@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Joint Bachelor Bash — Danni &amp; Brendon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&amp;family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&amp;family=Space+Grotesk:wght@400;500;700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#120E0F;
+    --pink:#FF2E7E;
+    --gold:#FFC53D;
+    --parchment:#F3E7D2;
+    --plum:#3B1E36;
+    --inkbrown:#2B1B12;
+    --plum-light:#5A2E4F;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family:'Space Grotesk', sans-serif;
+    background:var(--ink);
+    color:var(--parchment);
+    overflow-x:hidden;
+  }
+
+  a{color:inherit;}
+
+  /* ---------- NAV ---------- */
+  .quicknav{
+    position:sticky;
+    top:0;
+    z-index:50;
+    display:flex;
+    justify-content:center;
+    gap:.5rem;
+    padding:.85rem 1rem;
+    background:rgba(18,14,15,.75);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid rgba(255,197,61,.25);
+    transition:background .5s ease, border-color .5s ease;
+  }
+  body[data-theme="day2"] .quicknav{
+    background:rgba(243,231,210,.85);
+    border-bottom:1px solid rgba(43,27,18,.2);
+  }
+  .quicknav a{
+    font-family:'JetBrains Mono', monospace;
+    font-size:.72rem;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    text-decoration:none;
+    padding:.5rem 1rem;
+    border-radius:999px;
+    border:1px solid rgba(255,197,61,.4);
+    color:var(--gold);
+    transition:all .3s ease;
+    white-space:nowrap;
+  }
+  .quicknav a:hover{background:var(--gold);color:var(--ink);}
+  body[data-theme="day2"] .quicknav a{
+    color:var(--inkbrown);
+    border-color:rgba(43,27,18,.35);
+  }
+  body[data-theme="day2"] .quicknav a:hover{
+    background:var(--inkbrown);color:var(--parchment);
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;
+    padding:5.5rem 1.5rem 5rem;
+    text-align:center;
+    background:
+      radial-gradient(circle at 18% 20%, rgba(255,46,126,.35), transparent 45%),
+      radial-gradient(circle at 82% 75%, rgba(255,197,61,.22), transparent 50%),
+      var(--ink);
+    overflow:hidden;
+  }
+  .hero::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    opacity:.35;
+    mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;max-width:800px;margin:0 auto;}
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:.75rem;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin:0 0 1.4rem;
+  }
+  .hero-title{
+    font-family:'Bungee', system-ui, sans-serif;
+    font-weight:400;
+    font-size:clamp(2.4rem, 8vw, 5.2rem);
+    line-height:1.02;
+    margin:0 0 1.3rem;
+    color:var(--parchment);
+    text-shadow:
+      3px 3px 0 var(--pink),
+      6px 6px 0 rgba(255,197,61,.5);
+    letter-spacing:.01em;
+  }
+  .hero-sub{
+    font-size:clamp(1.05rem, 2.4vw, 1.35rem);
+    color:var(--parchment);
+    opacity:.9;
+    margin:0 0 1.8rem;
+    font-weight:500;
+  }
+  .hero-sub .amp{color:var(--pink);font-family:'Fraunces',serif;font-style:italic;}
+  .stamp{
+    display:inline-block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:.78rem;
+    letter-spacing:.03em;
+    color:var(--ink);
+    background:var(--gold);
+    padding:.55rem 1.1rem;
+    border-radius:3px;
+    transform:rotate(-2deg);
+    margin:0 0 2rem;
+    box-shadow:4px 4px 0 rgba(255,46,126,.55);
+  }
+  .meta{
+    font-family:'JetBrains Mono', monospace;
+    font-size:.85rem;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--parchment);
+    opacity:.75;
+    margin:0;
+  }
+
+  /* ---------- DAY SECTIONS ---------- */
+  .day{
+    position:relative;
+    padding:4.5rem 1.5rem 5rem;
+  }
+  .day--one{
+    background:
+      radial-gradient(circle at 85% 10%, rgba(255,46,126,.18), transparent 55%),
+      var(--ink);
+  }
+  .day--two{
+    background:var(--parchment);
+    color:var(--inkbrown);
+  }
+  .day--two::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    opacity:.5;
+    mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+    pointer-events:none;
+  }
+
+  .day-head{max-width:720px;margin:0 auto 2.8rem;text-align:center;position:relative;}
+  .day-eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:.72rem;
+    letter-spacing:.3em;
+    text-transform:uppercase;
+    color:var(--gold);
+  }
+  .day--two .day-eyebrow{color:var(--plum);}
+  .day--one .day-head h2{
+    font-family:'Bungee', system-ui, sans-serif;
+    font-weight:400;
+    font-size:clamp(2rem, 5.5vw, 3.2rem);
+    margin:.6rem 0 .5rem;
+    color:var(--pink);
+  }
+  .day--two .day-head h2{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-style:italic;
+    font-size:clamp(2rem, 5.5vw, 3.2rem);
+    margin:.6rem 0 .5rem;
+    color:var(--inkbrown);
+  }
+  .day-date{
+    font-family:'JetBrains Mono', monospace;
+    font-size:.85rem;
+    letter-spacing:.06em;
+    opacity:.75;
+    margin:0;
+  }
+
+  .event-list{
+    list-style:none;
+    margin:0 auto;
+    padding:0;
+    max-width:680px;
+    display:flex;
+    flex-direction:column;
+    gap:1.1rem;
+    position:relative;
+  }
+  .event-card{
+    display:grid;
+    grid-template-columns:110px 1fr;
+    gap:1.2rem;
+    align-items:start;
+    padding:1.4rem 1.5rem;
+    border-radius:10px;
+  }
+  .day--one .event-card{
+    background:var(--plum);
+    border:1px solid rgba(255,197,61,.25);
+  }
+  .day--one .event-card--tbd{
+    border-style:dashed;
+    opacity:.85;
+  }
+  .day--two .event-card{
+    background:rgba(255,255,255,.5);
+    border:1px solid rgba(43,27,18,.15);
+  }
+  .day--two .event-card--tbd{
+    border-style:dashed;
+    opacity:.85;
+  }
+  .event-time{
+    font-family:'JetBrains Mono', monospace;
+    font-size:.85rem;
+    font-weight:600;
+    letter-spacing:.03em;
+    color:var(--gold);
+    padding-top:.15rem;
+  }
+  .day--two .event-time{color:var(--plum);}
+  .event-body h3{
+    margin:0 0 .4rem;
+    font-size:1.15rem;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+  }
+  .event-body p{
+    margin:0 0 .6rem;
+    font-size:.95rem;
+    line-height:1.5;
+    opacity:.85;
+  }
+  .event-body a{
+    display:inline-block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:.8rem;
+    text-decoration:none;
+    border-bottom:1px solid currentColor;
+    padding-bottom:1px;
+  }
+  .day--one .event-body a{color:var(--pink);}
+  .day--two .event-body a{color:var(--plum);}
+
+  /* ---------- TRANSITION ---------- */
+  .transition{
+    text-align:center;
+    padding:2.2rem 1rem;
+    background:linear-gradient(180deg, var(--ink) 0%, var(--plum) 45%, var(--parchment) 100%);
+  }
+  .transition p{
+    margin:0;
+    font-family:'JetBrains Mono', monospace;
+    font-size:.75rem;
+    letter-spacing:.25em;
+    text-transform:uppercase;
+    color:rgba(243,231,210,.6);
+  }
+
+  /* ---------- FOOTER ---------- */
+  .footer{
+    background:var(--inkbrown);
+    color:var(--parchment);
+    text-align:center;
+    padding:3rem 1.5rem;
+  }
+  .footer-rsvp{
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-size:1.2rem;
+    margin:0 0 .8rem;
+  }
+  .footer-joke{
+    font-family:'JetBrains Mono', monospace;
+    font-size:.78rem;
+    opacity:.6;
+    max-width:480px;
+    margin:0 auto;
+    line-height:1.5;
+  }
+
+  @media (max-width:520px){
+    .event-card{grid-template-columns:1fr;gap:.4rem;}
+    .event-time{padding-top:0;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body data-theme="day1">
+
+  <nav class="quicknav">
+    <a href="#day1">Day One · Debauchery</a>
+    <a href="#day2">Day Two · Sober Sunday</a>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">You Are Hereby Summoned</p>
+      <h1 class="hero-title">THE JOINT<br>BACHELOR BASH</h1>
+      <p class="hero-sub">Danni <span class="amp">&amp;</span> Brendon go out with a bang. Allegedly.</p>
+      <p class="stamp">presented by D.T.F. &amp; B.J. — yes, really. no, we're not explaining it.</p>
+      <p class="meta">Oct 10–11 · Boston, MA</p>
+    </div>
+  </header>
+
+  <main>
+    <section id="day1" class="day day--one">
+      <div class="day-head">
+        <span class="day-eyebrow">Day One</span>
+        <h2>Drunken Debauchery</h2>
+        <p class="day-date">Saturday, October 10</p>
+      </div>
+      <ol class="event-list">
+        <li class="event-card">
+          <div class="event-time">11:00 AM</div>
+          <div class="event-body">
+            <h3>Drag Brunch</h3>
+            <p>Theme TBD. Bottomless something. Wear your good wig.</p>
+            <a href="https://www.flipphoneevents.com/boston" target="_blank" rel="noopener">Get details →</a>
+          </div>
+        </li>
+        <li class="event-card event-card--tbd">
+          <div class="event-time">TBD</div>
+          <div class="event-body">
+            <h3>Smarty Pants Presentations</h3>
+            <p>Time drops soon. Start drafting your slides. Or don't — we won't check.</p>
+          </div>
+        </li>
+        <li class="event-card event-card--tbd">
+          <div class="event-time">TBD</div>
+          <div class="event-body">
+            <h3>D&amp;D&amp;D — Dungeons &amp; Dragons &amp; Drinks</h3>
+            <p>Special guest DM: Evan Stewart. Roll for initiative, then roll for another round.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <div class="transition" aria-hidden="true">
+      <p>— the morning after —</p>
+    </div>
+
+    <section id="day2" class="day day--two">
+      <div class="day-head">
+        <span class="day-eyebrow">Day Two</span>
+        <h2>Sober Sunday</h2>
+        <p class="day-date">Sunday, October 11</p>
+      </div>
+      <ol class="event-list">
+        <li class="event-card">
+          <div class="event-time">4:20 PM</div>
+          <div class="event-body">
+            <h3>Room Escapers — Organized Chaos</h3>
+            <p>Fitting, honestly.</p>
+            <a href="https://roomescapersboston.com/" target="_blank" rel="noopener">Get details →</a>
+          </div>
+        </li>
+        <li class="event-card event-card--tbd">
+          <div class="event-time">TBD</div>
+          <div class="event-body">
+            <h3>Smarty Pants Presentations</h3>
+            <p>Round two. Time drops soon.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p class="footer-rsvp">RSVP to Danni &amp; Brendon — details coming soon.</p>
+    <p class="footer-joke">This page updates as the TBDs firm up. Please attend responsibly. Or don't — that's kind of the theme.</p>
+  </footer>
+
+  <script>
+    const body = document.body;
+    const day2 = document.getElementById('day2');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          body.setAttribute('data-theme', 'day2');
+        } else if (entry.boundingClientRect.top > 0) {
+          body.setAttribute('data-theme', 'day1');
+        }
+      });
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    observer.observe(day2);
+  </script>
+
+</body>
+</html>

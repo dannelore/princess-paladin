@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Danni &amp; Brendon's Bachelor Quest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400;1,500&family=IM+Fell+English+SC&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --parchment:#EFE1BD;
+    --parchment-dark:#DEC993;
+    --ink:#2A2013;
+    --wax:#7C1F2A;
+    --gold:#A8762A;
+    --rose:#B96C87;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family:'EB Garamond', serif;
+    background:var(--parchment);
+    color:var(--ink);
+    overflow-x:hidden;
+  }
+  a{color:inherit;}
+  svg.icon{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.4;flex-shrink:0;}
+
+  /* ---------- NAV ---------- */
+  .quicknav{
+    position:sticky;
+    top:0;
+    z-index:50;
+    display:flex;
+    justify-content:center;
+    gap:.6rem;
+    padding:.8rem 1rem;
+    background:rgba(239,225,189,.9);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid rgba(42,32,19,.18);
+  }
+  .quicknav a{
+    display:flex;
+    align-items:center;
+    gap:.4rem;
+    font-family:'IM Fell English SC', serif;
+    font-size:.85rem;
+    letter-spacing:.05em;
+    text-decoration:none;
+    padding:.45rem 1rem;
+    border:1px solid rgba(124,31,42,.4);
+    border-radius:2px;
+    color:var(--wax);
+    transition:all .3s ease;
+  }
+  .quicknav a:hover{background:var(--wax);color:var(--parchment);}
+  .quicknav .die{width:14px;height:14px;}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;
+    padding:5rem 1.5rem 4.5rem;
+    text-align:center;
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(168,118,42,.16), transparent 55%),
+      var(--parchment);
+    overflow:hidden;
+    box-shadow:inset 0 -40px 60px -40px rgba(42,32,19,.15);
+  }
+  .hero::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    opacity:.5;
+    mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.10'/%3E%3C/svg%3E");
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;max-width:760px;margin:0 auto;}
+  .eyebrow{
+    font-family:'IM Fell English SC', serif;
+    font-size:.95rem;
+    letter-spacing:.32em;
+    text-transform:uppercase;
+    color:var(--wax);
+    margin:0 0 1.3rem;
+  }
+  .hero-title{
+    font-family:'Cinzel', serif;
+    font-weight:700;
+    font-size:clamp(1.9rem, 6.4vw, 3.6rem);
+    line-height:1.25;
+    margin:0 0 1.1rem;
+    color:var(--ink);
+    text-shadow:2px 2px 0 rgba(168,118,42,.35);
+  }
+  .hero-title .amp{color:var(--gold);}
+  .hero-sub{
+    font-family:'EB Garamond', serif;
+    font-style:italic;
+    font-size:clamp(1.05rem, 2.2vw, 1.3rem);
+    color:var(--ink);
+    opacity:.85;
+    margin:0 0 2.2rem;
+  }
+
+  /* wax seal */
+  .seal-wrap{display:flex;justify-content:center;margin:0 0 1.8rem;}
+  .seal{
+    position:relative;
+    width:132px;
+    height:132px;
+    border-radius:50%;
+    background:radial-gradient(circle at 32% 28%, #9C2E3B, var(--wax) 60%, #5E1620 100%);
+    box-shadow:0 6px 14px rgba(42,32,19,.35), inset 0 0 0 3px rgba(0,0,0,.15);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transform:rotate(-4deg);
+  }
+  .seal-text{
+    font-family:'Cinzel', serif;
+    font-size:.62rem;
+    letter-spacing:.06em;
+    color:rgba(239,225,189,.92);
+    text-align:center;
+    line-height:1.4;
+    padding:0 .6rem;
+  }
+  .seal-text small{
+    display:block;
+    font-family:'IM Fell English SC', serif;
+    font-size:.58rem;
+    opacity:.75;
+    margin-top:.2rem;
+    letter-spacing:.02em;
+  }
+
+  .meta{
+    font-family:'JetBrains Mono', monospace;
+    font-size:.8rem;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--ink);
+    opacity:.7;
+    margin:0;
+  }
+
+  /* ---------- DAY SECTIONS ---------- */
+  .day{position:relative;padding:4rem 1.5rem 4.5rem;}
+  .day--one{
+    background:
+      radial-gradient(circle at 85% 15%, rgba(124,31,42,.10), transparent 55%),
+      var(--parchment-dark);
+  }
+  .day--two{background:var(--parchment);}
+
+  .day-head{max-width:720px;margin:0 auto 2.6rem;text-align:center;}
+  .day-eyebrow{
+    font-family:'IM Fell English SC', serif;
+    font-size:.85rem;
+    letter-spacing:.34em;
+    text-transform:uppercase;
+    color:var(--wax);
+  }
+  .day-head h2{
+    font-family:'Cinzel', serif;
+    font-weight:600;
+    font-size:clamp(1.6rem, 4.6vw, 2.5rem);
+    margin:.5rem 0 .4rem;
+    color:var(--ink);
+  }
+  .day-date{
+    font-family:'EB Garamond', serif;
+    font-style:italic;
+    font-size:1rem;
+    opacity:.75;
+    margin:0;
+  }
+  .day-note{
+    font-family:'EB Garamond', serif;
+    font-style:italic;
+    font-size:.88rem;
+    opacity:.65;
+    margin:.5rem 0 0;
+  }
+
+  .event-list{
+    list-style:none;
+    margin:0 auto;
+    padding:0;
+    max-width:680px;
+    display:flex;
+    flex-direction:column;
+    gap:1.1rem;
+  }
+  .event-card{
+    display:grid;
+    grid-template-columns:auto 100px 1fr;
+    gap:1.1rem;
+    align-items:start;
+    padding:1.3rem 1.4rem;
+    background:rgba(239,225,189,.55);
+    border:1px solid rgba(42,32,19,.22);
+    border-radius:3px;
+    position:relative;
+  }
+  .day--two .event-card{background:rgba(255,251,240,.55);}
+  .event-card--tbd{border-style:dashed;opacity:.88;}
+  .event-icon{color:var(--wax);padding-top:.1rem;}
+  .event-time{
+    font-family:'JetBrains Mono', monospace;
+    font-size:.82rem;
+    font-weight:600;
+    letter-spacing:.02em;
+    color:var(--gold);
+    padding-top:.2rem;
+  }
+  .event-body h3{
+    margin:0 0 .35rem;
+    font-family:'Cinzel', serif;
+    font-weight:600;
+    font-size:1.05rem;
+  }
+  .event-body p{
+    margin:0 0 .5rem;
+    font-size:1rem;
+    line-height:1.5;
+    opacity:.85;
+  }
+  .event-body p.covers{
+    font-family:'JetBrains Mono', monospace;
+    font-size:.75rem;
+    font-style:normal;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:var(--wax);
+    opacity:.9;
+  }
+  .event-body a{
+    display:inline-block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:.78rem;
+    text-decoration:none;
+    border-bottom:1px solid currentColor;
+    color:var(--wax);
+    padding-bottom:1px;
+  }
+  .event-count{
+    font-family:'JetBrains Mono', monospace;
+    font-size:.75rem;
+    letter-spacing:.03em;
+    color:var(--gold);
+    margin:.15rem 0 .55rem;
+  }
+
+  /* ---------- TRANSITION ---------- */
+  .transition{
+    text-align:center;
+    padding:2rem 1rem;
+    background:linear-gradient(180deg, var(--parchment-dark), var(--parchment));
+  }
+  .transition p{
+    margin:0;
+    font-family:'IM Fell English SC', serif;
+    font-size:.85rem;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    color:var(--wax);
+    opacity:.7;
+  }
+
+  /* ---------- FOOTER ---------- */
+  .footer{
+    background:var(--ink);
+    color:var(--parchment);
+    text-align:center;
+    padding:3rem 1.5rem;
+  }
+  .footer-rsvp{
+    font-family:'Cinzel', serif;
+    font-size:1.05rem;
+    margin:0 0 .8rem;
+  }
+  .footer-joke{
+    font-family:'EB Garamond', serif;
+    font-style:italic;
+    font-size:.95rem;
+    opacity:.7;
+    max-width:480px;
+    margin:0 auto;
+    line-height:1.5;
+  }
+
+  @media (max-width:560px){
+    .event-card{grid-template-columns:auto 1fr;}
+    .event-time{grid-column:2;padding-top:0;}
+    .event-body{grid-column:2;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+  }
+</style>
+</head>
+<body>
+
+  <nav class="quicknav">
+    <a href="#day1"><svg class="icon die" viewBox="0 0 24 24"><polygon points="12 2 22 8.5 22 17.5 12 22 2 17.5 2 8.5"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="8.5" x2="22" y2="8.5"/></svg> Session One</a>
+    <a href="#day2"><svg class="icon die" viewBox="0 0 24 24"><polygon points="12 2 22 8.5 22 17.5 12 22 2 17.5 2 8.5"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="8.5" x2="22" y2="8.5"/></svg> Session Two</a>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">A Party Is Forming</p>
+      <h1 class="hero-title">Danni <span class="amp">&amp;</span> Brendon's<br>Bachelor Quest</h1>
+      <p class="hero-sub">One weekend. Two sessions. Zero saving throws.</p>
+      <div class="seal-wrap">
+        <div class="seal">
+          <div class="seal-text">D.T.F.<br>&amp; B.J.<small>yes, really.<br>no, we're not explaining it.</small></div>
+        </div>
+      </div>
+      <p class="meta">Oct 10–11 · Boston, MA · Party Size: TBD</p>
+    </div>
+  </header>
+
+  <main>
+    <section id="day1" class="day day--one">
+      <div class="day-head">
+        <span class="day-eyebrow">Session One</span>
+        <h2>Drunken Debauchery</h2>
+        <p class="day-date">Saturday, October 10</p>
+        <p class="day-note">No official lunch on the books — brunch is doing the heavy lifting.</p>
+      </div>
+      <ol class="event-list">
+        <li class="event-card">
+          <svg class="icon event-icon" viewBox="0 0 24 24"><path d="M6 3h12l-1.5 8a4.5 4.5 0 0 1-9 0L6 3z"/><path d="M9 21h6"/><path d="M12 15.5V21"/><path d="M6 7H4a2 2 0 0 0 0 4h2.4"/><path d="M18 7h2a2 2 0 0 1 0 4h-2.4"/></svg>
+          <div class="event-time">11:00 AM</div>
+          <div class="event-body">
+            <h3>Drag Brunch</h3>
+            <p class="event-count" data-event="dragBrunch">Headcount: TBD</p>
+            <p>Theme TBD. Wear your good wig.</p>
+            <p class="covers">Admission covered — tips, food &amp; drinks are on you</p>
+            <a href="https://www.flipphoneevents.com/boston" target="_blank" rel="noopener">Get details →</a>
+          </div>
+        </li>
+        <li class="event-card event-card--tbd">
+          <svg class="icon event-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.7-2.5 2-2.5 4"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div class="event-time">1:00 PM</div>
+          <div class="event-body">
+            <h3>TBD</h3>
+            <p>Something's brewing for this slot — details soon.</p>
+          </div>
+        </li>
+        <li class="event-card">
+          <svg class="icon event-icon" viewBox="0 0 24 24"><path d="M3 20v-8l9-6 9 6v8"/><path d="M8 20v-6h8v6"/><path d="M3 12l9-6 9 6"/></svg>
+          <div class="event-time">3:00 PM</div>
+          <div class="event-body">
+            <h3>Short Rest</h3>
+            <p>Check into the Airbnb, get settled, set up before the next session.</p>
+          </div>
+        </li>
+        <li class="event-card">
+          <svg class="icon event-icon" viewBox="0 0 24 24"><path d="M8 3h9a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2V6a3 3 0 0 1 3-3z"/><line x1="9" y1="8" x2="16" y2="8"/><line x1="9" y1="12" x2="16" y2="12"/></svg>
+          <div class="event-time">3:30 PM</div>
+          <div class="event-body">
+            <h3>Smarty Pants Presentations</h3>
+            <p class="event-count" data-event="smartyPants1">Headcount: TBD</p>
+            <p>Bring your best nerd-out. Slides optional, confidence mandatory.</p>
+          </div>
+        </li>
+        <li class="event-card">
+          <svg class="icon event-icon" viewBox="0 0 24 24"><polygon points="12 2 22 8.5 22 17.5 12 22 2 17.5 2 8.5"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="8.5" x2="22" y2="8.5"/><line x1="12" y1="22" x2="22" y2="8.5"/><line x1="12" y1="22" x2="2" y2="8.5"/></svg>
+          <div class="event-time">5:00 PM</div>
+          <div class="event-body">
+            <h3>D&amp;D&amp;D — Dungeons &amp; Dragons &amp; Drinks</h3>
+            <p class="event-count" data-event="danddd">Headcount: TBD</p>
+            <p>Special guest DM: Evan Stewart. Roll for initiative, then roll for another round.</p>
+            <p class="covers">Dinner covered — likely pizza &amp; wings</p>
+          </div>
+        </li>
+        <li class="event-card">
+          <svg class="icon event-icon" viewBox="0 0 24 24"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>
+          <div class="event-time">9:00 PM</div>
+          <div class="event-body">
+            <h3>Drunken Karaoke / Jackbox Games</h3>
+            <p>The night's final boss. No saving throws for dignity.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <div class="transition" aria-hidden="true"><p>— long rest —</p></div>
+
+    <section id="day2" class="day day--two">
+      <div class="day-head">
+        <span class="day-eyebrow">Session Two</span>
+        <h2>Sober Sunday</h2>
+        <p class="day-date">Sunday, October 11</p>
+      </div>
+      <ol class="event-list">
+        <li class="event-card event-card--tbd">
+          <svg class="icon event-icon" viewBox="0 0 24 24"><path d="M8 3h9a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2V6a3 3 0 0 1 3-3z"/><line x1="9" y1="8" x2="16" y2="8"/><line x1="9" y1="12" x2="16" y2="12"/></svg>
+          <div class="event-time">TBD</div>
+          <div class="event-body">
+            <h3>Smarty Pants Presentations</h3>
+            <p class="event-count" data-event="smartyPants2">Headcount: TBD</p>
+            <p>Round two. Time drops soon.</p>
+          </div>
+        </li>
+        <li class="event-card">
+          <svg class="icon event-icon" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="1"/><path d="M9 10V7a3 3 0 0 1 6 0v3"/><circle cx="12" cy="15" r="1.3"/></svg>
+          <div class="event-time">4:20 PM</div>
+          <div class="event-body">
+            <h3>Room Escapers — Organized Chaos</h3>
+            <p class="event-count" data-event="roomEscapers">Headcount: TBD</p>
+            <p>Fitting, honestly.</p>
+            <p class="covers">Admission covered</p>
+            <a href="https://roomescapersboston.com/" target="_blank" rel="noopener">Get details →</a>
+          </div>
+        </li>
+      </ol>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p class="footer-rsvp">RSVP by raven (or, realistically, by texting Danni)</p>
+    <p class="footer-joke">Details update here as the TBDs firm up. No character sheet required — please attend responsibly, or don't. That's kind of the theme.</p>
+  </footer>
+
+  <script>
+    // ---- EDIT EVENT COUNTS HERE ----
+    // Just change the "value" below and re-save; that card updates itself.
+    // "label" controls the word before the colon (e.g. "Headcount" or "Presenters").
+    const EVENT_STATS = {
+      dragBrunch:    { label: "Headcount",  value: "4/10 (more tickets available)" }, // Drag Brunch
+      smartyPants1:  { label: "Presenters", value: "TBD" },                            // Smarty Pants, Session One
+      danddd:        { label: "Headcount",  value: "6/7 spots taken" },                // D&D&D
+      smartyPants2:  { label: "Presenters", value: "TBD" },                            // Smarty Pants, Session Two
+      roomEscapers:  { label: "Headcount",  value: "TBD" },                            // Room Escapers
+    };
+
+    document.querySelectorAll('[data-event]').forEach(el => {
+      const stat = EVENT_STATS[el.dataset.event];
+      if (stat) el.textContent = stat.label + ': ' + stat.value;
+    });
+  </script>
+
+</body>
+</html>
