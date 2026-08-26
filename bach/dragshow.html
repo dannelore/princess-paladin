@@ -99,13 +99,44 @@
     color:var(--ink);
     text-shadow:2px 2px 0 rgba(168,118,42,.35);
   }
-  .hero-sub{
-    font-family:'EB Garamond', serif;
-    font-style:italic;
-    font-size:clamp(.95rem, 1.8vw, 1.1rem);
+  .event-note{
+    font-family:'JetBrains Mono', monospace;
+    font-size:.85rem;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--wax);
+    margin:0 0 1.4rem;
+  }
+  .event-venue{
+    margin:0 auto;
+  }
+  .venue-name{
+    font-family:'Cinzel', serif;
+    font-weight:600;
+    font-size:1.15rem;
+    margin:0 0 .3rem;
     color:var(--ink);
+  }
+  .venue-address{
+    font-family:'EB Garamond', serif;
+    font-size:1rem;
+    line-height:1.5;
     opacity:.85;
-    margin:0 0 1.2rem;
+    margin:0 0 .4rem;
+  }
+  .venue-phone{
+    font-family:'EB Garamond', serif;
+    font-size:1rem;
+    margin:0;
+  }
+  .venue-phone a{
+    text-decoration:none;
+    color:var(--gold);
+    border-bottom:1px solid rgba(168,118,42,.4);
+  }
+  .venue-phone a:hover{
+    color:var(--wax);
+    border-color:var(--wax);
   }
   .covers-banner{
     display:inline-block;
@@ -124,14 +155,23 @@
     .hero-inner{text-align:center;}
   }
 
-  /* ---------- VIDEO ---------- */
-  .video-section{
-    padding:3rem 1.5rem 1rem;
-    background:var(--parchment-dark);
+  /* ---------- VIDEO + RULES (side by side) ---------- */
+  .main-split{
+    padding:3rem 1.5rem 4.5rem;
+    background:var(--parchment);
   }
-  .video-wrap{
-    max-width:720px;
+  .split-inner{
+    max-width:1180px;
     margin:0 auto;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
+    gap:3rem;
+    align-items:start;
+  }
+
+  .video-col{
+    position:sticky;
+    top:5rem;
   }
   .video-frame{
     position:relative;
@@ -141,6 +181,7 @@
     border-radius:4px;
     overflow:hidden;
     box-shadow:0 8px 20px -10px rgba(42,32,19,.4);
+    background:var(--parchment-dark);
   }
   .video-frame iframe{
     position:absolute;
@@ -158,13 +199,7 @@
     margin:.75rem 0 0;
   }
 
-  /* ---------- RULES ---------- */
-  .rules{
-    position:relative;
-    padding:3.5rem 1.5rem 4.5rem;
-    background:var(--parchment);
-  }
-  .day-head{max-width:680px;margin:0 auto 2.4rem;text-align:center;}
+  .day-head{margin:0 0 2rem;text-align:left;}
   .day-eyebrow{
     font-family:'IM Fell English SC', serif;
     font-size:.85rem;
@@ -183,9 +218,8 @@
   .rule-list{
     list-style:none;
     counter-reset:rule;
-    margin:0 auto;
+    margin:0;
     padding:0;
-    max-width:680px;
     display:flex;
     flex-direction:column;
     gap:1.1rem;
@@ -224,6 +258,38 @@
     font-size:1rem;
     line-height:1.5;
     opacity:.85;
+  }
+  .rule-sublist{
+    margin:.3rem 0 0;
+    padding-left:1.1rem;
+    display:flex;
+    flex-direction:column;
+    gap:.4rem;
+  }
+  .rule-sublist li{
+    font-size:.96rem;
+    line-height:1.5;
+    opacity:.85;
+    list-style:none;
+    position:relative;
+    padding-left:.9rem;
+  }
+  .rule-sublist li::before{
+    content:"—";
+    position:absolute;
+    left:0;
+    color:var(--gold);
+  }
+
+  @media (max-width:880px){
+    .split-inner{
+      grid-template-columns:1fr;
+      gap:2.2rem;
+    }
+    .video-col{
+      position:static;
+    }
+    .day-head{text-align:center;}
   }
 
   /* ---------- FOOTER ---------- */
@@ -266,74 +332,62 @@
     <div class="hero-inner">
       <p class="eyebrow">What To Expect</p>
       <h1 class="hero-title">Drag Brunch</h1>
-      <p class="hero-sub">Ones, fives, and zero saving throws for dignity.</p>
-      <span class="covers-banner">Admission covered — tips, food &amp; drinks are on you</span>
+      <p class="event-note">Theme TBD — Arrive by 10:45am</p>
+      <div class="event-venue">
+        <p class="venue-name">Summer Shack</p>
+        <p class="venue-address">149 Alewife Brook Pkwy<br>Cambridge, MA 02140</p>
+        <p class="venue-phone"><a href="tel:+16175209500">(617) 520-9500</a></p>
+      </div>
     </div>
   </header>
 
-  <section class="video-section">
-    <div class="video-wrap">
-      <div class="video-frame">
-        <!-- Swap the src below for your actual drag brunch video -->
-        <iframe src="https://www.youtube.com/embed/REPLACE_WITH_VIDEO_ID" title="Drag Brunch Preview" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-      </div>
-      <p class="video-caption">A taste of the chaos that awaits.</p>
-    </div>
-  </section>
+  <main class="main-split">
+    <div class="split-inner">
 
-  <main class="rules">
-    <div class="day-head">
-      <span class="day-eyebrow">The Rules of Engagement</span>
-      <h2>Read Before You Sit Down</h2>
-    </div>
-    <ol class="rule-list">
+      <div class="video-col">
+        <div class="video-frame">
+          <!-- Swap the src below for your actual drag brunch video -->
+          <iframe src="https://www.youtube.com/embed/REPLACE_WITH_VIDEO_ID" title="Drag Brunch Preview" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+        <p class="video-caption">A taste of the chaos that awaits.</p>
+      </div>
+
+      <div class="rules-col">
+        <div class="day-head">
+          <span class="day-eyebrow">The Rules of Engagement</span>
+          <h2>Read Before You Sit Down</h2>
+        </div>
+        <ol class="rule-list">
       <li class="rule-card">
         <span class="rule-num"></span>
         <div class="rule-body">
-          <h3>Come with cash</h3>
-          <p>Ones, fives, tens — twenties if you want a real show. Tips go straight to the queens.</p>
+          <h3>Admission's covered</h3>
+          <p>You're responsible for your meal, drinks, and tips.</p>
         </div>
       </li>
       <li class="rule-card">
         <span class="rule-num"></span>
         <div class="rule-body">
-          <h3>Hand it over, don't tease it</h3>
-          <p>Wave the bill to get her attention, then let her take it. No pulling back for laughs.</p>
+          <h3>Come with cash in small bills</h3>
+          <ul class="rule-sublist">
+            <li>Tips go straight to the queens.</li>
+            <li>There are 3–4 queens who do multiple performances.</li>
+            <li>Wave the bill to get her attention, then let her take it — no pulling back for laughs.</li>
+          </ul>
         </div>
       </li>
       <li class="rule-card">
         <span class="rule-num"></span>
         <div class="rule-body">
-          <h3>Stay in your seat</h3>
-          <p>No jumping into a number. Keep your support loud, not physical.</p>
-        </div>
-      </li>
-      <li class="rule-card">
-        <span class="rule-num"></span>
-        <div class="rule-body">
-          <h3>It's her show, not yours</h3>
-          <p>Enjoy the spotlight from where you're sitting — let each queen have her moment.</p>
-        </div>
-      </li>
-      <li class="rule-card">
-        <span class="rule-num"></span>
-        <div class="rule-body">
-          <h3>Applaud like she can hear it</h3>
-          <p>Loud, often, and especially at the meet-and-greet after.</p>
+          <h3>Stay in your seat unless invited to join</h3>
+          <p>Applaud loud and often.</p>
         </div>
       </li>
       <li class="rule-card">
         <span class="rule-num"></span>
         <div class="rule-body">
           <h3>Hands off unless invited</h3>
-          <p>Hair is a hard no. Ask before you hug — the makeup will not survive a white shirt.</p>
-        </div>
-      </li>
-      <li class="rule-card">
-        <span class="rule-num"></span>
-        <div class="rule-body">
-          <h3>Use the pronouns she's giving you</h3>
-          <p>She'll make it clear — follow her lead, no exceptions.</p>
+          <p>Hair is a hard no. Ask before you hug.</p>
         </div>
       </li>
       <li class="rule-card">
@@ -346,18 +400,14 @@
       <li class="rule-card">
         <span class="rule-num"></span>
         <div class="rule-body">
-          <h3>Save the photos</h3>
-          <p>Meet-and-greet is your window. Mid-number is not photo time.</p>
+          <h3>Forget the photos</h3>
+          <p>Phone down, be present.</p>
         </div>
       </li>
-      <li class="rule-card">
-        <span class="rule-num"></span>
-        <div class="rule-body">
-          <h3>Bring the energy</h3>
-          <p>Phone down, be present. If you can't have fun, go visit your refrigerator instead.</p>
-        </div>
-      </li>
-    </ol>
+        </ol>
+      </div>
+
+    </div>
   </main>
 
   <footer class="footer">
