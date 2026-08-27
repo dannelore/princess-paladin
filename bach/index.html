@@ -185,41 +185,64 @@
     margin:0 auto;
     padding:0;
     max-width:680px;
-    display:flex;
-    flex-direction:column;
-    gap:1.1rem;
   }
   .event-card{
-    display:grid;
-    grid-template-columns:auto 100px 1fr;
-    gap:1.1rem;
-    align-items:start;
-    padding:1.3rem 1.4rem;
-    background:rgba(239,225,189,.55);
-    border:1px solid rgba(42,32,19,.22);
-    border-radius:3px;
-    position:relative;
+    border-bottom:1px solid rgba(42,32,19,.18);
   }
-  .day--two .event-card{background:rgba(255,251,240,.55);}
-  .event-card--tbd{border-style:dashed;opacity:.88;}
-  .event-icon{color:var(--wax);padding-top:.1rem;}
+  .event-card:first-child{border-top:1px solid rgba(42,32,19,.18);}
+  .event-summary{
+    display:flex;
+    align-items:center;
+    gap:.9rem;
+    padding:.85rem .2rem;
+    cursor:pointer;
+    list-style:none;
+  }
+  .event-summary::-webkit-details-marker{display:none;}
+  .event-summary::marker{content:"";}
+  .event-summary:hover{background:rgba(42,32,19,.05);}
+  .event-icon{color:var(--wax);flex-shrink:0;}
+  .event-icon svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.4;}
   .event-time{
     font-family:'JetBrains Mono', monospace;
-    font-size:.82rem;
+    font-size:.78rem;
     font-weight:600;
     letter-spacing:.02em;
     color:var(--gold);
-    padding-top:.2rem;
+    flex-shrink:0;
+    width:88px;
   }
-  .event-body h3{
-    margin:0 0 .35rem;
+  .event-title{
     font-family:'Cinzel', serif;
     font-weight:600;
-    font-size:1.05rem;
+    font-size:.98rem;
+    flex:1;
+  }
+  .event-count-badge{
+    font-family:'JetBrains Mono', monospace;
+    font-size:.72rem;
+    letter-spacing:.02em;
+    color:var(--wax);
+    background:rgba(124,31,42,.1);
+    border:1px solid rgba(124,31,42,.25);
+    border-radius:999px;
+    padding:.2rem .6rem;
+    flex-shrink:0;
+    white-space:nowrap;
+  }
+  .event-chevron{
+    flex-shrink:0;
+    color:var(--wax);
+    opacity:.55;
+    transition:transform .25s ease;
+  }
+  .event-card[open] .event-chevron{transform:rotate(90deg);}
+  .event-body{
+    padding:0 .2rem 1.1rem calc(88px + .9rem + 26px + .9rem);
   }
   .event-body p{
     margin:0 0 .5rem;
-    font-size:1rem;
+    font-size:.95rem;
     line-height:1.5;
     opacity:.85;
   }
@@ -240,13 +263,6 @@
     border-bottom:1px solid currentColor;
     color:var(--wax);
     padding-bottom:1px;
-  }
-  .event-count{
-    font-family:'JetBrains Mono', monospace;
-    font-size:.75rem;
-    letter-spacing:.03em;
-    color:var(--gold);
-    margin:.15rem 0 .55rem;
   }
 
   /* ---------- TRANSITION ---------- */
@@ -288,9 +304,10 @@
   }
 
   @media (max-width:560px){
-    .event-card{grid-template-columns:auto 1fr;}
-    .event-time{grid-column:2;padding-top:0;}
-    .event-body{grid-column:2;}
+    .event-time{width:64px;font-size:.72rem;}
+    .event-title{font-size:.9rem;}
+    .event-body{padding-left:calc(64px + .9rem + 26px + .9rem);}
+    .event-count-badge{font-size:.66rem;padding:.15rem .45rem;}
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -328,60 +345,78 @@
         <p class="day-note">No official lunch on the books — brunch is doing the heavy lifting.</p>
       </div>
       <ol class="event-list">
-        <li class="event-card">
-          <svg class="icon event-icon" viewBox="0 0 24 24"><path d="M6 3h12l-1.5 8a4.5 4.5 0 0 1-9 0L6 3z"/><path d="M9 21h6"/><path d="M12 15.5V21"/><path d="M6 7H4a2 2 0 0 0 0 4h2.4"/><path d="M18 7h2a2 2 0 0 1 0 4h-2.4"/></svg>
-          <div class="event-time">11:00 AM</div>
+        <li class="event-card"><details>
+          <summary class="event-summary">
+            <span class="event-icon"><svg viewBox="0 0 24 24"><path d="M6 3h12l-1.5 8a4.5 4.5 0 0 1-9 0L6 3z"/><path d="M9 21h6"/><path d="M12 15.5V21"/><path d="M6 7H4a2 2 0 0 0 0 4h2.4"/><path d="M18 7h2a2 2 0 0 1 0 4h-2.4"/></svg></span>
+            <span class="event-time">11:00 AM</span>
+            <span class="event-title">Drag Brunch</span>
+            <span class="event-count-badge" data-event="dragBrunch"></span>
+            <span class="event-chevron">›</span>
+          </summary>
           <div class="event-body">
-            <h3>Drag Brunch</h3>
-            <p class="event-count" data-event="dragBrunch">Headcount: TBD</p>
-            <p>Theme TBD. Wear your good wig.</p>
+            <p>Theme TBD. Wear your good wig. More tickets can be purchased if we need them.</p>
             <p class="covers">Admission covered — tips, food &amp; drinks are on you</p>
             <a href="https://www.flipphoneevents.com/boston" target="_blank" rel="noopener">Get details →</a>
           </div>
-        </li>
-        <li class="event-card event-card--tbd">
-          <svg class="icon event-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.7-2.5 2-2.5 4"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <div class="event-time">1:00 PM</div>
+        </details></li>
+        <li class="event-card"><details>
+          <summary class="event-summary">
+            <span class="event-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.7-2.5 2-2.5 4"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+            <span class="event-time">1:00 PM</span>
+            <span class="event-title">TBD</span>
+            <span class="event-chevron">›</span>
+          </summary>
           <div class="event-body">
-            <h3>TBD</h3>
             <p>Something's brewing for this slot — details soon.</p>
           </div>
-        </li>
-        <li class="event-card">
-          <svg class="icon event-icon" viewBox="0 0 24 24"><path d="M3 20v-8l9-6 9 6v8"/><path d="M8 20v-6h8v6"/><path d="M3 12l9-6 9 6"/></svg>
-          <div class="event-time">3:00 PM</div>
+        </details></li>
+        <li class="event-card"><details>
+          <summary class="event-summary">
+            <span class="event-icon"><svg viewBox="0 0 24 24"><path d="M3 20v-8l9-6 9 6v8"/><path d="M8 20v-6h8v6"/><path d="M3 12l9-6 9 6"/></svg></span>
+            <span class="event-time">3:00 PM</span>
+            <span class="event-title">Short Rest</span>
+            <span class="event-chevron">›</span>
+          </summary>
           <div class="event-body">
-            <h3>Short Rest</h3>
             <p>Check into the Airbnb, get settled, set up before the next session.</p>
           </div>
-        </li>
-        <li class="event-card">
-          <svg class="icon event-icon" viewBox="0 0 24 24"><path d="M8 3h9a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2V6a3 3 0 0 1 3-3z"/><line x1="9" y1="8" x2="16" y2="8"/><line x1="9" y1="12" x2="16" y2="12"/></svg>
-          <div class="event-time">3:30 PM</div>
+        </details></li>
+        <li class="event-card"><details>
+          <summary class="event-summary">
+            <span class="event-icon"><svg viewBox="0 0 24 24"><path d="M8 3h9a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2V6a3 3 0 0 1 3-3z"/><line x1="9" y1="8" x2="16" y2="8"/><line x1="9" y1="12" x2="16" y2="12"/></svg></span>
+            <span class="event-time">3:30 PM</span>
+            <span class="event-title">Smarty Pants Presentations</span>
+            <span class="event-count-badge" data-event="smartyPants1"></span>
+            <span class="event-chevron">›</span>
+          </summary>
           <div class="event-body">
-            <h3>Smarty Pants Presentations</h3>
-            <p class="event-count" data-event="smartyPants1">Headcount: TBD</p>
             <p>Bring your best nerd-out. Slides optional, confidence mandatory.</p>
           </div>
-        </li>
-        <li class="event-card">
-          <svg class="icon event-icon" viewBox="0 0 24 24"><polygon points="12 2 22 8.5 22 17.5 12 22 2 17.5 2 8.5"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="8.5" x2="22" y2="8.5"/><line x1="12" y1="22" x2="22" y2="8.5"/><line x1="12" y1="22" x2="2" y2="8.5"/></svg>
-          <div class="event-time">5:00 PM</div>
+        </details></li>
+        <li class="event-card"><details>
+          <summary class="event-summary">
+            <span class="event-icon"><svg viewBox="0 0 24 24"><polygon points="12 2 22 8.5 22 17.5 12 22 2 17.5 2 8.5"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="8.5" x2="22" y2="8.5"/><line x1="12" y1="22" x2="22" y2="8.5"/><line x1="12" y1="22" x2="2" y2="8.5"/></svg></span>
+            <span class="event-time">5:00 PM</span>
+            <span class="event-title">D&amp;D&amp;D — Dungeons &amp; Dragons &amp; Drinks</span>
+            <span class="event-count-badge" data-event="danddd"></span>
+            <span class="event-chevron">›</span>
+          </summary>
           <div class="event-body">
-            <h3>D&amp;D&amp;D — Dungeons &amp; Dragons &amp; Drinks</h3>
-            <p class="event-count" data-event="danddd">Headcount: TBD</p>
             <p>Special guest DM: Evan Stewart. Roll for initiative, then roll for another round.</p>
             <p class="covers">Dinner covered — likely pizza &amp; wings</p>
           </div>
-        </li>
-        <li class="event-card">
-          <svg class="icon event-icon" viewBox="0 0 24 24"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>
-          <div class="event-time">9:00 PM</div>
+        </details></li>
+        <li class="event-card"><details>
+          <summary class="event-summary">
+            <span class="event-icon"><svg viewBox="0 0 24 24"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg></span>
+            <span class="event-time">9:00 PM</span>
+            <span class="event-title">Drunken Karaoke / Jackbox Games</span>
+            <span class="event-chevron">›</span>
+          </summary>
           <div class="event-body">
-            <h3>Drunken Karaoke / Jackbox Games</h3>
             <p>The night's final boss. No saving throws for dignity.</p>
           </div>
-        </li>
+        </details></li>
       </ol>
     </section>
 
@@ -394,26 +429,32 @@
         <p class="day-date">Sunday, October 11</p>
       </div>
       <ol class="event-list">
-        <li class="event-card event-card--tbd">
-          <svg class="icon event-icon" viewBox="0 0 24 24"><path d="M8 3h9a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2V6a3 3 0 0 1 3-3z"/><line x1="9" y1="8" x2="16" y2="8"/><line x1="9" y1="12" x2="16" y2="12"/></svg>
-          <div class="event-time">TBD</div>
+        <li class="event-card"><details>
+          <summary class="event-summary">
+            <span class="event-icon"><svg viewBox="0 0 24 24"><path d="M8 3h9a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2V6a3 3 0 0 1 3-3z"/><line x1="9" y1="8" x2="16" y2="8"/><line x1="9" y1="12" x2="16" y2="12"/></svg></span>
+            <span class="event-time">TBD</span>
+            <span class="event-title">Smarty Pants Presentations</span>
+            <span class="event-count-badge" data-event="smartyPants2"></span>
+            <span class="event-chevron">›</span>
+          </summary>
           <div class="event-body">
-            <h3>Smarty Pants Presentations</h3>
-            <p class="event-count" data-event="smartyPants2">Headcount: TBD</p>
             <p>Round two. Time drops soon.</p>
           </div>
-        </li>
-        <li class="event-card">
-          <svg class="icon event-icon" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="1"/><path d="M9 10V7a3 3 0 0 1 6 0v3"/><circle cx="12" cy="15" r="1.3"/></svg>
-          <div class="event-time">4:20 PM</div>
+        </details></li>
+        <li class="event-card"><details>
+          <summary class="event-summary">
+            <span class="event-icon"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="1"/><path d="M9 10V7a3 3 0 0 1 6 0v3"/><circle cx="12" cy="15" r="1.3"/></svg></span>
+            <span class="event-time">4:20 PM</span>
+            <span class="event-title">Room Escapers — Organized Chaos</span>
+            <span class="event-count-badge" data-event="roomEscapers"></span>
+            <span class="event-chevron">›</span>
+          </summary>
           <div class="event-body">
-            <h3>Room Escapers — Organized Chaos</h3>
-            <p class="event-count" data-event="roomEscapers">Headcount: TBD</p>
             <p>Fitting, honestly.</p>
             <p class="covers">Admission covered</p>
             <a href="https://roomescapersboston.com/" target="_blank" rel="noopener">Get details →</a>
           </div>
-        </li>
+        </details></li>
       </ol>
     </section>
   </main>
@@ -425,19 +466,22 @@
 
   <script>
     // ---- EDIT EVENT COUNTS HERE ----
-    // Just change the "value" below and re-save; that card updates itself.
-    // "label" controls the word before the colon (e.g. "Headcount" or "Presenters").
+    // Just change the "value" below and re-save; that event's badge updates itself.
+    // "label" shows on hover, so people can tell a headcount from a presenter count.
     const EVENT_STATS = {
-      dragBrunch:    { label: "Headcount",  value: "4/10 (more tickets available)" }, // Drag Brunch
-      smartyPants1:  { label: "Presenters", value: "TBD" },                            // Smarty Pants, Session One
-      danddd:        { label: "Table Full",  value: "- Audience Available" },                // D&D&D
-      smartyPants2:  { label: "Presenters", value: "TBD" },                            // Smarty Pants, Session Two
-      roomEscapers:  { label: "Headcount",  value: "2/12" },                            // Room Escapers
+      dragBrunch:    { label: "Headcount",  value: "4/10" },      // Drag Brunch
+      smartyPants1:  { label: "Presenters", value: "TBD" },       // Smarty Pants, Session One
+      danddd:        { label: "Headcount",  value: "6/7" },       // D&D&D
+      smartyPants2:  { label: "Presenters", value: "TBD" },       // Smarty Pants, Session Two
+      roomEscapers:  { label: "Headcount",  value: "TBD" },       // Room Escapers
     };
 
     document.querySelectorAll('[data-event]').forEach(el => {
       const stat = EVENT_STATS[el.dataset.event];
-      if (stat) el.textContent = stat.label + ': ' + stat.value;
+      if (stat) {
+        el.textContent = stat.value;
+        el.title = stat.label;
+      }
     });
   </script>
 
