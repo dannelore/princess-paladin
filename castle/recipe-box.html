@@ -30,6 +30,9 @@ h1,h2,h3{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0 .4
 .header{ text-align:center; padding:10px 0 24px; }
 .back{ display:inline-block; margin:0 10px 10px; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1rem; text-decoration:none; color:var(--ink-soft); }
 .back:hover{ color:var(--pink-accent-deep); }
+.site-nav{ display:flex; justify-content:center; flex-wrap:wrap; gap:8px 10px; margin-bottom:12px; }
+.site-nav a{ font-family:'Jost',sans-serif; font-weight:500; font-size:.85rem; text-decoration:none; color:#fff; background:var(--pink-accent); border-radius:999px; padding:8px 16px; }
+.site-nav a:hover{ background:var(--pink-accent-deep); }
 .title{ font-size:2.3rem; margin:6px 0 2px; }
 .tagline{ font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--gold); margin:0; }
 .panel{ background:var(--cream); border-radius:20px; padding:20px; box-shadow:0 6px 20px rgba(74,59,65,.12); margin-bottom:18px; }
@@ -45,6 +48,8 @@ textarea{ min-height:90px; resize:vertical; }
 .btn.danger{ background:var(--danger); }
 .hint{ font-size:.78rem; color:var(--ink-soft); margin-top:4px; }
 .card{ background:#fff; border:1px solid var(--pink-bg-soft); border-radius:16px; padding:16px; margin-bottom:12px; }
+.card.inactive{ opacity:.6; }
+.tag.inactive-tag{ background:var(--parchment-bg); border:1px solid var(--parchment-border); color:var(--ink-soft); }
 .card h3{ margin-bottom:4px; }
 .meta{ font-size:.82rem; color:var(--ink-soft); margin-bottom:8px; }
 .tag{ display:inline-block; font-size:.72rem; padding:3px 10px; border-radius:999px; background:var(--pink-bg-soft); margin:0 5px 5px 0; }
@@ -74,9 +79,12 @@ textarea{ min-height:90px; resize:vertical; }
 <body>
 <div class="shell">
   <div class="header">
-    <a class="back" href="../index.html">&larr; Back Home</a>
-    <a class="back" href="https://princessandpaladin.com/castle">&larr; Back to Castle Keep</a>
-    <a class="back" href="https://princessandpaladin.com/castle/meal-planner">&larr; Meal Planner</a>
+    <nav class="site-nav">
+      <a href="../index.html">Home</a>
+      <a href="https://princessandpaladin.com/castle">Castle Keep</a>
+      <a href="https://princessandpaladin.com/castle/meal-planner">Meal Planner</a>
+      <a href="https://princessandpaladin.com/castle/recipes">Recipes</a>
+    </nav>
     <h1 class="title display">Recipe Box</h1>
     <p class="tagline">type it in, find it later</p>
   </div>
@@ -106,6 +114,11 @@ textarea{ min-height:90px; resize:vertical; }
           <option value="occasional">Occasionally</option>
           <option value="date-night">Date Night Default</option>
         </select>
+      </div>
+      <div><label>Circulation</label>
+        <label style="display:flex; align-items:center; gap:8px; font-weight:400; text-transform:none; letter-spacing:normal; color:var(--ink); margin-top:9px;">
+          <input type="checkbox" id="f_active" checked style="width:auto;"> In circulation
+        </label>
       </div>
     </div>
     <label>Tags <span class="hint">tap to select — add your own below if you need one that's missing</span></label>
@@ -198,7 +211,17 @@ function renderTagChips(selected){
   wrap.querySelectorAll('.chip').forEach(chip => {
     chip.addEventListener('click', () => {
       // let the native checkbox click happen, then sync the visual state
-      setTimeout(() => chip.classList.toggle('checked', chip.querySelector('input').checked), 0);
+      setTimeout(() => {
+        const cb = chip.querySelector('input');
+        chip.classList.toggle('checked', cb.checked);
+        // "N servings" tags double as the actual serving count — keep the
+        // numeric Servings field in sync so lunch-portion math is never
+        // reading a different number than the tag says.
+        const match = cb.value.match(/^(\d+)\s+servings$/i);
+        if (match && cb.checked){
+          document.getElementById('f_servings').value = match[1];
+        }
+      }, 0);
     });
   });
 }
@@ -236,10 +259,10 @@ function renderList(){
   const wrap = document.getElementById('recipeList');
   document.getElementById('emptyMsg').style.display = recipes.length ? 'none' : 'block';
   wrap.innerHTML = recipes.map(r => `
-    <div class="card">
+    <div class="card ${r.active === false ? 'inactive' : ''}">
       <h3>${r.name}</h3>
       <div class="meta">serves ${r.servings} · prep ${r.prepTime||'—'} · cook ${r.cookTime||'—'} · ${r.method}</div>
-      <div>${(r.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}<span class="tag">${FREQUENCY_LABELS[r.frequency] || r.frequency}</span></div>
+      <div>${(r.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}<span class="tag">${FREQUENCY_LABELS[r.frequency] || r.frequency}</span>${r.active === false ? '<span class="tag inactive-tag">not in circulation</span>' : ''}</div>
       <details class="recipe-details">
         <summary>View recipe</summary>
         <div class="recipe-detail-body">
@@ -251,6 +274,7 @@ function renderList(){
       </details>
       <div class="card-actions">
         <button class="btn small secondary" onclick="editRecipe('${r.id}')">Edit</button>
+        <button class="btn small secondary" onclick="toggleActive('${r.id}')">${r.active === false ? 'Put back in circulation' : 'Take out of circulation'}</button>
         <button class="btn small danger" onclick="deleteRecipe('${r.id}')">Delete</button>
       </div>
     </div>
@@ -265,6 +289,7 @@ function clearForm(){
   document.getElementById('f_servings').value = 4;
   document.getElementById('f_method').value = 'stovetop';
   document.getElementById('f_frequency').value = 'weekly';
+  document.getElementById('f_active').checked = true;
   renderTagChips([]);
 }
 
@@ -280,6 +305,7 @@ function editRecipe(id){
   document.getElementById('f_cook').value = r.cookTime || '';
   document.getElementById('f_method').value = r.method;
   document.getElementById('f_frequency').value = r.frequency;
+  document.getElementById('f_active').checked = r.active !== false;
   (r.tags||[]).forEach(t => addTagOption(t)); // make sure old/typed-in tags still show as options
   renderTagChips(r.tags || []);
   document.getElementById('f_ingredients').value = (r.ingredients||[]).map(i => `${i.qty ?? ''} ${i.unit||''} ${i.name}`.trim().replace(/\s+/g,' ')).join('\n');
@@ -293,20 +319,30 @@ function deleteRecipe(id){
   renderTagFilter(); renderList();
 }
 
+function toggleActive(id){
+  const recipes = getRecipes().map(r => r.id === id ? { ...r, active: r.active === false ? true : false } : r);
+  saveRecipes(recipes);
+  renderList();
+}
+
 document.getElementById('saveBtn').addEventListener('click', () => {
   const name = document.getElementById('f_name').value.trim();
   if (!name){ alert('Give the recipe a name first.'); return; }
   const ingredients = document.getElementById('f_ingredients').value.split('\n').map(parseIngredientLine).filter(Boolean);
   const instructions = document.getElementById('f_instructions').value.split('\n').map(s => s.trim()).filter(Boolean);
   const tags = getCheckedTags();
+  const servingsTag = tags.map(t => t.match(/^(\d+)\s+servings$/i)).find(Boolean);
+  const servingsFromField = Number(document.getElementById('f_servings').value) || 4;
+  const servings = servingsTag ? Number(servingsTag[1]) : servingsFromField;
 
   const payload = {
     name,
-    servings: Number(document.getElementById('f_servings').value) || 4,
+    servings,
     prepTime: document.getElementById('f_prep').value.trim(),
     cookTime: document.getElementById('f_cook').value.trim(),
     method: document.getElementById('f_method').value,
     frequency: document.getElementById('f_frequency').value,
+    active: document.getElementById('f_active').checked,
     tags, ingredients, instructions
   };
 
