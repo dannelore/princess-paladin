@@ -104,6 +104,7 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
 
   <div class="toolbar">
     <button class="btn" id="buildBtn">🪄 Build My Week</button>
+    <button class="btn secondary" id="clearAllBtn">Clear All</button>
   </div>
 
   <div class="panel" id="weekPanel"></div>
@@ -240,13 +241,15 @@ function buildWeek(){
     Sat: (r) => hasTag(r, 'kid friendly')
   };
 
-  // Crockpot meals are restricted to Sun/Wed/Fri, and kid-friendly meals are
-  // restricted to Saturday only — these apply on top of the day rules above,
-  // ruling recipes OUT of days rather than requiring them.
+  // Crockpot meals are restricted to Sun/Wed/Fri, kid-friendly meals are
+  // restricted to Saturday only, and Date Night Default meals are restricted
+  // to Thursday only — these apply on top of the day rules above, ruling
+  // recipes OUT of days rather than requiring them.
   const CROCKPOT_DAYS = new Set(['Sun', 'Wed', 'Fri']);
   const passesExclusions = (r, dayKey) => {
     if (hasMethod(r, 'crockpot') && !CROCKPOT_DAYS.has(dayKey)) return false;
     if (hasTag(r, 'kid friendly') && dayKey !== 'Sat') return false;
+    if (r.frequency === 'date-night' && dayKey !== 'Thu') return false;
     return true;
   };
 
@@ -283,7 +286,7 @@ function buildWeek(){
   render();
 
   if (skippedForNoMatch.length){
-    alert(`Left ${skippedForNoMatch.join(' & ')} empty — nothing fits without breaking a rule. Reminder: Sun/Tue need "6/8 servings," Mon/Wed/Fri need "2/4 servings," Sat needs "kid friendly," Thu needs "Repeat this: Date Night Default," crockpot meals are Sun/Wed/Fri only, kid-friendly meals are Saturday only, and no meal repeats in the same week. Add more matching recipes, or fill it in manually.`);
+    alert(`Left ${skippedForNoMatch.join(' & ')} empty — nothing fits without breaking a rule. Reminder: Sun/Tue need "6/8 servings," Mon/Wed/Fri need "2/4 servings," Sat needs "kid friendly," Thu needs "Repeat this: Date Night Default," crockpot meals are Sun/Wed/Fri only, kid-friendly meals are Saturday only, Date Night Default meals are Thursday only, and no meal repeats in the same week. Add more matching recipes, or fill it in manually.`);
   }
 }
 
@@ -552,6 +555,14 @@ document.getElementById('addExBtn').addEventListener('click', () => {
 document.getElementById('prevWeek').addEventListener('click', () => { currentWeek = addDays(currentWeek, -7); render(); });
 document.getElementById('nextWeek').addEventListener('click', () => { currentWeek = addDays(currentWeek, 7); render(); });
 document.getElementById('buildBtn').addEventListener('click', buildWeek);
+document.getElementById('clearAllBtn').addEventListener('click', () => {
+  if (!confirm('Clear every dinner and lunch assignment for this week? This won\'t touch your shopping list extras or pantry.')) return;
+  const plan = getPlan();
+  plan[currentWeek] = {};
+  DAY_KEYS.forEach(k => plan[currentWeek][k] = { dinner: null, lunch: null });
+  saveJSON(PLAN_KEY, plan);
+  render();
+});
 
 function render(){ renderWeekPanel(); renderPantryList(); renderShopList(); }
 render();
