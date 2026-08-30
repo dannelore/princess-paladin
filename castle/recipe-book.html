@@ -61,8 +61,6 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
 .recipe-entry h4{ margin:10px 0 4px; font-size:.85rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); }
 .recipe-entry ul, .recipe-entry ol{ margin:0 0 10px; padding-left:22px; }
 .recipe-entry li{ margin-bottom:4px; }
-.back-to-top{ display:inline-block; margin-top:10px; font-size:.8rem; text-decoration:none; color:var(--sage-deep); }
-.back-to-top:hover{ color:var(--pink-accent-deep); }
 </style>
 </head>
 <body>
@@ -72,9 +70,9 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
       <a href="../index.html">Home</a>
       <a href="https://princessandpaladin.com/castle">Castle Keep</a>
       <a href="https://princessandpaladin.com/castle/meal-planner">Meal Planner</a>
-      <a href="https://princessandpaladin.com/castle/recipe-construction">Recipe Construction</a>
+      <a href="https://princessandpaladin.com/castle/recipe-box">Recipe Construction</a>
     </nav>
-    <h1 class="title display">Recipe Book</h1>
+    <h1 class="title display">Recipes</h1>
     <p class="tagline">the whole book, all in one scroll</p>
   </div>
 
@@ -132,7 +130,6 @@ function render(){
       <ul>${(r.ingredients||[]).map(i => `<li>${[i.qty, i.unit, i.name].filter(Boolean).join(' ')}</li>`).join('') || '<li>—</li>'}</ul>
       <h4>Instructions</h4>
       <ol>${(r.instructions||[]).map(s => `<li>${s}</li>`).join('') || '<li>—</li>'}</ol>
-      <a class="back-to-top" href="#tocPanel">&uarr; Back to table of contents</a>
     </div>
   `).join('');
 }
