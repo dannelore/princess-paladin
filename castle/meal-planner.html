@@ -30,6 +30,9 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
 .header{ text-align:center; padding:10px 0 20px; }
 .back{ display:inline-block; margin:0 10px 10px; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1rem; text-decoration:none; color:var(--ink-soft); }
 .back:hover{ color:var(--pink-accent-deep); }
+.site-nav{ display:inline-flex; flex-wrap:wrap; gap:2px; background:var(--cream); border:1px solid var(--pink-bg-soft); border-radius:999px; padding:5px; margin-bottom:14px; box-shadow:0 3px 12px rgba(74,59,65,.08); }
+.site-nav a{ font-family:'Jost',sans-serif; font-weight:500; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; text-decoration:none; color:var(--ink-soft); padding:8px 14px; border-radius:999px; transition:background .15s ease, color .15s ease; }
+.site-nav a:hover{ background:var(--pink-accent); color:#fff; }
 .title{ font-size:2.3rem; margin:6px 0 2px; }
 .tagline{ font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--gold); margin:0; }
 .weeknav{ display:flex; justify-content:center; align-items:center; gap:14px; margin-bottom:16px; }
@@ -83,8 +86,12 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
 <body>
 <div class="shell">
   <div class="header">
-    <a class="back" href="../index.html">&larr; Back Home</a>
-    <a class="back" href="https://princessandpaladin.com/castle">&larr; Back to the Castle Keep</a>
+    <nav class="site-nav">
+      <a href="../index.html">Home</a>
+      <a href="https://princessandpaladin.com/castle">Castle Keep</a>
+      <a href="https://princessandpaladin.com/castle/recipes">Recipes</a>
+      <a href="https://princessandpaladin.com/castle/recipe-construction">Recipe Construction</a>
+    </nav>
     <h1 class="title display">Meal Planner</h1>
     <p class="tagline">seven dinners, zero decision fatigue</p>
   </div>
@@ -97,7 +104,6 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
 
   <div class="toolbar">
     <button class="btn" id="buildBtn">🪄 Build My Week</button>
-    <a class="btn secondary" href="https://princessandpaladin.com/castle/recipe-box" style="text-decoration:none; display:inline-block;">Open Recipe Box</a>
   </div>
 
   <div class="panel" id="weekPanel"></div>
@@ -203,8 +209,8 @@ function history(beforeWeekIso){
 }
 
 function buildWeek(){
-  const recipes = getRecipes();
-  if (!recipes.length){ alert('Add some recipes in the Recipe Box first!'); return; }
+  const recipes = getRecipes().filter(r => r.active !== false); // "out of circulation" recipes sit out of auto-fill
+  if (!recipes.length){ alert('No recipes in circulation to build from — add some in Recipe Construction, or put an existing one back in circulation.'); return; }
 
   const days = getWeekDays(currentWeek);
   const hist = history(currentWeek);
@@ -302,7 +308,7 @@ function renderWeekPanel(){
   const autoLunches = computeLunches(days);
   const wrap = document.getElementById('weekPanel');
 
-  const recipeOptions = (selectedId) => recipes.map(r => `<option value="${r.id}" ${selectedId===r.id ? 'selected':''}>${r.name}</option>`).join('');
+  const recipeOptions = (selectedId) => recipes.map(r => `<option value="${r.id}" ${selectedId===r.id ? 'selected':''}>${r.name}${r.active === false ? ' (inactive)' : ''}</option>`).join('');
 
   wrap.innerHTML = DAY_KEYS.map((k, idx) => {
     const day = days[k];
