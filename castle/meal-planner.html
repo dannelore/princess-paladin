@@ -220,12 +220,17 @@ function buildWeek(){
   // Sunday & Tuesday are batch-cook nights that need to stretch into lunches,
   // so they're restricted to recipes tagged for a big enough batch.
   // Thursday defaults to a recipe marked "Date Night Default", unless you've
-  // already chosen something for that night.
+  // already chosen something for that night. Mon/Wed/Fri stick to smaller
+  // 2-4 serving meals, and Saturday is reserved for kid-friendly recipes.
   const hasTag = (r, tag) => (r.tags || []).includes(tag);
   const DAY_TAG_RULES = {
     Tue: (r) => hasTag(r, '6 servings'),
     Sun: (r) => hasTag(r, '6 servings') || hasTag(r, '8 servings'),
-    Thu: (r) => r.frequency === 'date-night'
+    Thu: (r) => r.frequency === 'date-night',
+    Mon: (r) => hasTag(r, '2 servings') || hasTag(r, '4 servings'),
+    Wed: (r) => hasTag(r, '2 servings') || hasTag(r, '4 servings'),
+    Fri: (r) => hasTag(r, '2 servings') || hasTag(r, '4 servings'),
+    Sat: (r) => hasTag(r, 'kid friendly')
   };
 
   const chosen = new Set();
@@ -259,7 +264,7 @@ function buildWeek(){
   render();
 
   if (skippedForNoMatch.length){
-    alert(`Left ${skippedForNoMatch.join(' & ')} empty — no recipe fits that day's rule yet. For Sun/Tue, tag a recipe "6 servings" or "8 servings"; for Thu, set a recipe's "Repeat this" to "Date Night Default." Or just fill it in manually.`);
+    alert(`Left ${skippedForNoMatch.join(' & ')} empty — no recipe fits that day's rule yet. Sun/Tue need "6/8 servings," Mon/Wed/Fri need "2/4 servings," Sat needs "kid friendly," and Thu needs "Repeat this: Date Night Default." Tag a recipe accordingly, or fill it in manually.`);
   }
 }
 
