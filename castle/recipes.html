@@ -30,6 +30,9 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
 .header{ text-align:center; padding:10px 0 24px; }
 .back{ display:inline-block; margin:0 10px 10px; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1rem; text-decoration:none; color:var(--ink-soft); }
 .back:hover{ color:var(--pink-accent-deep); }
+.site-nav{ display:inline-flex; flex-wrap:wrap; gap:2px; background:var(--cream); border:1px solid var(--pink-bg-soft); border-radius:999px; padding:5px; margin-bottom:14px; box-shadow:0 3px 12px rgba(74,59,65,.08); }
+.site-nav a{ font-family:'Jost',sans-serif; font-weight:500; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; text-decoration:none; color:var(--ink-soft); padding:8px 14px; border-radius:999px; transition:background .15s ease, color .15s ease; }
+.site-nav a:hover{ background:var(--pink-accent); color:#fff; }
 .title{ font-size:2.3rem; margin:6px 0 2px; }
 .tagline{ font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--gold); margin:0; }
 .panel{ background:var(--cream); border-radius:20px; padding:20px; box-shadow:0 6px 20px rgba(74,59,65,.12); margin-bottom:18px; }
@@ -54,6 +57,7 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
 .recipe-meta{ font-size:.85rem; color:var(--ink-soft); margin-bottom:6px; }
 .recipe-tags{ margin-bottom:10px; }
 .tag{ display:inline-block; font-size:.72rem; padding:3px 10px; border-radius:999px; background:var(--pink-bg-soft); margin:0 5px 5px 0; }
+.tag.inactive-tag{ background:var(--parchment-bg); border:1px solid var(--parchment-border); color:var(--ink-soft); }
 .recipe-entry h4{ margin:10px 0 4px; font-size:.85rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); }
 .recipe-entry ul, .recipe-entry ol{ margin:0 0 10px; padding-left:22px; }
 .recipe-entry li{ margin-bottom:4px; }
@@ -64,9 +68,13 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
 <body>
 <div class="shell">
   <div class="header">
-    <a class="back" href="../index.html">&larr; Back Home</a>
-    <a class="back" href="https://princessandpaladin.com/castle">&larr; Back to the Castle Keep</a>
-    <h1 class="title display">Recipes</h1>
+    <nav class="site-nav">
+      <a href="../index.html">Home</a>
+      <a href="https://princessandpaladin.com/castle">Castle Keep</a>
+      <a href="https://princessandpaladin.com/castle/meal-planner">Meal Planner</a>
+      <a href="https://princessandpaladin.com/castle/recipe-construction">Recipe Construction</a>
+    </nav>
+    <h1 class="title display">Recipe Book</h1>
     <p class="tagline">the whole book, all in one scroll</p>
   </div>
 
@@ -78,7 +86,7 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
 
     <main class="recipe-main">
       <div id="recipeListing"></div>
-      <p class="empty" id="emptyMsg" style="display:none;">No recipes yet — add some in the <a href="../recipe-box/index.html" style="color:var(--pink-accent-deep);">Recipe Box</a> and they'll show up here.</p>
+      <p class="empty" id="emptyMsg" style="display:none;">No recipes yet — add some in <a href="../recipe-box/index.html" style="color:var(--pink-accent-deep);">Recipe Construction</a> and they'll show up here.</p>
     </main>
   </div>
 </div>
@@ -93,6 +101,17 @@ const FREQUENCY_LABELS = {
   occasional: 'occasional',
   'date-night': 'date night default'
 };
+const METHOD_OPTIONS = [
+  { value: 'oven', label: 'Oven' },
+  { value: 'stovetop', label: 'Stovetop' },
+  { value: 'crockpot', label: 'Crockpot' },
+  { value: 'instant-pot', label: 'Instant Pot' },
+  { value: 'grill', label: 'Grill' },
+  { value: 'no-cook', label: 'No-cook' }
+];
+function methodLabel(value){
+  return (METHOD_OPTIONS.find(m => m.value === value) || {}).label || value;
+}
 
 function render(){
   const recipes = getRecipes().sort((a,b) => a.name.localeCompare(b.name));
@@ -107,8 +126,8 @@ function render(){
   document.getElementById('recipeListing').innerHTML = recipes.map(r => `
     <div class="panel recipe-entry" id="${r.id}">
       <h3>${r.name}</h3>
-      <div class="recipe-meta">serves ${r.servings} · prep ${r.prepTime||'—'} · cook ${r.cookTime||'—'} · ${r.method}</div>
-      <div class="recipe-tags">${(r.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}<span class="tag">${FREQUENCY_LABELS[r.frequency] || r.frequency}</span></div>
+      <div class="recipe-meta">serves ${r.servings} · prep ${r.prepTime||'—'} · cook ${r.cookTime||'—'} · ${(r.methods || (r.method ? [r.method] : [])).map(methodLabel).join(', ') || '—'}</div>
+      <div class="recipe-tags">${(r.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}<span class="tag">${FREQUENCY_LABELS[r.frequency] || r.frequency}</span>${r.active === false ? '<span class="tag inactive-tag">not in circulation</span>' : ''}</div>
       <h4>Ingredients</h4>
       <ul>${(r.ingredients||[]).map(i => `<li>${[i.qty, i.unit, i.name].filter(Boolean).join(' ')}</li>`).join('') || '<li>—</li>'}</ul>
       <h4>Instructions</h4>
