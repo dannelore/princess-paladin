@@ -9,7 +9,7 @@
 @font-face{ font-family:'Apricot'; src:url('../fonts/Apricot.ttf') format('truetype'); font-display:swap; }
 
 :root{
-  --pink-bg:#F7F1E4;                    /* Cream — page background */
+  --pink-bg:#E7E5DF;                    /* Gray — Castle Keeping page background */
   --pink-bg-soft: rgba(58,46,40,0.16);  /* Border — translucent ink, used for hairlines + subtle fills */
   --pink-accent:#5F7752;                /* now green (Mint/sage) — primary accent */
   --pink-accent-deep:#44573A;           /* deeper green — hover/deep accent */
@@ -28,7 +28,8 @@ h1,h2,h3{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0 .4
 .display{ font-family:'Apricot','Cormorant Garamond',serif; font-weight:400; }
 .shell{ max-width:760px; margin:0 auto; padding:24px 18px 70px; }
 .header{ text-align:center; padding:10px 0 24px; }
-.back{ display:inline-block; margin-bottom:14px; font-size:.85rem; text-decoration:none; color:var(--ink-soft); border:1px solid var(--pink-accent); background:var(--cream); padding:6px 14px; border-radius:999px; }
+.back{ display:inline-block; margin:0 10px 10px; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1rem; text-decoration:none; color:var(--ink-soft); }
+.back:hover{ color:var(--pink-accent-deep); }
 .title{ font-size:2.3rem; margin:6px 0 2px; }
 .tagline{ font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--gold); margin:0; }
 .panel{ background:var(--cream); border-radius:20px; padding:20px; box-shadow:0 6px 20px rgba(74,59,65,.12); margin-bottom:18px; }
@@ -48,6 +49,15 @@ textarea{ min-height:90px; resize:vertical; }
 .meta{ font-size:.82rem; color:var(--ink-soft); margin-bottom:8px; }
 .tag{ display:inline-block; font-size:.72rem; padding:3px 10px; border-radius:999px; background:var(--pink-bg-soft); margin:0 5px 5px 0; }
 .card-actions{ margin-top:10px; display:flex; gap:8px; }
+.recipe-details{ margin-top:8px; }
+.recipe-details summary{ cursor:pointer; font-size:.85rem; color:var(--pink-accent-deep); list-style:none; font-weight:500; }
+.recipe-details summary::-webkit-details-marker{ display:none; }
+.recipe-details summary::before{ content:'▸ '; }
+.recipe-details[open] summary::before{ content:'▾ '; }
+.recipe-detail-body{ margin-top:8px; padding-top:8px; border-top:1px solid var(--pink-bg-soft); font-size:.9rem; }
+.recipe-detail-body h4{ margin:8px 0 4px; font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); }
+.recipe-detail-body ul, .recipe-detail-body ol{ margin:0 0 8px; padding-left:20px; }
+.recipe-detail-body li{ margin-bottom:4px; }
 .toolbar{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
 .toolbar input, .toolbar select{ flex:1 1 160px; }
 .empty{ text-align:center; padding:30px; color:var(--ink-soft); font-style:italic; font-family:'Cormorant Garamond',serif; }
@@ -229,6 +239,15 @@ function renderList(){
       <h3>${r.name}</h3>
       <div class="meta">serves ${r.servings} · prep ${r.prepTime||'—'} · cook ${r.cookTime||'—'} · ${r.method}</div>
       <div>${(r.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}<span class="tag">${FREQUENCY_LABELS[r.frequency] || r.frequency}</span></div>
+      <details class="recipe-details">
+        <summary>View recipe</summary>
+        <div class="recipe-detail-body">
+          <h4>Ingredients</h4>
+          <ul>${(r.ingredients||[]).map(i => `<li>${[i.qty, i.unit, i.name].filter(Boolean).join(' ')}</li>`).join('') || '<li>—</li>'}</ul>
+          <h4>Instructions</h4>
+          <ol>${(r.instructions||[]).map(s => `<li>${s}</li>`).join('') || '<li>—</li>'}</ol>
+        </div>
+      </details>
       <div class="card-actions">
         <button class="btn small secondary" onclick="editRecipe('${r.id}')">Edit</button>
         <button class="btn small danger" onclick="deleteRecipe('${r.id}')">Delete</button>
