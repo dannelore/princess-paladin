@@ -84,10 +84,17 @@
     margin-top: 8px;
   }
 
-  /* ---------- Two panel layout ---------- */
+  /* ---------- Layout ---------- */
   .panels{
     display:grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 280px;
+    gap: 28px;
+    align-items: start;
+  }
+
+  .main-column{
+    display:flex;
+    flex-direction: column;
     gap: 28px;
   }
 
@@ -154,13 +161,86 @@
     text-align:center;
   }
 
+  /* Sidebar */
+  .sidebar{
+    padding: 30px 22px;
+  }
+
+  .sidebar-box{
+    text-align: center;
+  }
+
+  .sidebar-box + .sidebar-box{
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px dashed var(--line);
+  }
+
+  .sidebar-box h2{
+    font-family:'Jost', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.78rem;
+    color: var(--gold);
+    margin: 0 0 14px;
+  }
+
+  .comfort-show{
+    text-align: center;
+  }
+
+  .comfort-show h2{
+    font-family:'Jost', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.78rem;
+    color: var(--gold);
+    margin: 0 0 14px;
+  }
+
+  #comfort-result{
+    font-family:'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1.15rem;
+    color: var(--rose-dark);
+    min-height: 1.6em;
+    margin: 0 0 14px;
+  }
+
+  #comfort-spin-btn{
+    font-family:'Jost', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #fff;
+    background: var(--rose);
+    border: none;
+    border-radius: 999px;
+    padding: 10px 22px;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease;
+  }
+
+  #comfort-spin-btn:hover,
+  #comfort-spin-btn:focus-visible{
+    background: var(--rose-dark);
+    transform: translateY(-2px);
+  }
+
+  #comfort-spin-btn:active{
+    transform: translateY(0);
+  }
+
   .nav-list{
     list-style:none;
     margin:0; padding:0;
-    display:grid;
-    grid-template-columns: repeat(4, minmax(0, 130px));
+    display:flex;
+    flex-wrap: wrap;
     justify-content: center;
     gap: 14px;
+  }
+
+  .nav-list li{
+    flex: 0 0 130px;
   }
 
   .nav-list a{
@@ -234,8 +314,8 @@
       grid-template-columns: 1fr;
     }
     .welcome{ padding: 30px 26px; }
-    .nav-list{
-      grid-template-columns: repeat(3, minmax(0, 110px));
+    .nav-list li{
+      flex: 0 0 110px;
     }
   }
 
@@ -274,20 +354,30 @@
 
   <div class="panels">
 
-    <section class="panel welcome">
-      <h2>Hello Friend</h2>
-      <p>This is where I keep the things I'm trying to remember, organize, track, or make easier for myself — projects, plans, lists, references, and whatever else earns a permanent spot outside my brain.</p>
-      <p>Basically: if I've thought "there has to be a better way to keep track of this," it probably lives here.</p>
-    </section>
+    <div class="main-column">
+      <section class="panel welcome">
+        <h2>Hello Friend</h2>
+        <p>This is where I keep the things I'm trying to remember, organize, track, or make easier for myself — projects, plans, lists, references, and whatever else earns a permanent spot outside my brain.</p>
+        <p>Basically: if I've thought "there has to be a better way to keep track of this," it probably lives here.</p>
+      </section>
 
-    <nav class="panel nav-panel" aria-label="Site sections">
-      <h2>Wander to</h2>
-      <ul class="nav-list">
-        <li><a href="/self-care"><span class="icon">🌷</span><span class="label">Self Care</span></a></li>
-        <li><a href="/projects"><span class="icon">🧵</span><span class="label">Projects</span></a></li>
-        <li><a href="/to-do-list"><span class="icon">📝</span><span class="label">To Do List</span></a></li>
-      </ul>
-    </nav>
+      <nav class="panel nav-panel" aria-label="Site sections">
+        <h2>Wander to</h2>
+        <ul class="nav-list">
+          <li><a href="/to-do-list"><span class="icon">📝</span><span class="label">To Do List</span></a></li>
+          <li><a href="/self-care"><span class="icon">🌷</span><span class="label">Self Care</span></a></li>
+          <li><a href="/projects"><span class="icon">🧵</span><span class="label">Projects</span></a></li>
+        </ul>
+      </nav>
+    </div>
+
+    <aside class="panel sidebar">
+      <div class="comfort-show sidebar-box">
+        <h2>Comfort Show Roulette</h2>
+        <p id="comfort-result">Press the button for a pick</p>
+        <button type="button" id="comfort-spin-btn">🎲 Pick for me</button>
+      </div>
+    </aside>
 
   </div>
 
@@ -302,6 +392,47 @@
 <script>
   document.getElementById('last-updated-date').textContent =
     new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Comfort Show Roulette — edit this list with your own picks
+  const comfortShows = [
+    "Buffy the Vampire Slayer",
+    "Community",
+    "Yellowjackets",
+    "Heated Rivalry",
+    "Forbidden Fruits",
+    "Mean Girls",
+    "Mean Girls Musical",
+    "Hamilton",
+    "Firefly",
+    "Serenity",
+    "Across the Universe",
+    "Barbie",
+    "Wicked",
+    "Wicked: For Good",
+    "Crazy Ex-Girlfriend",
+    "New Girl",
+    "Practical Magic",
+    "The Craft",
+    "Jennifer’s Body",
+    "But I’m a Cheerleader",
+    "Heathers",
+    "Easy A",
+    "Clueless",
+    "Moulin Rouge!",
+    "Rent",
+    "Freaky Friday",
+    "Freakier Friday",
+    "Burlesque",
+    "The Parent Trap",
+  ];
+
+  const comfortResult = document.getElementById('comfort-result');
+  const comfortBtn = document.getElementById('comfort-spin-btn');
+
+  comfortBtn.addEventListener('click', () => {
+    const pick = comfortShows[Math.floor(Math.random() * comfortShows.length)];
+    comfortResult.textContent = pick;
+  });
 </script>
 
 </body>
