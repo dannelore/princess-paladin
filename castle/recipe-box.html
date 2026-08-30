@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recipe Box — Princess & Paladin</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,500&family=Jost:wght@300;400;500;600&display=swap');
+@font-face{ font-family:'Apricot'; src:url('../fonts/Apricot.ttf') format('truetype'); font-display:swap; }
+
+:root{
+  --pink-bg:#F6D9E6; --pink-bg-soft:#F2C9DC; --pink-accent:#E87CA6; --pink-accent-deep:#D65F8E;
+  --sage-deep:#7E9270; --cream:#FDF6EC; --ink:#4A3B41; --ink-soft:#7A6670;
+}
+*{ box-sizing:border-box; }
+body{ margin:0; background:var(--pink-bg); color:var(--ink); font-family:'Jost',sans-serif; }
+h1,h2,h3{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0 .4em; }
+.display{ font-family:'Apricot','Cormorant Garamond',serif; font-weight:400; }
+.shell{ max-width:760px; margin:0 auto; padding:24px 18px 70px; }
+.header{ text-align:center; padding:10px 0 24px; }
+.back{ display:inline-block; margin-bottom:14px; font-size:.85rem; text-decoration:none; color:var(--ink-soft); border:1px solid var(--pink-accent); background:var(--cream); padding:6px 14px; border-radius:999px; }
+.title{ font-size:2.3rem; margin:6px 0 2px; }
+.tagline{ font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--ink-soft); margin:0; }
+.panel{ background:var(--cream); border-radius:20px; padding:20px; box-shadow:0 6px 20px rgba(74,59,65,.12); margin-bottom:18px; }
+label{ display:block; font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin:12px 0 4px; }
+input, select, textarea{ width:100%; font-family:'Jost',sans-serif; font-size:.95rem; padding:9px 12px; border:1px solid var(--pink-bg-soft); border-radius:10px; background:#fff; color:var(--ink); }
+textarea{ min-height:90px; resize:vertical; }
+.row{ display:flex; gap:12px; flex-wrap:wrap; }
+.row > div{ flex:1 1 140px; }
+.btn{ font-family:'Jost',sans-serif; font-weight:500; border:none; border-radius:999px; padding:10px 20px; cursor:pointer; background:var(--pink-accent); color:#fff; font-size:.9rem; margin-top:16px; }
+.btn:hover{ background:var(--pink-accent-deep); }
+.btn.secondary{ background:transparent; color:var(--pink-accent-deep); border:1px solid var(--pink-accent); }
+.btn.small{ padding:6px 14px; font-size:.8rem; margin-top:0; }
+.btn.danger{ background:#B3564B; }
+.hint{ font-size:.78rem; color:var(--ink-soft); margin-top:4px; }
+.card{ background:#fff; border:1px solid var(--pink-bg-soft); border-radius:16px; padding:16px; margin-bottom:12px; }
+.card h3{ margin-bottom:4px; }
+.meta{ font-size:.82rem; color:var(--ink-soft); margin-bottom:8px; }
+.tag{ display:inline-block; font-size:.72rem; padding:3px 10px; border-radius:999px; background:var(--pink-bg-soft); margin:0 5px 5px 0; }
+.card-actions{ margin-top:10px; display:flex; gap:8px; }
+.toolbar{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+.toolbar input, .toolbar select{ flex:1 1 160px; }
+.empty{ text-align:center; padding:30px; color:var(--ink-soft); font-style:italic; font-family:'Cormorant Garamond',serif; }
+.chip-group{ display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+.chip{ display:inline-flex; align-items:center; gap:6px; font-size:.85rem; padding:7px 14px; border-radius:999px; border:1px solid var(--pink-bg-soft); background:#fff; cursor:pointer; user-select:none; }
+.chip input{ width:auto; margin:0; accent-color:var(--pink-accent); }
+.chip.checked{ background:var(--pink-accent); border-color:var(--pink-accent); color:#fff; }
+.chip.checked input{ accent-color:#fff; }
+.addtag-row{ display:flex; gap:8px; margin-top:10px; }
+.addtag-row input{ flex:1; }
+.addtag-row button{ margin-top:0; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="header">
+    <a class="back" href="../index.html">&larr; Back to the hub</a>
+    <h1 class="title display">Recipe Box</h1>
+    <p class="tagline">type it in, find it later</p>
+  </div>
+
+  <div class="panel">
+    <h2 id="formTitle">Add a Recipe</h2>
+    <label>Name</label>
+    <input type="text" id="f_name">
+
+    <div class="row">
+      <div><label>Servings</label><input type="number" id="f_servings" min="1" value="4"></div>
+      <div><label>Prep time</label><input type="text" id="f_prep" placeholder="15 min"></div>
+      <div><label>Cook time</label><input type="text" id="f_cook" placeholder="30 min"></div>
+    </div>
+    <div class="row">
+      <div><label>Cooking method</label>
+        <select id="f_method">
+          <option value="oven">Oven</option><option value="stovetop">Stovetop</option>
+          <option value="crockpot">Crockpot</option><option value="instant-pot">Instant Pot</option>
+          <option value="grill">Grill</option><option value="no-cook">No-cook</option>
+        </select>
+      </div>
+      <div><label>Repeat this...</label>
+        <select id="f_frequency">
+          <option value="weekly">Whenever</option>
+          <option value="biweekly">Every other week</option>
+          <option value="occasional">Occasionally</option>
+        </select>
+      </div>
+    </div>
+    <label>Tags <span class="hint">tap to select — add your own below if you need one that's missing</span></label>
+    <div class="chip-group" id="tagChips"></div>
+    <div class="addtag-row">
+      <input type="text" id="newTagInput" placeholder="Add a new tag option">
+      <button type="button" class="btn small secondary" id="addTagOptionBtn">+ Add tag</button>
+    </div>
+
+    <label>Ingredients <span class="hint">— one per line, like "2 lb chicken thighs"</span></label>
+    <textarea id="f_ingredients" placeholder="2 lb chicken thighs&#10;1 lemon&#10;4 clove garlic"></textarea>
+
+    <label>Instructions <span class="hint">— one step per line</span></label>
+    <textarea id="f_instructions" placeholder="Preheat oven to 425.&#10;Toss everything with oil and roast 35 min."></textarea>
+
+    <div>
+      <button class="btn" id="saveBtn">Save Recipe</button>
+      <button class="btn secondary small" id="cancelEditBtn" style="display:none;">Cancel edit</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <input type="search" id="search" placeholder="Search by name…">
+      <select id="tagFilter"><option value="">All tags</option></select>
+    </div>
+    <div id="recipeList"></div>
+    <p class="empty" id="emptyMsg" style="display:none;">Nothing here yet — add your first recipe above.</p>
+  </div>
+</div>
+
+<script>
+const KEY = 'pp_recipes';
+let editingId = null;
+
+function getRecipes(){ try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; } }
+function saveRecipes(list){ localStorage.setItem(KEY, JSON.stringify(list)); }
+function uid(){ return 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function parseFraction(str){
+  str = str.trim();
+  if (/^\d+\/\d+$/.test(str)){ const [a,b] = str.split('/'); return (+a)/(+b); }
+  const n = parseFloat(str);
+  return isNaN(n) ? null : n;
+}
+const UNITS = ['g','kg','ml','l','tsp','tbsp','cup','cups','oz','lb','lbs','can','cans','clove','cloves','pinch','stick','sticks','bunch'];
+function parseIngredientLine(line){
+  const tokens = line.trim().split(/\s+/);
+  if (!tokens.length || !tokens[0]) return null;
+  let qty = null, unit = '';
+  const maybeQty = parseFraction(tokens[0]);
+  if (maybeQty !== null){ qty = maybeQty; tokens.shift(); }
+  if (tokens.length && UNITS.includes(tokens[0].toLowerCase())){ unit = tokens.shift(); }
+  const name = tokens.join(' ');
+  return name ? { qty, unit, name } : null;
+}
+
+const TAGS_KEY = 'pp_tag_options';
+const DEFAULT_TAGS = ['beef','chicken','turkey','pork','pasta','2 servings','4 servings','6 servings','8 servings','kid friendly'];
+
+function getTagOptions(){
+  const stored = loadStoredTags();
+  if (stored) return stored;
+  saveJSONraw(TAGS_KEY, DEFAULT_TAGS);
+  return DEFAULT_TAGS.slice();
+}
+function loadStoredTags(){ try{ return JSON.parse(localStorage.getItem(TAGS_KEY)); }catch(e){ return null; } }
+function saveJSONraw(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+function addTagOption(tag){
+  const opts = getTagOptions();
+  if (!opts.includes(tag)){ opts.push(tag); saveJSONraw(TAGS_KEY, opts); }
+}
+
+function renderTagChips(selected){
+  selected = selected || [];
+  const wrap = document.getElementById('tagChips');
+  wrap.innerHTML = getTagOptions().map(t => `
+    <label class="chip ${selected.includes(t) ? 'checked' : ''}">
+      <input type="checkbox" value="${t}" ${selected.includes(t) ? 'checked' : ''}>
+      ${t}
+    </label>
+  `).join('');
+  wrap.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      // let the native checkbox click happen, then sync the visual state
+      setTimeout(() => chip.classList.toggle('checked', chip.querySelector('input').checked), 0);
+    });
+  });
+}
+function getCheckedTags(){
+  return Array.from(document.querySelectorAll('#tagChips input:checked')).map(cb => cb.value);
+}
+
+document.getElementById('addTagOptionBtn').addEventListener('click', () => {
+  const input = document.getElementById('newTagInput');
+  const tag = input.value.trim();
+  if (!tag) return;
+  addTagOption(tag);
+  input.value = '';
+  const currentlySelected = getCheckedTags();
+  currentlySelected.push(tag);
+  renderTagChips(currentlySelected);
+});
+
+function renderTagFilter(){
+  const sel = document.getElementById('tagFilter');
+  const current = sel.value;
+  const used = getRecipes().flatMap(r => r.tags || []);
+  const tags = Array.from(new Set([...getTagOptions(), ...used])).sort();
+  sel.innerHTML = '<option value="">All tags</option>' + tags.map(t => `<option>${t}</option>`).join('');
+  sel.value = current;
+}
+
+function renderList(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const tag = document.getElementById('tagFilter').value;
+  let recipes = getRecipes().sort((a,b) => a.name.localeCompare(b.name));
+  if (q) recipes = recipes.filter(r => r.name.toLowerCase().includes(q));
+  if (tag) recipes = recipes.filter(r => (r.tags||[]).includes(tag));
+
+  const wrap = document.getElementById('recipeList');
+  document.getElementById('emptyMsg').style.display = recipes.length ? 'none' : 'block';
+  wrap.innerHTML = recipes.map(r => `
+    <div class="card">
+      <h3>${r.name}</h3>
+      <div class="meta">serves ${r.servings} · prep ${r.prepTime||'—'} · cook ${r.cookTime||'—'} · ${r.method}</div>
+      <div>${(r.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}<span class="tag">${r.frequency === 'weekly' ? 'whenever' : r.frequency === 'biweekly' ? 'every other week' : 'occasional'}</span></div>
+      <div class="card-actions">
+        <button class="btn small secondary" onclick="editRecipe('${r.id}')">Edit</button>
+        <button class="btn small danger" onclick="deleteRecipe('${r.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function clearForm(){
+  editingId = null;
+  document.getElementById('formTitle').textContent = 'Add a Recipe';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+  ['f_name','f_prep','f_cook','f_ingredients','f_instructions'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f_servings').value = 4;
+  document.getElementById('f_method').value = 'stovetop';
+  document.getElementById('f_frequency').value = 'weekly';
+  renderTagChips([]);
+}
+
+function editRecipe(id){
+  const r = getRecipes().find(x => x.id === id);
+  if (!r) return;
+  editingId = id;
+  document.getElementById('formTitle').textContent = 'Edit Recipe';
+  document.getElementById('cancelEditBtn').style.display = 'inline-block';
+  document.getElementById('f_name').value = r.name;
+  document.getElementById('f_servings').value = r.servings;
+  document.getElementById('f_prep').value = r.prepTime || '';
+  document.getElementById('f_cook').value = r.cookTime || '';
+  document.getElementById('f_method').value = r.method;
+  document.getElementById('f_frequency').value = r.frequency;
+  (r.tags||[]).forEach(t => addTagOption(t)); // make sure old/typed-in tags still show as options
+  renderTagChips(r.tags || []);
+  document.getElementById('f_ingredients').value = (r.ingredients||[]).map(i => `${i.qty ?? ''} ${i.unit||''} ${i.name}`.trim().replace(/\s+/g,' ')).join('\n');
+  document.getElementById('f_instructions').value = (r.instructions||[]).join('\n');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteRecipe(id){
+  if (!confirm('Delete this recipe?')) return;
+  saveRecipes(getRecipes().filter(r => r.id !== id));
+  renderTagFilter(); renderList();
+}
+
+document.getElementById('saveBtn').addEventListener('click', () => {
+  const name = document.getElementById('f_name').value.trim();
+  if (!name){ alert('Give the recipe a name first.'); return; }
+  const ingredients = document.getElementById('f_ingredients').value.split('\n').map(parseIngredientLine).filter(Boolean);
+  const instructions = document.getElementById('f_instructions').value.split('\n').map(s => s.trim()).filter(Boolean);
+  const tags = getCheckedTags();
+
+  const payload = {
+    name,
+    servings: Number(document.getElementById('f_servings').value) || 4,
+    prepTime: document.getElementById('f_prep').value.trim(),
+    cookTime: document.getElementById('f_cook').value.trim(),
+    method: document.getElementById('f_method').value,
+    frequency: document.getElementById('f_frequency').value,
+    tags, ingredients, instructions
+  };
+
+  let recipes = getRecipes();
+  if (editingId){
+    recipes = recipes.map(r => r.id === editingId ? { ...r, ...payload } : r);
+  } else {
+    recipes.push({ id: uid(), ...payload });
+  }
+  saveRecipes(recipes);
+  clearForm();
+  renderTagFilter(); renderList();
+});
+
+document.getElementById('cancelEditBtn').addEventListener('click', clearForm);
+document.getElementById('search').addEventListener('input', renderList);
+document.getElementById('tagFilter').addEventListener('change', renderList);
+
+renderTagChips([]);
+renderTagFilter();
+renderList();
+</script>
+</body>
+</html>
