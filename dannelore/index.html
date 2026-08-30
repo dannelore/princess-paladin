@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Princess &amp; Paladin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+
+  :root{
+    --pink-bg: #F6D9E6;
+    --pink-bg-deep: #F2C9DC;
+    --rose: #E87CA6;
+    --rose-dark: #C85D87;
+    --sage: #8FA37E;
+    --sage-dark: #6D8259;
+    --cream: #FCF6EE;
+    --gold: #C89B3C;
+    --ink: #4A3B42;
+    --line: rgba(74,59,66,0.18);
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:'Ubuntu', sans-serif;
+    color: var(--ink);
+    background-color: var(--pink-bg);
+    background-image: linear-gradient(135deg, var(--pink-bg) 0%, var(--pink-bg-deep) 100%);
+    background-attachment: fixed;
+  }
+
+  .wrap{
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    text-align:center;
+    margin-bottom: 44px;
+  }
+
+  .hero-icons{
+    display:flex;
+    justify-content:center;
+    align-items:flex-end;
+    gap: 18px;
+    margin-bottom: 14px;
+  }
+
+  .hero-icons svg{
+    width: 46px;
+    height: 46px;
+    filter: drop-shadow(0 2px 3px rgba(74,59,66,0.25));
+  }
+
+  h1.site-title{
+    font-family:'Spicy Rice', sans-serif;
+    font-weight:600;
+    font-size: clamp(2.6rem, 6vw, 4.2rem);
+    margin: 0;
+    letter-spacing: 0.02em;
+    color: var(--rose-dark);
+  }
+
+  h1.site-title .amp{
+    font-style: italic;
+    color: var(--sage-dark);
+    padding: 0 6px;
+  }
+
+  .tagline{
+    font-family:'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1.25rem;
+    color: var(--ink);
+    opacity: 0.85;
+    margin-top: 8px;
+  }
+
+  /* ---------- Two panel layout ---------- */
+  .panels{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .panel{
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(74,59,66,0.12);
+    position: relative;
+  }
+
+  .panel::before{
+    content:"";
+    position:absolute;
+    inset: 8px;
+    border: 1px solid var(--rose);
+    border-radius: 3px;
+    opacity: 0.35;
+    pointer-events:none;
+  }
+
+  /* Welcome panel */
+  .welcome{
+    padding: 38px 40px;
+  }
+
+  .welcome h2{
+    font-family:'Montserrat', sans-serif;
+    font-weight:600;
+    font-size: 1.7rem;
+    color: var(--sage-dark);
+    margin: 0 0 14px;
+  }
+
+  .welcome p{
+    font-size: 0.98rem;
+    line-height: 1.75;
+    margin: 0 0 14px;
+  }
+
+  .welcome p:last-child{ margin-bottom:0; }
+
+  .signoff{
+    font-family:'Cormorant Garamond', serif;
+    font-style: italic;
+    color: var(--rose-dark);
+    font-size: 1.05rem;
+  }
+
+  /* Sidebar nav panel */
+  .nav-panel{
+    padding: 30px 26px;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .nav-panel h2{
+    font-family:'Jost', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.78rem;
+    color: var(--gold);
+    margin: 0 0 18px;
+    text-align:center;
+  }
+
+  .nav-list{
+    list-style:none;
+    margin:0; padding:0;
+    display:grid;
+    grid-template-columns: repeat(4, minmax(0, 130px));
+    justify-content: center;
+    gap: 14px;
+  }
+
+  .nav-list a{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap: 6px;
+    aspect-ratio: 1 / 1;
+    text-align:center;
+    text-decoration:none;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .nav-list a .icon{
+    font-size: 1.3rem;
+    line-height:1;
+  }
+
+  .nav-list a .label{
+    font-family:'Cormorant Garamond', serif;
+    font-size: 0.95rem;
+    font-weight:600;
+    line-height: 1.2;
+  }
+
+  .nav-list a:hover,
+  .nav-list a:focus-visible{
+    border-color: var(--rose);
+    background: #FFF7FA;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 14px rgba(200,93,135,0.22);
+  }
+
+  .nav-list a:focus-visible{
+    outline: 2px solid var(--rose-dark);
+    outline-offset: 2px;
+  }
+
+  footer{
+    text-align:center;
+    margin-top: 48px;
+    font-size: 0.8rem;
+    color: var(--ink);
+    opacity: 0.55;
+    font-family:'Jost', sans-serif;
+    letter-spacing: 0.04em;
+  }
+
+  footer div{
+    margin-top: 6px;
+  }
+
+  footer .footer-divider{
+    margin-top: 0;
+    font-size: 0.9rem;
+    color: var(--rose-dark);
+    letter-spacing: 0.08em;
+  }
+
+  /* ---------- Mobile ---------- */
+  @media (max-width: 780px){
+    .panels{
+      grid-template-columns: 1fr;
+    }
+    .welcome{ padding: 30px 26px; }
+    .nav-list{
+      grid-template-columns: repeat(3, minmax(0, 110px));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .nav-list a{ transition:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="hero-icons">
+      <!-- Tiara -->
+      <svg viewBox="0 0 64 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 40 L4 26 L16 34 L22 14 L32 30 L42 14 L48 34 L60 26 L60 40 Z"
+              fill="#E87CA6" stroke="#C85D87" stroke-width="1.5" stroke-linejoin="round"/>
+        <circle cx="22" cy="14" r="3.2" fill="#FCF6EE" stroke="#C85D87" stroke-width="1.2"/>
+        <circle cx="32" cy="9" r="3.6" fill="#FCF6EE" stroke="#C85D87" stroke-width="1.2"/>
+        <circle cx="42" cy="14" r="3.2" fill="#FCF6EE" stroke="#C85D87" stroke-width="1.2"/>
+        <rect x="4" y="38" width="56" height="5" rx="1.5" fill="#E87CA6" stroke="#C85D87" stroke-width="1.5"/>
+      </svg>
+      <!-- Sword -->
+      <svg viewBox="0 0 32 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
+        <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#C89B3C" stroke="#8A6A22" stroke-width="1.2"/>
+        <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
+        <circle cx="16" cy="60" r="3.4" fill="#C89B3C" stroke="#8A6A22" stroke-width="1.2"/>
+      </svg>
+    </div>
+
+    <h1 class="site-title">Princess <span class="amp">&amp;</span> Paladin</h1>
+    <p class="tagline">where creativity and chaos meet organization and overthinking</p>
+  </div>
+
+  <div class="panels">
+
+    <section class="panel welcome">
+      <h2>Hello Friend</h2>
+      <p>This is where I keep the things I'm trying to remember, organize, track, or make easier for myself — projects, plans, lists, references, and whatever else earns a permanent spot outside my brain.</p>
+      <p>Basically: if I've thought "there has to be a better way to keep track of this," it probably lives here.</p>
+    </section>
+
+    <nav class="panel nav-panel" aria-label="Site sections">
+      <h2>Wander to</h2>
+      <ul class="nav-list">
+        <li><a href="/self-care"><span class="icon">🌷</span><span class="label">Self Care</span></a></li>
+        <li><a href="/projects"><span class="icon">🧵</span><span class="label">Projects</span></a></li>
+        <li><a href="/to-do-list"><span class="icon">📝</span><span class="label">To Do List</span></a></li>
+      </ul>
+    </nav>
+
+  </div>
+
+  <footer>
+    <div class="footer-divider">♕ ───────── ⚔ ───────── ♕</div>
+    <div>Princess &amp; Paladin • Established 2021</div>
+    <div>last updated <span id="last-updated-date">(date)</span></div>
+  </footer>
+
+</div>
+
+<script>
+  document.getElementById('last-updated-date').textContent =
+    new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+</script>
+
+</body>
+</html>
