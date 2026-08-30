@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recipes — Princess & Paladin</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,500&family=Jost:wght@300;400;500;600&display=swap');
+@font-face{ font-family:'Apricot'; src:url('../fonts/Apricot.ttf') format('truetype'); font-display:swap; }
+
+:root{
+  --pink-bg:#E7E5DF;                    /* Gray — Castle Keeping page background */
+  --pink-bg-soft: rgba(58,46,40,0.16);  /* Border — translucent ink, used for hairlines + subtle fills */
+  --pink-accent:#5F7752;                /* green (Mint/sage) — primary accent */
+  --pink-accent-deep:#44573A;           /* deeper green — hover/deep accent */
+  --danger:#6E2430;                     /* Burgundy — reserved for delete/danger actions */
+  --sage-deep:#5F7752;                  /* Mint/sage — links, secondary labels */
+  --cream:#FFFDF8;                      /* Off-white — panel/card backgrounds */
+  --ink:#2E241F;                        /* Ink — body text, headings */
+  --ink-soft:#6B5E54;                   /* Muted brown — secondary/dimmed text */
+  --gold:#9C7440;                       /* Gold — tagline, flourishes */
+  --parchment-bg:#EDE1C3;
+  --parchment-border:#C9B688;
+}
+*{ box-sizing:border-box; }
+body{ margin:0; background:var(--pink-bg); color:var(--ink); font-family:'Jost',sans-serif; }
+h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0 .4em; }
+.display{ font-family:'Apricot','Cormorant Garamond',serif; font-weight:400; }
+.shell{ max-width:760px; margin:0 auto; padding:24px 18px 70px; }
+.header{ text-align:center; padding:10px 0 24px; }
+.back{ display:inline-block; margin:0 10px 10px; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1rem; text-decoration:none; color:var(--ink-soft); }
+.back:hover{ color:var(--pink-accent-deep); }
+.title{ font-size:2.3rem; margin:6px 0 2px; }
+.tagline{ font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--gold); margin:0; }
+.panel{ background:var(--cream); border-radius:20px; padding:20px; box-shadow:0 6px 20px rgba(74,59,65,.12); margin-bottom:18px; }
+.empty{ text-align:center; padding:30px; color:var(--ink-soft); font-style:italic; font-family:'Cormorant Garamond',serif; }
+
+.toc h2{ margin-bottom:.5em; }
+.toc-list{ list-style:none; margin:0; padding:0; column-count:1; }
+.toc-list li{ margin-bottom:6px; }
+.toc-list a{ text-decoration:none; color:var(--sage-deep); font-size:.98rem; }
+.toc-list a:hover{ color:var(--pink-accent-deep); text-decoration:underline; }
+
+.recipe-entry{ scroll-margin-top:16px; }
+.recipe-entry + .recipe-entry{ margin-top:22px; padding-top:22px; border-top:1px solid var(--pink-bg-soft); }
+.recipe-meta{ font-size:.85rem; color:var(--ink-soft); margin-bottom:6px; }
+.recipe-tags{ margin-bottom:10px; }
+.tag{ display:inline-block; font-size:.72rem; padding:3px 10px; border-radius:999px; background:var(--pink-bg-soft); margin:0 5px 5px 0; }
+.recipe-entry h4{ margin:10px 0 4px; font-size:.85rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); }
+.recipe-entry ul, .recipe-entry ol{ margin:0 0 10px; padding-left:22px; }
+.recipe-entry li{ margin-bottom:4px; }
+.back-to-top{ display:inline-block; margin-top:10px; font-size:.8rem; text-decoration:none; color:var(--sage-deep); }
+.back-to-top:hover{ color:var(--pink-accent-deep); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="header">
+    <a class="back" href="../index.html">&larr; Back Home</a>
+    <a class="back" href="https://princessandpaladin.com/castle">&larr; Back to the Castle Keep</a>
+    <h1 class="title display">Recipes</h1>
+    <p class="tagline">the whole book, all in one scroll</p>
+  </div>
+
+  <div class="panel toc" id="tocPanel">
+    <h2>Table of Contents</h2>
+    <ul class="toc-list" id="tocList"></ul>
+  </div>
+
+  <div id="recipeListing"></div>
+  <p class="empty" id="emptyMsg" style="display:none;">No recipes yet — add some in the <a href="../recipe-box/index.html" style="color:var(--pink-accent-deep);">Recipe Box</a> and they'll show up here.</p>
+</div>
+
+<script>
+const KEY = 'pp_recipes';
+function getRecipes(){ try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; } }
+
+const FREQUENCY_LABELS = {
+  weekly: 'whenever',
+  biweekly: 'every other week',
+  occasional: 'occasional',
+  'date-night': 'date night default'
+};
+
+function render(){
+  const recipes = getRecipes().sort((a,b) => a.name.localeCompare(b.name));
+
+  document.getElementById('tocPanel').style.display = recipes.length ? 'block' : 'none';
+  document.getElementById('emptyMsg').style.display = recipes.length ? 'none' : 'block';
+
+  document.getElementById('tocList').innerHTML = recipes.map(r =>
+    `<li><a href="#${r.id}">${r.name}</a></li>`
+  ).join('');
+
+  document.getElementById('recipeListing').innerHTML = recipes.map(r => `
+    <div class="panel recipe-entry" id="${r.id}">
+      <h3>${r.name}</h3>
+      <div class="recipe-meta">serves ${r.servings} · prep ${r.prepTime||'—'} · cook ${r.cookTime||'—'} · ${r.method}</div>
+      <div class="recipe-tags">${(r.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}<span class="tag">${FREQUENCY_LABELS[r.frequency] || r.frequency}</span></div>
+      <h4>Ingredients</h4>
+      <ul>${(r.ingredients||[]).map(i => `<li>${[i.qty, i.unit, i.name].filter(Boolean).join(' ')}</li>`).join('') || '<li>—</li>'}</ul>
+      <h4>Instructions</h4>
+      <ol>${(r.instructions||[]).map(s => `<li>${s}</li>`).join('') || '<li>—</li>'}</ol>
+      <a class="back-to-top" href="#tocPanel">&uarr; Back to table of contents</a>
+    </div>
+  `).join('');
+}
+
+render();
+</script>
+</body>
+</html>
