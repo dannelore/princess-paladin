@@ -9,7 +9,7 @@
 @font-face{ font-family:'Apricot'; src:url('../fonts/Apricot.ttf') format('truetype'); font-display:swap; }
 
 :root{
-  --pink-bg:#F7F1E4;                    /* Cream — page background */
+  --pink-bg:#E7E5DF;                    /* Gray — Castle Keeping page background */
   --pink-bg-soft: rgba(58,46,40,0.16);  /* Border — translucent ink, used for hairlines + subtle fills */
   --pink-accent:#5F7752;                /* now green (Mint/sage) — primary accent */
   --pink-accent-deep:#44573A;           /* deeper green — hover/deep accent */
@@ -28,7 +28,8 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
 .display{ font-family:'Apricot','Cormorant Garamond',serif; font-weight:400; }
 .shell{ max-width:820px; margin:0 auto; padding:24px 18px 70px; }
 .header{ text-align:center; padding:10px 0 20px; }
-.back{ display:inline-block; margin-bottom:14px; font-size:.85rem; text-decoration:none; color:var(--ink-soft); border:1px solid var(--pink-accent); background:var(--cream); padding:6px 14px; border-radius:999px; }
+.back{ display:inline-block; margin:0 10px 10px; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1rem; text-decoration:none; color:var(--ink-soft); }
+.back:hover{ color:var(--pink-accent-deep); }
 .title{ font-size:2.3rem; margin:6px 0 2px; }
 .tagline{ font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--gold); margin:0; }
 .weeknav{ display:flex; justify-content:center; align-items:center; gap:14px; margin-bottom:16px; }
@@ -52,7 +53,8 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
 .needed-badge{ display:block; font-size:.72rem; color:var(--gold); font-style:italic; margin-top:2px; }
 .pantry-toggle{ position:fixed; top:50%; right:0; transform:translateY(-50%); z-index:120;
   background:var(--pink-accent); color:#fff; border:none; border-radius:12px 0 0 12px;
-  padding:14px 10px; font-family:'Jost',sans-serif; font-size:.85rem; cursor:pointer;
+  padding:14px 10px; font-family:'Jost',sans-serif; font-size:.85rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:.06em; cursor:pointer;
   writing-mode:vertical-rl; text-orientation:mixed; box-shadow:-4px 0 14px rgba(74,59,65,.18); }
 .pantry-toggle:hover{ background:var(--pink-accent-deep); }
 .pantry-overlay{ position:fixed; inset:0; background:rgba(74,59,65,.35); opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:150; }
@@ -113,7 +115,7 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
   </div>
 </div>
 
-<button class="pantry-toggle" id="pantryToggleBtn">🥫 Pantry</button>
+<button class="pantry-toggle" id="pantryToggleBtn">Pantry</button>
 <div class="pantry-overlay" id="pantryOverlay"></div>
 <aside class="pantry-sidebar" id="pantrySidebar">
   <div class="pantry-sidebar-head">
@@ -217,10 +219,13 @@ function buildWeek(){
 
   // Sunday & Tuesday are batch-cook nights that need to stretch into lunches,
   // so they're restricted to recipes tagged for a big enough batch.
+  // Thursday defaults to a recipe marked "Date Night Default", unless you've
+  // already chosen something for that night.
   const hasTag = (r, tag) => (r.tags || []).includes(tag);
   const DAY_TAG_RULES = {
     Tue: (r) => hasTag(r, '6 servings'),
-    Sun: (r) => hasTag(r, '6 servings') || hasTag(r, '8 servings')
+    Sun: (r) => hasTag(r, '6 servings') || hasTag(r, '8 servings'),
+    Thu: (r) => r.frequency === 'date-night'
   };
 
   const chosen = new Set();
@@ -254,7 +259,7 @@ function buildWeek(){
   render();
 
   if (skippedForNoMatch.length){
-    alert(`Left ${skippedForNoMatch.join(' & ')} empty — no recipe tagged for that batch size yet. Tag a recipe "6 servings" or "8 servings" in the Recipe Box, or fill it in manually.`);
+    alert(`Left ${skippedForNoMatch.join(' & ')} empty — no recipe fits that day's rule yet. For Sun/Tue, tag a recipe "6 servings" or "8 servings"; for Thu, set a recipe's "Repeat this" to "Date Night Default." Or just fill it in manually.`);
   }
 }
 
