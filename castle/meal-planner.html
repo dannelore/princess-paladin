@@ -9,8 +9,18 @@
 @font-face{ font-family:'Apricot'; src:url('../fonts/Apricot.ttf') format('truetype'); font-display:swap; }
 
 :root{
-  --pink-bg:#F6D9E6; --pink-bg-soft:#F2C9DC; --pink-accent:#E87CA6; --pink-accent-deep:#D65F8E;
-  --sage-deep:#7E9270; --cream:#FDF6EC; --ink:#4A3B41; --ink-soft:#7A6670;
+  --pink-bg:#F7F1E4;                    /* Cream — page background */
+  --pink-bg-soft: rgba(58,46,40,0.16);  /* Border — translucent ink, used for hairlines + subtle fills */
+  --pink-accent:#5F7752;                /* now green (Mint/sage) — primary accent */
+  --pink-accent-deep:#44573A;           /* deeper green — hover/deep accent */
+  --danger:#6E2430;                     /* Burgundy — reserved for delete/danger actions */
+  --sage-deep:#5F7752;                  /* Mint/sage — links, secondary labels */
+  --cream:#FFFDF8;                      /* Off-white — panel/card backgrounds */
+  --ink:#2E241F;                        /* Ink — body text, headings */
+  --ink-soft:#6B5E54;                   /* Muted brown — secondary/dimmed text */
+  --gold:#9C7440;                       /* Gold — tagline, flourishes */
+  --parchment-bg:#EDE1C3;
+  --parchment-border:#C9B688;
 }
 *{ box-sizing:border-box; }
 body{ margin:0; background:var(--pink-bg); color:var(--ink); font-family:'Jost',sans-serif; }
@@ -20,7 +30,7 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
 .header{ text-align:center; padding:10px 0 20px; }
 .back{ display:inline-block; margin-bottom:14px; font-size:.85rem; text-decoration:none; color:var(--ink-soft); border:1px solid var(--pink-accent); background:var(--cream); padding:6px 14px; border-radius:999px; }
 .title{ font-size:2.3rem; margin:6px 0 2px; }
-.tagline{ font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--ink-soft); margin:0; }
+.tagline{ font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--gold); margin:0; }
 .weeknav{ display:flex; justify-content:center; align-items:center; gap:14px; margin-bottom:16px; }
 .weeknav strong{ font-family:'Cormorant Garamond',serif; font-size:1.1rem; }
 .btn{ font-family:'Jost',sans-serif; font-weight:500; border:none; border-radius:999px; padding:10px 20px; cursor:pointer; background:var(--pink-accent); color:#fff; font-size:.9rem; }
@@ -32,6 +42,28 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
 .day-block{ padding:12px 0; border-bottom:1px solid var(--pink-bg-soft); }
 .day-block:last-child{ border-bottom:none; }
 .day-heading{ font-family:'Cormorant Garamond',serif; font-weight:600; font-size:1.05rem; margin-bottom:6px; }
+.day-date{ font-family:'Jost',sans-serif; font-weight:400; font-size:.8rem; color:var(--ink-soft); margin-left:6px; }
+.two-col{ display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; }
+.two-col > .panel{ flex:1 1 320px; margin-bottom:0; }
+.pantry-item{ display:flex; align-items:flex-start; gap:8px; padding:6px 0; font-size:.92rem; }
+.pantry-item.checked > label{ color: var(--pink-accent-deep); font-weight:500; }
+.pantry-item.needed{ background: var(--parchment-bg); border:1px solid var(--parchment-border); border-radius:10px; padding:5px 8px; margin:0 -8px 4px; }
+.pantry-item input[type=checkbox]{ margin-top:3px; }
+.needed-badge{ display:block; font-size:.72rem; color:var(--gold); font-style:italic; margin-top:2px; }
+.pantry-toggle{ position:fixed; top:50%; right:0; transform:translateY(-50%); z-index:120;
+  background:var(--pink-accent); color:#fff; border:none; border-radius:12px 0 0 12px;
+  padding:14px 10px; font-family:'Jost',sans-serif; font-size:.85rem; cursor:pointer;
+  writing-mode:vertical-rl; text-orientation:mixed; box-shadow:-4px 0 14px rgba(74,59,65,.18); }
+.pantry-toggle:hover{ background:var(--pink-accent-deep); }
+.pantry-overlay{ position:fixed; inset:0; background:rgba(74,59,65,.35); opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:150; }
+.pantry-overlay.open{ opacity:1; pointer-events:auto; }
+.pantry-sidebar{ position:fixed; top:0; right:-340px; width:320px; max-width:88vw; height:100vh;
+  background:var(--cream); box-shadow:-10px 0 28px rgba(74,59,65,.2); padding:22px; overflow-y:auto;
+  transition:right .25s ease; z-index:200; }
+.pantry-sidebar.open{ right:0; }
+.pantry-sidebar-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+.pantry-close{ background:none; border:none; font-size:1.4rem; line-height:1; cursor:pointer; color:var(--ink-soft); }
+.pantry-close:hover{ color:var(--pink-accent-deep); }
 .day-row{ display:flex; align-items:center; gap:12px; padding:4px 0; flex-wrap:wrap; }
 .meal-label{ width:64px; font-size:.75rem; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); }
 .day-select, .lunch-select{ flex:1 1 220px; font-family:'Jost',sans-serif; font-size:.92rem; padding:8px 10px; border:1px solid var(--pink-bg-soft); border-radius:10px; background:#fff; }
@@ -69,7 +101,7 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
 
   <div class="panel">
     <h2>Shopping List</h2>
-    <p class="tagline" style="font-size:.85rem;">Built from this week's dinners — updates automatically.</p>
+    <p class="tagline" style="font-size:.85rem;">Built from this week's meals — updates automatically.</p>
     <div id="shopList"></div>
     <div class="addextra">
       <input type="text" id="exName" placeholder="Add something else…">
@@ -79,6 +111,21 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
     </div>
   </div>
 </div>
+
+<button class="pantry-toggle" id="pantryToggleBtn">🥫 Pantry</button>
+<div class="pantry-overlay" id="pantryOverlay"></div>
+<aside class="pantry-sidebar" id="pantrySidebar">
+  <div class="pantry-sidebar-head">
+    <h2 style="margin:0;">Pantry</h2>
+    <button class="pantry-close" id="pantryCloseBtn" aria-label="Close pantry">&times;</button>
+  </div>
+  <p class="tagline" style="font-size:.85rem;">Check off anything you actually need this week. Items highlighted here are used in a recipe this week — check your stock.</p>
+  <div id="pantryList"></div>
+  <div class="addextra">
+    <input type="text" id="newPantryItem" placeholder="Add a pantry item…">
+    <button class="btn small secondary" id="addPantryItemBtn">+ Add</button>
+  </div>
+</aside>
 
 <script>
 const RECIPES_KEY = 'pp_recipes';
@@ -254,7 +301,7 @@ function renderWeekPanel(){
     const showAutoHint = !day.lunch; // only when left on Auto
     return `
       <div class="day-block">
-        <div class="day-heading">${DAY_LABELS[k]}</div>
+        <div class="day-heading">${DAY_LABELS[k]}<span class="day-date">${new Date(addDays(currentWeek, idx) + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span></div>
         <div class="day-row">
           <div class="meal-label">Lunch</div>
           <select class="lunch-select" data-day="${k}">${lunchOptions}</select>
@@ -296,14 +343,111 @@ function categorize(name){
 }
 function norm(name){ return name.trim().toLowerCase().replace(/\s+/g,' '); }
 
-function renderShopList(){
+const PANTRY_ITEMS_KEY = 'pp_pantry_items';
+const PANTRY_CHECKED_KEY = 'pp_pantry_checked';
+const DEFAULT_PANTRY_ITEMS = [
+  'eggs','milk','butter','olive oil','salt','black pepper','garlic','onions',
+  'flour','sugar','rice','pasta','bread','paper towels','dish soap','coffee'
+];
+function getPantryItems(){
+  const stored = loadJSON(PANTRY_ITEMS_KEY, null);
+  if (stored) return stored;
+  saveJSON(PANTRY_ITEMS_KEY, DEFAULT_PANTRY_ITEMS);
+  return DEFAULT_PANTRY_ITEMS.slice();
+}
+function addPantryItem(item){
+  const items = getPantryItems();
+  if (!items.includes(item)){ items.push(item); saveJSON(PANTRY_ITEMS_KEY, items); }
+}
+function getPantryChecked(weekIso){
+  const all = loadJSON(PANTRY_CHECKED_KEY, {});
+  return all[weekIso] || {};
+}
+function setPantryChecked(weekIso, item, checked){
+  const all = loadJSON(PANTRY_CHECKED_KEY, {});
+  if (!all[weekIso]) all[weekIso] = {};
+  all[weekIso][item] = checked;
+  saveJSON(PANTRY_CHECKED_KEY, all);
+}
+
+function getWeekRecipesForMatching(){
   const days = getWeekDays(currentWeek);
   const dinnerRecipes = DAY_KEYS.map(k => days[k].dinner).filter(v => v && v !== 'SKIP').map(getRecipe).filter(Boolean);
   const manualLunchRecipes = DAY_KEYS.map(k => days[k].lunch).filter(v => v && v !== 'SKIP').map(getRecipe).filter(Boolean);
-  const allRecipes = [...dinnerRecipes, ...manualLunchRecipes];
+  return [...dinnerRecipes, ...manualLunchRecipes];
+}
+
+// Matches this week's recipe ingredients against the pantry list by name.
+// A match means: don't add it to the shopping list — just flag it in the
+// Pantry sidebar so she can check her own stock instead.
+function computeNeededPantryItems(){
+  const pantryItems = getPantryItems();
+  const recipes = getWeekRecipesForMatching();
+  const needed = {}; // normalized pantry item -> { name, recipes: Set }
+  pantryItems.forEach(p => {
+    const pNorm = norm(p);
+    recipes.forEach(r => (r.ingredients||[]).forEach(ing => {
+      const iNorm = norm(ing.name);
+      if (iNorm.includes(pNorm) || pNorm.includes(iNorm)){
+        if (!needed[pNorm]) needed[pNorm] = { name: p, recipes: new Set() };
+        needed[pNorm].recipes.add(r.name);
+      }
+    }));
+  });
+  return needed;
+}
+
+function renderPantryList(){
+  const items = getPantryItems().slice().sort();
+  const checked = getPantryChecked(currentWeek);
+  const needed = computeNeededPantryItems();
+  const wrap = document.getElementById('pantryList');
+  wrap.innerHTML = items.map(item => {
+    const neededInfo = needed[norm(item)];
+    return `
+    <div class="pantry-item ${checked[item] ? 'checked' : ''} ${neededInfo ? 'needed' : ''}">
+      <input type="checkbox" data-item="${item}" ${checked[item] ? 'checked' : ''}>
+      <div>
+        <label>${item}</label>
+        ${neededInfo ? `<span class="needed-badge">needed for ${Array.from(neededInfo.recipes).join(', ')}</span>` : ''}
+      </div>
+    </div>
+  `;
+  }).join('');
+  wrap.querySelectorAll('input[type=checkbox]').forEach(cb => cb.addEventListener('change', () => {
+    setPantryChecked(currentWeek, cb.dataset.item, cb.checked);
+    render();
+  }));
+}
+document.getElementById('addPantryItemBtn').addEventListener('click', () => {
+  const input = document.getElementById('newPantryItem');
+  const item = input.value.trim();
+  if (!item) return;
+  addPantryItem(item);
+  setPantryChecked(currentWeek, item, true); // adding it now means you need it now
+  input.value = '';
+  render();
+});
+
+const pantrySidebar = document.getElementById('pantrySidebar');
+const pantryOverlay = document.getElementById('pantryOverlay');
+function openPantry(){ pantrySidebar.classList.add('open'); pantryOverlay.classList.add('open'); }
+function closePantry(){ pantrySidebar.classList.remove('open'); pantryOverlay.classList.remove('open'); }
+document.getElementById('pantryToggleBtn').addEventListener('click', openPantry);
+document.getElementById('pantryCloseBtn').addEventListener('click', closePantry);
+pantryOverlay.addEventListener('click', closePantry);
+
+function renderShopList(){
+  const allRecipes = getWeekRecipesForMatching();
+  const pantryNorms = getPantryItems().map(norm);
+  const matchesPantry = (ingName) => {
+    const iNorm = norm(ingName);
+    return pantryNorms.some(pNorm => iNorm.includes(pNorm) || pNorm.includes(iNorm));
+  };
 
   const map = {};
   allRecipes.forEach(r => (r.ingredients||[]).forEach(ing => {
+    if (matchesPantry(ing.name)) return; // flagged in the Pantry sidebar instead of the shopping list
     const key = norm(ing.name) + '|' + (ing.unit||'');
     if (!map[key]) map[key] = { name: ing.name, unit: ing.unit||'', qty:0, sources:new Set(), category: categorize(ing.name) };
     if (typeof ing.qty === 'number') map[key].qty += ing.qty;
@@ -315,6 +459,12 @@ function renderShopList(){
   extras.forEach(ex => {
     const key = 'manual_' + ex.id;
     map[key] = { name: ex.name, unit: ex.unit||'', qty: ex.qty||'', sources: new Set(['Added by you']), category: categorize(ex.name), manual:true, id: ex.id };
+  });
+
+  const pantryChecked = getPantryChecked(currentWeek);
+  Object.keys(pantryChecked).filter(item => pantryChecked[item]).forEach(item => {
+    const key = 'pantry_' + norm(item);
+    map[key] = { name: item, unit: '', qty: '', sources: new Set(['Pantry']), category: categorize(item), manual:true, id: 'pantry_' + norm(item) };
   });
 
   const checkedAll = loadJSON(CHECKED_KEY, {});
@@ -373,7 +523,7 @@ document.getElementById('prevWeek').addEventListener('click', () => { currentWee
 document.getElementById('nextWeek').addEventListener('click', () => { currentWeek = addDays(currentWeek, 7); render(); });
 document.getElementById('buildBtn').addEventListener('click', buildWeek);
 
-function render(){ renderWeekPanel(); renderShopList(); }
+function render(){ renderWeekPanel(); renderPantryList(); renderShopList(); }
 render();
 </script>
 </body>

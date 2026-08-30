@@ -9,8 +9,18 @@
 @font-face{ font-family:'Apricot'; src:url('../fonts/Apricot.ttf') format('truetype'); font-display:swap; }
 
 :root{
-  --pink-bg:#F6D9E6; --pink-bg-soft:#F2C9DC; --pink-accent:#E87CA6; --pink-accent-deep:#D65F8E;
-  --sage-deep:#7E9270; --cream:#FDF6EC; --ink:#4A3B41; --ink-soft:#7A6670;
+  --pink-bg:#F7F1E4;                    /* Cream — page background */
+  --pink-bg-soft: rgba(58,46,40,0.16);  /* Border — translucent ink, used for hairlines + subtle fills */
+  --pink-accent:#5F7752;                /* now green (Mint/sage) — primary accent */
+  --pink-accent-deep:#44573A;           /* deeper green — hover/deep accent */
+  --danger:#6E2430;                     /* Burgundy — reserved for delete/danger actions */
+  --sage-deep:#5F7752;                  /* Mint/sage — links, secondary labels */
+  --cream:#FFFDF8;                      /* Off-white — panel/card backgrounds */
+  --ink:#2E241F;                        /* Ink — body text, headings */
+  --ink-soft:#6B5E54;                   /* Muted brown — secondary/dimmed text */
+  --gold:#9C7440;                       /* Gold — tagline, flourishes */
+  --parchment-bg:#EDE1C3;
+  --parchment-border:#C9B688;
 }
 *{ box-sizing:border-box; }
 body{ margin:0; background:var(--pink-bg); color:var(--ink); font-family:'Jost',sans-serif; }
@@ -20,7 +30,7 @@ h1,h2,h3{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0 .4
 .header{ text-align:center; padding:10px 0 24px; }
 .back{ display:inline-block; margin-bottom:14px; font-size:.85rem; text-decoration:none; color:var(--ink-soft); border:1px solid var(--pink-accent); background:var(--cream); padding:6px 14px; border-radius:999px; }
 .title{ font-size:2.3rem; margin:6px 0 2px; }
-.tagline{ font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--ink-soft); margin:0; }
+.tagline{ font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--gold); margin:0; }
 .panel{ background:var(--cream); border-radius:20px; padding:20px; box-shadow:0 6px 20px rgba(74,59,65,.12); margin-bottom:18px; }
 label{ display:block; font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin:12px 0 4px; }
 input, select, textarea{ width:100%; font-family:'Jost',sans-serif; font-size:.95rem; padding:9px 12px; border:1px solid var(--pink-bg-soft); border-radius:10px; background:#fff; color:var(--ink); }
@@ -31,7 +41,7 @@ textarea{ min-height:90px; resize:vertical; }
 .btn:hover{ background:var(--pink-accent-deep); }
 .btn.secondary{ background:transparent; color:var(--pink-accent-deep); border:1px solid var(--pink-accent); }
 .btn.small{ padding:6px 14px; font-size:.8rem; margin-top:0; }
-.btn.danger{ background:#B3564B; }
+.btn.danger{ background:var(--danger); }
 .hint{ font-size:.78rem; color:var(--ink-soft); margin-top:4px; }
 .card{ background:#fff; border:1px solid var(--pink-bg-soft); border-radius:16px; padding:16px; margin-bottom:12px; }
 .card h3{ margin-bottom:4px; }
@@ -82,6 +92,7 @@ textarea{ min-height:90px; resize:vertical; }
           <option value="weekly">Whenever</option>
           <option value="biweekly">Every other week</option>
           <option value="occasional">Occasionally</option>
+          <option value="date-night">Date Night Default</option>
         </select>
       </div>
     </div>
@@ -117,6 +128,13 @@ textarea{ min-height:90px; resize:vertical; }
 <script>
 const KEY = 'pp_recipes';
 let editingId = null;
+
+const FREQUENCY_LABELS = {
+  weekly: 'whenever',
+  biweekly: 'every other week',
+  occasional: 'occasional',
+  'date-night': 'date night default'
+};
 
 function getRecipes(){ try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; } }
 function saveRecipes(list){ localStorage.setItem(KEY, JSON.stringify(list)); }
@@ -209,7 +227,7 @@ function renderList(){
     <div class="card">
       <h3>${r.name}</h3>
       <div class="meta">serves ${r.servings} · prep ${r.prepTime||'—'} · cook ${r.cookTime||'—'} · ${r.method}</div>
-      <div>${(r.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}<span class="tag">${r.frequency === 'weekly' ? 'whenever' : r.frequency === 'biweekly' ? 'every other week' : 'occasional'}</span></div>
+      <div>${(r.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}<span class="tag">${FREQUENCY_LABELS[r.frequency] || r.frequency}</span></div>
       <div class="card-actions">
         <button class="btn small secondary" onclick="editRecipe('${r.id}')">Edit</button>
         <button class="btn small danger" onclick="deleteRecipe('${r.id}')">Delete</button>
