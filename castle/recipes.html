@@ -26,7 +26,7 @@
 body{ margin:0; background:var(--pink-bg); color:var(--ink); font-family:'Jost',sans-serif; }
 h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0 .4em; }
 .display{ font-family:'Apricot','Cormorant Garamond',serif; font-weight:400; }
-.shell{ max-width:760px; margin:0 auto; padding:24px 18px 70px; }
+.shell{ max-width:980px; margin:0 auto; padding:24px 18px 70px; }
 .header{ text-align:center; padding:10px 0 24px; }
 .back{ display:inline-block; margin:0 10px 10px; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1rem; text-decoration:none; color:var(--ink-soft); }
 .back:hover{ color:var(--pink-accent-deep); }
@@ -35,11 +35,19 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
 .panel{ background:var(--cream); border-radius:20px; padding:20px; box-shadow:0 6px 20px rgba(74,59,65,.12); margin-bottom:18px; }
 .empty{ text-align:center; padding:30px; color:var(--ink-soft); font-style:italic; font-family:'Cormorant Garamond',serif; }
 
-.toc h2{ margin-bottom:.5em; }
-.toc-list{ list-style:none; margin:0; padding:0; column-count:1; }
+.layout{ display:flex; gap:22px; align-items:flex-start; }
+.toc{ flex:0 0 220px; position:sticky; top:20px; max-height:calc(100vh - 40px); overflow-y:auto; }
+.toc h2{ margin-bottom:.5em; font-size:1.2rem; }
+.recipe-main{ flex:1 1 auto; min-width:0; }
+.toc-list{ list-style:none; margin:0; padding:0; }
 .toc-list li{ margin-bottom:6px; }
-.toc-list a{ text-decoration:none; color:var(--sage-deep); font-size:.98rem; }
+.toc-list a{ text-decoration:none; color:var(--sage-deep); font-size:.92rem; }
 .toc-list a:hover{ color:var(--pink-accent-deep); text-decoration:underline; }
+
+@media (max-width: 720px){
+  .layout{ flex-direction:column; }
+  .toc{ position:static; max-height:none; flex-basis:auto; width:100%; }
+}
 
 .recipe-entry{ scroll-margin-top:16px; }
 .recipe-entry + .recipe-entry{ margin-top:22px; padding-top:22px; border-top:1px solid var(--pink-bg-soft); }
@@ -62,13 +70,17 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
     <p class="tagline">the whole book, all in one scroll</p>
   </div>
 
-  <div class="panel toc" id="tocPanel">
-    <h2>Table of Contents</h2>
-    <ul class="toc-list" id="tocList"></ul>
-  </div>
+  <div class="layout">
+    <aside class="panel toc" id="tocPanel">
+      <h2>Table of Contents</h2>
+      <ul class="toc-list" id="tocList"></ul>
+    </aside>
 
-  <div id="recipeListing"></div>
-  <p class="empty" id="emptyMsg" style="display:none;">No recipes yet — add some in the <a href="../recipe-box/index.html" style="color:var(--pink-accent-deep);">Recipe Box</a> and they'll show up here.</p>
+    <main class="recipe-main">
+      <div id="recipeListing"></div>
+      <p class="empty" id="emptyMsg" style="display:none;">No recipes yet — add some in the <a href="../recipe-box/index.html" style="color:var(--pink-accent-deep);">Recipe Box</a> and they'll show up here.</p>
+    </main>
+  </div>
 </div>
 
 <script>
