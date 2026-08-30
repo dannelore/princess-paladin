@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Recipe Box — Princess & Paladin</title>
+<title>Recipe Construction — Princess & Paladin</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,500&family=Jost:wght@300;400;500;600&display=swap');
 @font-face{ font-family:'Apricot'; src:url('../fonts/Apricot.ttf') format('truetype'); font-display:swap; }
@@ -30,9 +30,9 @@ h1,h2,h3{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0 .4
 .header{ text-align:center; padding:10px 0 24px; }
 .back{ display:inline-block; margin:0 10px 10px; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1rem; text-decoration:none; color:var(--ink-soft); }
 .back:hover{ color:var(--pink-accent-deep); }
-.site-nav{ display:flex; justify-content:center; flex-wrap:wrap; gap:8px 10px; margin-bottom:12px; }
-.site-nav a{ font-family:'Jost',sans-serif; font-weight:500; font-size:.85rem; text-decoration:none; color:#fff; background:var(--pink-accent); border-radius:999px; padding:8px 16px; }
-.site-nav a:hover{ background:var(--pink-accent-deep); }
+.site-nav{ display:inline-flex; flex-wrap:wrap; gap:2px; background:var(--cream); border:1px solid var(--pink-bg-soft); border-radius:999px; padding:5px; margin-bottom:14px; box-shadow:0 3px 12px rgba(74,59,65,.08); }
+.site-nav a{ font-family:'Jost',sans-serif; font-weight:500; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; text-decoration:none; color:var(--ink-soft); padding:8px 14px; border-radius:999px; transition:background .15s ease, color .15s ease; }
+.site-nav a:hover{ background:var(--pink-accent); color:#fff; }
 .title{ font-size:2.3rem; margin:6px 0 2px; }
 .tagline{ font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--gold); margin:0; }
 .panel{ background:var(--cream); border-radius:20px; padding:20px; box-shadow:0 6px 20px rgba(74,59,65,.12); margin-bottom:18px; }
@@ -85,7 +85,7 @@ textarea{ min-height:90px; resize:vertical; }
       <a href="https://princessandpaladin.com/castle/meal-planner">Meal Planner</a>
       <a href="https://princessandpaladin.com/castle/recipes">Recipes</a>
     </nav>
-    <h1 class="title display">Recipe Box</h1>
+    <h1 class="title display">Recipe Construction</h1>
     <p class="tagline">type it in, find it later</p>
   </div>
 
@@ -100,13 +100,6 @@ textarea{ min-height:90px; resize:vertical; }
       <div><label>Cook time</label><input type="text" id="f_cook" placeholder="30 min"></div>
     </div>
     <div class="row">
-      <div><label>Cooking method</label>
-        <select id="f_method">
-          <option value="oven">Oven</option><option value="stovetop">Stovetop</option>
-          <option value="crockpot">Crockpot</option><option value="instant-pot">Instant Pot</option>
-          <option value="grill">Grill</option><option value="no-cook">No-cook</option>
-        </select>
-      </div>
       <div><label>Repeat this...</label>
         <select id="f_frequency">
           <option value="weekly">Whenever</option>
@@ -121,6 +114,8 @@ textarea{ min-height:90px; resize:vertical; }
         </label>
       </div>
     </div>
+    <label>Cooking method(s) <span class="hint">tap all that apply</span></label>
+    <div class="chip-group" id="methodChips"></div>
     <label>Tags <span class="hint">tap to select — add your own below if you need one that's missing</span></label>
     <div class="chip-group" id="tagChips"></div>
     <div class="addtag-row">
@@ -199,6 +194,36 @@ function addTagOption(tag){
   if (!opts.includes(tag)){ opts.push(tag); saveJSONraw(TAGS_KEY, opts); }
 }
 
+const METHOD_OPTIONS = [
+  { value: 'oven', label: 'Oven' },
+  { value: 'stovetop', label: 'Stovetop' },
+  { value: 'crockpot', label: 'Crockpot' },
+  { value: 'instant-pot', label: 'Instant Pot' },
+  { value: 'grill', label: 'Grill' },
+  { value: 'no-cook', label: 'No-cook' }
+];
+function renderMethodChips(selected){
+  selected = selected || [];
+  const wrap = document.getElementById('methodChips');
+  wrap.innerHTML = METHOD_OPTIONS.map(m => `
+    <label class="chip ${selected.includes(m.value) ? 'checked' : ''}">
+      <input type="checkbox" value="${m.value}" ${selected.includes(m.value) ? 'checked' : ''}>
+      ${m.label}
+    </label>
+  `).join('');
+  wrap.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      setTimeout(() => chip.classList.toggle('checked', chip.querySelector('input').checked), 0);
+    });
+  });
+}
+function getCheckedMethods(){
+  return Array.from(document.querySelectorAll('#methodChips input:checked')).map(cb => cb.value);
+}
+function methodLabel(value){
+  return (METHOD_OPTIONS.find(m => m.value === value) || {}).label || value;
+}
+
 function renderTagChips(selected){
   selected = selected || [];
   const wrap = document.getElementById('tagChips');
@@ -261,7 +286,7 @@ function renderList(){
   wrap.innerHTML = recipes.map(r => `
     <div class="card ${r.active === false ? 'inactive' : ''}">
       <h3>${r.name}</h3>
-      <div class="meta">serves ${r.servings} · prep ${r.prepTime||'—'} · cook ${r.cookTime||'—'} · ${r.method}</div>
+      <div class="meta">serves ${r.servings} · prep ${r.prepTime||'—'} · cook ${r.cookTime||'—'} · ${(r.methods || (r.method ? [r.method] : [])).map(methodLabel).join(', ') || '—'}</div>
       <div>${(r.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}<span class="tag">${FREQUENCY_LABELS[r.frequency] || r.frequency}</span>${r.active === false ? '<span class="tag inactive-tag">not in circulation</span>' : ''}</div>
       <details class="recipe-details">
         <summary>View recipe</summary>
@@ -287,9 +312,9 @@ function clearForm(){
   document.getElementById('cancelEditBtn').style.display = 'none';
   ['f_name','f_prep','f_cook','f_ingredients','f_instructions'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f_servings').value = 4;
-  document.getElementById('f_method').value = 'stovetop';
   document.getElementById('f_frequency').value = 'weekly';
   document.getElementById('f_active').checked = true;
+  renderMethodChips(['stovetop']);
   renderTagChips([]);
 }
 
@@ -303,9 +328,9 @@ function editRecipe(id){
   document.getElementById('f_servings').value = r.servings;
   document.getElementById('f_prep').value = r.prepTime || '';
   document.getElementById('f_cook').value = r.cookTime || '';
-  document.getElementById('f_method').value = r.method;
   document.getElementById('f_frequency').value = r.frequency;
   document.getElementById('f_active').checked = r.active !== false;
+  renderMethodChips(r.methods || (r.method ? [r.method] : []));
   (r.tags||[]).forEach(t => addTagOption(t)); // make sure old/typed-in tags still show as options
   renderTagChips(r.tags || []);
   document.getElementById('f_ingredients').value = (r.ingredients||[]).map(i => `${i.qty ?? ''} ${i.unit||''} ${i.name}`.trim().replace(/\s+/g,' ')).join('\n');
@@ -331,6 +356,8 @@ document.getElementById('saveBtn').addEventListener('click', () => {
   const ingredients = document.getElementById('f_ingredients').value.split('\n').map(parseIngredientLine).filter(Boolean);
   const instructions = document.getElementById('f_instructions').value.split('\n').map(s => s.trim()).filter(Boolean);
   const tags = getCheckedTags();
+  const methods = getCheckedMethods();
+  if (!methods.length){ alert('Pick at least one cooking method.'); return; }
   const servingsTag = tags.map(t => t.match(/^(\d+)\s+servings$/i)).find(Boolean);
   const servingsFromField = Number(document.getElementById('f_servings').value) || 4;
   const servings = servingsTag ? Number(servingsTag[1]) : servingsFromField;
@@ -340,7 +367,8 @@ document.getElementById('saveBtn').addEventListener('click', () => {
     servings,
     prepTime: document.getElementById('f_prep').value.trim(),
     cookTime: document.getElementById('f_cook').value.trim(),
-    method: document.getElementById('f_method').value,
+    methods,
+    method: methods[0], // kept for backward compatibility with anything still reading the old single-value field
     frequency: document.getElementById('f_frequency').value,
     active: document.getElementById('f_active').checked,
     tags, ingredients, instructions
@@ -361,6 +389,7 @@ document.getElementById('cancelEditBtn').addEventListener('click', clearForm);
 document.getElementById('search').addEventListener('input', renderList);
 document.getElementById('tagFilter').addEventListener('change', renderList);
 
+renderMethodChips(['stovetop']);
 renderTagChips([]);
 renderTagFilter();
 renderList();
