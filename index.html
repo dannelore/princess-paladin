@@ -3,18 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>princessandpaladin.com</title>
+<title>Castle Keeping — princessandpaladin.com</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg: #F7F1E4;
+    --bg: #E7E5DF;
     --panel: #FFFDF8;
     --border: rgba(58,46,40,0.16);
     --pink: #E87CA6;
     --mint: #5F7752;
     --gold: #9C7440;
+    --burgundy: #6E2430;
     --text: #2E241F;
     --muted: #6B5E54;
   }
@@ -31,8 +32,6 @@
 
   a{ color: var(--mint); text-decoration: none; }
   a:hover{ text-decoration: underline; }
-
-  .pixel{ font-family:'Cormorant Garamond', serif; }
 
   .wrap{
     max-width: 1080px;
@@ -78,25 +77,39 @@
     margin: 14px 0 0;
   }
 
-  header{ padding-bottom: 56px; }
+  .back-link{
+    display:inline-flex;
+    align-items:center;
+    gap: 6px;
+    margin-top: 22px;
+    font-family:'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .back-link:hover{ color: var(--burgundy); }
+
+  header{ padding-bottom: 12px; }
+
+  /* ---------- PAGE TITLE ---------- */
+  .page-title{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: 12px;
+    margin: 30px 0 40px;
+  }
+  .page-title svg{ width: 30px; height: 30px; color: var(--burgundy); }
+  .page-title h2{
+    font-family:'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    color: var(--text);
+    margin: 0;
+  }
 
   /* ---------- LAYOUT ---------- */
-  main.wrap{
-    display: grid;
-    grid-template-columns: 1fr 300px;
-    gap: 22px;
-    padding-bottom: 56px;
-    align-items: start;
-  }
-  @media (max-width: 820px){
-    main.wrap{ grid-template-columns: 1fr; }
-  }
-
-  .main-col{
-    display:flex;
-    flex-direction: column;
-    gap: 22px;
-  }
+  main.wrap{ padding-bottom: 56px; }
 
   .panel{
     background: var(--panel);
@@ -106,212 +119,44 @@
     box-shadow: 0 2px 10px rgba(58,46,40,0.05);
   }
 
-  .panel-title{
+  /* ---------- LINK CARDS ---------- */
+  .cards-grid{
     display:flex;
-    align-items:center;
-    gap: 10px;
-    font-family:'Cormorant Garamond', serif;
-    font-weight: 600;
-    font-size: 20px;
-    letter-spacing: 0.01em;
-    color: var(--text);
-    margin: 0 0 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 26px;
   }
 
-  /* ---------- WELCOME PANEL ---------- */
-  .welcome-body{
+  .card{
     display:flex;
-    gap: 22px;
-    align-items:flex-start;
-  }
-  @media (max-width: 560px){ .welcome-body{ flex-direction: column; } }
-
-  .avatar-box{
-    flex-shrink: 0;
-    width: 108px;
-  }
-  .avatar-frame{
-    width: 108px;
-    height: 108px;
-    background: #F0E8D6;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    display:flex;
+    flex-direction: column;
     align-items:center;
     justify-content:center;
-  }
-  .avatar-frame svg{ width: 56px; height: 56px; }
-  .avatar-stat{
-    font-family:'Cormorant Garamond', serif;
-    font-style: italic;
-    font-size: 12px;
     text-align:center;
-    color: var(--gold);
-    border: 1px solid var(--border);
-    border-top: none;
-    padding: 6px 4px;
-    letter-spacing: 0.01em;
-    line-height: 1.5;
-  }
-
-  .welcome-text p{
-    font-size: 15px;
-    line-height: 1.7;
-    color: var(--text);
-    margin: 0 0 16px;
-  }
-  .welcome-text p:last-child{ margin-bottom: 0; }
-
-  .parchment-box{
-    display:flex;
-    align-items:center;
-    gap: 14px;
-    padding: 20px 26px;
-    background:
-      radial-gradient(ellipse at 15% 20%, rgba(156,116,64,0.12), transparent 55%),
-      radial-gradient(ellipse at 85% 80%, rgba(156,116,64,0.1), transparent 55%),
-      #EDE1C3;
-    border: 1px solid #C9B688;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4), 0 3px 10px rgba(58,46,40,0.08);
-    border-radius: 3px;
-    color: #6E2430;
-    font-family:'Cormorant Garamond', serif;
-    font-weight: 600;
-    font-style: italic;
-    font-size: 17px;
-    line-height: 1.4;
+    gap: 10px;
+    width: 130px;
+    height: 130px;
+    padding: 12px;
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   }
-  .parchment-box:hover, .parchment-box:focus-visible{
-    transform: translateY(-2px);
-    border-color: #6E2430;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4), 0 8px 18px rgba(58,46,40,0.12);
+  .card:hover, .card:focus-visible{
+    transform: translateY(-3px);
+    border-color: var(--burgundy);
+    box-shadow: 0 10px 22px rgba(58,46,40,0.1);
     text-decoration: none;
     outline: none;
   }
 
-  ul.facts{
-    list-style: none;
-    margin: 16px 0 0;
-    padding: 0;
-  }
-  ul.facts li{
-    font-size: 14.5px;
-    line-height: 1.65;
-    color: var(--text);
-    padding-left: 18px;
-    position: relative;
-    margin-bottom: 6px;
-  }
-  ul.facts li::before{
-    content: "•";
-    position: absolute;
-    left: 2px;
-    color: var(--pink);
-  }
-  .hot{ color: var(--pink); }
+  .card svg{ width: 26px; height: 26px; color: var(--burgundy); }
 
-  .current-box{ }
-  .current-list{
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  .current-list li{
-    font-size: 15px;
-    line-height: 1.7;
-    color: var(--text);
-  }
-  .current-list .label{
-    font-family:'Cormorant Garamond', serif;
-    font-style: italic;
-    color: var(--gold);
-    margin-right: 4px;
-  }
-
-  /* ---------- SECTIONS PANEL ---------- */
-  .section-links{
-    display:flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .link-box{
-    display:flex;
-    align-items:center;
-    gap: 12px;
-    padding: 12px 16px;
-    color: var(--text);
+  .card h3{
     font-family:'Cormorant Garamond', serif;
     font-weight: 600;
-    font-size: 18px;
-    transition: transform 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
-  }
-  .link-box svg{ width:15px; height:15px; color: var(--gold); flex-shrink: 0; }
-  .link-box:hover, .link-box:focus-visible{
-    transform: translateX(3px);
-    box-shadow: 0 4px 14px rgba(58,46,40,0.08);
-    color: var(--pink);
-    text-decoration: none;
-    outline: none;
-  }
-  .link-box:hover svg, .link-box:focus-visible svg{ color: var(--pink); }
-
-  .link-group{
-    display:flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .sub-links{
-    display:flex;
-    flex-direction: column;
-    gap: 1px;
-    padding-left: 22px;
-  }
-  .sub-links a{
-    font-family:'Cormorant Garamond', serif;
-    font-style: italic;
-    font-size: 15px;
-    color: var(--muted);
-    padding: 6px 8px;
-    border-radius: 4px;
-    transition: color 0.15s ease, background 0.15s ease;
-  }
-  .sub-links a:hover, .sub-links a:focus-visible{
-    color: var(--pink);
-    background: rgba(232,124,166,0.08);
-    text-decoration: none;
-    outline: none;
-  }
-
-  .navlist{
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  .navlist li{ margin-bottom: 2px; }
-  .navlist a{
-    display:flex;
-    align-items:center;
-    gap: 10px;
+    font-size: 17px;
+    line-height: 1.2;
     color: var(--text);
-    font-size: 14.5px;
-    padding: 7px 6px;
-    border-radius: 4px;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-  .navlist a:hover, .navlist a:focus-visible{
-    background: rgba(232,124,166,0.1);
-    color: var(--pink);
-    text-decoration: none;
-    outline: none;
-  }
-  .navlist svg{ width:13px; height:13px; color: var(--gold); flex-shrink: 0; }
-
-  .navlist .divider{
-    height: 1px;
-    background: var(--border);
-    margin: 12px 4px;
+    margin: 0;
   }
 
   /* ---------- FOOTER ---------- */
@@ -325,7 +170,6 @@
     color: var(--muted);
   }
   .footer-flourish{
-    font-family:'Cormorant Garamond', serif;
     font-style: normal;
     color: var(--gold);
     letter-spacing: 0.05em;
@@ -363,71 +207,49 @@
 
   <h1 class="logo">Princess &amp; Paladin</h1>
   <p class="subhead">where creativity and chaos meet organization and overthinking</p>
+
+  <a class="back-link" href="../index.html">
+    <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M13 7H1M1 7L6 2M1 7L6 12" stroke="currentColor" stroke-width="1.6"/></svg>
+    back home
+  </a>
 </header>
 
 <main class="wrap">
 
-  <div class="main-col">
-    <section class="panel">
-      <div class="welcome-body">
-        <div class="welcome-text">
-          <p>This is Danni &amp; Brendon's little corner of the internet — built mostly so we can find our own lists from any device, not because we think anyone else needs to see it. If you're here for The Bach, though, that part actually is for you.</p>
-        </div>
-      </div>
-    </section>
-
-    <a class="parchment-box" href="https://princessandpaladin.com/bach/">
-      Click here for information about the Joint Bachelor(ette) Party
-    </a>
+  <div class="page-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 21V10l3-2V6h2v2l3-2v3l3-2v3l3-2v2l3 2v11Z"/>
+      <path d="M4 21h16"/>
+    </svg>
+    <h2>Castle Keeping</h2>
   </div>
 
-  <aside class="section-links">
-    <a class="panel link-box" href="https://princessandpaladin.com/bach/">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 3h6l-1 8a2 2 0 0 1-4 0L9 3Z"/>
-        <path d="M12 11v7M9 21h6"/>
-      </svg>
-      The Bach
-    </a>
-    <a class="panel link-box" href="https://princessandpaladin.com/dannelore/index.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 18 L5.5 11 L9 15 L12 8 L15 15 L18.5 11 L20 18 Z"/>
-        <path d="M4 18h16"/>
-      </svg>
-      Princess
-    </a>
-    <a class="panel link-box" href="#paladin">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 3 L14 5.5 L14 15 L12 18 L10 15 L10 5.5 Z"/>
-        <path d="M7 11.5h10"/>
-        <path d="M12 18v3"/>
-      </svg>
-      Paladin
-    </a>
-    <a class="panel link-box" href="#vault">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="9"/>
-        <path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/>
-      </svg>
-      Side Quests
-    </a>
-    <a class="panel link-box" href="#castle">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 21V10l3-2V6h2v2l3-2v3l3-2v3l3-2v2l3 2v11Z"/>
-        <path d="M4 21h16"/>
-      </svg>
-      Castle Keeping
-    </a>
-    <a class="panel link-box" href="#templates">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M7 3h7l4 4v14H7Z"/>
-        <path d="M14 3v4h4"/>
-        <path d="M9.5 12h5M9.5 16h5"/>
-      </svg>
-      Templates
-    </a>
-  </aside>
+  <div class="cards-grid">
 
+    <a class="card panel" href="#meal-planner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7 3v7a2 2 0 0 0 2 2v9M7 3v5M9 3v5"/>
+        <path d="M17 3c-1.5 0-2.5 1.5-2.5 4s.5 4 .5 4v10"/>
+      </svg>
+      <h3>Meal Planner</h3>
+    </a>
+
+    <a class="card panel" href="#recipe-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 6.5C6 5 9 5 12 6.5V19c-3-1.5-6-1.5-8 0V6.5Z"/>
+        <path d="M20 6.5C18 5 15 5 12 6.5V19c3-1.5 6-1.5 8 0V6.5Z"/>
+      </svg>
+      <h3>Recipe Box</h3>
+    </a>
+
+    <a class="card panel" href="#cleaning-schedule">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2c2 3 5 6 5 10a5 5 0 0 1-10 0c0-4 3-7 5-10Z"/>
+      </svg>
+      <h3>Cleaning Schedule</h3>
+    </a>
+
+  </div>
 
 </main>
 
