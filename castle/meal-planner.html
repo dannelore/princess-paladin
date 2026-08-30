@@ -229,6 +229,7 @@ function buildWeek(){
   // already chosen something for that night. Mon/Wed/Fri stick to smaller
   // 2-4 serving meals, and Saturday is reserved for kid-friendly recipes.
   const hasTag = (r, tag) => (r.tags || []).includes(tag);
+  const hasMethod = (r, method) => (r.methods || (r.method ? [r.method] : [])).includes(method);
   const DAY_TAG_RULES = {
     Tue: (r) => hasTag(r, '6 servings'),
     Sun: (r) => hasTag(r, '6 servings') || hasTag(r, '8 servings'),
@@ -239,6 +240,16 @@ function buildWeek(){
     Sat: (r) => hasTag(r, 'kid friendly')
   };
 
+  // Crockpot meals are restricted to Sun/Wed/Fri, and kid-friendly meals are
+  // restricted to Saturday only — these apply on top of the day rules above,
+  // ruling recipes OUT of days rather than requiring them.
+  const CROCKPOT_DAYS = new Set(['Sun', 'Wed', 'Fri']);
+  const passesExclusions = (r, dayKey) => {
+    if (hasMethod(r, 'crockpot') && !CROCKPOT_DAYS.has(dayKey)) return false;
+    if (hasTag(r, 'kid friendly') && dayKey !== 'Sat') return false;
+    return true;
+  };
+
   const chosen = new Set();
   const skippedForNoMatch = [];
 
@@ -247,15 +258,17 @@ function buildWeek(){
     if (existing) return; // already set (recipe id or SKIP) — leave it alone
 
     const dayTagFilter = DAY_TAG_RULES[k];
-    const base = dayTagFilter ? recipes.filter(dayTagFilter) : recipes;
+    let base = recipes.filter(r => passesExclusions(r, k));
+    if (dayTagFilter) base = base.filter(dayTagFilter);
 
+    // No meal repeats within the same week — this is a hard rule, so unlike
+    // the frequency-eligibility check below, it's never loosened as a fallback.
     let candidates = base.filter(r => eligible(r) && !chosen.has(r.id));
     if (!candidates.length) candidates = base.filter(r => !chosen.has(r.id));
-    if (!candidates.length) candidates = base;
 
     if (!candidates.length){
-      // no recipe carries the required tag for this day — leave it empty rather than break the rule
-      if (dayTagFilter) skippedForNoMatch.push(DAY_LABELS[k]);
+      // nothing left that fits this day's rules without repeating — leave it empty
+      skippedForNoMatch.push(DAY_LABELS[k]);
       return;
     }
 
@@ -270,7 +283,7 @@ function buildWeek(){
   render();
 
   if (skippedForNoMatch.length){
-    alert(`Left ${skippedForNoMatch.join(' & ')} empty — no recipe fits that day's rule yet. Sun/Tue need "6/8 servings," Mon/Wed/Fri need "2/4 servings," Sat needs "kid friendly," and Thu needs "Repeat this: Date Night Default." Tag a recipe accordingly, or fill it in manually.`);
+    alert(`Left ${skippedForNoMatch.join(' & ')} empty — nothing fits without breaking a rule. Reminder: Sun/Tue need "6/8 servings," Mon/Wed/Fri need "2/4 servings," Sat needs "kid friendly," Thu needs "Repeat this: Date Night Default," crockpot meals are Sun/Wed/Fri only, kid-friendly meals are Saturday only, and no meal repeats in the same week. Add more matching recipes, or fill it in manually.`);
   }
 }
 
