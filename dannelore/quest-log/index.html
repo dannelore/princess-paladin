@@ -1,1 +1,1398 @@
-HI
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quest Log · Princess &amp; Paladin</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  @font-face{
+    font-family:'Apricot';
+    src:url('../fonts/Apricot.ttf') format('truetype');
+    font-display:swap;
+  }
+
+  :root{
+    --pink-bg:#F6D9E6;
+    --pink-bg-alt:#F2C9DC;
+    --accent:#E87CA6;
+    --accent-dark:#D2698E;
+    --sage:#9CAF88;
+    --sage-dark:#7C9469;
+    --dusty-rose:#D8A7B1;
+    --cream:#FBF3E7;
+    --gold:#C9A227;
+    --copper:#B87333;
+    --ink:#4A3B41;
+    --ink-soft:#7A6670;
+    --white:#FFFDFB;
+    --work:#6E4D5C;
+
+    --font-display:'Apricot','Cormorant Garamond',serif;
+    --font-serif:'Cormorant Garamond',serif;
+    --font-body:'Jost',sans-serif;
+
+    --radius-sm:10px;
+    --radius-md:16px;
+    --radius-lg:24px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+
+  body{
+    margin:0;
+    font-family:var(--font-body);
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 15% 8%, rgba(255,255,255,0.5), transparent 40%),
+      var(--pink-bg);
+    min-height:100vh;
+    padding-bottom:80px;
+  }
+
+  a{color:inherit;}
+
+  /* ===== RIBBON HEADER ===== */
+  .ribbon{
+    position:sticky;
+    top:0;
+    z-index:50;
+    background:linear-gradient(180deg, var(--pink-bg-alt) 0%, var(--pink-bg) 100%);
+    border-bottom:2px solid rgba(232,124,166,0.35);
+    box-shadow:0 4px 16px rgba(180,90,120,0.12);
+  }
+
+  .ribbon-inner{
+    max-width:1300px;
+    margin:0 auto;
+    padding:14px 24px;
+    display:flex;
+    align-items:center;
+    gap:22px;
+  }
+
+  .avatar-frame{
+    position:relative;
+    width:64px;
+    height:64px;
+    border-radius:50%;
+    background:var(--cream);
+    border:3px solid var(--white);
+    box-shadow:0 0 0 3px var(--accent), 0 4px 10px rgba(180,90,120,0.25);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:30px;
+    flex-shrink:0;
+  }
+
+  .identity{
+    display:flex;
+    flex-direction:column;
+    min-width:150px;
+  }
+  .identity .name{
+    font-family:var(--font-display);
+    font-size:22px;
+    line-height:1.1;
+    font-weight:600;
+  }
+  .identity .level-tag{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    letter-spacing:.02em;
+  }
+
+  .bars{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    max-width:380px;
+  }
+  .bar-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .bar-label{
+    font-size:11px;
+    width:26px;
+    text-align:right;
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+  .bar-track{
+    flex:1;
+    height:9px;
+    border-radius:6px;
+    background:rgba(255,255,255,0.6);
+    border:1px solid rgba(74,59,65,0.12);
+    overflow:hidden;
+  }
+  .bar-fill{
+    height:100%;
+    border-radius:6px;
+    transition:width .5s cubic-bezier(.4,0,.2,1);
+  }
+  .bar-fill.xp{background:linear-gradient(90deg,var(--sage),var(--sage-dark));}
+  .bar-num{
+    font-size:10.5px;
+    color:var(--ink-soft);
+    width:64px;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .currency{
+    display:flex;
+    gap:14px;
+    flex-shrink:0;
+  }
+  .coin{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    font-family:var(--font-serif);
+    font-weight:600;
+    font-size:16px;
+    background:var(--white);
+    padding:6px 12px;
+    border-radius:20px;
+    box-shadow:0 2px 6px rgba(180,90,120,0.12);
+  }
+  .coin.gold{color:var(--gold);}
+  .coin.copper{color:var(--copper);}
+  .coin .dot{
+    width:9px;height:9px;border-radius:50%;
+    display:inline-block;
+  }
+  .coin.gold .dot{background:var(--gold);}
+  .coin.copper .dot{background:var(--copper);}
+
+  .panel-btns{
+    display:flex;
+    gap:8px;
+    flex-shrink:0;
+  }
+  .panel-btn{
+    font-family:var(--font-body);
+    font-size:13px;
+    font-weight:500;
+    background:var(--white);
+    border:1.5px solid var(--accent);
+    color:var(--accent-dark);
+    padding:8px 14px;
+    border-radius:18px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .panel-btn:hover{background:var(--accent); color:var(--white);}
+
+  @media (max-width:900px){
+    .ribbon-inner{flex-wrap:wrap; row-gap:10px;}
+    .bars{order:4; max-width:100%; flex-basis:100%;}
+  }
+
+  /* ===== DATE STRIP ===== */
+  .date-strip{
+    max-width:1300px;
+    margin:18px auto 0;
+    padding:0 24px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .date-strip .line{
+    flex:1;
+    height:1px;
+    background:linear-gradient(90deg, transparent, rgba(232,124,166,0.4), transparent);
+  }
+  .date-nav{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:var(--font-serif);
+    font-size:17px;
+    background:var(--white);
+    padding:6px 8px 6px 16px;
+    border-radius:20px;
+    box-shadow:0 2px 8px rgba(180,90,120,0.1);
+  }
+  .date-nav button{
+    width:28px;height:28px;
+    border-radius:50%;
+    border:none;
+    background:var(--pink-bg-alt);
+    color:var(--accent-dark);
+    cursor:pointer;
+    font-size:14px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .date-nav button:disabled{opacity:.35; cursor:default;}
+  .date-nav button:hover:not(:disabled){background:var(--accent); color:var(--white);}
+  .date-nav .today-pill{
+    font-size:11px;
+    background:var(--sage);
+    color:var(--white);
+    padding:3px 9px;
+    border-radius:10px;
+    cursor:pointer;
+    border:none;
+    font-family:var(--font-body);
+  }
+  .past-note{
+    font-size:12px;
+    color:var(--ink-soft);
+    font-style:italic;
+  }
+
+  /* ===== BOARD ===== */
+  .board{
+    max-width:1300px;
+    margin:22px auto 0;
+    padding:0 24px;
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:20px;
+  }
+  @media (max-width:1080px){
+    .board{grid-template-columns:repeat(2, 1fr);}
+  }
+  @media (max-width:560px){
+    .board{grid-template-columns:1fr;}
+  }
+
+  .col-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:10px;
+    padding:0 4px;
+  }
+  .col-head h2{
+    font-family:var(--font-serif);
+    font-size:22px;
+    font-weight:600;
+    margin:0;
+  }
+  .col-head .sub{
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+
+  .col-dailies h2{color:var(--sage-dark);}
+  .col-todo h2{color:var(--accent-dark);}
+  .col-projects h2{color:var(--copper);}
+  .col-work h2{color:var(--work);}
+
+  .add-row{
+    background:var(--white);
+    border-radius:var(--radius-md);
+    padding:12px 14px;
+    margin-bottom:12px;
+    box-shadow:0 2px 8px rgba(180,90,120,0.08);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .add-row input[type="text"], .add-row textarea, .add-row select, .add-row input[type="date"]{
+    font-family:var(--font-body);
+    font-size:14px;
+    border:1px solid rgba(74,59,65,0.15);
+    border-radius:8px;
+    padding:8px 10px;
+    background:var(--cream);
+    color:var(--ink);
+    width:100%;
+  }
+  .add-row input::placeholder{color:var(--ink-soft);}
+  .add-row-controls{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .stars-input{
+    display:flex;
+    gap:3px;
+    cursor:pointer;
+  }
+  .stars-input span{
+    font-size:16px;
+    color:rgba(74,59,65,0.2);
+    transition:color .1s;
+  }
+  .stars-input span.active{color:var(--gold);}
+
+  .priority-select{
+    font-family:var(--font-body);
+    font-size:12px;
+    border-radius:8px;
+    border:1px solid rgba(74,59,65,0.15);
+    background:var(--cream);
+    color:var(--ink);
+    padding:5px 8px;
+  }
+
+  .preset-row{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .preset-row button{
+    font-family:var(--font-body);
+    font-size:10.5px;
+    color:var(--ink-soft);
+    background:var(--cream);
+    border:1px solid rgba(74,59,65,0.15);
+    border-radius:10px;
+    padding:4px 9px;
+    cursor:pointer;
+  }
+  .preset-row button:hover{background:var(--pink-bg-alt); color:var(--accent-dark);}
+
+  .weekday-picker{
+    display:flex;
+    gap:4px;
+    flex-wrap:wrap;
+  }
+  .weekday-picker button{
+    width:26px;height:26px;
+    border-radius:50%;
+    border:1px solid rgba(74,59,65,0.2);
+    background:var(--cream);
+    font-size:10.5px;
+    font-family:var(--font-body);
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .weekday-picker button.on{
+    background:var(--sage);
+    border-color:var(--sage-dark);
+    color:var(--white);
+  }
+
+  .add-btn{
+    font-family:var(--font-body);
+    font-weight:500;
+    font-size:13px;
+    background:var(--accent);
+    color:var(--white);
+    border:none;
+    padding:8px 16px;
+    border-radius:16px;
+    cursor:pointer;
+    align-self:flex-end;
+  }
+  .add-btn:hover{background:var(--accent-dark);}
+  .add-btn.editing{background:var(--gold);}
+  .cancel-edit-btn{
+    font-family:var(--font-body);
+    font-size:12px;
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    text-decoration:underline;
+    cursor:pointer;
+    align-self:flex-end;
+  }
+
+  .col-work .add-row, .col-work .task-list{border-top:2px solid var(--work);}
+
+  /* task cards */
+  .task-list{
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+  }
+  .task-card{
+    background:var(--white);
+    border-radius:var(--radius-md);
+    padding:12px 14px;
+    box-shadow:0 2px 8px rgba(180,90,120,0.08);
+    border-left:4px solid var(--dusty-rose);
+    transition:opacity .2s, transform .2s;
+  }
+  .col-dailies .task-card{border-left-color:var(--sage);}
+  .col-todo .task-card{border-left-color:var(--accent);}
+  .col-projects .task-card{border-left-color:var(--copper);}
+  .col-work .task-card{border-left-color:var(--work);}
+
+  .task-card.done{opacity:.55;}
+
+  .task-main{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .check{
+    width:22px;height:22px;
+    border-radius:50%;
+    border:2px solid var(--sage);
+    flex-shrink:0;
+    margin-top:2px;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;
+    color:transparent;
+    background:var(--white);
+    transition:all .15s;
+  }
+  .check.checked{
+    background:var(--sage);
+    color:var(--white);
+  }
+  .col-todo .check{border-color:var(--accent);}
+  .col-todo .check.checked{background:var(--accent);}
+  .col-projects .check{border-color:var(--copper);}
+  .col-projects .check.checked{background:var(--copper);}
+  .col-work .check{border-color:var(--work);}
+  .col-work .check.checked{background:var(--work);}
+
+  .task-body{flex:1; min-width:0;}
+  .task-title{
+    font-family:var(--font-serif);
+    font-size:16.5px;
+    font-weight:500;
+    line-height:1.25;
+    cursor:pointer;
+  }
+  .task-title:hover{text-decoration:underline dotted;}
+  .task-card.done .task-title{text-decoration:line-through; text-decoration-color:var(--ink-soft);}
+  .task-meta{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:4px;
+    flex-wrap:wrap;
+  }
+  .stars-display{font-size:11px; color:var(--gold); letter-spacing:1px;}
+  .streak-chip{
+    font-size:10.5px;
+    background:var(--pink-bg-alt);
+    color:var(--accent-dark);
+    padding:2px 7px;
+    border-radius:8px;
+    font-weight:500;
+  }
+  .weekday-chip{
+    font-size:10px;
+    color:var(--ink-soft);
+  }
+  .priority-chip{
+    font-size:10px;
+    padding:2px 7px;
+    border-radius:8px;
+    font-weight:500;
+    color:var(--white);
+  }
+  .priority-chip.low{background:var(--sage);}
+  .priority-chip.medium{background:var(--gold);}
+  .priority-chip.high{background:var(--accent);}
+  .priority-chip.urgent{background:var(--hp, #D2698E);}
+
+  .task-actions{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    flex-shrink:0;
+  }
+  .task-edit, .task-delete{
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    cursor:pointer;
+    font-size:13px;
+    padding:2px 6px;
+  }
+  .task-edit:hover{color:var(--accent-dark);}
+  .task-delete:hover{color:var(--accent-dark);}
+
+  .empty-note{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    font-style:italic;
+    text-align:center;
+    padding:14px 0;
+  }
+
+  /* ===== SLIDE PANEL (Shop only) ===== */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(74,59,65,0.35);
+    opacity:0; pointer-events:none;
+    transition:opacity .25s;
+    z-index:90;
+  }
+  .overlay.open{opacity:1; pointer-events:auto;}
+
+  .side-panel{
+    position:fixed;
+    top:0; right:0;
+    width:380px; max-width:90vw;
+    height:100%;
+    background:var(--cream);
+    box-shadow:-6px 0 24px rgba(74,59,65,0.2);
+    transform:translateX(100%);
+    transition:transform .3s cubic-bezier(.4,0,.2,1);
+    z-index:100;
+    display:flex;
+    flex-direction:column;
+  }
+  .side-panel.open{transform:translateX(0);}
+
+  .panel-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:18px 20px;
+    border-bottom:2px solid rgba(232,124,166,0.25);
+    background:var(--pink-bg-alt);
+  }
+  .panel-header h2{
+    font-family:var(--font-serif);
+    font-size:20px;
+    margin:0;
+    color:var(--accent-dark);
+  }
+  .panel-close{
+    background:none;
+    border:none;
+    font-size:18px;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+
+  .panel-content{
+    flex:1;
+    overflow-y:auto;
+    padding:20px;
+  }
+
+  .shop-item{
+    background:var(--white);
+    border-radius:var(--radius-md);
+    padding:12px 14px;
+    margin-bottom:10px;
+    box-shadow:0 2px 6px rgba(180,90,120,0.08);
+  }
+  .shop-item .name-row{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+  .shop-item .name{font-family:var(--font-serif); font-size:16px; font-weight:600; cursor:pointer;}
+  .shop-item .name:hover{text-decoration:underline dotted;}
+  .shop-item .shop-actions{display:flex; gap:2px; flex-shrink:0;}
+  .shop-item .shop-actions button{
+    background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:13px; padding:2px 5px;
+  }
+  .shop-item .shop-actions button:hover{color:var(--accent-dark);}
+  .shop-item .desc{font-size:12.5px; color:var(--ink-soft); margin:3px 0 8px;}
+  .shop-item .row{display:flex; align-items:center; justify-content:space-between;}
+  .shop-item .price{font-size:13px; font-weight:500;}
+  .shop-item .price .g{color:var(--gold);}
+  .shop-item .price .c{color:var(--copper);}
+  .redeem-btn{
+    font-size:12px;
+    background:var(--sage);
+    color:var(--white);
+    border:none;
+    padding:6px 12px;
+    border-radius:12px;
+    cursor:pointer;
+  }
+  .redeem-btn:disabled{background:rgba(74,59,65,0.15); cursor:not-allowed;}
+
+  /* ===== MODALS ===== */
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(74,59,65,0.5);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:200;
+    padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-card{
+    background:var(--cream);
+    border-radius:var(--radius-lg);
+    padding:32px 28px;
+    max-width:360px;
+    text-align:center;
+    box-shadow:0 12px 40px rgba(74,59,65,0.3);
+    border:3px solid var(--white);
+  }
+  .modal-card .big-emoji{font-size:44px;}
+  .modal-card h3{
+    font-family:var(--font-display);
+    font-size:26px;
+    margin:10px 0 6px;
+    color:var(--accent-dark);
+  }
+  .modal-card p{font-size:14px; color:var(--ink-soft); line-height:1.5;}
+  .modal-card button{
+    margin-top:16px;
+    background:var(--accent);
+    color:var(--white);
+    border:none;
+    padding:10px 24px;
+    border-radius:18px;
+    font-family:var(--font-body);
+    font-size:14px;
+    cursor:pointer;
+  }
+
+  footer{
+    text-align:center;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:50px;
+    font-style:italic;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== RIBBON HEADER ===== -->
+<div class="ribbon">
+  <div class="ribbon-inner">
+    <div class="avatar-frame" id="avatarFrame">
+      <span id="avatarBase">🧝‍♀️</span>
+    </div>
+    <div class="identity">
+      <div class="name" id="charName">Danni</div>
+      <div class="level-tag">Level <span id="levelNum">1</span></div>
+    </div>
+    <div class="bars">
+      <div class="bar-row">
+        <span class="bar-label">XP</span>
+        <div class="bar-track"><div class="bar-fill xp" id="xpBar" style="width:0%"></div></div>
+        <span class="bar-num" id="xpNum">0 / 100</span>
+      </div>
+    </div>
+    <div class="currency">
+      <div class="coin gold"><span class="dot"></span><span id="goldNum">0</span></div>
+      <div class="coin copper"><span class="dot"></span><span id="copperNum">0</span></div>
+    </div>
+    <div class="panel-btns">
+      <button class="panel-btn" id="openShop">🛍 Shop</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DATE STRIP ===== -->
+<div class="date-strip">
+  <div class="line"></div>
+  <div class="date-nav">
+    <button id="prevDay" title="Previous day">‹</button>
+    <span id="dateLabel">Today · Sat, Aug 30</span>
+    <button id="nextDay" title="Next day">›</button>
+    <button class="today-pill" id="jumpToday">today</button>
+  </div>
+  <div class="line"></div>
+</div>
+<div style="max-width:1300px;margin:6px auto 0;padding:0 24px;">
+  <p class="past-note" id="pastNote"></p>
+</div>
+
+<!-- ===== BOARD ===== -->
+<div class="board">
+
+  <!-- DAILIES -->
+  <div class="col-dailies">
+    <div class="col-head"><h2>Dailies 🌿</h2><span class="sub" id="dailyCount">0 today</span></div>
+    <div class="add-row" id="dailyAddRow">
+      <input type="text" id="dailyInput" placeholder="Add a daily, e.g. 15 minutes of cleaning">
+      <div class="preset-row" id="dailyPresets"></div>
+      <div class="weekday-picker" id="dailyWeekdays"></div>
+      <div class="add-row-controls">
+        <div class="stars-input" id="dailyStars" data-value="3"></div>
+        <select class="priority-select" id="dailyPriority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+          <option value="urgent">Urgent</option>
+        </select>
+      </div>
+      <div class="add-row-controls">
+        <button class="cancel-edit-btn" id="dailyCancelEdit" style="display:none;">cancel edit</button>
+        <button class="add-btn" id="addDaily">Add</button>
+      </div>
+    </div>
+    <div class="task-list" id="dailyList"></div>
+  </div>
+
+  <!-- TO DO -->
+  <div class="col-todo">
+    <div class="col-head"><h2>To Do 🌸</h2><span class="sub" id="todoCount">0 open</span></div>
+    <div class="add-row">
+      <input type="text" id="todoInput" placeholder="Add a to-do">
+      <div class="add-row-controls">
+        <div class="stars-input" id="todoStars" data-value="3"></div>
+        <select class="priority-select" id="todoPriority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+          <option value="urgent">Urgent</option>
+        </select>
+      </div>
+      <div class="add-row-controls">
+        <button class="cancel-edit-btn" id="todoCancelEdit" style="display:none;">cancel edit</button>
+        <button class="add-btn" id="addTodo">Add</button>
+      </div>
+    </div>
+    <div class="task-list" id="todoList"></div>
+  </div>
+
+  <!-- WORK (simple list) -->
+  <div class="col-work">
+    <div class="col-head"><h2>Work 💼</h2><span class="sub" id="workCount">0 open</span></div>
+    <div class="add-row">
+      <input type="text" id="workInput" placeholder="Add a work to-do">
+      <div class="add-row-controls">
+        <div class="stars-input" id="workStars" data-value="3"></div>
+        <select class="priority-select" id="workPriority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+          <option value="urgent">Urgent</option>
+        </select>
+      </div>
+      <div class="add-row-controls">
+        <button class="cancel-edit-btn" id="workCancelEdit" style="display:none;">cancel edit</button>
+        <button class="add-btn" id="addWork">Add</button>
+      </div>
+    </div>
+    <div class="task-list" id="workList"></div>
+  </div>
+
+  <!-- PROJECTS (simple list) -->
+  <div class="col-projects">
+    <div class="col-head"><h2>Projects 🗺️</h2><span class="sub" id="projectCount">0 open</span></div>
+    <div class="add-row">
+      <input type="text" id="projectInput" placeholder="Add a project, e.g. Plan the Bach itinerary (May 12\u201319)">
+      <div class="add-row-controls">
+        <div class="stars-input" id="projectStars" data-value="4"></div>
+        <select class="priority-select" id="projectPriority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+          <option value="urgent">Urgent</option>
+        </select>
+      </div>
+      <div class="add-row-controls">
+        <button class="cancel-edit-btn" id="projectCancelEdit" style="display:none;">cancel edit</button>
+        <button class="add-btn" id="addProject">Add</button>
+      </div>
+    </div>
+    <div class="task-list" id="projectList"></div>
+  </div>
+
+</div>
+
+<footer>where creativity and chaos meet organization and overthinking 🌷</footer>
+
+<!-- ===== SIDE PANEL (Shop) ===== -->
+<div class="overlay" id="overlay"></div>
+<div class="side-panel" id="sidePanel">
+  <div class="panel-header">
+    <h2>Shop</h2>
+    <button class="panel-close" id="closePanel">✕</button>
+  </div>
+  <div class="panel-content">
+    <div class="add-row">
+      <input type="text" id="shopName" placeholder="Reward name, e.g. Watch one episode">
+      <input type="text" id="shopDesc" placeholder="Short description (optional)">
+      <div class="add-row-controls">
+        <input type="number" id="shopGold" placeholder="gold" min="0" style="width:70px;">
+        <input type="number" id="shopCopper" placeholder="copper" min="0" style="width:70px;">
+      </div>
+      <div class="add-row-controls">
+        <button class="cancel-edit-btn" id="shopCancelEdit" style="display:none;">cancel edit</button>
+        <button class="add-btn" id="addShopItem">Add reward</button>
+      </div>
+    </div>
+    <div id="shopList"></div>
+  </div>
+</div>
+
+<!-- ===== MODALS ===== -->
+<div class="modal-overlay" id="levelModal">
+  <div class="modal-card">
+    <div class="big-emoji">✨</div>
+    <h3>Level <span id="newLevelNum"></span>!</h3>
+    <p>You've grown stronger. Bonus payout: <strong id="levelBonusText"></strong></p>
+    <button onclick="closeModal('levelModal')">Keep going</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<script>
+/* ============ FIREBASE SETUP ============ */
+const firebaseConfig = {
+  apiKey: "AIzaSyAdNZBoh1pH80-ZFBbOlcrlsLdMi3D62Wg",
+  authDomain: "princess-paladin.firebaseapp.com",
+  projectId: "princess-paladin",
+  storageBucket: "princess-paladin.firebasestorage.app",
+  messagingSenderId: "282931655557",
+  appId: "1:282931655557:web:cae6ccd23f32cb9be54aec",
+  measurementId: "G-E5K2NMCR3Y"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+// No login: everything reads/writes this one fixed document. That's the
+// tradeoff for skipping accounts — fine for a private site nobody else
+// knows the address of.
+const docRef = db.collection('questlog').doc('danni-quest-log');
+
+/* ============ STATE LAYER ============
+   State lives in Firestore, with localStorage kept only as a same-device
+   cache so the page has something to show instantly on load. */
+const STORE_KEY = 'questlog-danni-v3';
+
+function defaultState(){
+  return {
+    level:1, xp:0, xpToNext:100,
+    gold:0, copper:0,
+    dailies:[], todos:[], projects:[], work:[],
+    shop:[],
+    completions:{}   // date -> { taskId: true }
+  };
+}
+function migrateState(s){
+  if(!s.work) s.work = [];
+  // drop any leftover fields from older versions (HP/closet/day-types)
+  delete s.hp; delete s.maxHp; delete s.closet; delete s.worn;
+  delete s.workDailies; delete s.workTodos; delete s.workProjects;
+  delete s.dayTypes;
+  if(s.dailies) s.dailies.forEach(d => delete d.dayTypes);
+  return s;
+}
+function saveState(){
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  docRef.set(state).catch(err => console.error('Sync to Firestore failed:', err));
+}
+async function loadStateFromFirestore(){
+  const snap = await docRef.get();
+  if(snap.exists){
+    state = migrateState(snap.data());
+  } else {
+    const raw = localStorage.getItem(STORE_KEY);
+    state = raw ? migrateState(JSON.parse(raw)) : defaultState();
+    await docRef.set(state);
+  }
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+}
+
+let state = defaultState();
+
+const WEEKDAYS = ['S','M','T','W','T','F','S'];
+const PRIORITY_LABEL = { low:'Low', medium:'Medium', high:'High', urgent:'Urgent' };
+
+/* ============ DATE HELPERS ============ */
+let viewDate = startOfDay(new Date());
+const TODAY = startOfDay(new Date());
+const MIN_DATE = addDays(TODAY, -13);
+
+function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
+function addDays(d, n){ const x = new Date(d); x.setDate(x.getDate()+n); return x; }
+function dateKey(d){ return d.toISOString().slice(0,10); }
+function fmtDate(d){
+  const opts = { weekday:'short', month:'short', day:'numeric' };
+  const label = d.toLocaleDateString('en-US', opts);
+  return sameDay(d,TODAY) ? `Today · ${label}` : label;
+}
+function sameDay(a,b){ return dateKey(a)===dateKey(b); }
+
+/* ============ REWARD MATH ============ */
+function computeReward(stars, streak){
+  const baseCopper = stars * 10;
+  const streakBonus = Math.min(streak, 10) * 2;
+  const totalCopper = baseCopper + streakBonus;
+  const xp = stars * 10 + Math.min(streak,10) * 2;
+  return { copper: totalCopper, xp };
+}
+function addCurrency(copperAmount){
+  let totalCopper = state.copper + copperAmount;
+  state.gold += Math.floor(totalCopper/100);
+  state.copper = totalCopper % 100;
+}
+function spendCurrency(gold, copper){
+  const totalHave = state.gold*100 + state.copper;
+  const totalCost = gold*100 + copper;
+  if(totalHave < totalCost) return false;
+  const remaining = totalHave - totalCost;
+  state.gold = Math.floor(remaining/100);
+  state.copper = remaining % 100;
+  return true;
+}
+function addXP(amount){
+  state.xp += amount;
+  while(state.xp >= state.xpToNext){
+    state.xp -= state.xpToNext;
+    state.level += 1;
+    state.xpToNext = Math.round(state.xpToNext * 1.25);
+    levelUpBonus();
+  }
+}
+function levelUpBonus(){
+  const bonusCopper = 20 + state.level * 5;
+  addCurrency(bonusCopper);
+  const g = Math.floor(bonusCopper/100), c = bonusCopper % 100;
+  document.getElementById('newLevelNum').textContent = state.level;
+  document.getElementById('levelBonusText').textContent = `${g}g ${c}c`;
+  openModal('levelModal');
+}
+
+/* ============ STREAK HELPER ============ */
+function getStreak(taskId){
+  let streak = 0;
+  let d = addDays(viewDate, -1);
+  while(d >= MIN_DATE){
+    const rec = state.completions[dateKey(d)];
+    if(rec && rec[taskId]){ streak++; d = addDays(d,-1); }
+    else break;
+  }
+  return streak;
+}
+
+/* ============ UTIL ============ */
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+function starsDisplay(n){ return '★'.repeat(n) + '☆'.repeat(5-n); }
+function uid(){ return crypto.randomUUID(); }
+function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+/* ============ RENDER: HEADER ============ */
+function renderHeader(){
+  document.getElementById('levelNum').textContent = state.level;
+  document.getElementById('xpBar').style.width = (state.xp/state.xpToNext*100)+'%';
+  document.getElementById('xpNum').textContent = `${state.xp} / ${state.xpToNext}`;
+  document.getElementById('goldNum').textContent = state.gold;
+  document.getElementById('copperNum').textContent = state.copper;
+}
+
+/* ============ RENDER: DATE STRIP ============ */
+function renderDateStrip(){
+  document.getElementById('dateLabel').textContent = fmtDate(viewDate);
+  document.getElementById('prevDay').disabled = dateKey(viewDate) === dateKey(MIN_DATE);
+  document.getElementById('nextDay').disabled = dateKey(viewDate) === dateKey(TODAY);
+  const note = document.getElementById('pastNote');
+  note.textContent = sameDay(viewDate, TODAY)
+    ? ''
+    : 'Viewing a past day — check off anything you missed to backfill it.';
+}
+
+/* ============ STARS INPUT (for add rows) ============ */
+function setupStarsInput(id){
+  const el = document.getElementById(id);
+  function draw(){
+    const val = parseInt(el.dataset.value);
+    el.innerHTML = '';
+    for(let i=1;i<=5;i++){
+      const s = document.createElement('span');
+      s.textContent = '★';
+      if(i<=val) s.classList.add('active');
+      s.onclick = () => { el.dataset.value = i; draw(); };
+      el.appendChild(s);
+    }
+  }
+  draw();
+}
+['dailyStars','todoStars','projectStars','workStars'].forEach(setupStarsInput);
+
+/* ============ WEEKDAY PICKER (Dailies only) ============ */
+function makeWeekdayPicker(containerId){
+  const el = document.getElementById(containerId);
+  let days = {0:true,1:true,2:true,3:true,4:true,5:true,6:true};
+  function draw(){
+    el.innerHTML = '';
+    WEEKDAYS.forEach((label, idx) => {
+      const btn = document.createElement('button');
+      btn.textContent = label;
+      if(days[idx]) btn.classList.add('on');
+      btn.onclick = () => { days[idx] = !days[idx]; draw(); };
+      el.appendChild(btn);
+    });
+  }
+  draw();
+  return {
+    get: () => Object.keys(days).filter(d=>days[d]).map(Number),
+    set: (arr) => { days = {0:false,1:false,2:false,3:false,4:false,5:false,6:false}; arr.forEach(d=>days[d]=true); draw(); },
+    reset: () => { days = {0:true,1:true,2:true,3:true,4:true,5:true,6:true}; draw(); }
+  };
+}
+function makePresetRow(containerId, weekdayPicker){
+  const el = document.getElementById(containerId);
+  const PRESETS = [
+    { label:'Every day', days:[0,1,2,3,4,5,6] },
+    { label:'Weekend (Fri–Sun)', days:[5,6,0] },
+    { label:'Clear', days:[] },
+  ];
+  PRESETS.forEach(preset => {
+    const btn = document.createElement('button');
+    btn.textContent = preset.label;
+    btn.onclick = () => weekdayPicker.set(preset.days);
+    el.appendChild(btn);
+  });
+}
+
+const dailyWeekdayPicker = makeWeekdayPicker('dailyWeekdays');
+makePresetRow('dailyPresets', dailyWeekdayPicker);
+
+/* ============ EDITING STATE ============ */
+let editing = { daily:null, todo:null, project:null, work:null };
+
+/* ============ ADD / EDIT: DAILIES ============ */
+function wireDailyForm(prefix, arrayKey, weekdayPicker){
+  const input = document.getElementById(prefix+'Input');
+  const starsEl = document.getElementById(prefix+'Stars');
+  const priorityEl = document.getElementById(prefix+'Priority');
+  const addBtn = document.getElementById('add'+capitalize(prefix));
+  const cancelBtn = document.getElementById(prefix+'CancelEdit');
+
+  addBtn.onclick = () => {
+    const title = input.value.trim();
+    if(!title) return;
+    const stars = parseInt(starsEl.dataset.value);
+    const priority = priorityEl.value;
+    const days = weekdayPicker.get();
+
+    if(editing[prefix]){
+      const task = state[arrayKey].find(t=>t.id===editing[prefix]);
+      Object.assign(task, { title, stars, priority, days });
+      exitEditMode(prefix);
+    } else {
+      state[arrayKey].push({ id: uid(), title, stars, priority, days });
+    }
+    resetDailyForm(prefix, weekdayPicker);
+    saveAndRender();
+  };
+  cancelBtn.onclick = () => { exitEditMode(prefix); resetDailyForm(prefix, weekdayPicker); };
+}
+function resetDailyForm(prefix, weekdayPicker){
+  document.getElementById(prefix+'Input').value='';
+  document.getElementById(prefix+'Priority').value='medium';
+  document.getElementById(prefix+'Stars').dataset.value=3;
+  setupStarsInput(prefix+'Stars');
+  weekdayPicker.reset();
+}
+function enterEditMode(prefix, task, weekdayPicker){
+  editing[prefix] = task.id;
+  document.getElementById(prefix+'Input').value = task.title;
+  const priorityEl = document.getElementById(prefix+'Priority');
+  if(priorityEl) priorityEl.value = task.priority || 'medium';
+  document.getElementById(prefix+'Stars').dataset.value = task.stars;
+  setupStarsInput(prefix+'Stars');
+  if(weekdayPicker) weekdayPicker.set(task.days || []);
+  const addBtn = document.getElementById('add'+capitalize(prefix));
+  addBtn.textContent = 'Save changes';
+  addBtn.classList.add('editing');
+  document.getElementById(prefix+'CancelEdit').style.display = 'inline';
+  document.getElementById(prefix+'Input').scrollIntoView({behavior:'smooth', block:'center'});
+}
+function exitEditMode(prefix){
+  editing[prefix] = null;
+  const addBtn = document.getElementById('add'+capitalize(prefix));
+  addBtn.textContent = 'Add';
+  addBtn.classList.remove('editing');
+  document.getElementById(prefix+'CancelEdit').style.display = 'none';
+}
+
+wireDailyForm('daily', 'dailies', dailyWeekdayPicker);
+
+/* ============ ADD / EDIT: TODOS ============ */
+function wireTodoForm(prefix, arrayKey){
+  const input = document.getElementById(prefix+'Input');
+  const starsEl = document.getElementById(prefix+'Stars');
+  const priorityEl = document.getElementById(prefix+'Priority');
+  const addBtn = document.getElementById('add'+capitalize(prefix));
+  const cancelBtn = document.getElementById(prefix+'CancelEdit');
+
+  addBtn.onclick = () => {
+    const title = input.value.trim();
+    if(!title) return;
+    const stars = parseInt(starsEl.dataset.value);
+    const priority = priorityEl ? priorityEl.value : 'medium';
+
+    if(editing[prefix]){
+      const task = state[arrayKey].find(t=>t.id===editing[prefix]);
+      Object.assign(task, { title, stars, priority });
+      exitEditMode(prefix);
+    } else {
+      state[arrayKey].push({ id: uid(), title, stars, priority, done:false });
+    }
+    input.value='';
+    if(priorityEl) priorityEl.value='medium';
+    starsEl.dataset.value=3;
+    setupStarsInput(prefix+'Stars');
+    saveAndRender();
+  };
+  cancelBtn.onclick = () => {
+    exitEditMode(prefix);
+    input.value='';
+    if(priorityEl) priorityEl.value='medium';
+    starsEl.dataset.value=3;
+    setupStarsInput(prefix+'Stars');
+  };
+}
+wireTodoForm('todo', 'todos');
+wireTodoForm('work', 'work');
+wireTodoForm('project', 'projects'); // Projects is now a simple list too, same shape as Work/To Do
+
+/* ============ RENDER: DAILIES ============ */
+function renderDailyColumn(){
+  const list = document.getElementById('dailyList');
+  const dow = viewDate.getDay();
+  const key = dateKey(viewDate);
+  const dayRecord = state.completions[key] || {};
+  const scheduled = state.dailies.filter(d => d.days.includes(dow));
+
+  list.innerHTML = '';
+  if(scheduled.length===0){
+    list.innerHTML = '<div class="empty-note">Nothing scheduled for this day yet 🌾</div>';
+  }
+  scheduled.forEach(task => {
+    const isDone = !!dayRecord[task.id];
+    const streak = getStreak(task.id);
+    const card = document.createElement('div');
+    card.className = 'task-card' + (isDone?' done':'');
+    card.innerHTML = `
+      <div class="task-main">
+        <div class="check ${isDone?'checked':''}">${isDone?'✓':''}</div>
+        <div class="task-body">
+          <div class="task-title">${escapeHtml(task.title)}</div>
+          <div class="task-meta">
+            <span class="stars-display">${starsDisplay(task.stars)}</span>
+            <span class="priority-chip ${task.priority||'medium'}">${PRIORITY_LABEL[task.priority||'medium']}</span>
+            ${streak>0?`<span class="streak-chip">🔥 ${streak}d streak</span>`:''}
+          </div>
+        </div>
+        <div class="task-actions">
+          <button class="task-edit" title="Edit">✎</button>
+          <button class="task-delete" title="Delete">✕</button>
+        </div>
+      </div>
+    `;
+    card.querySelector('.check').onclick = () => toggleDaily(task, isDone);
+    card.querySelector('.task-title').onclick = () => enterEditMode('daily', task, dailyWeekdayPicker);
+    card.querySelector('.task-edit').onclick = () => enterEditMode('daily', task, dailyWeekdayPicker);
+    card.querySelector('.task-delete').onclick = () => {
+      state.dailies = state.dailies.filter(d=>d.id!==task.id);
+      saveAndRender();
+    };
+    list.appendChild(card);
+  });
+  document.getElementById('dailyCount').textContent = `${scheduled.length} today`;
+}
+
+function toggleDaily(task, wasDone){
+  const key = dateKey(viewDate);
+  if(!state.completions[key]) state.completions[key] = {};
+  if(wasDone){
+    delete state.completions[key][task.id];
+  } else {
+    state.completions[key][task.id] = true;
+    const streak = getStreak(task.id);
+    const { copper, xp } = computeReward(task.stars, streak);
+    addCurrency(copper);
+    addXP(xp);
+  }
+  saveAndRender();
+}
+
+/* ============ RENDER: TODOS / WORK (shared, simple list) ============ */
+function renderSimpleColumn(arrayKey, listElId, countElId, prefix, showPriority){
+  const list = document.getElementById(listElId);
+  list.innerHTML = '';
+  const tasks = state[arrayKey];
+  const open = tasks.filter(t=>!t.done);
+  if(tasks.length===0){
+    list.innerHTML = '<div class="empty-note">Nothing here yet ✨</div>';
+  }
+  tasks.forEach(task => {
+    const card = document.createElement('div');
+    card.className = 'task-card' + (task.done?' done':'');
+    card.innerHTML = `
+      <div class="task-main">
+        <div class="check ${task.done?'checked':''}">${task.done?'✓':''}</div>
+        <div class="task-body">
+          <div class="task-title">${escapeHtml(task.title)}</div>
+          <div class="task-meta">
+            <span class="stars-display">${starsDisplay(task.stars)}</span>
+            ${showPriority?`<span class="priority-chip ${task.priority||'medium'}">${PRIORITY_LABEL[task.priority||'medium']}</span>`:''}
+          </div>
+        </div>
+        <div class="task-actions">
+          <button class="task-edit" title="Edit">✎</button>
+          <button class="task-delete" title="Delete">✕</button>
+        </div>
+      </div>
+    `;
+    card.querySelector('.check').onclick = () => {
+      task.done = !task.done;
+      if(task.done){
+        const { copper, xp } = computeReward(task.stars, 0);
+        addCurrency(copper); addXP(xp);
+      }
+      saveAndRender();
+    };
+    card.querySelector('.task-title').onclick = () => enterEditMode(prefix, task, null, null);
+    card.querySelector('.task-edit').onclick = () => enterEditMode(prefix, task, null, null);
+    card.querySelector('.task-delete').onclick = () => {
+      state[arrayKey] = state[arrayKey].filter(t=>t.id!==task.id);
+      saveAndRender();
+    };
+    list.appendChild(card);
+  });
+  document.getElementById(countElId).textContent = `${open.length} open`;
+}
+
+
+
+/* ============ SHOP ============ */
+let editingShopId = null;
+
+document.getElementById('addShopItem').onclick = () => {
+  const name = document.getElementById('shopName').value.trim();
+  if(!name) return;
+  const desc = document.getElementById('shopDesc').value.trim();
+  const gold = parseInt(document.getElementById('shopGold').value) || 0;
+  const copper = parseInt(document.getElementById('shopCopper').value) || 0;
+
+  if(editingShopId){
+    const item = state.shop.find(s=>s.id===editingShopId);
+    Object.assign(item, { name, desc, gold, copper });
+    exitShopEditMode();
+  } else {
+    state.shop.push({ id: uid(), name, desc, gold, copper });
+  }
+  resetShopForm();
+  saveAndRender();
+};
+document.getElementById('shopCancelEdit').onclick = () => {
+  exitShopEditMode();
+  resetShopForm();
+};
+function resetShopForm(){
+  document.getElementById('shopName').value='';
+  document.getElementById('shopDesc').value='';
+  document.getElementById('shopGold').value='';
+  document.getElementById('shopCopper').value='';
+}
+function enterShopEditMode(item){
+  editingShopId = item.id;
+  document.getElementById('shopName').value = item.name;
+  document.getElementById('shopDesc').value = item.desc || '';
+  document.getElementById('shopGold').value = item.gold;
+  document.getElementById('shopCopper').value = item.copper;
+  const addBtn = document.getElementById('addShopItem');
+  addBtn.textContent = 'Save changes';
+  addBtn.classList.add('editing');
+  document.getElementById('shopCancelEdit').style.display = 'inline';
+  document.getElementById('shopName').scrollIntoView({behavior:'smooth', block:'center'});
+}
+function exitShopEditMode(){
+  editingShopId = null;
+  const addBtn = document.getElementById('addShopItem');
+  addBtn.textContent = 'Add reward';
+  addBtn.classList.remove('editing');
+  document.getElementById('shopCancelEdit').style.display = 'none';
+}
+
+function renderShop(){
+  const el = document.getElementById('shopList');
+  el.innerHTML = '';
+  if(state.shop.length===0){
+    el.innerHTML = '<div class="empty-note">Add a reward above — a treat you\'ll actually want to earn.</div>';
+    return;
+  }
+  state.shop.forEach(item => {
+    const affordable = (state.gold*100+state.copper) >= (item.gold*100+item.copper);
+    const div = document.createElement('div');
+    div.className = 'shop-item';
+    div.innerHTML = `
+      <div class="name-row">
+        <div class="name">${escapeHtml(item.name)}</div>
+        <div class="shop-actions">
+          <button class="shop-edit" title="Edit">✎</button>
+          <button class="shop-delete" title="Delete">✕</button>
+        </div>
+      </div>
+      ${item.desc?`<div class="desc">${escapeHtml(item.desc)}</div>`:''}
+      <div class="row">
+        <span class="price"><span class="g">${item.gold}g</span> <span class="c">${item.copper}c</span></span>
+        <button class="redeem-btn" ${affordable?'':'disabled'}>Redeem</button>
+      </div>
+    `;
+    div.querySelector('.redeem-btn').onclick = () => {
+      if(spendCurrency(item.gold, item.copper)) saveAndRender();
+    };
+    div.querySelector('.name').onclick = () => enterShopEditMode(item);
+    div.querySelector('.shop-edit').onclick = () => enterShopEditMode(item);
+    div.querySelector('.shop-delete').onclick = () => {
+      state.shop = state.shop.filter(s=>s.id!==item.id);
+      if(editingShopId===item.id){ exitShopEditMode(); resetShopForm(); }
+      saveAndRender();
+    };
+    el.appendChild(div);
+  });
+}
+
+/* ============ SHOP PANEL TOGGLE ============ */
+const overlay = document.getElementById('overlay');
+const sidePanel = document.getElementById('sidePanel');
+document.getElementById('openShop').onclick = () => {
+  overlay.classList.add('open');
+  sidePanel.classList.add('open');
+};
+function closePanel(){
+  overlay.classList.remove('open');
+  sidePanel.classList.remove('open');
+}
+document.getElementById('closePanel').onclick = closePanel;
+overlay.onclick = closePanel;
+
+/* ============ MODALS ============ */
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+/* ============ DATE NAV ============ */
+document.getElementById('prevDay').onclick = () => {
+  if(dateKey(viewDate)===dateKey(MIN_DATE)) return;
+  viewDate = addDays(viewDate,-1);
+  renderAll();
+};
+document.getElementById('nextDay').onclick = () => {
+  if(dateKey(viewDate)===dateKey(TODAY)) return;
+  viewDate = addDays(viewDate,1);
+  renderAll();
+};
+document.getElementById('jumpToday').onclick = () => { viewDate = TODAY; renderAll(); };
+
+/* ============ RENDER ALL ============ */
+function renderAll(){
+  renderHeader();
+  renderDateStrip();
+  renderDailyColumn();
+  renderSimpleColumn('todos','todoList','todoCount','todo', true);
+  renderSimpleColumn('work','workList','workCount','work', true);
+  renderSimpleColumn('projects','projectList','projectCount','project', true);
+  renderShop();
+}
+function saveAndRender(){ saveState(); renderAll(); }
+
+/* ============ INITIAL LOAD ============ */
+loadStateFromFirestore().then(renderAll);
+</script>
+</body>
+</html>
