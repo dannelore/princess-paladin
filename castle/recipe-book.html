@@ -89,9 +89,79 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
 <script>
-const KEY = 'pp_recipes';
-function getRecipes(){ try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; } }
+/* ============ FIREBASE SETUP ============
+   Shared across Recipe Construction, Meal Planner, and Recipe Book —
+   all three pages read and write the same Firestore document. */
+const firebaseConfig = {
+  apiKey: "AIzaSyAdNZBoh1pH80-ZFBbOlcrlsLdMi3D62Wg",
+  authDomain: "princess-paladin.firebaseapp.com",
+  projectId: "princess-paladin",
+  storageBucket: "princess-paladin.firebasestorage.app",
+  messagingSenderId: "282931655557",
+  appId: "1:282931655557:web:cae6ccd23f32cb9be54aec",
+  measurementId: "G-E5K2NMCR3Y"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+// No login: everything reads/writes this one fixed document — same
+// tradeoff as the quest log, fine for a private site nobody else knows
+// the address of.
+const mealDocRef = db.collection('mealplanning').doc('danni-meal-plan');
+
+/* ============ STATE LAYER ============
+   State lives in Firestore, with localStorage kept only as a same-device
+   cache so the page has something to show instantly on load. This page
+   only reads mealState.recipes — it never writes. */
+const MEAL_STORE_KEY = 'pp-mealplanning-v1';
+
+function defaultMealState(){
+  return {
+    recipes: [],
+    tagOptions: ['beef','chicken','turkey','pork','pasta','2 servings','4 servings','6 servings','8 servings','kid friendly'],
+    mealplan: {},
+    shoppingExtras: {},
+    shoppingChecked: {},
+    pantryItems: ['eggs','milk','butter','olive oil','salt','black pepper','garlic','onions','flour','sugar','rice','pasta','bread','paper towels','dish soap','coffee'],
+    pantryChecked: {}
+  };
+}
+function loadLegacyMealState(){
+  function legacyJSON(key, fallback){
+    try{ const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }catch(e){ return fallback; }
+  }
+  const d = defaultMealState();
+  return {
+    recipes: legacyJSON('pp_recipes', d.recipes),
+    tagOptions: legacyJSON('pp_tag_options', d.tagOptions),
+    mealplan: legacyJSON('pp_mealplan', d.mealplan),
+    shoppingExtras: legacyJSON('pp_shopping_extras', d.shoppingExtras),
+    shoppingChecked: legacyJSON('pp_shopping_checked', d.shoppingChecked),
+    pantryItems: legacyJSON('pp_pantry_items', d.pantryItems),
+    pantryChecked: legacyJSON('pp_pantry_checked', d.pantryChecked)
+  };
+}
+function saveMealState(){
+  localStorage.setItem(MEAL_STORE_KEY, JSON.stringify(mealState));
+  mealDocRef.set(mealState).catch(err => console.error('Sync to Firestore failed:', err));
+}
+async function loadMealStateFromFirestore(){
+  const snap = await mealDocRef.get();
+  if (snap.exists){
+    mealState = Object.assign(defaultMealState(), snap.data());
+  } else {
+    const raw = localStorage.getItem(MEAL_STORE_KEY);
+    mealState = raw ? Object.assign(defaultMealState(), JSON.parse(raw)) : loadLegacyMealState();
+    await mealDocRef.set(mealState);
+  }
+  localStorage.setItem(MEAL_STORE_KEY, JSON.stringify(mealState));
+}
+let mealState = null;
+
+function getRecipes(){ return mealState.recipes; }
 
 const FREQUENCY_LABELS = {
   weekly: 'whenever',
@@ -134,7 +204,7 @@ function render(){
   `).join('');
 }
 
-render();
+loadMealStateFromFirestore().then(render);
 </script>
 </body>
 </html>
