@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Skincare Routine</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Nunito+Sans:wght@400;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Nunito+Sans:wght@400;600;700;800&family=Jost:wght@400;500;600&display=swap');
 
   :root{
     --dawn-1:#FFEFE0;
@@ -22,10 +22,13 @@
   body{
     margin:0;
     font-family:'Nunito Sans', sans-serif;
-    background:var(--cream);
+    background-color:#F6D9E6;
+    background-image:linear-gradient(135deg, #F6D9E6 0%, #F2C9DC 100%);
+    background-attachment:fixed;
     color:#2c2c2c;
     display:flex;
-    justify-content:center;
+    flex-direction:column;
+    align-items:center;
     padding:32px 16px 64px;
   }
   .sheet{
@@ -214,6 +217,54 @@
     }
   }
 
+  .site-nav{
+    width:100%;
+    max-width:920px;
+    margin:0 auto 24px;
+    display:flex;
+    justify-content:center;
+    gap:28px;
+    padding:14px 0;
+  }
+  .site-nav a{
+    font-family:'Jost', sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    font-size:0.8rem;
+    font-weight:600;
+    color:#4A3B42;
+    text-decoration:none;
+    padding-bottom:4px;
+    border-bottom:1px solid transparent;
+    transition:border-color 0.15s ease, color 0.15s ease;
+  }
+  .site-nav a:hover{
+    color:#C85D87;
+    border-color:#E87CA6;
+  }
+
+  .back-btn-row{
+    text-align:center;
+    margin-bottom:28px;
+  }
+  .back-btn{
+    display:inline-block;
+    font-family:'Jost', sans-serif;
+    font-size:0.9rem;
+    font-weight:500;
+    color:#fff;
+    background:#E87CA6;
+    border:none;
+    border-radius:999px;
+    padding:10px 24px;
+    text-decoration:none;
+    transition:background 0.15s ease, transform 0.15s ease;
+  }
+  .back-btn:hover{
+    background:#C85D87;
+    transform:translateY(-2px);
+  }
+
   @media (max-width:420px){
     .title h1{font-size:1.6rem;}
     .block{padding:22px 18px 26px;}
@@ -221,14 +272,22 @@
 </style>
 </head>
 <body>
+<nav class="site-nav">
+  <a href="../index.html">Home</a>
+  <a href="../princess/index.html">Princess</a>
+  <a href="../selfcare/index.html">Self Care</a>
+</nav>
 <div class="sheet">
+  <div class="back-btn-row">
+    <a href="#morning" class="back-btn">Back to Morning Routine</a>
+  </div>
   <div class="title">
     <h1>Daily Skincare Routine</h1>
     <p>Morning &amp; Night</p>
   </div>
 
   <div class="routine">
-    <div class="block am">
+    <div class="block am" id="morning">
       <div class="block-head">
         <div class="glyph">☀️</div>
         <div>
