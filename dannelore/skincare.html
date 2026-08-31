@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skincare Routine</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Nunito+Sans:wght@400;600;700;800&display=swap');
+
+  :root{
+    --dawn-1:#FFEFE0;
+    --dawn-2:#FFD7B5;
+    --dawn-3:#F4A896;
+    --dawn-ink:#5C3A2E;
+    --dusk-1:#2B2A4C;
+    --dusk-2:#413C6B;
+    --dusk-3:#B8A9DE;
+    --dusk-ink:#EFE9FA;
+    --cream:#FFF8F0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Nunito Sans', sans-serif;
+    background:var(--cream);
+    color:#2c2c2c;
+    display:flex;
+    justify-content:center;
+    padding:32px 16px 64px;
+  }
+  .sheet{
+    width:100%;
+    max-width:920px;
+  }
+  .title{
+    text-align:center;
+    margin-bottom:28px;
+  }
+  .title h1{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:2rem;
+    margin:0 0 4px;
+    color:#3a2e2e;
+    letter-spacing:-0.01em;
+  }
+  .title p{
+    margin:0;
+    font-size:0.9rem;
+    color:#8a7a6f;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    font-weight:600;
+  }
+
+  .routine{
+    border-radius:28px;
+    overflow:hidden;
+    box-shadow:0 20px 50px -20px rgba(43,42,76,0.35);
+    display:flex;
+    align-items:stretch;
+  }
+
+  .block{
+    padding:28px 22px 32px;
+    position:relative;
+    flex:1 1 0;
+    min-width:0;
+  }
+  .am{
+    background:linear-gradient(160deg, var(--dawn-1) 0%, var(--dawn-2) 55%, var(--dawn-3) 100%);
+    color:var(--dawn-ink);
+  }
+  .pm{
+    background:linear-gradient(160deg, var(--dusk-2) 0%, var(--dusk-1) 60%, #1c1b34 100%);
+    color:var(--dusk-ink);
+  }
+
+  .block-head{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:20px;
+  }
+  .glyph{
+    width:38px;height:38px;
+    border-radius:50%;
+    flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-size:1.1rem;
+  }
+  .am .glyph{ background:#fff; box-shadow:0 0 0 6px rgba(255,255,255,0.35); }
+  .pm .glyph{ background:var(--dusk-3); box-shadow:0 0 0 6px rgba(184,169,222,0.25); }
+
+  .block-head h2{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:1.35rem;
+    margin:0;
+  }
+  .block-head span{
+    display:block;
+    font-size:0.75rem;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    opacity:0.65;
+    font-weight:700;
+    margin-top:2px;
+  }
+
+  .steps{
+    list-style:none;
+    margin:0;padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .step{
+    display:flex;
+    align-items:flex-start;
+    gap:14px;
+    background:rgba(255,255,255,0.4);
+    border-radius:14px;
+    padding:12px 14px;
+  }
+  .pm .step{
+    background:rgba(255,255,255,0.07);
+  }
+  .num{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:1rem;
+    width:24px;height:24px;
+    border-radius:50%;
+    flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    margin-top:1px;
+  }
+  .am .num{ background:var(--dawn-ink); color:var(--dawn-1); }
+  .pm .num{ background:var(--dusk-3); color:var(--dusk-1); }
+
+  .step-text strong{
+    display:block;
+    font-size:0.98rem;
+    font-weight:700;
+  }
+  .step-text small{
+    display:block;
+    font-size:0.82rem;
+    opacity:0.75;
+    margin-top:2px;
+    font-weight:600;
+  }
+  .step-text .detail{
+    margin:8px 0 0;
+    padding-left:16px;
+    font-size:0.82rem;
+    line-height:1.5;
+    opacity:0.9;
+  }
+  .step-text .detail li{
+    margin-bottom:4px;
+  }
+  .step-text .detail li:last-child{
+    margin-bottom:0;
+  }
+  .step-text .caveat{
+    display:block;
+    margin-top:8px;
+    font-size:0.8rem;
+    font-weight:700;
+    font-style:italic;
+    opacity:0.85;
+  }
+
+  .horizon{
+    width:14px;
+    flex-shrink:0;
+    background:linear-gradient(180deg, var(--dawn-3), var(--dusk-2));
+  }
+
+  .notes{
+    margin-top:22px;
+    background:#fff;
+    border-radius:20px;
+    padding:20px 22px;
+    box-shadow:0 10px 30px -18px rgba(0,0,0,0.25);
+  }
+  .notes h3{
+    font-family:'Fraunces', serif;
+    font-size:1rem;
+    margin:0 0 12px;
+    color:#5C3A2E;
+  }
+  .notes ul{
+    margin:0;
+    padding-left:18px;
+    font-size:0.88rem;
+    line-height:1.55;
+    color:#4a4a4a;
+  }
+  .notes li{margin-bottom:8px;}
+  .notes li:last-child{margin-bottom:0;}
+  .notes strong{color:#2c2c2c;}
+
+  @media (max-width:720px){
+    .routine{
+      flex-direction:column;
+    }
+    .horizon{
+      width:100%;
+      height:14px;
+      background:linear-gradient(90deg, var(--dawn-3), var(--dusk-2));
+    }
+  }
+
+  @media (max-width:420px){
+    .title h1{font-size:1.6rem;}
+    .block{padding:22px 18px 26px;}
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="title">
+    <h1>Daily Skincare Routine</h1>
+    <p>Morning &amp; Night</p>
+  </div>
+
+  <div class="routine">
+    <div class="block am">
+      <div class="block-head">
+        <div class="glyph">☀️</div>
+        <div>
+          <h2>Morning</h2>
+          <span>Protect &amp; hydrate</span>
+        </div>
+      </div>
+      <ul class="steps">
+        <li class="step">
+          <div class="num">1</div>
+          <div class="step-text">
+            <strong>Wet Face</strong>
+            <small>Lukewarm water</small>
+          </div>
+        </li>
+        <li class="step">
+          <div class="num">2</div>
+          <div class="step-text">
+            <strong>CeraVe Cream-to-Foam Cleanser</strong>
+            <ul class="detail">
+              <li>Small amount into wet hands, massage gently for 30–60 seconds</li>
+              <li>Wet face cloth → gently wipe cleanser off, rinse cloth, repeat if needed</li>
+              <li>Pat face with skincare towel</li>
+              <li><strong>Mon/Wed/Fri:</strong> dry face completely</li>
+              <li><strong>Other days:</strong> slightly damp is fine</li>
+            </ul>
+          </div>
+        </li>
+        <li class="step">
+          <div class="num">3</div>
+          <div class="step-text">
+            <strong>haruharu Centella 3% PHA</strong>
+            <small>Mon / Wed / Fri only — face must be completely dry</small>
+            <ul class="detail">
+              <li>Pour a dime-sized amount onto a cotton pad, enough to saturate it</li>
+              <li>Gently swipe across forehead, cheeks, nose, and chin — avoid eyes, eyelids, and lips</li>
+              <li>Do not rinse off — let settle 30–60 seconds</li>
+            </ul>
+          </div>
+        </li>
+        <li class="step">
+          <div class="num">4</div>
+          <div class="step-text">
+            <strong>Hyaluronic Acid Serum</strong>
+            <small>Good Molecules</small>
+            <ul class="detail">
+              <li>If you used PHA, don't splash water back on — just lightly dampen fingertips</li>
+              <li>2–3 drops on fingertips, warm between palms first to help it spread further</li>
+              <li>Press/pat over face rather than rubbing — add more drops as needed, no set max</li>
+              <li>Let settle ~30–60 seconds</li>
+            </ul>
+          </div>
+        </li>
+        <li class="step">
+          <div class="num">5</div>
+          <div class="step-text">
+            <strong>Caffeine Solution</strong>
+            <small>The Ordinary — under-eyes only</small>
+            <ul class="detail">
+              <li>Tiny drop on fingertip, gently tap under each eye</li>
+              <li>Stay around the under-eye/orbital bone area</li>
+              <li>Do NOT put on eyelids, lash line, or right against your eyeball</li>
+            </ul>
+          </div>
+        </li>
+        <li class="step">
+          <div class="num">6</div>
+          <div class="step-text">
+            <strong>Moisturizer</strong>
+            <small>CeraVe Moisturizing Cream</small>
+            <ul class="detail">
+              <li>Small amount, dot around face, gently spread</li>
+              <li>Spreading, not performing the Great Schmear™</li>
+            </ul>
+          </div>
+        </li>
+        <li class="step">
+          <div class="num">7</div>
+          <div class="step-text">
+            <strong>SPF 50</strong>
+            <small>Neutrogena Hydro Boost — always last, every day</small>
+            <ul class="detail">
+              <li>Apply generously and evenly over face and neck</li>
+              <li>Don't forget hairline and ears</li>
+              <li>Let it set before heading outside</li>
+            </ul>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="horizon"></div>
+
+    <div class="block pm">
+      <div class="block-head">
+        <div class="glyph">🌙</div>
+        <div>
+          <h2>Night</h2>
+          <span>Cleanse &amp; repair</span>
+        </div>
+      </div>
+      <ul class="steps">
+        <li class="step">
+          <div class="num">1</div>
+          <div class="step-text">
+            <strong>Wet Face</strong>
+            <small>Lukewarm water</small>
+          </div>
+        </li>
+        <li class="step">
+          <div class="num">2</div>
+          <div class="step-text">
+            <strong>CeraVe Cream-to-Foam Cleanser</strong>
+            <ul class="detail">
+              <li>Small amount into wet hands, massage gently for 30–60 seconds</li>
+              <li>Wet face cloth → gently wipe cleanser away, rinse cloth, repeat if needed</li>
+              <li>Leave skin slightly damp for HA</li>
+            </ul>
+          </div>
+        </li>
+        <li class="step">
+          <div class="num">3</div>
+          <div class="step-text">
+            <strong>Hyaluronic Acid Serum</strong>
+            <small>Good Molecules</small>
+            <ul class="detail">
+              <li>2–3 drops on fingertips, warm between palms first to help it spread further</li>
+              <li>Press/pat over slightly damp face rather than rubbing — add more drops as needed, no set max</li>
+              <li>Let settle ~30–60 seconds</li>
+            </ul>
+          </div>
+        </li>
+        <li class="step">
+          <div class="num">4</div>
+          <div class="step-text">
+            <strong>Super Peptide Serum</strong>
+            <small>Good Molecules — every night</small>
+            <ul class="detail">
+              <li>2–3 drops on fingertips, thin layer over forehead, cheeks, nose, chin</li>
+              <li>Add 1 more drop only if needed for coverage</li>
+              <li>Let settle ~30–60 seconds</li>
+            </ul>
+          </div>
+        </li>
+        <li class="step">
+          <div class="num">5</div>
+          <div class="step-text">
+            <strong>Azelaic Acid Suspension 10%</strong>
+            <small>Mon / Wed / Fri only — Tue/Thu/Sat/Sun: skip this step</small>
+            <ul class="detail">
+              <li>Pea-sized amount on fingertip, small dots on forehead, cheeks, chin</li>
+              <li>Spread into a thin, even layer</li>
+              <li>Avoid eyes, eyelids, lips — let settle about a minute</li>
+            </ul>
+          </div>
+        </li>
+        <li class="step">
+          <div class="num">6</div>
+          <div class="step-text">
+            <strong>Moisturizer</strong>
+            <small>CeraVe Moisturizing Cream</small>
+            <ul class="detail">
+              <li>Small amount, dot around face, gently spread over face and neck</li>
+            </ul>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="notes">
+    <h3>Good to know</h3>
+    <ul>
+      <li>The <strong>haruharu is a leave-on exfoliating serum</strong>, not a cleanser — applied to completely dry skin after cleansing, Mon/Wed/Fri only.</li>
+      <li>Peptide serum runs every night; Azelaic Acid layers on top Mon/Wed/Fri — the two work fine together, no conflict.</li>
+      <li><strong>Thin layer. Gentle hands. More product ≠ more effective.</strong> We're applying skincare, not schmearing condiments onto a sandwich. 😭</li>
+    </ul>
+  </div>  <div class="notes">
+    <h3>😵 I am doing skincare once today</h3>
+    <ul>
+      <li>Default to the <strong>PM</strong> routine.</li>
+      <li>Cleanse → HA serum → Peptide serum → Moisturizer.</li>
+      <li>If it's Mon/Wed/Fri: you can do your scheduled Azelaic Acid if your skin is comfortable — or skip it if you're simplifying because you're exhausted.</li>
+      <li>Skip the PHA entirely in the simplified routine.</li>
+      <li><strong>Important:</strong> if you're going outside during daylight, sunscreen is still its own thing — put SPF on before you head out even if the rest of your routine happens at night.</li>
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>
