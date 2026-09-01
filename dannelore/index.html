@@ -40,6 +40,42 @@
     padding: 56px 24px 80px;
   }
 
+  /* ---------- Navbar ---------- */
+  .navbar{
+    display:flex;
+    justify-content:center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 36px;
+  }
+
+  .navbar a{
+    font-family:'Jost', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--ink);
+    text-decoration: none;
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 9px 20px;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .navbar a:hover,
+  .navbar a:focus-visible{
+    color: var(--rose-dark);
+    border-color: var(--rose);
+    background: #FFF7FA;
+  }
+
+  .navbar a:focus-visible{
+    outline: 2px solid var(--rose-dark);
+    outline-offset: 2px;
+  }
+
   /* ---------- Hero ---------- */
   .hero{
     text-align:center;
@@ -328,6 +364,13 @@
 
 <div class="wrap">
 
+  <nav class="navbar" aria-label="Main navigation">
+    <a href="https://princessandpaladin.com/">Home</a>
+    <a href="https://princessandpaladin.com/castle/">Castle Keep</a>
+    <a href="/side-quests">Side Quests</a>
+    <a href="/templates">Templates</a>
+  </nav>
+
   <div class="hero">
     <div class="hero-icons">
       <!-- Tiara -->
@@ -364,8 +407,8 @@
       <nav class="panel nav-panel" aria-label="Site sections">
         <h2>Wander to</h2>
         <ul class="nav-list">
-          <li><a href="/to-do-list"><span class="icon">📝</span><span class="label">To Do List</span></a></li>
-          <li><a href="https://princessandpaladin.com/dannelore/skincare.html"><span class="icon">🌷</span><span class="label">Self Care</span></a></li>
+          <li><a href="https://princessandpaladin.com/dannelore/quest-log"><span class="icon">📝</span><span class="label">To Do List</span></a></li>
+          <li><a href="https://princessandpaladin.com/dannelore/self-care"><span class="icon">🌷</span><span class="label">Self Care</span></a></li>
           <li><a href="/projects"><span class="icon">🧵</span><span class="label">Projects</span></a></li>
         </ul>
       </nav>
@@ -415,13 +458,8 @@
     "Wicked: For Good",
     "Crazy Ex-Girlfriend",
     "New Girl",
-    "Practical Magic",
-    "Heathers",
-    "Moulin Rouge!",
-    "Rent",
     "Freaky Friday",
     "Freakier Friday",
-    "Burlesque",
     "The Parent Trap"
   ];
 
