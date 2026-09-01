@@ -30,7 +30,6 @@
     --ink:#4A3B41;
     --ink-soft:#7A6670;
     --white:#FFFDFB;
-    --work:#6E4D5C;
 
     --font-display:'Apricot','Cormorant Garamond',serif;
     --font-serif:'Cormorant Garamond',serif;
@@ -321,7 +320,6 @@
   .col-dailies h2{color:var(--sage-dark);}
   .col-todo h2{color:var(--accent-dark);}
   .col-projects h2{color:var(--copper);}
-  .col-work h2{color:var(--work);}
 
   .add-row{
     background:var(--white);
@@ -436,8 +434,6 @@
     align-self:flex-end;
   }
 
-  .col-work .add-row, .col-work .task-list{border-top:2px solid var(--work);}
-
   /* task cards */
   .task-list{
     display:flex;
@@ -455,7 +451,7 @@
   .col-dailies .task-card{border-left-color:var(--sage);}
   .col-todo .task-card{border-left-color:var(--accent);}
   .col-projects .task-card{border-left-color:var(--copper);}
-  .col-work .task-card{border-left-color:var(--work);}
+  .col-work .task-card{border-left-color:var(--dusty-rose);}
 
   .task-card.done{opacity:.55;}
 
@@ -485,8 +481,8 @@
   .col-todo .check.checked{background:var(--accent);}
   .col-projects .check{border-color:var(--copper);}
   .col-projects .check.checked{background:var(--copper);}
-  .col-work .check{border-color:var(--work);}
-  .col-work .check.checked{background:var(--work);}
+  .col-work .check{border-color:var(--dusty-rose);}
+  .col-work .check.checked{background:var(--dusty-rose);}
 
   .task-body{flex:1; min-width:0;}
   .task-title{
