@@ -57,6 +57,39 @@
 
   a{color:inherit;}
 
+  /* ===== SITE NAVBAR (matches homepage) ===== */
+  .site-navbar{
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:8px;
+    padding:20px 24px 0;
+  }
+  .site-navbar a{
+    font-family:var(--font-body);
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    font-size:0.78rem;
+    font-weight:500;
+    color:var(--ink);
+    text-decoration:none;
+    background:var(--cream);
+    border:1px solid rgba(74,59,65,0.18);
+    border-radius:999px;
+    padding:9px 20px;
+    transition:color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .site-navbar a:hover,
+  .site-navbar a:focus-visible{
+    color:var(--accent-dark);
+    border-color:var(--accent);
+    background:#FFF7FA;
+  }
+  .site-navbar a:focus-visible{
+    outline:2px solid var(--accent-dark);
+    outline-offset:2px;
+  }
+
   /* ===== RIBBON HEADER ===== */
   .ribbon{
     position:sticky;
@@ -656,6 +689,14 @@
 </style>
 </head>
 <body>
+
+<nav class="site-navbar" aria-label="Main navigation">
+  <a href="/">Home</a>
+  <a href="/princess">Princess</a>
+  <a href="/castle-keep">Castle Keep</a>
+  <a href="/side-quests">Side Quests</a>
+  <a href="/templates">Templates</a>
+</nav>
 
 <!-- ===== RIBBON HEADER ===== -->
 <div class="ribbon">
