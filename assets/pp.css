@@ -1,0 +1,609 @@
+/* ==========================================================================
+   Princess & Paladin — shared stylesheet
+   princessandpaladin.com
+
+   Load from any folder depth with an absolute path:
+     <link rel="stylesheet" href="/assets/pp.css">
+
+   Page-specific rules stay in that page's own <style> block.
+   Exception: the two self-care flowcharts share /assets/self-care.css
+   ========================================================================== */
+
+
+/* --------------------------------------------------------------------------
+   1. FONTS
+   Google Fonts still load from the HTML <head>. Copy this line into any page:
+
+   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+   Dannelore pages add these three as well:
+   Montserrat:ital,wght@0,500;0,600;0,700;1,500  |  Spicy+Rice  |  Ubuntu:ital,wght@0,300;0,400;0,500;1,400
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   2. TOKENS
+   -------------------------------------------------------------------------- */
+
+:root{
+
+  /* --- the six canonical colors --- */
+  --pink:      #E87CA6;
+  --sage:      #8FA37E;
+  --gold:      #9C7440;
+  --burgundy:  #6E2430;
+  --blade:     #B23A3A;   /* the sword blade, and nothing else */
+  --ink:       #2E241F;
+
+  /* --- supporting shades, derived from the six --- */
+  --pink-deep: #C85D87;
+  --sage-deep: #6D8259;
+  --gold-deep: #7C5B30;
+  --ink-soft:  #6B5E54;
+  --blade-deep:#7C1F2A;
+
+  /* --- surfaces --- */
+  --panel:            #FFFDF8;
+  --panel-tint:       #FFF7FA;   /* panel on hover */
+  --parchment:        #EDE1C3;
+  --parchment-border: #C9B688;
+
+  /* --- lines --- */
+  --line:        rgba(46,36,31,0.16);
+  --line-strong: rgba(46,36,31,0.28);
+  --line-gold:   rgba(156,116,64,0.32);
+
+  /* --- type --- */
+  --font-display: 'Cormorant Garamond',serif;
+  --font-serif:   'Cormorant Garamond',serif;
+  --font-body:    'Jost',sans-serif;
+
+  /* --- corners --- */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
+  /* --- layout ---
+     The content column is 980px. A sidebar ADDS to that width rather than
+     eating into it, so a page with a sidebar is 980 + sidebar + gap wide. */
+  --content:   980px;
+  --sidebar:   300px;
+  --gap:       24px;
+  --pad-x:     24px;
+
+  /* --- shadow --- */
+  --lift:    0 2px 10px rgba(46,36,31,0.06);
+  --lift-lg: 0 8px 24px rgba(46,36,31,0.12);
+}
+
+
+/* --------------------------------------------------------------------------
+   3. FOLDER BACKGROUNDS
+   Put the matching class on <body>. Subfolders use the parent's class:
+   every page under /castle/ gets class="pp-castle", and so on.
+   -------------------------------------------------------------------------- */
+
+body[class*="pp-"]{
+  background-attachment: fixed;
+}
+
+.pp-home{      background-image: linear-gradient(135deg,#F7F1E4 0%,#EFE4CE 100%); }
+.pp-castle{    background-image: linear-gradient(135deg,#E7E5DF 0%,#D9D6CC 100%); }
+.pp-dannelore{ background-image: linear-gradient(135deg,#F6D9E6 0%,#F2C9DC 100%); }
+.pp-templates{ background-image: linear-gradient(135deg,#EAEFE3 0%,#DDE5D3 100%); }
+
+
+/* --------------------------------------------------------------------------
+   4. BASE
+   -------------------------------------------------------------------------- */
+
+*{ box-sizing: border-box; }
+
+body{
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+a{ color: var(--sage-deep); text-decoration: none; }
+a:hover{ text-decoration: underline; }
+
+:focus-visible{
+  outline: 2px solid var(--pink-deep);
+  outline-offset: 2px;
+}
+
+h1,h2,h3,h4{
+  font-family: var(--font-serif);
+  font-weight: 600;
+  margin: 0 0 0.4em;
+  line-height: 1.2;
+}
+
+.pp-display{ font-family: var(--font-display); font-weight: 400; }
+
+
+/* --------------------------------------------------------------------------
+   5. LAYOUT
+   .pp-wrap    — a 980px content column, centered
+   .pp-layout  — content column + sidebar, where the sidebar adds width
+   -------------------------------------------------------------------------- */
+
+.pp-wrap{
+  max-width: calc(var(--content) + (var(--pad-x) * 2));
+  margin: 0 auto;
+  padding: 0 var(--pad-x);
+}
+
+.pp-layout{
+  display: grid;
+  grid-template-columns: minmax(0,1fr) var(--sidebar);
+  gap: var(--gap);
+  align-items: start;
+  max-width: calc(var(--content) + var(--sidebar) + var(--gap) + (var(--pad-x) * 2));
+  margin: 0 auto;
+  padding: 0 var(--pad-x);
+}
+
+/* Sidebar on the left instead */
+.pp-layout.pp-layout-left{
+  grid-template-columns: var(--sidebar) minmax(0,1fr);
+}
+
+.pp-col{
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-width: 0;
+}
+
+@media (max-width: 820px){
+  .pp-layout,
+  .pp-layout.pp-layout-left{ grid-template-columns: 1fr; }
+}
+
+
+/* --------------------------------------------------------------------------
+   6. PANELS
+   Every panel carries the inset rose hairline. It needs room to breathe —
+   keep at least 20px of padding, or use .pp-panel-tight on small cards.
+   -------------------------------------------------------------------------- */
+
+.pp-panel{
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 26px 28px;
+  box-shadow: var(--lift);
+}
+
+.pp-panel::before{
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border: 1px solid var(--pink);
+  border-radius: calc(var(--radius-sm) - 6px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.pp-panel-md{ border-radius: var(--radius-md); }
+.pp-panel-md::before{ border-radius: calc(var(--radius-md) - 6px); }
+
+.pp-panel-lg{ border-radius: var(--radius-lg); padding: 30px 32px; }
+.pp-panel-lg::before{ inset: 10px; border-radius: calc(var(--radius-lg) - 8px); }
+
+/* Small cards: extra padding so the inset line clears the content */
+.pp-panel-tight{ padding: 20px 16px; }
+.pp-panel-tight::before{ inset: 6px; }
+
+/* Opt out of the inset line entirely */
+.pp-panel-plain::before{ display: none; }
+
+.pp-panel-title{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.25rem;
+  margin: 0 0 18px;
+}
+
+
+/* --------------------------------------------------------------------------
+   7. NAVIGATION
+   Styling only — every page keeps whatever links it already has.
+   Works on either <nav class="pp-nav"> or the older .navbar / .site-nav.
+   -------------------------------------------------------------------------- */
+
+.pp-nav,
+.navbar,
+.site-nav{
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 32px;
+  padding: 0;
+  list-style: none;
+}
+
+.pp-nav a,
+.navbar a,
+.site-nav a{
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-decoration: none;
+  background: var(--panel);
+  border: 1px solid var(--line-gold);
+  border-radius: 999px;
+  padding: 8px 18px;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.pp-nav a:hover,
+.navbar a:hover,
+.site-nav a:hover,
+.pp-nav a:focus-visible,
+.navbar a:focus-visible,
+.site-nav a:focus-visible{
+  color: #fff;
+  background: var(--pink);
+  border-color: var(--pink);
+  text-decoration: none;
+}
+
+/* Marks the page you're currently on */
+.pp-nav a[aria-current="page"],
+.navbar a[aria-current="page"]{
+  color: #fff;
+  background: var(--sage);
+  border-color: var(--sage);
+}
+
+/* Small italic back-link, for subpages */
+.pp-back{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+.pp-back:hover{ color: var(--burgundy); text-decoration: none; }
+
+
+/* --------------------------------------------------------------------------
+   8. HERO + EMBLEM
+   Both icons are 64x64 now, so they sit on one baseline without any
+   flex-end trickery. Markup for the pair is in the snippet below section 13.
+   -------------------------------------------------------------------------- */
+
+.pp-hero{
+  text-align: center;
+  padding: 24px 0 40px;
+}
+
+.pp-emblem{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.pp-emblem svg{
+  width: 46px;
+  height: 46px;
+}
+
+.pp-title{
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: clamp(2.6rem, 8vw, 5rem);
+  letter-spacing: 0.005em;
+  line-height: 1.05;
+  margin: 0;
+  color: var(--ink);
+}
+
+.pp-tagline{
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--gold);
+  margin: 12px 0 0;
+}
+
+/* Smaller heading for interior pages */
+.pp-page-title{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 28px 0 36px;
+}
+.pp-page-title svg{ width: 28px; height: 28px; color: var(--burgundy); }
+.pp-page-title h2{
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  margin: 0;
+}
+
+
+/* --------------------------------------------------------------------------
+   9. LINK CARDS + TILES
+   -------------------------------------------------------------------------- */
+
+.pp-cards{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+}
+
+.pp-card{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
+  width: 146px;
+  min-height: 146px;
+  color: var(--ink);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.pp-card:hover,
+.pp-card:focus-visible{
+  transform: translateY(-3px);
+  border-color: var(--burgundy);
+  box-shadow: var(--lift-lg);
+  text-decoration: none;
+}
+.pp-card svg{ width: 26px; height: 26px; color: var(--burgundy); }
+.pp-card h3{
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.05rem;
+  line-height: 1.2;
+  margin: 0;
+}
+
+/* Horizontal link row, like the home sidebar */
+.pp-linkbox{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.1rem;
+  padding: 16px 20px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+.pp-linkbox svg{ width: 16px; height: 16px; color: var(--gold); flex-shrink: 0; }
+.pp-linkbox:hover,
+.pp-linkbox:focus-visible{
+  transform: translateX(3px);
+  box-shadow: var(--lift-lg);
+  color: var(--pink-deep);
+  text-decoration: none;
+}
+.pp-linkbox:hover svg,
+.pp-linkbox:focus-visible svg{ color: var(--pink); }
+
+
+/* --------------------------------------------------------------------------
+   10. PARCHMENT CALLOUT
+   -------------------------------------------------------------------------- */
+
+.pp-parchment{
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 26px;
+  background:
+    radial-gradient(ellipse at 15% 20%, rgba(156,116,64,0.12), transparent 55%),
+    radial-gradient(ellipse at 85% 80%, rgba(156,116,64,0.10), transparent 55%),
+    var(--parchment);
+  border: 1px solid var(--parchment-border);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4), var(--lift);
+  color: var(--burgundy);
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-style: italic;
+  font-size: 1.05rem;
+  line-height: 1.4;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.pp-parchment:hover,
+.pp-parchment:focus-visible{
+  transform: translateY(-2px);
+  border-color: var(--burgundy);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4), var(--lift-lg);
+  text-decoration: none;
+}
+
+
+/* --------------------------------------------------------------------------
+   11. BUTTONS, PILLS, TAGS
+   -------------------------------------------------------------------------- */
+
+.pp-btn{
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: #fff;
+  background: var(--pink);
+  border: none;
+  border-radius: 999px;
+  padding: 10px 22px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.pp-btn:hover,
+.pp-btn:focus-visible{
+  background: var(--pink-deep);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+.pp-btn:active{ transform: translateY(0); }
+
+.pp-btn-quiet{
+  color: var(--gold);
+  background: var(--panel);
+  border: 1px solid var(--line-gold);
+}
+.pp-btn-quiet:hover,
+.pp-btn-quiet:focus-visible{
+  color: #fff;
+  background: var(--pink);
+  border-color: var(--pink);
+}
+
+.pp-tag{
+  display: inline-block;
+  font-size: 0.74rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(46,36,31,0.08);
+  margin: 0 5px 5px 0;
+}
+.pp-tag-quiet{
+  background: var(--parchment);
+  border: 1px solid var(--parchment-border);
+  color: var(--ink-soft);
+}
+
+/* Small uppercase label. Gold is low-contrast at body size, so this
+   is the only place it should be used for text. */
+.pp-label{
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+
+/* --------------------------------------------------------------------------
+   12. FOOTER
+   -------------------------------------------------------------------------- */
+
+.pp-footer{
+  text-align: center;
+  padding: 32px 0 48px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+.pp-footer-flourish{
+  font-style: normal;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+  margin: 0 0 10px;
+}
+.pp-footer-estab{
+  font-style: normal;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+
+
+/* --------------------------------------------------------------------------
+   13. DANNELORE TYPE OVERRIDE
+   Everything under /dannelore/ keeps its own voice. Colors stay canonical;
+   only the typefaces change.
+   -------------------------------------------------------------------------- */
+
+.pp-dannelore{
+  font-family: 'Ubuntu', sans-serif;
+}
+
+.pp-dannelore .pp-title,
+.pp-dannelore h1.site-title{
+  font-family: 'Spicy Rice', sans-serif;
+  font-weight: 600;
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  letter-spacing: 0.02em;
+  color: var(--pink-deep);
+}
+
+.pp-dannelore .pp-panel h2,
+.pp-dannelore .welcome h2{
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  color: var(--sage-deep);
+}
+
+.pp-dannelore .pp-tagline,
+.pp-dannelore .tagline{
+  color: var(--ink);
+  opacity: 0.85;
+}
+
+
+/* --------------------------------------------------------------------------
+   14. UTILITIES
+   -------------------------------------------------------------------------- */
+
+.pp-center{ text-align: center; }
+.pp-muted{ color: var(--ink-soft); }
+.pp-italic{ font-family: var(--font-serif); font-style: italic; }
+
+.pp-empty{
+  text-align: center;
+  padding: 30px;
+  color: var(--ink-soft);
+  font-family: var(--font-serif);
+  font-style: italic;
+}
+
+.pp-divider{
+  height: 1px;
+  background: var(--line);
+  border: 0;
+  margin: 20px 0;
+}
+
+.pp-sr-only{
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+
+/* --------------------------------------------------------------------------
+   15. MOTION + PRINT
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce){
+  *{ transition: none !important; animation: none !important; }
+}
+
+@media print{
+  body{ background-image: none !important; }
+  .pp-nav, .navbar, .site-nav{ display: none; }
+  .pp-panel{ box-shadow: none; }
+  .pp-panel::before{ display: none; }
+}
