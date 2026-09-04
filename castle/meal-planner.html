@@ -168,7 +168,7 @@ const MEAL_STORE_KEY = 'pp-mealplanning-v1';
 function defaultMealState(){
   return {
     recipes: [],
-    tagOptions: ['beef','chicken','turkey','pork','pasta','2 servings','4 servings','6 servings','8 servings','kid friendly'],
+    tagOptions: ['beef','chicken','turkey','pork','pasta','2 servings','4 servings','6 servings','8 servings','kid friendly','oven','stove top','slow cooker','air fryer','toaster oven'],
     mealplan: {},
     shoppingExtras: {},
     shoppingChecked: {},
@@ -327,7 +327,7 @@ function buildWeek(){
     Sat: (r) => hasTag(r, 'kid friendly')
   };
 
-  // Crockpot meals are restricted to Sun/Wed/Fri, kid-friendly meals are
+  // Slow Cooker meals are restricted to Sun/Wed/Fri, kid-friendly meals are
   // restricted to Saturday only, and Date Night Default meals are restricted
   // to Thursday only — these apply on top of the day rules above, ruling
   // recipes OUT of days rather than requiring them.
@@ -361,7 +361,12 @@ function buildWeek(){
       return;
     }
 
-    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    // "Current Favorite" recipes go in every week — if one fits this day's
+    // rules and hasn't been placed yet, it wins the slot over everything else.
+    const favorites = candidates.filter(r => r.frequency === 'current-favorite');
+    const pool = favorites.length ? favorites : candidates;
+
+    const pick = pool[Math.floor(Math.random() * pool.length)];
     days[k].dinner = pick.id;
     chosen.add(pick.id);
   });
@@ -372,7 +377,7 @@ function buildWeek(){
   render();
 
   if (skippedForNoMatch.length){
-    alert(`Left ${skippedForNoMatch.join(' & ')} empty — nothing fits without breaking a rule. Reminder: Sun/Tue need "6/8 servings," Mon/Wed/Fri need "2/4 servings," Sat needs "kid friendly," Thu needs "Repeat this: Date Night Default," crockpot meals are Sun/Wed/Fri only, kid-friendly meals are Saturday only, Date Night Default meals are Thursday only, and no meal repeats in the same week. Add more matching recipes, or fill it in manually.`);
+    alert(`Left ${skippedForNoMatch.join(' & ')} empty — nothing fits without breaking a rule. Reminder: Sun/Tue need "6/8 servings," Mon/Wed/Fri need "2/4 servings," Sat needs "kid friendly," Thu needs "Repeat this: Date Night Default," slow cooker meals are Sun/Wed/Fri only, kid-friendly meals are Saturday only, Date Night Default meals are Thursday only, and no meal repeats in the same week. Add more matching recipes, or fill it in manually.`);
   }
 }
 

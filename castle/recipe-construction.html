@@ -103,6 +103,7 @@ textarea{ min-height:90px; resize:vertical; }
       <div><label>Repeat this...</label>
         <select id="f_frequency">
           <option value="weekly">Whenever</option>
+          <option value="current-favorite">Current Favorite</option>
           <option value="biweekly">Every other week</option>
           <option value="occasional">Occasionally</option>
           <option value="date-night">Date Night Default</option>
@@ -220,6 +221,7 @@ let editingId = null;
 
 const FREQUENCY_LABELS = {
   weekly: 'whenever',
+  'current-favorite': 'current favorite',
   biweekly: 'every other week',
   occasional: 'occasional',
   'date-night': 'date night default'
@@ -247,10 +249,13 @@ function parseIngredientLine(line){
   return name ? { qty, unit, name } : null;
 }
 
-const DEFAULT_TAGS = ['beef','chicken','turkey','pork','pasta','2 servings','4 servings','6 servings','8 servings','kid friendly'];
+const DEFAULT_TAGS = ['beef','chicken','turkey','pork','pasta','2 servings','4 servings','6 servings','8 servings','kid friendly','oven','stove top','slow cooker','air fryer','toaster oven'];
 
 function getTagOptions(){
   if (!mealState.tagOptions || !mealState.tagOptions.length) mealState.tagOptions = DEFAULT_TAGS.slice();
+  // Any default tag added after the saved list was written still shows up.
+  const missing = DEFAULT_TAGS.filter(t => !mealState.tagOptions.includes(t));
+  if (missing.length){ mealState.tagOptions.push(...missing); saveMealState(); }
   return mealState.tagOptions;
 }
 function addTagOption(tag){
@@ -260,11 +265,10 @@ function addTagOption(tag){
 
 const METHOD_OPTIONS = [
   { value: 'oven', label: 'Oven' },
-  { value: 'stovetop', label: 'Stovetop' },
-  { value: 'crockpot', label: 'Crockpot' },
-  { value: 'instant-pot', label: 'Instant Pot' },
-  { value: 'grill', label: 'Grill' },
-  { value: 'no-cook', label: 'No-cook' }
+  { value: 'stovetop', label: 'Stove Top' },
+  { value: 'crockpot', label: 'Slow Cooker' },        // value kept as 'crockpot' so existing recipes + the Sun/Wed/Fri planner rule keep working
+  { value: 'air-fryer', label: 'Air Fryer' },
+  { value: 'toaster-oven', label: 'Toaster Oven' }
 ];
 function renderMethodChips(selected){
   selected = selected || [];
@@ -341,7 +345,10 @@ function renderTagFilter(){
 function renderList(){
   const q = document.getElementById('search').value.trim().toLowerCase();
   const tag = document.getElementById('tagFilter').value;
-  let recipes = getRecipes().sort((a,b) => a.name.localeCompare(b.name));
+  // In circulation first (A–Z), then everything out of circulation (A–Z).
+  let recipes = getRecipes().slice().sort((a,b) =>
+    ((a.active === false) - (b.active === false)) || a.name.localeCompare(b.name)
+  );
   if (q) recipes = recipes.filter(r => r.name.toLowerCase().includes(q));
   if (tag) recipes = recipes.filter(r => (r.tags||[]).includes(tag));
 

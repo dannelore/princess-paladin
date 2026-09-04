@@ -39,17 +39,17 @@ h1,h2,h3,h4{ font-family:'Cormorant Garamond',serif; font-weight:600; margin:0 0
 .empty{ text-align:center; padding:30px; color:var(--ink-soft); font-style:italic; font-family:'Cormorant Garamond',serif; }
 
 .layout{ display:flex; gap:22px; align-items:flex-start; }
-.toc{ flex:0 0 220px; position:sticky; top:20px; max-height:calc(100vh - 40px); overflow-y:auto; }
+.toc{ flex:0 0 auto; width:max-content; min-width:200px; max-width:380px; position:sticky; top:20px; max-height:calc(100vh - 40px); overflow-y:auto; overflow-x:auto; }
 .toc h2{ margin-bottom:.5em; font-size:1.2rem; }
 .recipe-main{ flex:1 1 auto; min-width:0; }
 .toc-list{ list-style:none; margin:0; padding:0; }
 .toc-list li{ margin-bottom:6px; }
-.toc-list a{ text-decoration:none; color:var(--sage-deep); font-size:.92rem; }
+.toc-list a{ text-decoration:none; color:var(--sage-deep); font-size:.92rem; white-space:nowrap; }
 .toc-list a:hover{ color:var(--pink-accent-deep); text-decoration:underline; }
 
 @media (max-width: 720px){
   .layout{ flex-direction:column; }
-  .toc{ position:static; max-height:none; flex-basis:auto; width:100%; }
+  .toc{ position:static; max-height:none; flex-basis:auto; width:100%; min-width:0; max-width:none; }
 }
 
 .recipe-entry{ scroll-margin-top:16px; }
@@ -121,7 +121,7 @@ const MEAL_STORE_KEY = 'pp-mealplanning-v1';
 function defaultMealState(){
   return {
     recipes: [],
-    tagOptions: ['beef','chicken','turkey','pork','pasta','2 servings','4 servings','6 servings','8 servings','kid friendly'],
+    tagOptions: ['beef','chicken','turkey','pork','pasta','2 servings','4 servings','6 servings','8 servings','kid friendly','oven','stove top','slow cooker','air fryer','toaster oven'],
     mealplan: {},
     shoppingExtras: {},
     shoppingChecked: {},
@@ -165,24 +165,27 @@ function getRecipes(){ return mealState.recipes; }
 
 const FREQUENCY_LABELS = {
   weekly: 'whenever',
+  'current-favorite': 'current favorite',
   biweekly: 'every other week',
   occasional: 'occasional',
   'date-night': 'date night default'
 };
 const METHOD_OPTIONS = [
   { value: 'oven', label: 'Oven' },
-  { value: 'stovetop', label: 'Stovetop' },
-  { value: 'crockpot', label: 'Crockpot' },
-  { value: 'instant-pot', label: 'Instant Pot' },
-  { value: 'grill', label: 'Grill' },
-  { value: 'no-cook', label: 'No-cook' }
+  { value: 'stovetop', label: 'Stove Top' },
+  { value: 'crockpot', label: 'Slow Cooker' },        // value kept as 'crockpot' so existing recipes keep working
+  { value: 'air-fryer', label: 'Air Fryer' },
+  { value: 'toaster-oven', label: 'Toaster Oven' }
 ];
 function methodLabel(value){
   return (METHOD_OPTIONS.find(m => m.value === value) || {}).label || value;
 }
 
 function render(){
-  const recipes = getRecipes().sort((a,b) => a.name.localeCompare(b.name));
+  // In circulation first (A–Z), then everything out of circulation (A–Z).
+  const recipes = getRecipes().slice().sort((a,b) =>
+    ((a.active === false) - (b.active === false)) || a.name.localeCompare(b.name)
+  );
 
   document.getElementById('tocPanel').style.display = recipes.length ? 'block' : 'none';
   document.getElementById('emptyMsg').style.display = recipes.length ? 'none' : 'block';
