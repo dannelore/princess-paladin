@@ -7,37 +7,29 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/pp.css">
 
 <style>
-  @font-face{
-    font-family:'Apricot';
-    src:url('../fonts/Apricot.ttf') format('truetype');
-    font-display:swap;
-  }
-
   :root{
+    /* Folder background — the same two stops as the rest of /dannelore/ */
     --pink-bg:#F6D9E6;
     --pink-bg-alt:#F2C9DC;
-    --accent:#E87CA6;
-    --accent-dark:#D2698E;
-    --sage:#9CAF88;
-    --sage-dark:#7C9469;
+
+    /* The names this page already uses, pointed at the canonical palette.
+       --sage, --ink, --ink-soft, --gold and the radius tokens all come
+       straight from pp.css, so they aren't redefined here. */
+    --accent:var(--pink);
+    --accent-dark:var(--pink-deep);
+    --sage-dark:var(--sage-deep);
+    --cream:var(--panel);
+    --white:#FFFFFF;
     --dusty-rose:#D8A7B1;
-    --cream:#FBF3E7;
-    --gold:#C9A227;
-    --copper:#B87333;
-    --ink:#4A3B41;
-    --ink-soft:#7A6670;
-    --white:#FFFDFB;
 
-    --font-display:'Apricot','Cormorant Garamond',serif;
-    --font-serif:'Cormorant Garamond',serif;
-    --font-body:'Jost',sans-serif;
-
-    --radius-sm:10px;
-    --radius-md:16px;
-    --radius-lg:24px;
+    /* Treasure, not chrome. A bright coin gold that stays distinct from
+       copper at a glance — the canonical --gold is too brown for this. */
+    --quest-gold:#C9A227;
+    --quest-copper:#B87333;
   }
 
   *{box-sizing:border-box;}
@@ -47,47 +39,23 @@
     margin:0;
     font-family:var(--font-body);
     color:var(--ink);
-    background:
+    background-image:
       radial-gradient(circle at 15% 8%, rgba(255,255,255,0.5), transparent 40%),
-      var(--pink-bg);
+      linear-gradient(135deg, var(--pink-bg) 0%, var(--pink-bg-alt) 100%);
+    background-attachment:fixed;
     min-height:100vh;
     padding-bottom:80px;
   }
 
   a{color:inherit;}
 
-  /* ===== SITE NAVBAR (matches homepage) ===== */
-  .site-navbar{
-    display:flex;
-    justify-content:center;
-    flex-wrap:wrap;
-    gap:8px;
-    padding:20px 24px 0;
-  }
-  .site-navbar a{
-    font-family:var(--font-body);
-    text-transform:uppercase;
-    letter-spacing:0.12em;
-    font-size:0.78rem;
-    font-weight:500;
-    color:var(--ink);
-    text-decoration:none;
-    background:var(--cream);
-    border:1px solid rgba(74,59,65,0.18);
-    border-radius:999px;
-    padding:9px 20px;
-    transition:color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-  }
-  .site-navbar a:hover,
-  .site-navbar a:focus-visible{
-    color:var(--accent-dark);
-    border-color:var(--accent);
-    background:#FFF7FA;
-  }
-  .site-navbar a:focus-visible{
-    outline:2px solid var(--accent-dark);
-    outline-offset:2px;
-  }
+  /* ===== SITE NAVBAR ===== */
+  /* Styling comes from pp.css; these only fit it into the sticky ribbon.
+     The <nav> stays inside .ribbon but outside .ribbon-inner so it renders
+     as its own row above the stats rather than beside them. */
+  .ribbon .pp-nav{ margin:0; padding:10px 24px 0; }
+  .ribbon .pp-emblem{ margin:0; padding-top:12px; }
+  .ribbon .pp-emblem svg{ width:24px; height:24px; }
 
   /* ===== RIBBON HEADER ===== */
   .ribbon{
@@ -197,14 +165,14 @@
     border-radius:20px;
     box-shadow:0 2px 6px rgba(180,90,120,0.12);
   }
-  .coin.gold{color:var(--gold);}
-  .coin.copper{color:var(--copper);}
+  .coin.gold{color:var(--quest-gold);}
+  .coin.copper{color:var(--quest-copper);}
   .coin .dot{
     width:9px;height:9px;border-radius:50%;
     display:inline-block;
   }
-  .coin.gold .dot{background:var(--gold);}
-  .coin.copper .dot{background:var(--copper);}
+  .coin.gold .dot{background:var(--quest-gold);}
+  .coin.copper .dot{background:var(--quest-copper);}
 
   .panel-btns{
     display:flex;
@@ -319,7 +287,7 @@
 
   .col-dailies h2{color:var(--sage-dark);}
   .col-todo h2{color:var(--accent-dark);}
-  .col-projects h2{color:var(--copper);}
+  .col-projects h2{color:var(--quest-copper);}
 
   .add-row{
     background:var(--white);
@@ -359,7 +327,7 @@
     color:rgba(74,59,65,0.2);
     transition:color .1s;
   }
-  .stars-input span.active{color:var(--gold);}
+  .stars-input span.active{color:var(--quest-gold);}
 
   .priority-select{
     font-family:var(--font-body);
@@ -422,7 +390,7 @@
     align-self:flex-end;
   }
   .add-btn:hover{background:var(--accent-dark);}
-  .add-btn.editing{background:var(--gold);}
+  .add-btn.editing{background:var(--quest-gold);}
   .cancel-edit-btn{
     font-family:var(--font-body);
     font-size:12px;
@@ -450,7 +418,7 @@
   }
   .col-dailies .task-card{border-left-color:var(--sage);}
   .col-todo .task-card{border-left-color:var(--accent);}
-  .col-projects .task-card{border-left-color:var(--copper);}
+  .col-projects .task-card{border-left-color:var(--quest-copper);}
   .col-work .task-card{border-left-color:var(--dusty-rose);}
 
   .task-card.done{opacity:.55;}
@@ -479,8 +447,8 @@
   }
   .col-todo .check{border-color:var(--accent);}
   .col-todo .check.checked{background:var(--accent);}
-  .col-projects .check{border-color:var(--copper);}
-  .col-projects .check.checked{background:var(--copper);}
+  .col-projects .check{border-color:var(--quest-copper);}
+  .col-projects .check.checked{background:var(--quest-copper);}
   .col-work .check{border-color:var(--dusty-rose);}
   .col-work .check.checked{background:var(--dusty-rose);}
 
@@ -501,7 +469,7 @@
     margin-top:4px;
     flex-wrap:wrap;
   }
-  .stars-display{font-size:11px; color:var(--gold); letter-spacing:1px;}
+  .stars-display{font-size:11px; color:var(--quest-gold); letter-spacing:1px;}
   .streak-chip{
     font-size:10.5px;
     background:var(--pink-bg-alt);
@@ -522,7 +490,7 @@
     color:var(--white);
   }
   .priority-chip.low{background:var(--sage);}
-  .priority-chip.medium{background:var(--gold);}
+  .priority-chip.medium{background:var(--quest-gold);}
   .priority-chip.high{background:var(--accent);}
   .priority-chip.urgent{background:var(--hp, #D2698E);}
 
@@ -622,8 +590,8 @@
   .shop-item .desc{font-size:12.5px; color:var(--ink-soft); margin:3px 0 8px;}
   .shop-item .row{display:flex; align-items:center; justify-content:space-between;}
   .shop-item .price{font-size:13px; font-weight:500;}
-  .shop-item .price .g{color:var(--gold);}
-  .shop-item .price .c{color:var(--copper);}
+  .shop-item .price .g{color:var(--quest-gold);}
+  .shop-item .price .c{color:var(--quest-copper);}
   .redeem-btn{
     font-size:12px;
     background:var(--sage);
@@ -684,13 +652,30 @@
   }
 </style>
 </head>
-<body>
+<body class="pp-dannelore">
 
 <!-- ===== RIBBON HEADER ===== -->
 <div class="ribbon">
 
       
-  <nav class="site-navbar" aria-label="Main navigation">
+  <div class="pp-emblem pp-emblem-sm">
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M8 44 H56" stroke="#9C7440" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="32" cy="10" r="3.5" fill="#9C7440"/>
+      <circle cx="4" cy="18" r="3" fill="#9C7440"/>
+      <circle cx="60" cy="18" r="3" fill="#9C7440"/>
+    </svg>
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <g transform="translate(16,0)">
+        <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
+        <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+        <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
+        <circle cx="16" cy="60" r="3.4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+      </g>
+    </svg>
+  </div>
+  <nav class="pp-nav" aria-label="Main navigation">
   <a href="/">Home</a>
   <a href="/princess">Princess</a>
   <a href="/castle-keep">Castle Keep</a>
