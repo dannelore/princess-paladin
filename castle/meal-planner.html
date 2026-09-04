@@ -71,25 +71,31 @@
 .addextra{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
 .addextra input{ flex:1 1 120px; font-family:var(--font-body); padding:8px 10px; border:1px solid var(--line); border-radius:var(--radius-sm); }
 
-.pantry-tabs{ display:flex; gap:4px; margin:14px 0 10px; }
-.pantry-tab{ flex:1 1 0; min-width:0; font-family:var(--font-body); font-size:.68rem; font-weight:500;
-  text-transform:uppercase; letter-spacing:.05em; padding:8px 4px; cursor:pointer;
-  border:1px solid var(--line); background:#fff; color:var(--ink-soft); border-radius:999px; }
-.pantry-tab.active{ background:var(--sage); border-color:var(--sage); color:#fff; }
+.pantry-rail{ position:fixed; top:50%; right:0; transform:translateY(-50%); z-index:120;
+  display:flex; flex-direction:column; gap:5px; align-items:flex-end; }
+.pantry-tab-btn{ background:var(--sage); color:#fff; border:none; border-radius:12px 0 0 12px;
+  padding:11px 8px; font-family:var(--font-body); font-size:.66rem; font-weight:600;
+  text-transform:uppercase; letter-spacing:.06em; cursor:pointer;
+  writing-mode:vertical-rl; text-orientation:mixed;
+  box-shadow:-3px 0 12px rgba(46,36,31,.16); transition:background .15s ease, padding .15s ease; }
+.pantry-tab-btn:hover{ background:var(--sage-deep); padding-right:12px; }
+.pantry-tab-btn:nth-child(even){ background:var(--sage-deep); }
+.pantry-tab-btn:nth-child(even):hover{ background:var(--sage); }
+.rail-dot{ display:inline-block; background:var(--pink); color:#fff; border-radius:999px;
+  padding:1px 5px; margin-top:6px; font-size:.6rem; }
 .pantry-count{ font-size:.72rem; color:var(--ink-soft); font-style:italic; margin:0 0 8px; }
 .shop-qty{ font-weight:500; }
-.pantry-item{ display:flex; align-items:flex-start; gap:8px; padding:6px 0; font-size:.92rem; }
+.pantry-item{ display:flex; align-items:flex-start; gap:8px; padding:3px 0; font-size:.9rem; line-height:1.4; }
+.pantry-item-body{ flex:1; min-width:0; }
+.pantry-item label{ cursor:default; }
+.pantry-remove{ flex:0 0 auto; background:none; border:none; cursor:pointer; padding:0 2px;
+  font-size:1.05rem; line-height:1.2; color:var(--line-strong); }
+.pantry-remove:hover{ color:var(--burgundy); }
 .pantry-item.checked > label{ color:var(--sage-deep); font-weight:500; }
 .pantry-item.needed{ background:var(--parchment); border:1px solid var(--parchment-border); border-radius:var(--radius-sm); padding:5px 8px; margin:0 -8px 4px; }
 .pantry-item input[type=checkbox]{ margin-top:3px; }
 .needed-badge{ display:block; font-size:.72rem; color:var(--gold); font-style:italic; margin-top:2px; }
 
-.pantry-toggle{ position:fixed; top:50%; right:0; transform:translateY(-50%); z-index:120;
-  background:var(--sage); color:#fff; border:none; border-radius:12px 0 0 12px;
-  padding:14px 10px; font-family:var(--font-body); font-size:.85rem; font-weight:600;
-  text-transform:uppercase; letter-spacing:.06em; cursor:pointer;
-  writing-mode:vertical-rl; text-orientation:mixed; box-shadow:-4px 0 14px rgba(46,36,31,.18); }
-.pantry-toggle:hover{ background:var(--sage-deep); }
 .pantry-overlay{ position:fixed; inset:0; background:rgba(46,36,31,.35); opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:150; }
 .pantry-overlay.open{ opacity:1; pointer-events:auto; }
 .pantry-sidebar{ position:fixed; top:0; right:-340px; width:320px; max-width:88vw; height:100vh;
@@ -144,11 +150,11 @@
   </div>
 </div>
 
-<button class="pantry-toggle" id="pantryToggleBtn">Pantry</button>
+<div class="pantry-rail" id="pantryRail"></div>
 <div class="pantry-overlay" id="pantryOverlay"></div>
 <aside class="pantry-sidebar" id="pantrySidebar">
   <div class="pantry-sidebar-head">
-    <h2 style="margin:0;">Pantry</h2>
+    <h2 style="margin:0;" id="pantryTitle">Pantry</h2>
     <button class="pantry-close" id="pantryCloseBtn" aria-label="Close pantry">&times;</button>
   </div>
   <p class="tagline" style="font-size:.85rem;">Check off anything you actually need this week. Items highlighted here are used in a recipe this week — check your stock.</p>
@@ -496,41 +502,87 @@ const DEFAULT_PANTRY_GROUPS = {
     'salt','black pepper','garlic powder','Italian seasoning','red pepper flakes',
     'cumin','chili powder','taco seasoning','onion soup mix'
   ],
-  'Fridge / Freezer': [
-    'butter','milk','Dijon mustard','eggs','shredded cheese','Parmesan cheese',
-    'sour cream','ketchup','mustard','mayo','salsa','relish','bleu cheese','honey mustard'
+  'Condiments': [
+    'Dijon mustard','ketchup','mustard','mayo','salsa','relish','bleu cheese','honey mustard',
+    'honey','soy sauce','Worcestershire sauce','BBQ sauce','pasta sauce','taco sauce'
   ],
-  'Pantry': [
-    'olive oil','cooking spray','honey','soy sauce','Worcestershire sauce',
-    'apple cider vinegar','BBQ sauce','pasta sauce','taco sauce','pasta','egg noodles',
-    'Kraft Mac & Cheese','white rice','brown rice','bread','baked beans','canned corn',
-    'cornstarch','tortilla chips','potato chips','red cooking wine','variety chips',
-    'wraps','peanut butter','Nutella','Pop-Tarts','cereal','ramen'
+  'Fridge': [
+    'butter','milk','eggs','shredded cheese','Parmesan cheese','sour cream'
+  ],
+  'Basics': [
+    'olive oil','cooking spray','apple cider vinegar','cornstarch','red cooking wine',
+    'baked beans','canned corn'
+  ],
+  'Dry Goods': [
+    'pasta','egg noodles','Kraft Mac & Cheese','white rice','brown rice','bread','wraps','ramen',
+    'cereal','tortilla chips','potato chips','variety chips','peanut butter','Nutella','Pop-Tarts'
   ]
 };
+
+// Where items land if they came from an older shape and aren't in the defaults
+const LEGACY_GROUP_FALLBACK = {
+  'Spices': 'Spices',
+  'Fridge / Freezer': 'Fridge',
+  'Pantry': 'Dry Goods'
+};
+
 const PANTRY_GROUP_NAMES = Object.keys(DEFAULT_PANTRY_GROUPS);
 
 // Pantry used to be one flat array. If that's what's in Firestore, sort the
 // defaults into their groups and keep anything you'd added by hand under Pantry.
 function getPantryGroups(){
   const stored = loadJSON(PANTRY_ITEMS_KEY, null);
-  if (stored && !Array.isArray(stored) && typeof stored === 'object'){
-    const out = {};
-    PANTRY_GROUP_NAMES.forEach(g => out[g] = Array.isArray(stored[g]) ? stored[g].slice() : DEFAULT_PANTRY_GROUPS[g].slice());
-    return out;
-  }
   const groups = {};
-  PANTRY_GROUP_NAMES.forEach(g => groups[g] = DEFAULT_PANTRY_GROUPS[g].slice());
-  if (Array.isArray(stored)){
-    const known = new Set(PANTRY_GROUP_NAMES.flatMap(g => groups[g].map(norm)));
-    stored.forEach(item => { if (!known.has(norm(item))) groups['Pantry'].push(item); });
+  PANTRY_GROUP_NAMES.forEach(g => groups[g] = []);
+
+  // Which group does a known item belong to?
+  const homeOf = {};
+  PANTRY_GROUP_NAMES.forEach(g => DEFAULT_PANTRY_GROUPS[g].forEach(i => homeOf[norm(i)] = g));
+
+  if (stored && !Array.isArray(stored) && typeof stored === 'object'
+      && PANTRY_GROUP_NAMES.every(g => Array.isArray(stored[g]))){
+    // Already in the current five-group shape
+    PANTRY_GROUP_NAMES.forEach(g => groups[g] = stored[g].slice());
+    return groups;
   }
+
+  // Anything older: a flat array, or the earlier three-group object.
+  // Known items go to their proper tab; anything added by hand follows its old group.
+  const place = (item, fallback) => {
+    const home = homeOf[norm(item)] || fallback;
+    if (!groups[home].some(i => norm(i) === norm(item))) groups[home].push(item);
+  };
+
+  if (Array.isArray(stored)){
+    PANTRY_GROUP_NAMES.forEach(g => DEFAULT_PANTRY_GROUPS[g].forEach(i => place(i, g)));
+    stored.forEach(item => place(item, 'Dry Goods'));
+  } else if (stored && typeof stored === 'object'){
+    PANTRY_GROUP_NAMES.forEach(g => DEFAULT_PANTRY_GROUPS[g].forEach(i => place(i, g)));
+    Object.keys(stored).forEach(oldGroup => {
+      const fallback = LEGACY_GROUP_FALLBACK[oldGroup] || 'Dry Goods';
+      (Array.isArray(stored[oldGroup]) ? stored[oldGroup] : []).forEach(item => place(item, fallback));
+    });
+  } else {
+    PANTRY_GROUP_NAMES.forEach(g => groups[g] = DEFAULT_PANTRY_GROUPS[g].slice());
+  }
+
   saveJSON(PANTRY_ITEMS_KEY, groups);
   return groups;
 }
 function getPantryItems(){
   const g = getPantryGroups();
   return PANTRY_GROUP_NAMES.flatMap(n => g[n]);
+}
+function removePantryItem(item){
+  const groups = getPantryGroups();
+  PANTRY_GROUP_NAMES.forEach(g => {
+    groups[g] = groups[g].filter(i => norm(i) !== norm(item));
+  });
+  saveJSON(PANTRY_ITEMS_KEY, groups);
+  // Drop it from every week's checked state too, so it can't linger on a shopping list
+  const all = loadJSON(PANTRY_CHECKED_KEY, {});
+  Object.keys(all).forEach(week => { delete all[week][item]; });
+  saveJSON(PANTRY_CHECKED_KEY, all);
 }
 function addPantryItem(item, group){
   const groups = getPantryGroups();
@@ -580,16 +632,26 @@ function computeNeededPantryItems(){
 
 let activePantryTab = PANTRY_GROUP_NAMES[0];
 
+// One button per group down the right edge; each opens straight into its list.
+function renderPantryRail(){
+  const rail = document.getElementById('pantryRail');
+  const groups = getPantryGroups();
+  const checked = getPantryChecked(currentWeek);
+  rail.innerHTML = PANTRY_GROUP_NAMES.map(g => {
+    const due = (groups[g] || []).filter(i => checked[i]).length;
+    return `<button class="pantry-tab-btn" data-group="${g}">${g}${due ? `<span class="rail-dot">${due}</span>` : ''}</button>`;
+  }).join('');
+  rail.querySelectorAll('.pantry-tab-btn').forEach(btn => btn.addEventListener('click', () => {
+    openPantry(btn.dataset.group);
+  }));
+}
+
 function renderPantryList(){
   const groups = getPantryGroups();
   const checked = getPantryChecked(currentWeek);
   const needed = computeNeededPantryItems();
   const wrap = document.getElementById('pantryList');
-
-  const tabs = PANTRY_GROUP_NAMES.map(g => {
-    const short = g === 'Fridge / Freezer' ? 'Fridge' : g;
-    return `<button class="pantry-tab ${g === activePantryTab ? 'active' : ''}" data-group="${g}">${short}</button>`;
-  }).join('');
+  document.getElementById('pantryTitle').textContent = activePantryTab;
 
   const items = (groups[activePantryTab] || []).slice().sort((a,b) => a.localeCompare(b));
 
@@ -598,24 +660,23 @@ function renderPantryList(){
     return `
     <div class="pantry-item ${checked[item] ? 'checked' : ''} ${neededInfo ? 'needed' : ''}">
       <input type="checkbox" data-item="${item}" ${checked[item] ? 'checked' : ''}>
-      <div>
+      <div class="pantry-item-body">
         <label>${item}</label>
         ${neededInfo ? `<span class="needed-badge">needed for ${Array.from(neededInfo.recipes).join(', ')}</span>` : ''}
       </div>
+      <button class="pantry-remove" data-remove="${item}" title="Remove ${item}" aria-label="Remove ${item}">&times;</button>
     </div>
   `;
-  }).join('') || '<p class="empty">Nothing in this section yet.</p>';
+  }).join('') || '<p class="empty">Nothing in here yet.</p>';
 
-  wrap.innerHTML = `<div class="pantry-tabs">${tabs}</div>
-    <p class="pantry-count">${items.length} item${items.length === 1 ? '' : 's'} · tick anything you need to buy</p>
-    ${rows}`;
+  wrap.innerHTML = `<p class="pantry-count">${items.length} item${items.length === 1 ? '' : 's'} · tick anything you need to buy</p>${rows}`;
 
-  wrap.querySelectorAll('.pantry-tab').forEach(btn => btn.addEventListener('click', () => {
-    activePantryTab = btn.dataset.group;
-    renderPantryList();
-  }));
   wrap.querySelectorAll('input[type=checkbox]').forEach(cb => cb.addEventListener('change', () => {
     setPantryChecked(currentWeek, cb.dataset.item, cb.checked);
+    render();
+  }));
+  wrap.querySelectorAll('.pantry-remove').forEach(btn => btn.addEventListener('click', () => {
+    removePantryItem(btn.dataset.remove);
     render();
   }));
 }
@@ -631,9 +692,13 @@ document.getElementById('addPantryItemBtn').addEventListener('click', () => {
 
 const pantrySidebar = document.getElementById('pantrySidebar');
 const pantryOverlay = document.getElementById('pantryOverlay');
-function openPantry(){ pantrySidebar.classList.add('open'); pantryOverlay.classList.add('open'); }
+function openPantry(group){
+  if (group) activePantryTab = group;
+  renderPantryList();
+  pantrySidebar.classList.add('open');
+  pantryOverlay.classList.add('open');
+}
 function closePantry(){ pantrySidebar.classList.remove('open'); pantryOverlay.classList.remove('open'); }
-document.getElementById('pantryToggleBtn').addEventListener('click', openPantry);
 document.getElementById('pantryCloseBtn').addEventListener('click', closePantry);
 pantryOverlay.addEventListener('click', closePantry);
 
@@ -807,7 +872,7 @@ document.getElementById('clearAllBtn').addEventListener('click', () => {
   render();
 });
 
-function render(){ renderWeekPanel(); renderPantryList(); renderShopList(); }
+function render(){ renderWeekPanel(); renderPantryRail(); renderPantryList(); renderShopList(); }
 loadMealStateFromFirestore().then(render);
 </script>
 </body>
