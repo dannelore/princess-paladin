@@ -7,288 +7,27 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --pink-bg: #F6D9E6;
-    --pink-bg-deep: #F2C9DC;
-    --rose: #E87CA6;
-    --rose-dark: #C85D87;
-    --sage: #8FA37E;
-    --sage-dark: #6D8259;
-    --cream: #FCF6EE;
-    --gold: #C89B3C;
-    --ink: #4A3B42;
-    --line: rgba(74,59,66,0.18);
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    font-family:'Ubuntu', sans-serif;
-    color: var(--ink);
-    background-color: var(--pink-bg);
-    background-image: linear-gradient(135deg, var(--pink-bg) 0%, var(--pink-bg-deep) 100%);
-    background-attachment: fixed;
-    padding:32px 16px 64px;
-    display:flex;
-    justify-content:center;
-  }
-  .wrap{ width:100%; max-width:480px; }
-
-  .title{ text-align:center; margin-bottom:32px; }
-  h1.site-title{
-    font-family:'Spicy Rice', sans-serif;
-    font-weight:600;
-    font-size: clamp(1.9rem, 6vw, 2.6rem);
-    margin: 0;
-    letter-spacing: 0.02em;
-    color: var(--rose-dark);
-  }
-  .tagline{
-    font-family:'Cormorant Garamond', serif;
-    font-style: italic;
-    font-size: 1.1rem;
-    color: var(--ink);
-    opacity: 0.85;
-    margin: 8px 0 0;
-  }
-
-  .flow{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-  }
-
-  /* ---- Panel style (cream card w/ inner rose border) ---- */
-  .panel{
-    background: var(--cream);
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    box-shadow: 0 8px 24px rgba(74,59,66,0.12);
-    position: relative;
-    width:100%;
-  }
-  .panel::before{
-    content:"";
-    position:absolute;
-    inset: 7px;
-    border: 1px solid var(--rose);
-    border-radius: 3px;
-    opacity: 0.35;
-    pointer-events:none;
-  }
-
-  /* ---- Standalone nodes (home / go to sleep) ---- */
-  .node{
-    padding:16px 20px;
-    display:flex;
-    align-items:center;
-    gap:14px;
-  }
-  .node-emoji{
-    font-size:1.4rem;
-    flex-shrink:0;
-  }
-  .node-body{ flex:1; min-width:0; }
-  .node-time{
-    font-family:'Jost', sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    font-size:0.68rem;
-    font-weight:600;
-    color: var(--gold);
-    margin-bottom:3px;
-  }
-  .node-text{
-    font-family:'Montserrat', sans-serif;
-    font-weight:700;
-    font-size:1.05rem;
-    line-height:1.25;
-  }
-
-  /* ---- Time-block groups ---- */
-  .group{
-    padding:18px 20px 10px;
-  }
-  .group-time{
-    display:inline-block;
-    font-family:'Jost', sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    background: var(--rose);
-    color: #fff;
-    font-weight:600;
-    font-size:0.68rem;
-    border-radius:999px;
-    padding:5px 13px;
-    margin-bottom:12px;
-  }
-
-  .step-row{
-    padding:10px 0;
-    border-bottom:1px dashed var(--line);
-    display:flex;
-    align-items:flex-start;
-    gap:12px;
-  }
-  .step-row:last-child{ border-bottom:none; }
-  .step-emoji-sm{
-    font-size:1.1rem;
-    line-height:1.3;
-    flex-shrink:0;
-  }
-  .step-body{ flex:1; min-width:0; }
-  .step-text{
-    font-family:'Montserrat', sans-serif;
-    font-weight:600;
-    font-size:0.92rem;
-    line-height:1.3;
-  }
-
-  .sub-list{
-    list-style:none;
-    margin:9px 0 0;
-    padding:0;
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-  }
-  .sub-list li{
-    font-family:'Cormorant Garamond', serif;
-    font-style:italic;
-    font-size:0.95rem;
-    font-weight:500;
-    color: var(--ink);
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding-left:2px;
-  }
-  .sub-list li::before{
-    content:"";
-    width:5px;
-    height:5px;
-    border-radius:50%;
-    background: var(--gold);
-    flex-shrink:0;
-  }
-
-  .step-details summary{
-    cursor:pointer;
-    list-style:none;
-    display:flex;
-    align-items:center;
-    gap:6px;
-  }
-  .step-details summary::-webkit-details-marker{ display:none; }
-  .step-details summary::after{
-    content:"";
-    width:0; height:0;
-    border-left:5px solid transparent;
-    border-right:5px solid transparent;
-    border-top:6px solid var(--rose);
-    margin-left:auto;
-    transition:transform 0.15s ease;
-    flex-shrink:0;
-  }
-  .step-details[open] summary::after{
-    transform:rotate(180deg);
-  }
-
-  .skincare-link{
-    color: var(--rose-dark);
-    text-decoration:none;
-    border-bottom:1px dotted var(--rose-dark);
-  }
-  .skincare-link:hover{ color: var(--rose); border-color: var(--rose); }
-
-  .connector{
-    height:22px;
-    width:1px;
-    background: var(--line);
-  }
-
-  .end-node{
-    background: var(--sage);
-    color:#fff;
-    border-radius:6px;
-    padding:16px 20px;
-    width:100%;
-    text-align:center;
-    box-shadow: 0 8px 24px rgba(74,59,66,0.12);
-  }
-  .end-node .node-time{ color:rgba(255,255,255,0.85); }
-  .end-node .node-text{ font-size:1.05rem; }
-  .end-node .node-body{ text-align:center; }
-
-  .reminder-box{
-    padding:18px 20px;
-  }
-  .reminder-title{
-    font-family:'Jost', sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-size:0.78rem;
-    font-weight:600;
-    color: var(--gold);
-    margin-bottom:12px;
-  }
-  .reminder-list{
-    list-style:none;
-    margin:0;
-    padding:0;
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:9px 14px;
-  }
-  .reminder-list li{
-    font-family:'Cormorant Garamond', serif;
-    font-size:1rem;
-    font-weight:600;
-    color: var(--ink);
-    display:flex;
-    align-items:center;
-    gap:8px;
-  }
-  .reminder-list li::before{
-    content:"";
-    width:5px;
-    height:5px;
-    border-radius:50%;
-    background: var(--rose);
-    flex-shrink:0;
-  }
-
-  footer{
-    text-align:center;
-    margin-top: 40px;
-    font-size: 0.78rem;
-    color: var(--ink);
-    opacity: 0.55;
-    font-family:'Jost', sans-serif;
-    letter-spacing: 0.04em;
-  }
-  footer div{ margin-top: 6px; }
-  footer .footer-divider{
-    margin-top: 0;
-    font-size: 0.9rem;
-    color: var(--rose-dark);
-    letter-spacing: 0.08em;
-  }
-
-  @media print{
-    body{ padding:12px; background-image:none; }
-  }
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/self-care.css">
 </head>
-<body>
-<div class="wrap">
-  <div class="title">
+<body class="pp-dannelore flow-page">
+<div class="flow-wrap">
+  <nav class="pp-nav" aria-label="Main navigation">
+    <a href="/">Home</a>
+    <a href="/dannelore/">Princess</a>
+    <a href="/dannelore/self-care/">Self Care</a>
+  </nav>
+
+  <div class="flow-title">
     <h1 class="site-title">Evening Flowchart</h1>
   </div>
 
   <div class="flow">
 
-    <div class="panel node">
+    <div class="pp-panel node">
       <div class="node-emoji">🏠</div>
       <div class="node-body">
         <div class="node-time">4:30</div>
@@ -297,7 +36,7 @@
     </div>
     <div class="connector"></div>
 
-    <div class="panel group">
+    <div class="pp-panel group">
       <span class="group-time">4:30</span>
 
       <div class="step-row">
@@ -341,7 +80,7 @@
     </div>
     <div class="connector"></div>
 
-    <div class="panel group">
+    <div class="pp-panel group">
       <span class="group-time">8:45pm</span>
 
       <div class="step-row">
@@ -354,7 +93,7 @@
       </div>
       <div class="step-row">
         <div class="step-emoji-sm">✨</div>
-        <div class="step-body"><div class="step-text"><a class="skincare-link" href="skincare-routine.html">Skin care →</a></div></div>
+        <div class="step-body"><div class="step-text"><a class="skincare-link" href="skincare.html">Skin care →</a></div></div>
       </div>
       <div class="step-row">
         <div class="step-emoji-sm">🌙</div>
@@ -387,8 +126,8 @@
 
   </div>
 
-  <footer>
-    <div class="footer-divider">♕ ───────── ⚔ ───────── ♕</div>
+  <footer class="pp-footer">
+    <div class="pp-footer-flourish">♕ ───────── ⚔ ───────── ♕</div>
     <div>Mon–Thu routine — Fri–Sun schedule looks different.</div>
   </footer>
 </div>

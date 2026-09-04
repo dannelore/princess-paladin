@@ -1,1 +1,148 @@
-Hello World.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Self Care — Princess &amp; Paladin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/pp.css">
+<style>
+  /* Self-care landing: wider cards than the castle grid, since these
+     have a line of description under the title */
+  .care-cards{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+    margin-bottom: 28px;
+  }
+  .care-card{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    color: var(--ink);
+    padding: 28px 24px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+  .care-card:hover,
+  .care-card:focus-visible{
+    transform: translateY(-3px);
+    border-color: var(--pink);
+    box-shadow: var(--lift-lg);
+    text-decoration: none;
+  }
+  .care-card .emoji{ font-size: 1.8rem; line-height: 1; }
+  .care-card h3{
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin: 0;
+  }
+  .care-card p{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .care-card .when{
+    font-family: 'Jost', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--gold);
+  }
+
+  .note-panel h2{
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--sage-deep);
+    margin: 0 0 10px;
+  }
+  .note-panel p{ margin: 0; font-size: 0.95rem; line-height: 1.7; }
+</style>
+</head>
+<body class="pp-dannelore">
+
+<div class="pp-wrap">
+
+  <nav class="pp-nav" aria-label="Main navigation">
+    <a href="/">Home</a>
+    <a href="/dannelore/">Princess</a>
+    <a href="/dannelore/quest-log/">Quest Log</a>
+    <a href="/dannelore/self-care/" aria-current="page">Self Care</a>
+  </nav>
+
+  <div class="pp-hero">
+    <div class="pp-emblem">
+      <!-- Tiara -->
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M8 44 H56" stroke="#9C7440" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="32" cy="10" r="3.5" fill="#9C7440"/>
+        <circle cx="4" cy="18" r="3" fill="#9C7440"/>
+        <circle cx="60" cy="18" r="3" fill="#9C7440"/>
+      </svg>
+      <!-- Sword -->
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <g transform="translate(16,0)">
+          <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
+          <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+          <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
+          <circle cx="16" cy="60" r="3.4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+        </g>
+      </svg>
+    </div>
+    <h1 class="pp-title site-title">Self Care</h1>
+    <p class="pp-tagline tagline">the routines, written down so you don't have to remember them</p>
+  </div>
+
+  <div class="care-cards">
+
+    <a class="pp-panel care-card" href="morning-office.html">
+      <span class="emoji">⏰</span>
+      <span class="when">Mon / Tue / Thu</span>
+      <h3>Morning Flowchart</h3>
+      <p>wake up to out the door, in order</p>
+    </a>
+
+    <a class="pp-panel care-card" href="evening-office.html">
+      <span class="emoji">🌙</span>
+      <span class="when">Mon – Thu</span>
+      <h3>Evening Flowchart</h3>
+      <p>home from work through lights out</p>
+    </a>
+
+    <a class="pp-panel care-card" href="skincare.html">
+      <span class="emoji">✨</span>
+      <span class="when">Every day</span>
+      <h3>Skincare Routine</h3>
+      <p>morning and night, step by step</p>
+    </a>
+
+  </div>
+
+  <section class="pp-panel note-panel">
+    <h2>When it's one of those days</h2>
+    <p>Pick the one thing you can actually do and let the rest go. The routines are here to make decisions easier, not to be another list you're failing at. The skincare page has a shortened version at the bottom for exactly this.</p>
+  </section>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">♕ ───────── ⚔ ───────── ♕</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin • Established 2021</p>
+    <span id="updated"></span>
+  </footer>
+
+</div>
+
+<script>
+  document.getElementById('updated').textContent = 'last updated ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+</script>
+
+</body>
+</html>
