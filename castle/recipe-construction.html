@@ -71,6 +71,10 @@ textarea{ min-height:90px; resize:vertical; }
 .toolbar{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
 .toolbar input, .toolbar select{ flex:1 1 160px; }
 
+.filter-block{ margin-bottom:12px; }
+.filter-label{ display:block; font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:var(--gold); font-weight:600; margin-bottom:6px; }
+.filter-chip{ font-family:var(--font-body); color:var(--ink); }
+.filter-chip.checked{ color:#fff; }
 .chip-group{ display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
 .chip{ display:inline-flex; align-items:center; gap:6px; font-size:.85rem; padding:7px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; cursor:pointer; user-select:none; }
 .chip input{ width:auto; margin:0; accent-color:var(--sage); }
@@ -144,8 +148,9 @@ textarea{ min-height:90px; resize:vertical; }
   <div class="panel">
     <div class="toolbar">
       <input type="search" id="search" placeholder="Search by name…">
-      <select id="tagFilter"><option value="">All tags</option></select>
+      <button class="btn small secondary" id="clearFilters" style="margin-top:0;">Clear filters</button>
     </div>
+    <div id="filterChips"></div>
     <div id="recipeList"></div>
     <p class="empty" id="emptyMsg" style="display:none;">Nothing here yet — add your first recipe above.</p>
   </div>
@@ -254,7 +259,24 @@ function parseIngredientLine(line){
   return name ? { qty, unit, name } : null;
 }
 
-const DEFAULT_TAGS = ['beef','chicken','turkey','pork','pasta','2 servings','4 servings','6 servings','8 servings','kid friendly','oven','stove top','slow cooker','air fryer','toaster oven'];
+const DEFAULT_TAGS = ['beef','chicken','turkey','pork','pasta','2 servings','4 servings','6 servings','8 servings','kid friendly'];
+
+// These used to be tags as well as checkboxes, so you had to pick twice.
+// The checkboxes won. This strips the leftovers from tag options and recipes.
+const RETIRED_METHOD_TAGS = ['oven','stove top','stovetop','slow cooker','crockpot','crock pot','air fryer','toaster oven'];
+function retireMethodTags(){
+  let touched = false;
+  if (Array.isArray(mealState.tagOptions)){
+    const kept = mealState.tagOptions.filter(t => !RETIRED_METHOD_TAGS.includes(String(t).toLowerCase()));
+    if (kept.length !== mealState.tagOptions.length){ mealState.tagOptions = kept; touched = true; }
+  }
+  (mealState.recipes || []).forEach(r => {
+    if (!Array.isArray(r.tags)) return;
+    const kept = r.tags.filter(t => !RETIRED_METHOD_TAGS.includes(String(t).toLowerCase()));
+    if (kept.length !== r.tags.length){ r.tags = kept; touched = true; }
+  });
+  if (touched) saveMealState();
+}
 
 function getTagOptions(){
   if (!mealState.tagOptions || !mealState.tagOptions.length) mealState.tagOptions = DEFAULT_TAGS.slice();
@@ -338,24 +360,72 @@ document.getElementById('addTagOptionBtn').addEventListener('click', () => {
   renderTagChips(currentlySelected);
 });
 
+// A recipe has to match every active filter, so picking chicken + slow cooker
+// narrows down rather than piling up.
+let activeTagFilters = new Set();
+let activeMethodFilters = new Set();
+
+function recipeMethods(r){
+  return r.methods || (r.method ? [r.method] : []);
+}
+
 function renderTagFilter(){
-  const sel = document.getElementById('tagFilter');
-  const current = sel.value;
+  const wrap = document.getElementById('filterChips');
   const used = getRecipes().flatMap(r => r.tags || []);
-  const tags = Array.from(new Set([...getTagOptions(), ...used])).sort();
-  sel.innerHTML = '<option value="">All tags</option>' + tags.map(t => `<option>${t}</option>`).join('');
-  sel.value = current;
+  const tags = Array.from(new Set([...getTagOptions(), ...used]))
+    .filter(t => !RETIRED_METHOD_TAGS.includes(String(t).toLowerCase()))
+    .sort();
+
+  const methodChips = METHOD_OPTIONS.map(m =>
+    `<button type="button" class="chip filter-chip ${activeMethodFilters.has(m.value) ? 'checked' : ''}" data-method="${m.value}">${m.label}</button>`
+  ).join('');
+
+  const tagChips = tags.map(t =>
+    `<button type="button" class="chip filter-chip ${activeTagFilters.has(t) ? 'checked' : ''}" data-tag="${t}">${t}</button>`
+  ).join('');
+
+  wrap.innerHTML = `
+    <div class="filter-block">
+      <span class="filter-label">Cooking method</span>
+      <div class="chip-group">${methodChips}</div>
+    </div>
+    <div class="filter-block">
+      <span class="filter-label">Tags</span>
+      <div class="chip-group">${tagChips || '<span class="hint">No tags yet.</span>'}</div>
+    </div>`;
+
+  wrap.querySelectorAll('[data-method]').forEach(btn => btn.addEventListener('click', () => {
+    const v = btn.dataset.method;
+    activeMethodFilters.has(v) ? activeMethodFilters.delete(v) : activeMethodFilters.add(v);
+    retireMethodTags();
+  renderTagFilter(); renderList();
+  }));
+  wrap.querySelectorAll('[data-tag]').forEach(btn => btn.addEventListener('click', () => {
+    const v = btn.dataset.tag;
+    activeTagFilters.has(v) ? activeTagFilters.delete(v) : activeTagFilters.add(v);
+    renderTagFilter(); renderList();
+  }));
 }
 
 function renderList(){
   const q = document.getElementById('search').value.trim().toLowerCase();
-  const tag = document.getElementById('tagFilter').value;
   // In circulation first (A–Z), then everything out of circulation (A–Z).
   let recipes = getRecipes().slice().sort((a,b) =>
     ((a.active === false) - (b.active === false)) || a.name.localeCompare(b.name)
   );
   if (q) recipes = recipes.filter(r => r.name.toLowerCase().includes(q));
-  if (tag) recipes = recipes.filter(r => (r.tags||[]).includes(tag));
+  if (activeTagFilters.size){
+    recipes = recipes.filter(r => {
+      const t = r.tags || [];
+      return Array.from(activeTagFilters).every(f => t.includes(f));
+    });
+  }
+  if (activeMethodFilters.size){
+    recipes = recipes.filter(r => {
+      const m = recipeMethods(r);
+      return Array.from(activeMethodFilters).every(f => m.includes(f));
+    });
+  }
 
   const wrap = document.getElementById('recipeList');
   document.getElementById('emptyMsg').style.display = recipes.length ? 'none' : 'block';
@@ -463,7 +533,12 @@ document.getElementById('saveBtn').addEventListener('click', () => {
 
 document.getElementById('cancelEditBtn').addEventListener('click', clearForm);
 document.getElementById('search').addEventListener('input', renderList);
-document.getElementById('tagFilter').addEventListener('change', renderList);
+document.getElementById('clearFilters').addEventListener('click', () => {
+  activeTagFilters.clear();
+  activeMethodFilters.clear();
+  document.getElementById('search').value = '';
+  renderTagFilter(); renderList();
+});
 
 loadMealStateFromFirestore().then(() => {
   renderMethodChips(['stovetop']);

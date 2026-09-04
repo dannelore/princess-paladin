@@ -59,6 +59,9 @@
 
 .two-col{ display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; }
 .two-col > .panel{ flex:1 1 320px; margin-bottom:0; }
+.plan-and-shop{ margin-bottom:18px; align-items:stretch; }
+.plan-and-shop > .panel{ flex:1 1 400px; }
+@media (max-width: 900px){ .plan-and-shop > .panel + .panel{ margin-top:18px; } }
 
 .shop-cat{ margin-bottom:16px; }
 .shop-cat h4{ color:var(--sage-deep); margin-bottom:6px; }
@@ -122,6 +125,8 @@
     <button class="btn secondary" id="clearAllBtn">Clear All</button>
   </div>
 
+  <div class="two-col plan-and-shop">
+
   <div class="panel" id="weekPanel"></div>
 
   <div class="panel">
@@ -134,6 +139,8 @@
       <input type="text" id="exUnit" placeholder="unit" style="max-width:90px;">
       <button class="btn small" id="addExBtn">Add</button>
     </div>
+  </div>
+
   </div>
 </div>
 

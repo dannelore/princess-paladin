@@ -38,6 +38,11 @@
 .tag{ display:inline-block; font-size:.72rem; padding:3px 10px; border-radius:999px; background:rgba(46,36,31,.08); margin:0 5px 5px 0; }
 .tag.inactive-tag{ background:var(--parchment); border:1px solid var(--parchment-border); color:var(--ink-soft); }
 
+.btn{ font-family:var(--font-body); font-weight:500; border:none; border-radius:999px; padding:10px 20px;
+  cursor:pointer; background:var(--sage); color:#fff; font-size:.9rem; }
+.btn:hover{ background:var(--sage-deep); }
+.btn.secondary{ background:transparent; color:var(--sage-deep); border:1px solid var(--sage); }
+.btn.small{ padding:6px 14px; font-size:.8rem; }
 .empty{ text-align:center; padding:30px; color:var(--ink-soft); font-style:italic; font-family:var(--font-serif); }
 
 /* ---- recipe book only ---- */
@@ -61,6 +66,17 @@
   .toc{ position:static; max-height:none; flex-basis:auto; width:100%; min-width:0; max-width:none; }
 }
 
+.filter-panel{ margin-bottom:18px; }
+.filter-block{ margin-bottom:12px; }
+.filter-block:last-child{ margin-bottom:0; }
+.filter-label{ display:block; font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:var(--gold); font-weight:600; margin-bottom:6px; }
+.chip-group{ display:flex; flex-wrap:wrap; gap:8px; }
+.chip{ display:inline-flex; align-items:center; font-family:var(--font-body); font-size:.85rem; padding:7px 14px;
+  border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--ink); cursor:pointer; }
+.chip.checked{ background:var(--sage); border-color:var(--sage); color:#fff; }
+.filter-head{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
+.filter-head h2{ margin:0; font-size:1.2rem; }
+.filter-count{ font-size:.8rem; color:var(--ink-soft); font-style:italic; }
 .recipe-entry{ scroll-margin-top:16px; }
 .recipe-entry + .recipe-entry{ margin-top:22px; }
 .recipe-meta{ font-size:.85rem; color:var(--ink-soft); margin-bottom:6px; }
@@ -90,6 +106,14 @@
     </aside>
 
     <main class="recipe-main">
+      <section class="panel filter-panel">
+        <div class="filter-head">
+          <h2>Filters</h2>
+          <button type="button" class="btn small secondary" id="clearFilters">Clear</button>
+        </div>
+        <div id="filterChips"></div>
+        <p class="filter-count" id="filterCount"></p>
+      </section>
       <div id="recipeListing"></div>
       <p class="empty" id="emptyMsg" style="display:none;">No recipes yet — add some in <a href="../recipe-construction/index.html" style="color:var(--pink-accent-deep);">Recipe Construction</a> and they'll show up here.</p>
     </main>
@@ -188,14 +212,84 @@ function methodLabel(value){
   return (METHOD_OPTIONS.find(m => m.value === value) || {}).label || value;
 }
 
+// Cooking methods come from each recipe's checkboxes, not from tags —
+// same source of truth as Recipe Construction.
+const RETIRED_METHOD_TAGS = ['oven','stove top','stovetop','slow cooker','crockpot','crock pot','air fryer','toaster oven'];
+let activeTagFilters = new Set();
+let activeMethodFilters = new Set();
+
+function recipeMethods(r){ return r.methods || (r.method ? [r.method] : []); }
+
+function renderFilters(){
+  const wrap = document.getElementById('filterChips');
+  const tags = Array.from(new Set(getRecipes().flatMap(r => r.tags || [])))
+    .filter(t => !RETIRED_METHOD_TAGS.includes(String(t).toLowerCase()))
+    .sort();
+
+  const methodChips = METHOD_OPTIONS.map(m =>
+    `<button type="button" class="chip ${activeMethodFilters.has(m.value) ? 'checked' : ''}" data-method="${m.value}">${m.label}</button>`
+  ).join('');
+  const tagChips = tags.map(t =>
+    `<button type="button" class="chip ${activeTagFilters.has(t) ? 'checked' : ''}" data-tag="${t}">${t}</button>`
+  ).join('');
+
+  wrap.innerHTML = `
+    <div class="filter-block">
+      <span class="filter-label">Cooking method</span>
+      <div class="chip-group">${methodChips}</div>
+    </div>
+    <div class="filter-block">
+      <span class="filter-label">Tags</span>
+      <div class="chip-group">${tagChips || '<span class="filter-count">No tags yet.</span>'}</div>
+    </div>`;
+
+  wrap.querySelectorAll('[data-method]').forEach(btn => btn.addEventListener('click', () => {
+    const v = btn.dataset.method;
+    activeMethodFilters.has(v) ? activeMethodFilters.delete(v) : activeMethodFilters.add(v);
+    render();
+  }));
+  wrap.querySelectorAll('[data-tag]').forEach(btn => btn.addEventListener('click', () => {
+    const v = btn.dataset.tag;
+    activeTagFilters.has(v) ? activeTagFilters.delete(v) : activeTagFilters.add(v);
+    render();
+  }));
+}
+
+function applyFilters(list){
+  let out = list;
+  if (activeTagFilters.size){
+    out = out.filter(r => {
+      const t = r.tags || [];
+      return Array.from(activeTagFilters).every(f => t.includes(f));
+    });
+  }
+  if (activeMethodFilters.size){
+    out = out.filter(r => {
+      const m = recipeMethods(r);
+      return Array.from(activeMethodFilters).every(f => m.includes(f));
+    });
+  }
+  return out;
+}
+
 function render(){
   // In circulation first (A–Z), then everything out of circulation (A–Z).
-  const recipes = getRecipes().slice().sort((a,b) =>
+  const all = getRecipes().slice().sort((a,b) =>
     ((a.active === false) - (b.active === false)) || a.name.localeCompare(b.name)
   );
+  const recipes = applyFilters(all);
+
+  renderFilters();
+  const filtering = activeTagFilters.size || activeMethodFilters.size;
+  document.getElementById('filterCount').textContent =
+    filtering ? `showing ${recipes.length} of ${all.length} recipes` : `${all.length} recipes`;
 
   document.getElementById('tocPanel').style.display = recipes.length ? 'block' : 'none';
-  document.getElementById('emptyMsg').style.display = recipes.length ? 'none' : 'block';
+  const emptyMsg = document.getElementById('emptyMsg');
+  emptyMsg.style.display = recipes.length ? 'none' : 'block';
+  if (!recipes.length && all.length){
+    emptyMsg.textContent = 'No recipes match those filters.';
+  }
 
   document.getElementById('tocList').innerHTML = recipes.map(r =>
     `<li><a href="#${r.id}">${r.name}</a></li>`
@@ -213,6 +307,12 @@ function render(){
     </div>
   `).join('');
 }
+
+document.getElementById('clearFilters').addEventListener('click', () => {
+  activeTagFilters.clear();
+  activeMethodFilters.clear();
+  render();
+});
 
 loadMealStateFromFirestore().then(render);
 </script>
