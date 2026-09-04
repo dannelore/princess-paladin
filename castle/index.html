@@ -6,255 +6,90 @@
 <title>Castle Keeping — princessandpaladin.com</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/pp.css">
 <style>
-  :root{
-    --bg: #E7E5DF;
-    --panel: #FFFDF8;
-    --border: rgba(58,46,40,0.16);
-    --pink: #E87CA6;
-    --mint: #5F7752;
-    --gold: #9C7440;
-    --burgundy: #6E2430;
-    --text: #2E241F;
-    --muted: #6B5E54;
-  }
-
-  *{ box-sizing:border-box; }
-
-  body{
-    margin:0;
-    background: var(--bg);
-    color: var(--text);
-    font-family:'Jost', sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  a{ color: var(--mint); text-decoration: none; }
-  a:hover{ text-decoration: underline; }
-
-  .wrap{
-    max-width: 1080px;
-    margin: 0 auto;
-    padding: 0 24px;
-  }
-
-  /* ---------- HEADER ---------- */
-  header{
-    text-align:center;
-    padding: 20px 0 34px;
-  }
-
-  .hero-icons{
-    display:flex;
-    justify-content:center;
-    align-items:flex-end;
-    gap: 18px;
-    margin-bottom: 14px;
-  }
-
-  .hero-icons svg{
-    width: 46px;
-    height: 46px;
-    filter: drop-shadow(0 2px 3px rgba(74,59,66,0.25));
-  }
-
-  h1.logo{
-    font-family:'Cormorant Garamond', serif;
-    font-weight: 500;
-    font-size: clamp(2.8rem, 9vw, 5.8rem);
-    letter-spacing: 0.005em;
-    margin: 0;
-    color: var(--text);
-    line-height: 1.05;
-  }
-  p.subhead{
-    font-family:'Cormorant Garamond', serif;
-    font-style: italic;
-    font-size: 16px;
-    letter-spacing: 0.01em;
-    color: var(--gold);
-    margin: 14px 0 0;
-  }
-
-  .back-link{
-    display:inline-flex;
-    align-items:center;
-    gap: 6px;
-    margin-top: 22px;
-    font-family:'Cormorant Garamond', serif;
-    font-style: italic;
-    font-size: 14px;
-    color: var(--muted);
-  }
-  .back-link:hover{ color: var(--burgundy); }
-
-  header{ padding-bottom: 12px; }
-
-  /* ---------- PAGE TITLE ---------- */
-  .page-title{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap: 12px;
-    margin: 30px 0 40px;
-  }
-  .page-title svg{ width: 30px; height: 30px; color: var(--burgundy); }
-  .page-title h2{
-    font-family:'Cormorant Garamond', serif;
-    font-weight: 600;
-    font-size: clamp(1.8rem, 4vw, 2.6rem);
-    color: var(--text);
-    margin: 0;
-  }
-
-  /* ---------- LAYOUT ---------- */
-  main.wrap{ padding-bottom: 56px; }
-
-  .panel{
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 26px 28px;
-    box-shadow: 0 2px 10px rgba(58,46,40,0.05);
-  }
-
-  /* ---------- LINK CARDS ---------- */
-  .cards-grid{
-    display:flex;
-    flex-wrap: wrap;
+  /* Castle-only: tighter hero so the back-link tucks under it */
+  .pp-hero{ padding-bottom: 12px; }
+  .back-row{
+    display: flex;
     justify-content: center;
     gap: 18px;
-    margin-top: 26px;
-  }
-
-  .card{
-    display:flex;
-    flex-direction: column;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    gap: 10px;
-    width: 130px;
-    height: 130px;
-    padding: 12px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  }
-  .card:hover, .card:focus-visible{
-    transform: translateY(-3px);
-    border-color: var(--burgundy);
-    box-shadow: 0 10px 22px rgba(58,46,40,0.1);
-    text-decoration: none;
-    outline: none;
-  }
-
-  .card svg{ width: 26px; height: 26px; color: var(--burgundy); }
-
-  .card h3{
-    font-family:'Cormorant Garamond', serif;
-    font-weight: 600;
-    font-size: 17px;
-    line-height: 1.2;
-    color: var(--text);
-    margin: 0;
-  }
-
-  /* ---------- FOOTER ---------- */
-  footer{
-    padding: 20px 0 48px;
-    text-align:center;
-    font-family:'Cormorant Garamond', serif;
-    font-style: italic;
-    font-size: 14px;
-    letter-spacing: 0.01em;
-    color: var(--muted);
-  }
-  .footer-flourish{
-    font-style: normal;
-    color: var(--gold);
-    letter-spacing: 0.05em;
-    margin: 0 0 10px;
-  }
-  .footer-estab{
-    font-style: normal;
-    font-weight: 600;
-    color: var(--text);
-    margin: 0 0 6px;
+    margin-top: 20px;
   }
 </style>
 </head>
-<body>
+<body class="pp-castle">
 
-<header class="wrap">
-  <div class="hero-icons">
+<header class="pp-wrap pp-hero">
+  <div class="pp-emblem">
     <!-- Tiara -->
-    <svg viewBox="0 0 64 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M4 40 L4 26 L16 34 L22 14 L32 30 L42 14 L48 34 L60 26 L60 40 Z"
-            fill="#E87CA6" stroke="#C85D87" stroke-width="1.5" stroke-linejoin="round"/>
-      <circle cx="22" cy="14" r="3.2" fill="#FCF6EE" stroke="#C85D87" stroke-width="1.2"/>
-      <circle cx="32" cy="9" r="3.6" fill="#FCF6EE" stroke="#C85D87" stroke-width="1.2"/>
-      <circle cx="42" cy="14" r="3.2" fill="#FCF6EE" stroke="#C85D87" stroke-width="1.2"/>
-      <rect x="4" y="38" width="56" height="5" rx="1.5" fill="#E87CA6" stroke="#C85D87" stroke-width="1.5"/>
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M8 44 H56" stroke="#9C7440" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="32" cy="10" r="3.5" fill="#9C7440"/>
+      <circle cx="4" cy="18" r="3" fill="#9C7440"/>
+      <circle cx="60" cy="18" r="3" fill="#9C7440"/>
     </svg>
     <!-- Sword -->
-    <svg viewBox="0 0 32 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
-      <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#C89B3C" stroke="#8A6A22" stroke-width="1.2"/>
-      <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
-      <circle cx="16" cy="60" r="3.4" fill="#C89B3C" stroke="#8A6A22" stroke-width="1.2"/>
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <g transform="translate(16,0)">
+        <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
+        <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+        <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
+        <circle cx="16" cy="60" r="3.4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+      </g>
     </svg>
   </div>
 
-  <h1 class="logo">Princess &amp; Paladin</h1>
-  <p class="subhead">where creativity and chaos meet organization and overthinking</p>
+  <h1 class="pp-title">Princess &amp; Paladin</h1>
+  <p class="pp-tagline">where creativity and chaos meet organization and overthinking</p>
 
-  <a class="back-link" href="../index.html">
-    <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M13 7H1M1 7L6 2M1 7L6 12" stroke="currentColor" stroke-width="1.6"/></svg>
-    back home
-  </a>
-   <a class="back-link" href="https://princessandpaladin.com/castle">
-    <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M13 7H1M1 7L6 2M1 7L6 12" stroke="currentColor" stroke-width="1.6"/></svg>
-    back to castle keeping
-  </a>
+  <div class="back-row">
+    <a class="pp-back" href="/">
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M13 7H1M1 7L6 2M1 7L6 12" stroke="currentColor" stroke-width="1.6"/></svg>
+      back home
+    </a>
+  </div>
 </header>
 
-<main class="wrap">
+<main class="pp-wrap">
 
-  <div class="page-title">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <div class="pp-page-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M4 21V10l3-2V6h2v2l3-2v3l3-2v3l3-2v2l3 2v11Z"/>
       <path d="M4 21h16"/>
     </svg>
     <h2>Castle Keeping</h2>
   </div>
 
-  <div class="cards-grid">
+  <div class="pp-cards">
 
-    <a class="card panel" href="meal-planner">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <a class="pp-panel pp-panel-tight pp-card" href="meal-planner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M7 3v7a2 2 0 0 0 2 2v9M7 3v5M9 3v5"/>
         <path d="M17 3c-1.5 0-2.5 1.5-2.5 4s.5 4 .5 4v10"/>
       </svg>
       <h3>Meal Planner</h3>
     </a>
 
-    <a class="card panel" href="recipe-book">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <a class="pp-panel pp-panel-tight pp-card" href="recipe-book">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M4 6.5C6 5 9 5 12 6.5V19c-3-1.5-6-1.5-8 0V6.5Z"/>
         <path d="M20 6.5C18 5 15 5 12 6.5V19c3-1.5 6-1.5 8 0V6.5Z"/>
       </svg>
       <h3>Recipe Book</h3>
     </a>
 
-    <a class="card panel" href="recipe-construction">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <a class="pp-panel pp-panel-tight pp-card" href="recipe-construction">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2-2 2.8-2.8Z"/>
       </svg>
       <h3>Recipe Construction</h3>
     </a>
 
-    <a class="card panel" href="cleaning-schedule">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <a class="pp-panel pp-panel-tight pp-card" href="cleaning-schedule">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M12 2c2 3 5 6 5 10a5 5 0 0 1-10 0c0-4 3-7 5-10Z"/>
       </svg>
       <h3>Cleaning Schedule</h3>
@@ -264,9 +99,9 @@
 
 </main>
 
-<footer class="wrap">
-  <p class="footer-flourish">♕ ───────── ⚔ ───────── ♕</p>
-  <p class="footer-estab">Princess &amp; Paladin • Established 2021</p>
+<footer class="pp-wrap pp-footer">
+  <p class="pp-footer-flourish">♕ ───────── ⚔ ───────── ♕</p>
+  <p class="pp-footer-estab">Princess &amp; Paladin • Established 2021</p>
   <span id="updated"></span>
 </footer>
 
