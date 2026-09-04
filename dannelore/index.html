@@ -6,436 +6,166 @@
 <title>Princess &amp; Paladin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/pp.css">
 <style>
+  /* Dannelore runs a narrower sidebar than the rest of the site */
+  :root{ --sidebar: 280px; }
 
-  :root{
-    --pink-bg: #F6D9E6;
-    --pink-bg-deep: #F2C9DC;
-    --rose: #E87CA6;
-    --rose-dark: #C85D87;
-    --sage: #8FA37E;
-    --sage-dark: #6D8259;
-    --cream: #FCF6EE;
-    --gold: #C89B3C;
-    --ink: #4A3B42;
-    --line: rgba(74,59,66,0.18);
-  }
+  .welcome{ padding: 34px 36px; }
+  .welcome p{ font-size: 1rem; line-height: 1.75; margin: 0 0 14px; }
+  .welcome p:last-child{ margin-bottom: 0; }
 
-  *{ box-sizing: border-box; }
-
-  body{
-    margin:0;
-    min-height:100vh;
-    font-family:'Ubuntu', sans-serif;
-    color: var(--ink);
-    background-color: var(--pink-bg);
-    background-image: linear-gradient(135deg, var(--pink-bg) 0%, var(--pink-bg-deep) 100%);
-    background-attachment: fixed;
-  }
-
-  .wrap{
-    max-width: 980px;
-    margin: 0 auto;
-    padding: 56px 24px 80px;
-  }
-
-  /* ---------- Navbar ---------- */
-  .navbar{
-    display:flex;
-    justify-content:center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 36px;
-  }
-
-  .navbar a{
-    font-family:'Jost', sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: var(--ink);
-    text-decoration: none;
-    background: var(--cream);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 9px 20px;
-    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-  }
-
-  .navbar a:hover,
-  .navbar a:focus-visible{
-    color: var(--rose-dark);
-    border-color: var(--rose);
-    background: #FFF7FA;
-  }
-
-  .navbar a:focus-visible{
-    outline: 2px solid var(--rose-dark);
-    outline-offset: 2px;
-  }
-
-  /* ---------- Hero ---------- */
-  .hero{
-    text-align:center;
-    margin-bottom: 44px;
-  }
-
-  .hero-icons{
-    display:flex;
-    justify-content:center;
-    align-items:flex-end;
-    gap: 18px;
-    margin-bottom: 14px;
-  }
-
-  .hero-icons svg{
-    width: 46px;
-    height: 46px;
-    filter: drop-shadow(0 2px 3px rgba(74,59,66,0.25));
-  }
-
-  h1.site-title{
-    font-family:'Spicy Rice', sans-serif;
-    font-weight:600;
-    font-size: clamp(2.6rem, 6vw, 4.2rem);
-    margin: 0;
-    letter-spacing: 0.02em;
-    color: var(--rose-dark);
-  }
-
-  h1.site-title .amp{
-    font-style: italic;
-    color: var(--sage-dark);
-    padding: 0 6px;
-  }
-
-  .tagline{
-    font-family:'Cormorant Garamond', serif;
-    font-style: italic;
-    font-size: 1.25rem;
-    color: var(--ink);
-    opacity: 0.85;
-    margin-top: 8px;
-  }
-
-  /* ---------- Layout ---------- */
-  .panels{
-    display:grid;
-    grid-template-columns: 1fr 280px;
-    gap: 28px;
-    align-items: start;
-  }
-
-  .main-column{
-    display:flex;
-    flex-direction: column;
-    gap: 28px;
-  }
-
-  .panel{
-    background: var(--cream);
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    box-shadow: 0 8px 24px rgba(74,59,66,0.12);
-    position: relative;
-  }
-
-  .panel::before{
-    content:"";
-    position:absolute;
-    inset: 8px;
-    border: 1px solid var(--rose);
-    border-radius: 3px;
-    opacity: 0.35;
-    pointer-events:none;
-  }
-
-  /* Welcome panel */
-  .welcome{
-    padding: 38px 40px;
-  }
-
-  .welcome h2{
-    font-family:'Montserrat', sans-serif;
-    font-weight:600;
-    font-size: 1.7rem;
-    color: var(--sage-dark);
-    margin: 0 0 14px;
-  }
-
-  .welcome p{
-    font-size: 0.98rem;
-    line-height: 1.75;
-    margin: 0 0 14px;
-  }
-
-  .welcome p:last-child{ margin-bottom:0; }
-
-  .signoff{
-    font-family:'Cormorant Garamond', serif;
-    font-style: italic;
-    color: var(--rose-dark);
-    font-size: 1.05rem;
-  }
-
-  /* Sidebar nav panel */
-  .nav-panel{
-    padding: 30px 26px;
-    display:flex;
-    flex-direction:column;
-  }
-
-  .nav-panel h2{
-    font-family:'Jost', sans-serif;
+  .nav-panel{ display: flex; flex-direction: column; }
+  .nav-panel h2,
+  .sidebar-box h2{
+    font-family: 'Jost', sans-serif;
     text-transform: uppercase;
     letter-spacing: 0.14em;
     font-size: 0.78rem;
     color: var(--gold);
     margin: 0 0 18px;
-    text-align:center;
-  }
-
-  /* Sidebar */
-  .sidebar{
-    padding: 30px 22px;
-  }
-
-  .sidebar-box{
     text-align: center;
   }
 
+  .nav-list{
+    list-style: none;
+    margin: 0; padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
+  }
+  .nav-list li{ flex: 0 0 130px; }
+  .nav-list a{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    aspect-ratio: 1 / 1;
+    text-align: center;
+    text-decoration: none;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 10px 8px;
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  }
+  .nav-list a .icon{ font-size: 1.3rem; line-height: 1; }
+  .nav-list a .label{
+    font-family: var(--font-serif);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .nav-list a:hover,
+  .nav-list a:focus-visible{
+    border-color: var(--pink);
+    background: var(--panel-tint);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 14px rgba(200,93,135,0.22);
+    text-decoration: none;
+  }
+
+  .sidebar-box{ text-align: center; }
   .sidebar-box + .sidebar-box{
     margin-top: 28px;
     padding-top: 24px;
     border-top: 1px dashed var(--line);
   }
 
-  .sidebar-box h2{
-    font-family:'Jost', sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    font-size: 0.78rem;
-    color: var(--gold);
-    margin: 0 0 14px;
-  }
-
-  .comfort-show{
-    text-align: center;
-  }
-
-  .comfort-show h2{
-    font-family:'Jost', sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    font-size: 0.78rem;
-    color: var(--gold);
-    margin: 0 0 14px;
-  }
-
   #comfort-result{
-    font-family:'Cormorant Garamond', serif;
+    font-family: var(--font-serif);
     font-style: italic;
     font-size: 1.15rem;
-    color: var(--rose-dark);
+    color: var(--pink-deep);
     min-height: 1.6em;
     margin: 0 0 14px;
   }
 
-  #comfort-spin-btn{
-    font-family:'Jost', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 500;
-    color: #fff;
-    background: var(--rose);
-    border: none;
-    border-radius: 999px;
-    padding: 10px 22px;
-    cursor: pointer;
-    transition: background 0.15s ease, transform 0.15s ease;
-  }
-
-  #comfort-spin-btn:hover,
-  #comfort-spin-btn:focus-visible{
-    background: var(--rose-dark);
-    transform: translateY(-2px);
-  }
-
-  #comfort-spin-btn:active{
-    transform: translateY(0);
-  }
-
-  .nav-list{
-    list-style:none;
-    margin:0; padding:0;
-    display:flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 14px;
-  }
-
-  .nav-list li{
-    flex: 0 0 130px;
-  }
-
-  .nav-list a{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap: 6px;
-    aspect-ratio: 1 / 1;
-    text-align:center;
-    text-decoration:none;
-    color: var(--ink);
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 10px 8px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-  }
-
-  .nav-list a .icon{
-    font-size: 1.3rem;
-    line-height:1;
-  }
-
-  .nav-list a .label{
-    font-family:'Cormorant Garamond', serif;
-    font-size: 0.95rem;
-    font-weight:600;
-    line-height: 1.2;
-  }
-
-  .nav-list a:hover,
-  .nav-list a:focus-visible{
-    border-color: var(--rose);
-    background: #FFF7FA;
-    transform: translateY(-3px);
-    box-shadow: 0 6px 14px rgba(200,93,135,0.22);
-  }
-
-  .nav-list a:focus-visible{
-    outline: 2px solid var(--rose-dark);
-    outline-offset: 2px;
-  }
-
-  footer{
-    text-align:center;
-    margin-top: 48px;
-    font-size: 0.8rem;
-    color: var(--ink);
-    opacity: 0.55;
-    font-family:'Jost', sans-serif;
-    letter-spacing: 0.04em;
-  }
-
-  footer div{
-    margin-top: 6px;
-  }
-
-  footer .footer-divider{
-    margin-top: 0;
-    font-size: 0.9rem;
-    color: var(--rose-dark);
-    letter-spacing: 0.08em;
-  }
-
-  /* ---------- Mobile ---------- */
   @media (max-width: 780px){
-    .panels{
-      grid-template-columns: 1fr;
-    }
-    .welcome{ padding: 30px 26px; }
-    .nav-list li{
-      flex: 0 0 110px;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce){
-    .nav-list a{ transition:none; }
+    .welcome{ padding: 28px 24px; }
+    .nav-list li{ flex: 0 0 110px; }
   }
 </style>
 </head>
-<body>
+<body class="pp-dannelore">
 
-<div class="wrap">
-
-  <nav class="navbar" aria-label="Main navigation">
+<div class="pp-wrap">
+  <nav class="pp-nav" aria-label="Main navigation">
     <a href="https://princessandpaladin.com/">Home</a>
     <a href="https://princessandpaladin.com/castle/">Castle Keep</a>
     <a href="/side-quests">Side Quests</a>
     <a href="/templates">Templates</a>
   </nav>
 
-  <div class="hero">
-    <div class="hero-icons">
+  <div class="pp-hero">
+    <div class="pp-emblem">
       <!-- Tiara -->
-      <svg viewBox="0 0 64 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 40 L4 26 L16 34 L22 14 L32 30 L42 14 L48 34 L60 26 L60 40 Z"
-              fill="#E87CA6" stroke="#C85D87" stroke-width="1.5" stroke-linejoin="round"/>
-        <circle cx="22" cy="14" r="3.2" fill="#FCF6EE" stroke="#C85D87" stroke-width="1.2"/>
-        <circle cx="32" cy="9" r="3.6" fill="#FCF6EE" stroke="#C85D87" stroke-width="1.2"/>
-        <circle cx="42" cy="14" r="3.2" fill="#FCF6EE" stroke="#C85D87" stroke-width="1.2"/>
-        <rect x="4" y="38" width="56" height="5" rx="1.5" fill="#E87CA6" stroke="#C85D87" stroke-width="1.5"/>
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M8 44 H56" stroke="#9C7440" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="32" cy="10" r="3.5" fill="#9C7440"/>
+        <circle cx="4" cy="18" r="3" fill="#9C7440"/>
+        <circle cx="60" cy="18" r="3" fill="#9C7440"/>
       </svg>
       <!-- Sword -->
-      <svg viewBox="0 0 32 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
-        <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#C89B3C" stroke="#8A6A22" stroke-width="1.2"/>
-        <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
-        <circle cx="16" cy="60" r="3.4" fill="#C89B3C" stroke="#8A6A22" stroke-width="1.2"/>
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <g transform="translate(16,0)">
+          <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
+          <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+          <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
+          <circle cx="16" cy="60" r="3.4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+        </g>
       </svg>
     </div>
 
-    <h1 class="site-title">Princess <span class="amp">&amp;</span> Paladin</h1>
-    <p class="tagline">where creativity and chaos meet organization and overthinking</p>
+    <h1 class="pp-title">Princess &amp; Paladin</h1>
+    <p class="pp-tagline">where creativity and chaos meet organization and overthinking</p>
+  </div>
+</div>
+
+<main class="pp-layout">
+
+  <div class="pp-col">
+    <section class="pp-panel welcome">
+      <h2>Hello Friend</h2>
+      <p>This is where I keep the things I'm trying to remember, organize, track, or make easier for myself — projects, plans, lists, references, and whatever else earns a permanent spot outside my brain.</p>
+      <p>Basically: if I've thought "there has to be a better way to keep track of this," it probably lives here.</p>
+    </section>
+
+    <nav class="pp-panel nav-panel" aria-label="Site sections">
+      <h2>Wander to</h2>
+      <ul class="nav-list">
+        <li><a href="https://princessandpaladin.com/dannelore/quest-log"><span class="icon">📝</span><span class="label">To Do List</span></a></li>
+        <li><a href="https://princessandpaladin.com/dannelore/self-care"><span class="icon">🌷</span><span class="label">Self Care</span></a></li>
+        <li><a href="/projects"><span class="icon">🧵</span><span class="label">Projects</span></a></li>
+      </ul>
+    </nav>
   </div>
 
-  <div class="panels">
-
-    <div class="main-column">
-      <section class="panel welcome">
-        <h2>Hello Friend</h2>
-        <p>This is where I keep the things I'm trying to remember, organize, track, or make easier for myself — projects, plans, lists, references, and whatever else earns a permanent spot outside my brain.</p>
-        <p>Basically: if I've thought "there has to be a better way to keep track of this," it probably lives here.</p>
-      </section>
-
-      <nav class="panel nav-panel" aria-label="Site sections">
-        <h2>Wander to</h2>
-        <ul class="nav-list">
-          <li><a href="https://princessandpaladin.com/dannelore/quest-log"><span class="icon">📝</span><span class="label">To Do List</span></a></li>
-          <li><a href="https://princessandpaladin.com/dannelore/self-care"><span class="icon">🌷</span><span class="label">Self Care</span></a></li>
-          <li><a href="/projects"><span class="icon">🧵</span><span class="label">Projects</span></a></li>
-        </ul>
-      </nav>
+  <aside class="pp-panel sidebar">
+    <div class="sidebar-box">
+      <h2>Comfort Show Roulette</h2>
+      <p id="comfort-result">Press the button for a pick</p>
+      <button type="button" class="pp-btn" id="comfort-spin-btn">🎲 Pick for me</button>
     </div>
 
-    <aside class="panel sidebar">
-      <div class="comfort-show sidebar-box">
-        <h2>Comfort Show Roulette</h2>
-        <p id="comfort-result">Press the button for a pick</p>
-        <button type="button" id="comfort-spin-btn">🎲 Pick for me</button>
-      </div>
+    <div class="sidebar-box">
+      <h2>Other Sidebar</h2>
+      <p>Ideas go here!</p>
+    </div>
+  </aside>
 
-      <div class="sidebar-box">
-  <h2>Other Sidebar</h2>
-  <p>Ideas go here!</p>
-</div>
-    </aside>
+</main>
 
-  </div>
-
-  <footer>
-    <div class="footer-divider">♕ ───────── ⚔ ───────── ♕</div>
-    <div>Princess &amp; Paladin • Established 2021</div>
-    <div>last updated <span id="last-updated-date">(date)</span></div>
-  </footer>
-
-</div>
+<footer class="pp-wrap pp-footer">
+  <p class="pp-footer-flourish">♕ ───────── ⚔ ───────── ♕</p>
+  <p class="pp-footer-estab">Princess &amp; Paladin • Established 2021</p>
+  <span>last updated <span id="last-updated-date">(date)</span></span>
+</footer>
 
 <script>
   document.getElementById('last-updated-date').textContent =
