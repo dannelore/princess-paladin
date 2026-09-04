@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vmprman — Princess &amp; Paladin</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/assets/pp.css">
+
+<style>
+  /* Red folder background. Move this into pp.css section 3 as .pp-vmprman
+     when you're happy with it. */
+  .pp-vmprman{
+    background-image: linear-gradient(135deg,#A03038 0%,#6E2430 100%);
+    background-attachment: fixed;
+  }
+
+  .knight-stage{
+    display: flex;
+    justify-content: center;
+    padding: 8px 0 64px;
+  }
+  .knight-stage svg{
+    width: min(340px, 72vw);
+    height: auto;
+    color: #F7F1E4;
+  }
+
+  /* Nav sits a little lower on this page since there's no hero above it */
+  .pp-vmprman .pp-nav{ margin: 36px 0 40px; }
+</style>
+</head>
+
+<body class="pp-vmprman">
+
+  <div class="pp-wrap">
+
+    <nav class="pp-nav" aria-label="Main">
+      <a href="/">Home</a>
+      <a href="/castle-keep/">Castle Keeping</a>
+      <a href="/dannelore/">Dannelore</a>
+      <a href="/vmprman/" aria-current="page">Vmprman</a>
+      <a href="/templates/">Templates</a>
+    </nav>
+
+    <div class="knight-stage">
+      <!-- Shrugging knight -->
+      <svg viewBox="0 0 260 250" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="A knight in armour shrugging">
+
+        <g fill="none" stroke="currentColor" stroke-width="5"
+           stroke-linecap="round" stroke-linejoin="round">
+
+          <!-- plume -->
+          <path d="M130 46 C130 30 142 20 156 22 C146 30 144 38 146 46"
+                fill="#B23A3A" stroke="#B23A3A"/>
+
+          <!-- helm -->
+          <path d="M104 108 L104 76 A26 26 0 0 1 156 76 L156 108 Z"
+                fill="#F7F1E4" stroke="currentColor"/>
+          <!-- visor slit -->
+          <path d="M108 88 L152 88" stroke="#6E2430" stroke-width="8"/>
+          <!-- breath holes -->
+          <path d="M118 100 L118 100 M130 100 L130 100 M142 100 L142 100"
+                stroke="#6E2430" stroke-width="6"/>
+
+          <!-- gorget -->
+          <path d="M112 108 L148 108 L148 118 L112 118 Z" fill="#F7F1E4"/>
+
+          <!-- pauldrons, hiked up to the helm -->
+          <path d="M74 130 A24 20 0 0 1 112 116 L112 132 Z" fill="#F7F1E4"/>
+          <path d="M186 130 A24 20 0 0 0 148 116 L148 132 Z" fill="#F7F1E4"/>
+
+          <!-- tabard / breastplate -->
+          <path d="M108 118 L152 118 L162 190 L98 190 Z" fill="#F7F1E4"/>
+          <path d="M130 130 L130 176 M112 148 L148 148"
+                stroke="#B23A3A" stroke-width="7"/>
+
+          <!-- arms out, palms up -->
+          <path d="M80 134 L64 162 L36 154"/>
+          <path d="M180 134 L196 162 L224 154"/>
+
+          <!-- open hands -->
+          <path d="M36 154 q-12 -4 -14 6 q-2 9 10 10 q12 1 14 -8 Z" fill="#F7F1E4"/>
+          <path d="M224 154 q12 -4 14 6 q2 9 -10 10 q-12 1 -14 -8 Z" fill="#F7F1E4"/>
+
+          <!-- legs + boots -->
+          <path d="M114 190 L114 216 M146 190 L146 216"/>
+          <path d="M100 226 L100 218 A14 10 0 0 1 128 218 L128 226 Z" fill="#F7F1E4"/>
+          <path d="M132 226 L132 218 A14 10 0 0 1 160 218 L160 226 Z" fill="#F7F1E4"/>
+        </g>
+
+        <!-- shrug marks -->
+        <g fill="none" stroke="currentColor" stroke-width="4"
+           stroke-linecap="round" opacity="0.55">
+          <path d="M56 82 q10 -12 18 -4 q6 7 -3 12 q-5 3 -5 8"/>
+          <path d="M65 108 L65 108" stroke-width="5"/>
+          <path d="M204 82 q-10 -12 -18 -4 q-6 7 3 12 q5 3 5 8"/>
+          <path d="M195 108 L195 108" stroke-width="5"/>
+        </g>
+      </svg>
+    </div>
+
+  </div>
+
+</body>
+</html>
