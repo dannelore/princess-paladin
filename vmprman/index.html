@@ -15,9 +15,12 @@
   /* Red folder background. Move this into pp.css section 3 as .pp-vmprman
      when you're happy with it. */
   .pp-vmprman{
-    background-image: linear-gradient(135deg,#A03038 0%,#6E2430 100%);
+    background-image: linear-gradient(135deg,#7C1F2A 0%,#5A1720 100%);
     background-attachment: fixed;
   }
+
+  .pp-vmprman .pp-emblem{ padding-top: 32px; }
+  .pp-vmprman .pp-nav{ margin: 24px 0 40px; }
 
   .knight-stage{
     display: flex;
@@ -29,15 +32,34 @@
     height: auto;
     color: #F7F1E4;
   }
-
-  /* Nav sits a little lower on this page since there's no hero above it */
-  .pp-vmprman .pp-nav{ margin: 36px 0 40px; }
 </style>
 </head>
 
 <body class="pp-vmprman">
 
   <div class="pp-wrap">
+
+    <div class="pp-emblem">
+      <!-- Tiara -->
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z"
+              fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M8 44 H56" stroke="#9C7440" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="32" cy="10" r="3.5" fill="#9C7440"/>
+        <circle cx="4"  cy="18" r="3"   fill="#9C7440"/>
+        <circle cx="60" cy="18" r="3"   fill="#9C7440"/>
+      </svg>
+      <!-- Sword -->
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <g transform="translate(16,0)">
+          <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z"
+                fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
+          <rect x="6"  y="40" width="20" height="5"  rx="1.5" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+          <rect x="14" y="45" width="4"  height="15" rx="1.5" fill="#7C1F2A"/>
+          <circle cx="16" cy="60" r="3.4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+        </g>
+      </svg>
+    </div>
 
     <nav class="pp-nav" aria-label="Main">
       <a href="/">Home</a>
@@ -62,9 +84,7 @@
           <!-- helm -->
           <path d="M104 108 L104 76 A26 26 0 0 1 156 76 L156 108 Z"
                 fill="#F7F1E4" stroke="currentColor"/>
-          <!-- visor slit -->
           <path d="M108 88 L152 88" stroke="#6E2430" stroke-width="8"/>
-          <!-- breath holes -->
           <path d="M118 100 L118 100 M130 100 L130 100 M142 100 L142 100"
                 stroke="#6E2430" stroke-width="6"/>
 
@@ -75,7 +95,7 @@
           <path d="M74 130 A24 20 0 0 1 112 116 L112 132 Z" fill="#F7F1E4"/>
           <path d="M186 130 A24 20 0 0 0 148 116 L148 132 Z" fill="#F7F1E4"/>
 
-          <!-- tabard / breastplate -->
+          <!-- tabard -->
           <path d="M108 118 L152 118 L162 190 L98 190 Z" fill="#F7F1E4"/>
           <path d="M130 130 L130 176 M112 148 L148 148"
                 stroke="#B23A3A" stroke-width="7"/>
