@@ -68,6 +68,13 @@
 .addextra{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
 .addextra input{ flex:1 1 120px; font-family:var(--font-body); padding:8px 10px; border:1px solid var(--line); border-radius:var(--radius-sm); }
 
+.pantry-tabs{ display:flex; gap:4px; margin:14px 0 10px; }
+.pantry-tab{ flex:1 1 0; min-width:0; font-family:var(--font-body); font-size:.68rem; font-weight:500;
+  text-transform:uppercase; letter-spacing:.05em; padding:8px 4px; cursor:pointer;
+  border:1px solid var(--line); background:#fff; color:var(--ink-soft); border-radius:999px; }
+.pantry-tab.active{ background:var(--sage); border-color:var(--sage); color:#fff; }
+.pantry-count{ font-size:.72rem; color:var(--ink-soft); font-style:italic; margin:0 0 8px; }
+.shop-qty{ font-weight:500; }
 .pantry-item{ display:flex; align-items:flex-start; gap:8px; padding:6px 0; font-size:.92rem; }
 .pantry-item.checked > label{ color:var(--sage-deep); font-weight:500; }
 .pantry-item.needed{ background:var(--parchment); border:1px solid var(--parchment-border); border-radius:var(--radius-sm); padding:5px 8px; margin:0 -8px 4px; }
@@ -180,7 +187,7 @@ function defaultMealState(){
     mealplan: {},
     shoppingExtras: {},
     shoppingChecked: {},
-    pantryItems: DEFAULT_PANTRY_ITEMS.slice(),
+    pantryItems: JSON.parse(JSON.stringify(DEFAULT_PANTRY_GROUPS)),
     pantryChecked: {}
   };
 }
@@ -477,19 +484,54 @@ function norm(name){ return name.trim().toLowerCase().replace(/\s+/g,' '); }
 
 const PANTRY_ITEMS_KEY = 'pp_pantry_items';
 const PANTRY_CHECKED_KEY = 'pp_pantry_checked';
-const DEFAULT_PANTRY_ITEMS = [
-  'eggs','milk','butter','olive oil','salt','black pepper','garlic','onions',
-  'flour','sugar','rice','pasta','bread','paper towels','dish soap','coffee'
-];
-function getPantryItems(){
+const DEFAULT_PANTRY_GROUPS = {
+  'Spices': [
+    'salt','black pepper','garlic powder','Italian seasoning','red pepper flakes',
+    'cumin','chili powder','taco seasoning','onion soup mix'
+  ],
+  'Fridge / Freezer': [
+    'butter','milk','Dijon mustard','eggs','shredded cheese','Parmesan cheese',
+    'sour cream','ketchup','mustard','mayo','salsa','relish','bleu cheese','honey mustard'
+  ],
+  'Pantry': [
+    'olive oil','cooking spray','honey','soy sauce','Worcestershire sauce',
+    'apple cider vinegar','BBQ sauce','pasta sauce','taco sauce','pasta','egg noodles',
+    'Kraft Mac & Cheese','white rice','brown rice','bread','baked beans','canned corn',
+    'cornstarch','tortilla chips','potato chips','red cooking wine','variety chips',
+    'wraps','peanut butter','Nutella','Pop-Tarts','cereal','ramen'
+  ]
+};
+const PANTRY_GROUP_NAMES = Object.keys(DEFAULT_PANTRY_GROUPS);
+
+// Pantry used to be one flat array. If that's what's in Firestore, sort the
+// defaults into their groups and keep anything you'd added by hand under Pantry.
+function getPantryGroups(){
   const stored = loadJSON(PANTRY_ITEMS_KEY, null);
-  if (stored) return stored;
-  saveJSON(PANTRY_ITEMS_KEY, DEFAULT_PANTRY_ITEMS);
-  return DEFAULT_PANTRY_ITEMS.slice();
+  if (stored && !Array.isArray(stored) && typeof stored === 'object'){
+    const out = {};
+    PANTRY_GROUP_NAMES.forEach(g => out[g] = Array.isArray(stored[g]) ? stored[g].slice() : DEFAULT_PANTRY_GROUPS[g].slice());
+    return out;
+  }
+  const groups = {};
+  PANTRY_GROUP_NAMES.forEach(g => groups[g] = DEFAULT_PANTRY_GROUPS[g].slice());
+  if (Array.isArray(stored)){
+    const known = new Set(PANTRY_GROUP_NAMES.flatMap(g => groups[g].map(norm)));
+    stored.forEach(item => { if (!known.has(norm(item))) groups['Pantry'].push(item); });
+  }
+  saveJSON(PANTRY_ITEMS_KEY, groups);
+  return groups;
 }
-function addPantryItem(item){
-  const items = getPantryItems();
-  if (!items.includes(item)){ items.push(item); saveJSON(PANTRY_ITEMS_KEY, items); }
+function getPantryItems(){
+  const g = getPantryGroups();
+  return PANTRY_GROUP_NAMES.flatMap(n => g[n]);
+}
+function addPantryItem(item, group){
+  const groups = getPantryGroups();
+  const target = PANTRY_GROUP_NAMES.includes(group) ? group : 'Pantry';
+  if (!getPantryItems().some(i => norm(i) === norm(item))){
+    groups[target].push(item);
+    saveJSON(PANTRY_ITEMS_KEY, groups);
+  }
 }
 function getPantryChecked(weekIso){
   const all = loadJSON(PANTRY_CHECKED_KEY, {});
@@ -529,12 +571,22 @@ function computeNeededPantryItems(){
   return needed;
 }
 
+let activePantryTab = PANTRY_GROUP_NAMES[0];
+
 function renderPantryList(){
-  const items = getPantryItems().slice().sort();
+  const groups = getPantryGroups();
   const checked = getPantryChecked(currentWeek);
   const needed = computeNeededPantryItems();
   const wrap = document.getElementById('pantryList');
-  wrap.innerHTML = items.map(item => {
+
+  const tabs = PANTRY_GROUP_NAMES.map(g => {
+    const short = g === 'Fridge / Freezer' ? 'Fridge' : g;
+    return `<button class="pantry-tab ${g === activePantryTab ? 'active' : ''}" data-group="${g}">${short}</button>`;
+  }).join('');
+
+  const items = (groups[activePantryTab] || []).slice().sort((a,b) => a.localeCompare(b));
+
+  const rows = items.map(item => {
     const neededInfo = needed[norm(item)];
     return `
     <div class="pantry-item ${checked[item] ? 'checked' : ''} ${neededInfo ? 'needed' : ''}">
@@ -545,7 +597,16 @@ function renderPantryList(){
       </div>
     </div>
   `;
-  }).join('');
+  }).join('') || '<p class="empty">Nothing in this section yet.</p>';
+
+  wrap.innerHTML = `<div class="pantry-tabs">${tabs}</div>
+    <p class="pantry-count">${items.length} item${items.length === 1 ? '' : 's'} · tick anything you need to buy</p>
+    ${rows}`;
+
+  wrap.querySelectorAll('.pantry-tab').forEach(btn => btn.addEventListener('click', () => {
+    activePantryTab = btn.dataset.group;
+    renderPantryList();
+  }));
   wrap.querySelectorAll('input[type=checkbox]').forEach(cb => cb.addEventListener('change', () => {
     setPantryChecked(currentWeek, cb.dataset.item, cb.checked);
     render();
@@ -555,7 +616,7 @@ document.getElementById('addPantryItemBtn').addEventListener('click', () => {
   const input = document.getElementById('newPantryItem');
   const item = input.value.trim();
   if (!item) return;
-  addPantryItem(item);
+  addPantryItem(item, activePantryTab); // lands in whichever tab is open
   setPantryChecked(currentWeek, item, true); // adding it now means you need it now
   input.value = '';
   render();
@@ -569,6 +630,80 @@ document.getElementById('pantryToggleBtn').addEventListener('click', openPantry)
 document.getElementById('pantryCloseBtn').addEventListener('click', closePantry);
 pantryOverlay.addEventListener('click', closePantry);
 
+// "cups" and "cup" are the same unit; "onions" and "onion" are the same thing.
+// Without this the list ends up with three separate garlic lines.
+const UNIT_ALIASES = {
+  cups:'cup', tablespoon:'tbsp', tablespoons:'tbsp', tbsps:'tbsp',
+  teaspoon:'tsp', teaspoons:'tsp', tsps:'tsp',
+  pound:'lb', pounds:'lb', lbs:'lb', ounce:'oz', ounces:'oz',
+  grams:'g', gram:'g', kilograms:'kg', kilogram:'kg',
+  liters:'l', litres:'l', liter:'l', litre:'l',
+  milliliters:'ml', millilitres:'ml',
+  cloves:'clove', cans:'can', sticks:'stick', bunches:'bunch', pinches:'pinch'
+};
+function canonUnit(u){
+  const c = (u || '').trim().toLowerCase();
+  return UNIT_ALIASES[c] || c;
+}
+function singular(word){
+  if (word.length < 4) return word;
+  if (/ies$/.test(word)) return word.slice(0, -3) + 'y';
+  if (/oes$/.test(word)) return word.slice(0, -2);          // tomatoes, potatoes
+  if (/(s|x|z|ch|sh)es$/.test(word)) return word.slice(0, -2);
+  if (/ss$/.test(word)) return word;
+  if (/s$/.test(word)) return word.slice(0, -1);
+  return word;
+}
+function mergeKey(name){
+  return norm(name).split(' ').map(singular).join(' ');
+}
+function round2(n){ return Math.round(n * 100) / 100; }
+
+// Abbreviations never pluralize — "3 tbsp", not "3 tbsps"
+const PLURAL_UNITS = ['cup','clove','can','stick','bunch','pinch','slice','package','box','bag'];
+
+// Turns { cup: 3, tbsp: 2 } into "3 cups + 2 tbsp"
+function formatQty(units){
+  const parts = Object.entries(units)
+    .filter(([, qty]) => qty > 0)
+    .map(([unit, qty]) => {
+      const n = round2(qty);
+      if (!unit) return String(n);
+      const plural = n !== 1 && PLURAL_UNITS.includes(unit);
+      return n + ' ' + (plural ? unit + 's' : unit);
+    });
+  if (!parts.length) return '';
+  return parts.join(' + ');
+}
+
+function addToMap(map, name, qty, unit, source, extra){
+  const u = canonUnit(unit);
+  // "3 cloves garlic cloves" reads badly — drop the unit word off the name
+  let display = String(name).trim();
+  if (u){
+    const words = display.split(' ');
+    if (words.length > 1 && singular(words[words.length - 1].toLowerCase()) === u){
+      display = words.slice(0, -1).join(' ');
+    }
+  }
+  const key = mergeKey(display);
+  if (!map[key]){
+    map[key] = { name: display, units: {}, sources: new Set(), category: categorize(display), unlisted: false };
+  }
+  const entry = map[key];
+  // Keep the shortest name — "onion" reads better than "onions, diced"
+  if (display.length < entry.name.length) entry.name = display;
+  const n = typeof qty === 'number' ? qty : parseFloat(qty);
+  if (!isNaN(n) && n > 0){
+    entry.units[u] = (entry.units[u] || 0) + n;
+  } else {
+    entry.unlisted = true;
+  }
+  entry.sources.add(source);
+  if (extra) Object.assign(entry, extra);
+  return entry;
+}
+
 function renderShopList(){
   const allRecipes = getWeekRecipesForMatching();
   const pantryNorms = getPantryItems().map(norm);
@@ -578,25 +713,24 @@ function renderShopList(){
   };
 
   const map = {};
-  allRecipes.forEach(r => (r.ingredients||[]).forEach(ing => {
-    if (matchesPantry(ing.name)) return; // flagged in the Pantry sidebar instead of the shopping list
-    const key = norm(ing.name) + '|' + (ing.unit||'');
-    if (!map[key]) map[key] = { name: ing.name, unit: ing.unit||'', qty:0, sources:new Set(), category: categorize(ing.name) };
-    if (typeof ing.qty === 'number') map[key].qty += ing.qty;
-    map[key].sources.add(r.name);
+
+  // Everything this week's recipes call for, merged by ingredient
+  allRecipes.forEach(r => (r.ingredients || []).forEach(ing => {
+    if (matchesPantry(ing.name)) return; // flagged in the Pantry sidebar instead
+    addToMap(map, ing.name, ing.qty, ing.unit, r.name);
   }));
 
+  // Anything added by hand merges into the same lines
   const extrasAll = loadJSON(EXTRAS_KEY, {});
   const extras = extrasAll[currentWeek] || [];
   extras.forEach(ex => {
-    const key = 'manual_' + ex.id;
-    map[key] = { name: ex.name, unit: ex.unit||'', qty: ex.qty||'', sources: new Set(['Added by you']), category: categorize(ex.name), manual:true, id: ex.id };
+    addToMap(map, ex.name, ex.qty, ex.unit, 'Added by you');
   });
 
+  // Pantry items ticked as "need to buy"
   const pantryChecked = getPantryChecked(currentWeek);
   Object.keys(pantryChecked).filter(item => pantryChecked[item]).forEach(item => {
-    const key = 'pantry_' + norm(item);
-    map[key] = { name: item, unit: '', qty: '', sources: new Set(['Pantry']), category: categorize(item), manual:true, id: 'pantry_' + norm(item) };
+    addToMap(map, item, null, '', 'Pantry');
   });
 
   const checkedAll = loadJSON(CHECKED_KEY, {});
@@ -615,15 +749,18 @@ function renderShopList(){
   wrap.innerHTML = cats.map(cat => `
     <div class="shop-cat">
       <h4>${cat}</h4>
-      ${grouped[cat].map(item => `
+      ${grouped[cat].sort((a,b) => a.name.localeCompare(b.name)).map(item => {
+        const qtyStr = formatQty(item.units);
+        return `
         <div class="shop-item ${checked[item.key] ? 'checked':''}">
           <input type="checkbox" data-key="${item.key}" ${checked[item.key] ? 'checked':''}>
           <div>
-            <label>${item.qty ? Math.round(item.qty*100)/100 + ' ' : ''}${item.unit||''} ${item.name}</label>
+            <label>${qtyStr ? `<span class="shop-qty">${qtyStr}</span> ` : ''}${item.name}</label>
             <small>${item.sources.join(', ')}</small>
           </div>
         </div>
-      `).join('')}
+      `;
+      }).join('')}
     </div>
   `).join('');
 
