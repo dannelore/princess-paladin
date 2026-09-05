@@ -1017,7 +1017,7 @@ function setSeason(itemId, seasonNo, watched){
   if(!item) return;
   const s = (item.seasons || []).find(x => x.number === seasonNo);
   if(!s) return;
-  const cap = s.aired != null ? s.aired : s.episodes;  // never mark beyond what's aired
+  const cap = (s.aired != null && !isNaN(s.aired)) ? s.aired : s.episodes;  // never mark beyond what's aired
   s.watched = Math.max(0, Math.min(watched, cap));
   syncStatus(item);
   save();
@@ -1226,10 +1226,16 @@ $("detailBody").onclick = e => {
   const s = (item.seasons || []).find(x => x.number === no);
   if(!s) return;
 
-  const cap = s.aired != null ? s.aired : s.episodes;
+  /* Read the aired count from the rendered chip row — this is always correct
+     even for seasons saved before the `aired` field existed. */
+  const chipRow = $("detailBody").querySelector(`.pp-chips[data-season="${no}"]`);
+  const airedCap = chipRow
+    ? (parseInt(chipRow.getAttribute("data-total"), 10) || s.episodes)
+    : (s.aired != null ? s.aired : s.episodes);
+
   if(attr === "data-plus")  setSeason(openId, no, (s.watched || 0) + 1);
   if(attr === "data-minus") setSeason(openId, no, (s.watched || 0) - 1);
-  if(attr === "data-all")   setSeason(openId, no, cap);
+  if(attr === "data-all")   setSeason(openId, no, airedCap);
   if(attr === "data-none")  setSeason(openId, no, 0);
 };
 
