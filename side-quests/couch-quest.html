@@ -157,16 +157,16 @@
   }
 
   /* streaming service badges on card — colour comes from an inline style */
-  .cq-streams{ display:flex; flex-wrap:wrap; gap:4px; }
+  .cq-streams{ display:flex; flex-wrap:wrap; gap:3px; }
   .cq-stream{
     font-family: var(--font-body);
-    font-size: .66rem;
+    font-size: .62rem;
     font-weight: 600;
-    letter-spacing: .03em;
+    letter-spacing: .02em;
     color: #fff;
     border: 1px solid transparent;
     border-radius: 999px;
-    padding: 2px 8px;
+    padding: 2px 6px;
     white-space: nowrap;
   }
   /* pale swatches need dark text */
@@ -259,7 +259,9 @@
   .cq-step .cq-steplabel{ font-family:var(--font-serif); font-style:italic; font-size:.86rem; color:var(--ink-soft); }
 
   /* ---------- grid ---------- */
-  .cq-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:16px; }
+  .cq-grid{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px; }
+  @media (max-width:900px){ .cq-grid{ grid-template-columns:repeat(4,minmax(0,1fr)); } }
+  @media (max-width:700px){ .cq-grid{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
 
   .cq-card{
     position:relative; display:flex; flex-direction:column; padding:0; overflow:hidden;
@@ -336,7 +338,7 @@
 
   @media (max-width:560px){
     .cq-fields{ grid-template-columns:1fr; }
-    .cq-grid{ grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); }
+    .cq-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
     .cq-selects{ gap:8px; }
   }
 </style>
@@ -374,7 +376,7 @@
 
   <div class="cq-bar">
     <button class="cq-filter" data-filter="all" aria-pressed="true">All</button>
-    <button class="cq-filter" data-filter="want" aria-pressed="false">Want to watch</button>
+    <button class="cq-filter" data-filter="want" aria-pressed="false">TBW</button>
     <button class="cq-filter" data-filter="watching" aria-pressed="false">Watching</button>
     <button class="cq-filter" data-filter="watched" aria-pressed="false">Watched</button>
     <button class="cq-filter" data-filter="rewatch" aria-pressed="false">Rewatches</button>
@@ -491,7 +493,7 @@
       <div class="cq-field">
         <label for="fStatus">Status</label>
         <select id="fStatus">
-          <option value="want">Want to watch</option>
+          <option value="want">TBW (to be watched)</option>
           <option value="watching">Watching</option>
           <option value="watched">Watched</option>
         </select>
@@ -626,17 +628,17 @@ const TMDB_IMG  = "https://image.tmdb.org/t/p/w500";
    enough to need dark text. Subscription state is stored separately, in
    state.subs — see the Services panel. */
 const STREAMING_SERVICES = [
-  { name:"Netflix",     color:"#B23A3A" },
-  { name:"HBO Max",     color:"#5A3B8C" },
-  { name:"Hulu",        color:"#4E8C63" },
-  { name:"Disney+",     color:"#2D3E68" },
-  { name:"Apple TV+",   color:"#3A3A3C" },
-  { name:"Prime Video", color:"#2E6E8C" },
-  { name:"Peacock",     color:"#C96A2E" },
-  { name:"Paramount+",  color:"#2F5EA8" },
-  { name:"DropOut",     color:"#E0B33A", light:true },
-  { name:"YouTube",     color:"#8C2F2F" },
-  { name:"Other",       color:"#6B5E54" }
+  { name:"Netflix",     short:"Netflix",   color:"#B23A3A" },
+  { name:"HBO Max",     short:"HBO",       color:"#5A3B8C" },
+  { name:"Hulu",        short:"Hulu",      color:"#4E8C63" },
+  { name:"Disney+",     short:"Disney+",   color:"#2D3E68" },
+  { name:"Apple TV+",   short:"Apple",     color:"#3A3A3C" },
+  { name:"Prime Video", short:"Prime",     color:"#2E6E8C" },
+  { name:"Peacock",     short:"Peacock",   color:"#C96A2E" },
+  { name:"Paramount+",  short:"Para+",     color:"#2F5EA8" },
+  { name:"DropOut",     short:"DropOut",   color:"#E0B33A", light:true },
+  { name:"YouTube",     short:"YouTube",   color:"#8C2F2F" },
+  { name:"Other",       short:"Other",     color:"#6B5E54" }
 ];
 
 const SERVICE_BY_NAME = {};
@@ -1053,7 +1055,7 @@ function mergeSeasons(oldSeasons, fresh){
 }
 
 /* ---------------- filter + sort ---------------- */
-const LABEL = { want:"Want to watch", watching:"Watching", watched:"Watched" };
+const LABEL = { want:"TBW", watching:"Watching", watched:"Watched" };
 const NEXT  = { want:"watching", watching:"watched", watched:"want" };
 
 function byTitle(a, b){
@@ -1180,10 +1182,11 @@ function render(){
     const streams = (item.streams || []).map(x => {
       const svc = SERVICE_BY_NAME[x];
       const col = svc ? svc.color : "#6B5E54";
+      const lbl = svc && svc.short ? svc.short : x;
       const sub = isSubbed(x);
       return `<span class="cq-stream" data-sub="${sub}" ${svc && svc.light ? 'data-light="true"' : ""}
         style="background:${col};${sub ? "" : `color:${col};border-color:${col};`}"
-        title="${esc(x)}${sub ? "" : " — not subscribed"}">${esc(x)}</span>`;
+        title="${esc(x)}${sub ? "" : " — not subscribed"}">${esc(lbl)}</span>`;
     }).join("");
     const rewatch = item.rewatch ? `<span class="cq-rewatch">Rewatch</span>` : "";
 
