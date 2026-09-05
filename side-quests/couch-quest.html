@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Couch Quest — Princess &amp; Paladin</title>
+
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/pp-progress.css">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  .pp-sidequest{
+    background-image: linear-gradient(135deg,#EFEAF4 0%,#DFD5EC 100%);
+    background-attachment: fixed;
+  }
+
+  /* ---------- toolbar ---------- */
+  .cq-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:18px; }
+  .cq-bar .cq-spacer{ flex:1 1 auto; }
+
+  .cq-filter{
+    font-family:var(--font-body); font-size:.74rem; font-weight:500;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--gold);
+    background:var(--panel); border:1px solid var(--line-gold);
+    border-radius:999px; padding:7px 15px; cursor:pointer;
+    transition:color .15s ease, background .15s ease, border-color .15s ease;
+  }
+  .cq-filter:hover{ color:#fff; background:var(--pink); border-color:var(--pink); }
+  .cq-filter[aria-pressed="true"]{ color:#fff; background:var(--sage); border-color:var(--sage); }
+
+  .cq-count{ font-family:var(--font-serif); font-style:italic; font-size:.95rem; color:var(--ink-soft); }
+  .cq-sync{ font-family:var(--font-body); font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); }
+  .cq-sync[data-state="saving"]{ color:var(--gold); }
+  .cq-sync[data-state="error"]{ color:var(--blade); }
+
+  /* ---------- form + detail ---------- */
+  .cq-form, .cq-detail{ display:none; margin-bottom:22px; }
+  .cq-form.open, .cq-detail.open{ display:block; }
+
+  .cq-fields{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .cq-field{ display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .cq-field.wide{ grid-column:1 / -1; }
+
+  .cq-field label{
+    font-family:var(--font-body); font-size:.72rem; font-weight:600;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--gold);
+  }
+  .cq-field input, .cq-field select{
+    font-family:var(--font-body); font-size:.95rem; color:var(--ink);
+    background:#fff; border:1px solid var(--line);
+    border-radius:var(--radius-sm); padding:9px 12px; width:100%;
+  }
+  .cq-field input:focus, .cq-field select:focus{ outline:2px solid var(--pink); outline-offset:1px; }
+
+  .cq-hint{ font-family:var(--font-serif); font-style:italic; font-size:.85rem; color:var(--ink-soft); }
+  .cq-inline{ display:flex; gap:8px; align-items:flex-start; }
+  .cq-inline input{ flex:1 1 auto; }
+
+  .cq-results{ display:none; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); gap:10px; margin-top:12px; }
+  .cq-results.open{ display:grid; }
+  .cq-result{
+    text-align:left; padding:0; overflow:hidden; cursor:pointer;
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:var(--radius-sm); transition:border-color .15s ease, transform .15s ease;
+  }
+  .cq-result:hover{ border-color:var(--pink); transform:translateY(-2px); }
+  .cq-result img{ width:100%; aspect-ratio:2/3; object-fit:cover; display:block; background:var(--parchment); }
+  .cq-rname{ font-family:var(--font-serif); font-weight:600; font-size:.86rem; line-height:1.2; padding:7px 8px 2px; color:var(--ink); }
+  .cq-rmeta{ font-family:var(--font-body); font-size:.7rem; color:var(--ink-soft); padding:0 8px 8px; }
+
+  .cq-tagpick{ display:flex; flex-wrap:wrap; gap:6px; }
+  .cq-tagpick button{
+    font-family:var(--font-body); font-size:.74rem; color:var(--ink-soft);
+    background:var(--parchment); border:1px solid var(--parchment-border);
+    border-radius:999px; padding:4px 11px; cursor:pointer;
+  }
+  .cq-tagpick button[aria-pressed="true"]{ color:#fff; background:var(--sage); border-color:var(--sage); }
+
+  .cq-actions{ display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+
+  /* ---------- seasons ---------- */
+  .cq-detail-head{ display:flex; gap:16px; align-items:flex-start; margin-bottom:20px; }
+  .cq-detail-head img{ width:84px; aspect-ratio:2/3; object-fit:cover; border-radius:var(--radius-sm); flex-shrink:0; background:var(--parchment); }
+  .cq-detail-head h2{ margin:0 0 4px; font-size:1.5rem; }
+  .cq-detail-meta{ font-family:var(--font-serif); font-style:italic; color:var(--ink-soft); margin:0 0 10px; }
+
+  .cq-season{ padding:12px 0; border-top:1px solid var(--line); }
+  .cq-season:first-child{ border-top:0; }
+  .cq-season-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  .cq-season-name{ font-family:var(--font-body); font-size:.72rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); }
+  .cq-season-count{ font-family:var(--font-serif); font-style:italic; font-size:.9rem; color:var(--ink-soft); }
+  .cq-season-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .cq-step{ display:flex; gap:6px; }
+  .cq-step button{
+    width:28px; height:28px; font-size:1rem; line-height:1;
+    color:var(--gold); background:var(--panel); border:1px solid var(--line-gold);
+    border-radius:999px; cursor:pointer;
+  }
+  .cq-step button:hover{ color:#fff; background:var(--pink); border-color:var(--pink); }
+
+  /* ---------- grid ---------- */
+  .cq-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:16px; }
+
+  .cq-card{
+    position:relative; display:flex; flex-direction:column; padding:0; overflow:hidden;
+    border-radius:var(--radius-sm); background:var(--panel); border:1px solid var(--line);
+    box-shadow:var(--lift); transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .cq-card:hover{ transform:translateY(-3px); box-shadow:var(--lift-lg); }
+  .cq-card.is-done{ opacity:.62; }
+
+  .cq-posterwrap{ position:relative; cursor:pointer; }
+  .cq-poster{ aspect-ratio:2/3; width:100%; object-fit:cover; display:block; background:var(--parchment); }
+  .cq-poster-none{
+    aspect-ratio:2/3; display:flex; align-items:center; justify-content:center;
+    padding:14px; text-align:center;
+    background:radial-gradient(ellipse at 30% 25%,rgba(156,116,64,.14),transparent 60%),var(--parchment);
+    font-family:var(--font-serif); font-style:italic; font-size:.95rem;
+    color:var(--gold-deep); line-height:1.3;
+  }
+  .cq-ring{ position:absolute; bottom:7px; right:7px; background:rgba(255,253,248,.92); border-radius:50%; padding:3px; }
+
+  .cq-body{ padding:11px 12px 13px; display:flex; flex-direction:column; gap:7px; }
+  .cq-name{ font-family:var(--font-serif); font-weight:600; font-size:1rem; line-height:1.2; margin:0; color:var(--ink); word-break:break-word; }
+  .cq-where{ font-family:var(--font-serif); font-style:italic; font-size:.85rem; color:var(--ink-soft); }
+
+  .cq-status{
+    align-self:flex-start; font-family:var(--font-body); font-size:.68rem; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; color:#fff; border:none;
+    border-radius:999px; padding:4px 11px; cursor:pointer;
+  }
+  .cq-status[data-status="want"]{ background:var(--gold); }
+  .cq-status[data-status="watching"]{ background:var(--pink); }
+  .cq-status[data-status="watched"]{ background:var(--sage-deep); }
+
+  .cq-tags{ display:flex; flex-wrap:wrap; gap:4px; }
+  .cq-tags span{
+    font-family:var(--font-body); font-size:.68rem; color:var(--ink-soft);
+    background:rgba(46,36,31,.07); border-radius:999px; padding:2px 8px;
+  }
+
+  .cq-tools{ position:absolute; top:7px; right:7px; display:flex; gap:5px; opacity:0; transition:opacity .15s ease; }
+  .cq-card:hover .cq-tools, .cq-card:focus-within .cq-tools{ opacity:1; }
+  .cq-tools button{
+    width:26px; height:26px; display:flex; align-items:center; justify-content:center;
+    font-size:.8rem; color:var(--ink); background:rgba(255,253,248,.94);
+    border:1px solid var(--line); border-radius:999px; cursor:pointer; line-height:1;
+  }
+  .cq-tools button:hover{ color:#fff; background:var(--burgundy); border-color:var(--burgundy); }
+  @media (hover:none){ .cq-tools{ opacity:1; } }
+
+  @media (max-width:560px){
+    .cq-fields{ grid-template-columns:1fr; }
+    .cq-grid{ grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); }
+  }
+</style>
+</head>
+
+<body class="pp-sidequest">
+<div class="pp-wrap">
+
+  <nav class="pp-nav" style="margin-top:28px;">
+    <a href="/">Home</a>
+    <a href="/castle-keep/">Castle Keeping</a>
+    <a href="/dannelore/quest-log/">Quest Log</a>
+    <a href="/side-quest/">Side Quests</a>
+    <a href="/templates/">Templates</a>
+  </nav>
+
+  <header class="pp-hero" style="padding:8px 0 28px;">
+    <div class="pp-emblem pp-emblem-sm">
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#C85D87" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M8 44 H56" stroke="#C85D87" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="32" cy="10" r="3.5" fill="#9C7440"/><circle cx="4" cy="19" r="2.5" fill="#9C7440"/>
+        <circle cx="60" cy="19" r="2.5" fill="#9C7440"/><circle cx="32" cy="36" r="3" fill="#9C7440"/>
+      </svg>
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M32 4 L38 14 V38 H26 V14 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="2" stroke-linejoin="round"/>
+        <rect x="14" y="38" width="36" height="6" rx="3" fill="#9C7440"/>
+        <rect x="29" y="44" width="6" height="12" fill="#9C7440"/>
+        <circle cx="32" cy="58" r="4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <h1 class="pp-title" style="font-size:clamp(2.2rem,6vw,3.6rem);">Couch Quest</h1>
+    <p class="pp-tagline">Everything we said we'd get around to watching</p>
+  </header>
+
+  <div class="cq-bar">
+    <button class="cq-filter" data-filter="all" aria-pressed="true">All</button>
+    <button class="cq-filter" data-filter="want" aria-pressed="false">Want to watch</button>
+    <button class="cq-filter" data-filter="watching" aria-pressed="false">Watching</button>
+    <button class="cq-filter" data-filter="watched" aria-pressed="false">Watched</button>
+    <span class="cq-spacer"></span>
+    <button class="pp-btn" id="addBtn">Add something</button>
+  </div>
+
+  <div class="cq-bar" style="margin-bottom:14px;">
+    <span class="cq-count" id="count"></span>
+    <span class="cq-spacer"></span>
+    <span class="cq-sync" id="sync" data-state="idle">Connecting</span>
+  </div>
+
+  <!-- ---------------- add / edit ---------------- -->
+  <section class="pp-panel cq-form" id="form">
+    <h2 class="pp-panel-title" id="formTitle">Add something</h2>
+
+    <div class="cq-fields">
+      <div class="cq-field wide">
+        <label for="fTitle">Title</label>
+        <div class="cq-inline">
+          <input id="fTitle" type="text" placeholder="Over the Garden Wall" autocomplete="off">
+          <button class="pp-btn pp-btn-quiet" id="lookupBtn" style="white-space:nowrap;">Look it up</button>
+        </div>
+        <span class="cq-hint" id="lookupHint">Looks up TV shows and pulls in the poster and every season. Films aren't in the database — paste a poster link instead.</span>
+        <div class="cq-results" id="results"></div>
+      </div>
+
+      <div class="cq-field">
+        <label for="fType">Kind</label>
+        <select id="fType">
+          <option value="series">Series</option>
+          <option value="movie">Film</option>
+        </select>
+      </div>
+
+      <div class="cq-field">
+        <label for="fStatus">Status</label>
+        <select id="fStatus">
+          <option value="want">Want to watch</option>
+          <option value="watching">Watching</option>
+          <option value="watched">Watched</option>
+        </select>
+      </div>
+
+      <div class="cq-field wide">
+        <label for="fImage">Poster image link</label>
+        <input id="fImage" type="url" placeholder="https://… (optional)" autocomplete="off">
+      </div>
+
+      <div class="cq-field wide">
+        <label for="fNewTag">Add a new tag</label>
+        <input id="fNewTag" type="text" placeholder="Press Enter to save" autocomplete="off">
+      </div>
+
+      <div class="cq-field wide">
+        <label>Tags</label>
+        <div class="cq-tagpick" id="tagPick"></div>
+      </div>
+    </div>
+
+    <div class="cq-actions">
+      <button class="pp-btn" id="saveBtn">Save</button>
+      <button class="pp-btn pp-btn-quiet" id="cancelBtn">Cancel</button>
+      <span class="cq-spacer"></span>
+      <button class="pp-btn pp-btn-quiet" id="deleteBtn" style="display:none;">Delete</button>
+    </div>
+  </section>
+
+  <!-- ---------------- seasons ---------------- -->
+  <section class="pp-panel cq-detail" id="detail">
+    <div class="cq-detail-head">
+      <img id="dImg" alt="">
+      <div style="flex:1 1 auto; min-width:0;">
+        <h2 id="dTitle"></h2>
+        <p class="cq-detail-meta" id="dMeta"></p>
+        <div class="pp-progress" id="dOverall" data-color="pink" data-format="both"></div>
+      </div>
+    </div>
+    <div id="seasonList"></div>
+    <div class="cq-actions">
+      <button class="pp-btn pp-btn-quiet" id="detailClose">Close</button>
+      <button class="pp-btn pp-btn-quiet" id="refetchBtn">Refresh seasons</button>
+    </div>
+  </section>
+
+  <div class="cq-grid" id="grid"></div>
+  <p class="pp-empty" id="empty" style="display:none;">Nothing here yet. Add the first one.</p>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">♕ ───────── ⚔ ───────── ♕</p>
+    <p><a class="pp-back" href="/side-quest/">Back to Side Quests</a></p>
+  </footer>
+
+</div>
+
+<script src="/assets/pp-progress.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<script>
+/* ------------------------------------------------------------------
+   PASTE YOUR CONFIG HERE — the same block as your quest-log page.
+------------------------------------------------------------------- */
+const firebaseConfig = {
+  apiKey: "PASTE_FROM_QUEST_LOG",
+  authDomain: "princess-paladin.firebaseapp.com",
+  projectId: "princess-paladin",
+  storageBucket: "princess-paladin.appspot.com",
+  messagingSenderId: "PASTE_FROM_QUEST_LOG",
+  appId: "PASTE_FROM_QUEST_LOG"
+};
+
+const DOC_PATH  = "sidequest/couch-list";
+const CACHE_KEY = "pp_couch_list";
+const TVMAZE    = "https://api.tvmaze.com";
+
+const DEFAULT_TAGS = ["Comedy","Drama","Horror","Fantasy","Documentary","Animated","Rewatch","Together","Cozy"];
+
+let state  = { items: [], tagOptions: DEFAULT_TAGS.slice() };
+let editId = null, openId = null, pickedTags = [], filter = "all";
+let pendingLookup = null;
+let saving = false, docRef = null, saveTimer = null;
+
+const $ = id => document.getElementById(id);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const toHttps = u => (u || "").replace(/^http:\/\//, "https://");
+
+function setSync(s, t){ const e = $("sync"); e.dataset.state = s; e.textContent = t; }
+
+function esc(s){
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+}
+
+/* ---------------- progress maths ---------------- */
+function totals(item){
+  if(item.type !== "series" || !Array.isArray(item.seasons) || !item.seasons.length){
+    return { done:0, total:0, hasSeasons:false };
+  }
+  let done = 0, total = 0;
+  item.seasons.forEach(s => { done += (s.watched || 0); total += (s.episodes || 0); });
+  return { done: done, total: total, hasSeasons: true };
+}
+
+function position(item){
+  const t = totals(item);
+  if(!t.hasSeasons || !t.total) return "";
+  if(t.done >= t.total) return "Finished";
+  for(const s of item.seasons){
+    if((s.watched || 0) < (s.episodes || 0)){
+      return "Up next: S" + s.number + " E" + ((s.watched || 0) + 1);
+    }
+  }
+  return "";
+}
+
+function syncStatus(item){
+  const t = totals(item);
+  if(!t.hasSeasons || !t.total) return;
+  if(t.done === 0)               item.status = "want";
+  else if(t.done < t.total)      item.status = "watching";
+  else                           item.status = "watched";
+}
+
+/* ---------------- storage ---------------- */
+function loadCache(){
+  try{
+    const raw = localStorage.getItem(CACHE_KEY);
+    if(raw){
+      const p = JSON.parse(raw);
+      if(p && Array.isArray(p.items)) state = p;
+    }
+  }catch(e){}
+  if(!Array.isArray(state.tagOptions) || !state.tagOptions.length) state.tagOptions = DEFAULT_TAGS.slice();
+}
+function writeCache(){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(state)); }catch(e){} }
+
+function startFirebase(){
+  try{
+    firebase.initializeApp(firebaseConfig);
+    docRef = firebase.firestore().doc(DOC_PATH);
+    docRef.onSnapshot(snap => {
+      if(saving) return;
+      if(!snap.exists){ save(); return; }
+      const d = snap.data();
+      state = {
+        items: Array.isArray(d.items) ? d.items : [],
+        tagOptions: Array.isArray(d.tagOptions) && d.tagOptions.length ? d.tagOptions : DEFAULT_TAGS.slice()
+      };
+      writeCache();
+      render();
+      if(openId) openDetail(openId);
+      setSync("idle","Synced");
+    }, err => { console.error(err); setSync("error","Offline — this device only"); });
+  }catch(e){ console.error(e); setSync("error","Offline — this device only"); }
+}
+
+function save(){
+  writeCache();
+  render();
+  if(openId) openDetail(openId);
+  if(!docRef) return;
+  setSync("saving","Saving");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saving = true;
+    docRef.set({ items: state.items, tagOptions: state.tagOptions, updated: Date.now() })
+      .then(() => setSync("idle","Synced"))
+      .catch(e => { console.error(e); setSync("error","Couldn't save"); })
+      .finally(() => { saving = false; });
+  }, 500);
+}
+
+/* ---------------- TVmaze ---------------- */
+function lookup(q){
+  $("lookupHint").textContent = "Searching…";
+  fetch(TVMAZE + "/search/shows?q=" + encodeURIComponent(q))
+    .then(r => r.json())
+    .then(rows => {
+      const box = $("results");
+      box.innerHTML = "";
+      if(!rows.length){
+        $("lookupHint").textContent = "Nothing found. Check the spelling, or fill it in by hand.";
+        box.classList.remove("open");
+        return;
+      }
+      $("lookupHint").textContent = "Pick the right one:";
+      rows.slice(0,8).forEach(row => {
+        const s    = row.show;
+        const year = s.premiered ? s.premiered.slice(0,4) : "";
+        const net  = (s.network && s.network.name) || (s.webChannel && s.webChannel.name) || "";
+        const img  = s.image ? toHttps(s.image.medium) : "";
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "cq-result";
+        b.innerHTML =
+          (img ? `<img src="${esc(img)}" alt="" loading="lazy">`
+               : `<div class="cq-poster-none" style="font-size:.8rem;">${esc(s.name)}</div>`) +
+          `<div class="cq-rname">${esc(s.name)}</div>` +
+          `<div class="cq-rmeta">${esc([year, net].filter(Boolean).join(" · "))}</div>`;
+        b.onclick = () => choose(s);
+        box.appendChild(b);
+      });
+      box.classList.add("open");
+    })
+    .catch(e => { console.error(e); $("lookupHint").textContent = "Lookup failed — fill it in by hand."; });
+}
+
+function choose(show){
+  $("fTitle").value = show.name;
+  $("fImage").value = show.image ? toHttps(show.image.original || show.image.medium) : "";
+  $("fType").value  = "series";
+  $("results").classList.remove("open");
+  $("lookupHint").textContent = "Fetching seasons…";
+
+  fetchSeasons(show.id)
+    .then(seasons => {
+      pendingLookup = { tvmazeId: show.id, seasons: seasons };
+      const eps = seasons.reduce((n,s) => n + s.episodes, 0);
+      $("lookupHint").textContent =
+        seasons.length + (seasons.length === 1 ? " season, " : " seasons, ") + eps + " episodes found.";
+    })
+    .catch(e => {
+      console.error(e);
+      pendingLookup = { tvmazeId: show.id, seasons: [] };
+      $("lookupHint").textContent = "Got the show, but the seasons didn't load. Try Refresh seasons after saving.";
+    });
+}
+
+/* One request gets the show and every episode. Counting episodes per season
+   is more reliable than episodeOrder on shows that are still airing. */
+function fetchSeasons(showId){
+  return fetch(TVMAZE + "/shows/" + showId + "?embed=episodes")
+    .then(r => r.json())
+    .then(data => {
+      const eps = (data._embedded && data._embedded.episodes) || [];
+      const bySeason = {};
+      eps.forEach(ep => {
+        if(!ep.season || ep.number == null) return;   // skip specials
+        bySeason[ep.season] = (bySeason[ep.season] || 0) + 1;
+      });
+      return Object.keys(bySeason).map(Number).sort((a,b) => a - b)
+        .map(n => ({ number:n, episodes:bySeason[n], watched:0 }));
+    });
+}
+
+/* Keep watched counts when a show adds episodes */
+function mergeSeasons(oldSeasons, fresh){
+  const prev = {};
+  (oldSeasons || []).forEach(s => { prev[s.number] = s.watched || 0; });
+  return fresh.map(s => ({
+    number: s.number,
+    episodes: s.episodes,
+    watched: Math.min(prev[s.number] || 0, s.episodes)
+  }));
+}
+
+/* ---------------- render ---------------- */
+const LABEL = { want:"Want to watch", watching:"Watching", watched:"Watched" };
+const NEXT  = { want:"watching", watching:"watched", watched:"want" };
+
+function render(){
+  const grid  = $("grid");
+  const shown = state.items.filter(i => filter === "all" || i.status === filter);
+  grid.innerHTML = "";
+  $("empty").style.display = shown.length ? "none" : "block";
+  $("empty").textContent = state.items.length ? "Nothing in this filter." : "Nothing here yet. Add the first one.";
+
+  shown.forEach(item => {
+    const t = totals(item);
+    const card = document.createElement("div");
+    card.className = "cq-card" + (item.status === "watched" ? " is-done" : "");
+
+    const art = item.image
+      ? `<img class="cq-poster" src="${esc(item.image)}" alt="" loading="lazy"
+           onerror="this.outerHTML='<div class=&quot;cq-poster-none&quot;>${esc(item.title)}</div>'">`
+      : `<div class="cq-poster-none">${esc(item.title)}</div>`;
+
+    const ring = (t.hasSeasons && t.total)
+      ? `<div class="cq-ring"><div class="pp-progress-ring" data-color="pink"
+           data-current="${t.done}" data-total="${t.total}" data-size="38"></div></div>`
+      : "";
+
+    const where = position(item);
+    const tags  = (item.tags || []).map(x => `<span>${esc(x)}</span>`).join("");
+
+    card.innerHTML = `
+      <div class="cq-posterwrap" data-open="${item.id}">${art}${ring}</div>
+      <div class="cq-tools">
+        <button data-edit="${item.id}" aria-label="Edit ${esc(item.title)}">✎</button>
+        <button data-del="${item.id}" aria-label="Remove ${esc(item.title)}">✕</button>
+      </div>
+      <div class="cq-body">
+        <h3 class="cq-name">${esc(item.title)}</h3>
+        ${where ? `<div class="cq-where">${esc(where)}</div>` : ""}
+        <button class="cq-status" data-status="${item.status}" data-cycle="${item.id}">${LABEL[item.status]}</button>
+        ${tags ? `<div class="cq-tags">${tags}</div>` : ""}
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  PPProgress.draw(grid);
+
+  const done = state.items.filter(i => i.status === "watched").length;
+  $("count").textContent = state.items.length ? `${done} watched of ${state.items.length}` : "";
+}
+
+function openDetail(id){
+  const item = state.items.find(x => x.id === id);
+  if(!item){ closeDetail(); return; }
+  openId = id;
+
+  const t = totals(item);
+  $("dTitle").textContent = item.title;
+  $("dImg").src = item.image || "";
+  $("dImg").style.display = item.image ? "" : "none";
+  $("dMeta").textContent = position(item) || LABEL[item.status];
+
+  const overall = $("dOverall");
+  overall.setAttribute("data-current", t.done);
+  overall.setAttribute("data-total", t.total || 0);
+  overall.setAttribute("data-label", "Overall");
+  overall.style.display = (t.hasSeasons && t.total) ? "" : "none";
+
+  const list = $("seasonList");
+  list.innerHTML = "";
+
+  if(!t.hasSeasons){
+    list.innerHTML = `<p class="pp-empty">No seasons yet. If it's a series, use Refresh seasons to pull them in.</p>`;
+  }else{
+    item.seasons.forEach(s => {
+      const row = document.createElement("div");
+      row.className = "cq-season";
+      row.innerHTML = `
+        <div class="cq-season-head">
+          <span class="cq-season-name">Season ${s.number}</span>
+          <span class="cq-season-count">${s.watched || 0} of ${s.episodes}</span>
+        </div>
+        <div class="cq-season-row">
+          <div class="pp-pips" data-color="pink" data-clickable="true" data-season="${s.number}"
+               data-current="${s.watched || 0}" data-total="${s.episodes}"></div>
+          <div class="cq-step">
+            <button data-minus="${s.number}" aria-label="One fewer episode of season ${s.number}">−</button>
+            <button data-plus="${s.number}" aria-label="One more episode of season ${s.number}">+</button>
+          </div>
+        </div>`;
+      list.appendChild(row);
+    });
+  }
+
+  $("detail").classList.add("open");
+  PPProgress.draw($("detail"));
+}
+
+function closeDetail(){ openId = null; $("detail").classList.remove("open"); }
+
+function setSeason(itemId, seasonNo, watched){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item) return;
+  const s = (item.seasons || []).find(x => x.number === seasonNo);
+  if(!s) return;
+  s.watched = Math.max(0, Math.min(watched, s.episodes));
+  syncStatus(item);
+  save();
+}
+
+function renderTagPicker(){
+  const box = $("tagPick");
+  box.innerHTML = "";
+  state.tagOptions.forEach(tag => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = tag;
+    b.setAttribute("aria-pressed", pickedTags.includes(tag) ? "true" : "false");
+    b.onclick = () => {
+      pickedTags = pickedTags.includes(tag) ? pickedTags.filter(t => t !== tag) : pickedTags.concat(tag);
+      renderTagPicker();
+    };
+    box.appendChild(b);
+  });
+}
+
+/* ---------------- form ---------------- */
+function openForm(item){
+  closeDetail();
+  editId = item ? item.id : null;
+  pendingLookup = null;
+  pickedTags = item ? (item.tags || []).slice() : [];
+  $("formTitle").textContent = item ? "Edit" : "Add something";
+  $("fTitle").value  = item ? item.title : "";
+  $("fImage").value  = item ? (item.image || "") : "";
+  $("fStatus").value = item ? item.status : "want";
+  $("fType").value   = item ? (item.type || "series") : "series";
+  $("fNewTag").value = "";
+  $("results").classList.remove("open");
+  $("lookupHint").textContent = "Looks up TV shows and pulls in the poster and every season. Films aren't in the database — paste a poster link instead.";
+  $("deleteBtn").style.display = item ? "inline-block" : "none";
+  renderTagPicker();
+  $("form").classList.add("open");
+  $("fTitle").focus();
+}
+function closeForm(){ $("form").classList.remove("open"); editId = null; pickedTags = []; pendingLookup = null; }
+
+/* ---------------- events ---------------- */
+$("addBtn").onclick      = () => openForm(null);
+$("cancelBtn").onclick   = closeForm;
+$("detailClose").onclick = closeDetail;
+
+$("lookupBtn").onclick = () => { const q = $("fTitle").value.trim(); if(q) lookup(q); };
+$("fTitle").onkeydown  = e => { if(e.key === "Enter"){ e.preventDefault(); $("lookupBtn").click(); } };
+
+$("saveBtn").onclick = () => {
+  const title = $("fTitle").value.trim();
+  if(!title){ $("fTitle").focus(); return; }
+
+  const payload = {
+    title: title,
+    image: $("fImage").value.trim(),
+    status: $("fStatus").value,
+    type: $("fType").value,
+    tags: pickedTags.slice()
+  };
+
+  if(editId){
+    const i = state.items.findIndex(x => x.id === editId);
+    if(i > -1){
+      const merged = Object.assign({}, state.items[i], payload);
+      if(pendingLookup){
+        merged.tvmazeId = pendingLookup.tvmazeId;
+        merged.seasons  = mergeSeasons(state.items[i].seasons, pendingLookup.seasons);
+      }
+      state.items[i] = merged;
+    }
+  }else{
+    const item = Object.assign({ id: uid(), added: Date.now(), seasons: [] }, payload);
+    if(pendingLookup){
+      item.tvmazeId = pendingLookup.tvmazeId;
+      item.seasons  = pendingLookup.seasons;
+      if(item.status === "watched") item.seasons.forEach(s => { s.watched = s.episodes; });
+    }
+    state.items.unshift(item);
+  }
+  closeForm();
+  save();
+};
+
+$("deleteBtn").onclick = () => {
+  if(!editId) return;
+  const item = state.items.find(x => x.id === editId);
+  if(!confirm(`Remove "${item ? item.title : "this"}" from the list?`)) return;
+  state.items = state.items.filter(x => x.id !== editId);
+  closeForm();
+  save();
+};
+
+$("refetchBtn").onclick = () => {
+  const item = state.items.find(x => x.id === openId);
+  if(!item) return;
+  if(!item.tvmazeId){ alert("This one wasn't added by lookup. Edit it and use Look it up first."); return; }
+  $("dMeta").textContent = "Refreshing…";
+  fetchSeasons(item.tvmazeId)
+    .then(fresh => { item.seasons = mergeSeasons(item.seasons, fresh); syncStatus(item); save(); })
+    .catch(e => { console.error(e); $("dMeta").textContent = "Refresh failed."; });
+};
+
+$("fNewTag").onkeydown = e => {
+  if(e.key !== "Enter") return;
+  e.preventDefault();
+  const tag = e.target.value.trim();
+  if(!tag) return;
+  if(!state.tagOptions.includes(tag)) state.tagOptions.push(tag);
+  if(!pickedTags.includes(tag)) pickedTags.push(tag);
+  e.target.value = "";
+  renderTagPicker();
+};
+
+$("grid").onclick = e => {
+  const cycle = e.target.closest("[data-cycle]");
+  if(cycle){
+    const item = state.items.find(x => x.id === cycle.dataset.cycle);
+    if(item){
+      item.status = NEXT[item.status];
+      const t = totals(item);
+      if(t.hasSeasons && t.total){
+        if(item.status === "watched") item.seasons.forEach(s => { s.watched = s.episodes; });
+        if(item.status === "want")    item.seasons.forEach(s => { s.watched = 0; });
+      }
+      save();
+    }
+    return;
+  }
+  const edit = e.target.closest("[data-edit]");
+  if(edit){ const i = state.items.find(x => x.id === edit.dataset.edit); if(i) openForm(i); return; }
+
+  const del = e.target.closest("[data-del]");
+  if(del){
+    const i = state.items.find(x => x.id === del.dataset.del);
+    if(i && confirm(`Remove "${i.title}" from the list?`)){
+      if(openId === i.id) closeDetail();
+      state.items = state.items.filter(x => x.id !== i.id);
+      save();
+    }
+    return;
+  }
+  const open = e.target.closest("[data-open]");
+  if(open) openDetail(open.dataset.open);
+};
+
+/* pips fire this from pp-progress.js */
+$("seasonList").addEventListener("pp-progress-change", e => {
+  const box = e.target.closest("[data-season]");
+  if(!box || !openId) return;
+  setSeason(openId, parseInt(box.getAttribute("data-season"), 10), e.detail.current);
+});
+
+$("seasonList").onclick = e => {
+  const plus  = e.target.closest("[data-plus]");
+  const minus = e.target.closest("[data-minus]");
+  if((!plus && !minus) || !openId) return;
+  const item = state.items.find(x => x.id === openId);
+  if(!item) return;
+  const no = parseInt((plus || minus).getAttribute(plus ? "data-plus" : "data-minus"), 10);
+  const s = (item.seasons || []).find(x => x.number === no);
+  if(!s) return;
+  setSeason(openId, no, (s.watched || 0) + (plus ? 1 : -1));
+};
+
+document.querySelectorAll(".cq-filter").forEach(btn => {
+  btn.onclick = () => {
+    filter = btn.dataset.filter;
+    document.querySelectorAll(".cq-filter").forEach(b => b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+    render();
+  };
+});
+
+loadCache();
+render();
+startFirebase();
+</script>
+</body>
+</html>

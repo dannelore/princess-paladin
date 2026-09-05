@@ -1,1 +1,158 @@
-hi
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Side Quests — Princess &amp; Paladin</title>
+
+<link rel="stylesheet" href="/assets/pp.css">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  /* ---- background for /side-quest/ (move this into pp.css section 3) ---- */
+  .pp-sidequest{
+    background-image: linear-gradient(135deg,#EFEAF4 0%,#DFD5EC 100%);
+    background-attachment: fixed;
+  }
+
+  /* ---- square tiles ---- */
+  .sq-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 18px;
+    margin: 0 0 40px;
+  }
+
+  .sq-tile{
+    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 8px;
+    padding: 18px;
+    color: var(--ink);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+  .sq-tile:hover,
+  .sq-tile:focus-visible{
+    transform: translateY(-3px);
+    border-color: var(--burgundy);
+    box-shadow: var(--lift-lg);
+    text-decoration: none;
+  }
+  .sq-tile svg{ width: 24px; height: 24px; color: var(--burgundy); }
+  .sq-tile h3{
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.05rem;
+    line-height: 1.2;
+    margin: 0;
+  }
+  .sq-tile p{
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  /* empty slot, waiting to be filled in */
+  .sq-empty{
+    border-style: dashed;
+    border-color: var(--line-strong);
+    background: rgba(255,253,248,0.55);
+    box-shadow: none;
+    cursor: default;
+  }
+  .sq-empty::before{ display: none; }
+  .sq-empty:hover{ transform: none; box-shadow: none; border-color: var(--line-strong); }
+  .sq-empty span{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+  }
+</style>
+</head>
+
+<body class="pp-sidequest">
+
+  <div class="pp-wrap">
+
+    <!-- ================= NAV ================= -->
+    <nav class="pp-nav" style="margin-top:28px;">
+      <a href="/">Home</a>
+      <a href="/castle-keep/">Castle Keeping</a>
+      <a href="/dannelore/quest-log/">Quest Log</a>
+      <a href="/side-quest/" aria-current="page">Side Quests</a>
+      <a href="/templates/">Templates</a>
+    </nav>
+
+    <!-- ================= HERO ================= -->
+    <header class="pp-hero">
+
+      <div class="pp-emblem">
+        <!-- tiara -->
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z"
+                fill="#E87CA6" stroke="#C85D87" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M8 44 H56" stroke="#C85D87" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="32" cy="10" r="3.5" fill="#9C7440"/>
+          <circle cx="4"  cy="19" r="2.5" fill="#9C7440"/>
+          <circle cx="60" cy="19" r="2.5" fill="#9C7440"/>
+          <circle cx="32" cy="36" r="3" fill="#9C7440"/>
+        </svg>
+
+        <!-- sword -->
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M32 4 L38 14 V38 H26 V14 Z"
+                fill="#B23A3A" stroke="#7C1F2A" stroke-width="2" stroke-linejoin="round"/>
+          <rect x="14" y="38" width="36" height="6" rx="3" fill="#9C7440"/>
+          <rect x="29" y="44" width="6" height="12" fill="#9C7440"/>
+          <circle cx="32" cy="58" r="4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.5"/>
+        </svg>
+      </div>
+
+      <h1 class="pp-title">Side Quests</h1>
+      <p class="pp-tagline">The things we do for the joy of it</p>
+    </header>
+
+    <!-- ================= TILES ================= -->
+    <!--
+      To fill a slot in: swap the <div class="pp-panel pp-panel-tight sq-tile sq-empty">
+      for the <a> version at the bottom of this list, set the href, name and blurb.
+    -->
+    <div class="sq-grid">
+
+      <div class="pp-panel pp-panel-tight sq-tile sq-empty"><span>Open slot</span></div>
+      <div class="pp-panel pp-panel-tight sq-tile sq-empty"><span>Open slot</span></div>
+      <div class="pp-panel pp-panel-tight sq-tile sq-empty"><span>Open slot</span></div>
+      <div class="pp-panel pp-panel-tight sq-tile sq-empty"><span>Open slot</span></div>
+      <div class="pp-panel pp-panel-tight sq-tile sq-empty"><span>Open slot</span></div>
+      <div class="pp-panel pp-panel-tight sq-tile sq-empty"><span>Open slot</span></div>
+
+      <!-- FILLED TILE TEMPLATE — copy this, delete one empty slot above
+      <a class="pp-panel pp-panel-tight sq-tile" href="/side-quest/etsy-shop/">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3 l2.6 5.6 6 .8 -4.4 4.2 1.1 6.1 -5.3 -2.9 -5.3 2.9 1.1 -6.1 -4.4 -4.2 6 -.8 Z"/>
+        </svg>
+        <h3>Etsy Shop</h3>
+        <p>Listings and orders</p>
+      </a>
+      -->
+
+    </div>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="pp-footer">
+      <p class="pp-footer-flourish">♕ ───────── ⚔ ───────── ♕</p>
+      <p class="pp-footer-estab">Princess &amp; Paladin</p>
+      <p>Est. 2021</p>
+    </footer>
+
+  </div>
+
+</body>
+</html>
