@@ -204,6 +204,22 @@
   }
   .col-head h2{ font-family:var(--font-serif); font-size:22px; font-weight:600; margin:0; }
   .col-head .sub{ font-size:12px; color:var(--ink-soft); }
+  .col-head .head-right{ display:flex; align-items:baseline; gap:10px; }
+  .view-toggle{
+    font-family:var(--font-body); font-size:11.5px;
+    background:none; border:none; padding:0; cursor:pointer;
+    color:var(--ink-soft); text-decoration:underline;
+  }
+  .view-toggle:hover{ color:var(--accent-dark); }
+  .view-toggle.on{ color:var(--accent-dark); font-weight:500; }
+
+  /* Dailies not scheduled for the day being viewed, shown in "see all" */
+  .task-card.off-schedule{ opacity:.72; border-left-style:dashed; }
+  .task-card.off-schedule .check{ cursor:default; border-color:rgba(74,59,65,0.25); }
+  .off-chip{
+    font-size:10px; padding:2px 7px; border-radius:8px;
+    background:rgba(74,59,65,0.08); color:var(--ink-soft);
+  }
 
   .col-dailies h2{ color:var(--sage-dark); }
   .col-todos h2{ color:var(--accent-dark); }
@@ -658,7 +674,13 @@
 <div class="board">
 
   <div class="col-dailies">
-    <div class="col-head"><h2>Dailies 🌿</h2><span class="sub" id="dailiesCount">0 today</span></div>
+    <div class="col-head">
+      <h2>Dailies 🌿</h2>
+      <span class="head-right">
+        <span class="sub" id="dailiesCount">0 today</span>
+        <button class="view-toggle" id="dailiesViewToggle">see all</button>
+      </span>
+    </div>
     <div class="add-row">
       <textarea id="dailiesInput" placeholder="One daily per line.&#10;Indent with two spaces or a dash to make it a subtask."></textarea>
       <div class="repeat-block">
@@ -1225,7 +1247,7 @@ function exitEdit(col){
 /* ============ CARDS ============ */
 const expanded = new Set();
 
-function metaHtml(task, column, streak){
+function metaHtml(task, column, streak, offSchedule){
   const tag = tagById(task.tag);
   let html = `<span class="stars-display">${starsDisplay(task.difficulty || 3)}</span>`;
   html += `<span class="priority-chip ${task.priority || 'medium'}">${PRIORITY_LABEL[task.priority || 'medium']}</span>`;
@@ -1237,14 +1259,15 @@ function metaHtml(task, column, streak){
     html += `<span class="due-chip ${overdue ? 'overdue' : ''}">${overdue ? 'overdue · ' : 'due '}${label}</span>`;
   }
   if(streak > 0) html += `<span class="streak-chip">🔥 ${streak}d</span>`;
-  html += `<span class="payout-chip">${money(value(task, column))}</span>`;
+  if(offSchedule) html += `<span class="off-chip">not this day</span>`;
+  else html += `<span class="payout-chip">${money(value(task, column))}</span>`;
   return html;
 }
 
 function buildCard(task, column, opts){
   const isDone = opts.done;
   const card = document.createElement('div');
-  card.className = 'task-card' + (isDone ? ' done' : '');
+  card.className = 'task-card' + (isDone ? ' done' : '') + (opts.offSchedule ? ' off-schedule' : '');
   const subs = task.subs || [];
   const subState = opts.subState || {};
   const doneSubs = subs.filter(s => subState[s.id]).length;
@@ -1254,7 +1277,7 @@ function buildCard(task, column, opts){
       <div class="check ${isDone ? 'checked' : ''}">${isDone ? '✓' : ''}</div>
       <div class="task-body">
         <div class="task-title">${escapeHtml(task.title)}</div>
-        <div class="task-meta">${metaHtml(task, column, opts.streak || 0)}</div>
+        <div class="task-meta">${metaHtml(task, column, opts.streak || 0, opts.offSchedule)}</div>
       </div>
       <div class="task-actions">
         <button class="task-edit" title="Edit">✎</button>
@@ -1263,8 +1286,8 @@ function buildCard(task, column, opts){
     </div>
   `;
 
-  const isOpen = expanded.has(task.id);
-  if(subs.length || isOpen){
+  const isOpen = expanded.has(task.id) && !opts.offSchedule;
+  if((subs.length || isOpen) && !opts.offSchedule){
     const wrap = document.createElement('div');
     wrap.className = 'sub-wrap';
     const bar = subs.length ? `<div class="sub-progress"><i style="width:${doneSubs/subs.length*100}%"></i></div>` : '';
@@ -1291,6 +1314,7 @@ function buildCard(task, column, opts){
 
   const toggle = document.createElement('button');
   toggle.className = 'expand-btn';
+  if(opts.offSchedule) toggle.style.display = 'none';
   toggle.textContent = subs.length
     ? (isOpen ? 'hide subtasks' : `${doneSubs}/${subs.length} subtasks`)
     : (isOpen ? 'hide subtasks' : '+ subtasks');
@@ -1361,25 +1385,46 @@ function toggleDaily(task){
   saveAndRender();
 }
 
+let dailiesShowAll = false;
+document.getElementById('dailiesViewToggle').onclick = () => {
+  dailiesShowAll = !dailiesShowAll;
+  renderAll();
+};
+
 function renderDailies(){
   const list = document.getElementById('dailiesList');
   const doneList = document.getElementById('dailiesDone');
   const doneToggle = document.getElementById('dailiesDoneToggle');
+  const viewToggle = document.getElementById('dailiesViewToggle');
   list.innerHTML = ''; doneList.innerHTML = '';
 
-  const scheduled = S().dailies.filter(t => PQ.isScheduled(t, viewDate) && matchesFilter(t));
+  const mine = S().dailies.filter(matchesFilter);
+  const scheduled = mine.filter(t => PQ.isScheduled(t, viewDate));
   const open = scheduled.filter(t => !isDailyDone(t, viewDate));
   const done = scheduled.filter(t => isDailyDone(t, viewDate));
+  const offSchedule = dailiesShowAll ? mine.filter(t => !PQ.isScheduled(t, viewDate)) : [];
 
-  if(!open.length){
-    list.innerHTML = `<div class="empty-note">${scheduled.length ? 'All done for this day 🌿' : 'Nothing scheduled for this day'}</div>`;
-  }
   const rec = id => (S().completions[PQ.dateKey(viewDate)] || {})[id] || { subs:{} };
+
+  if(!open.length && !offSchedule.length){
+    list.innerHTML = `<div class="empty-note">${
+      scheduled.length ? 'All done for this day 🌿'
+      : (mine.length ? 'Nothing scheduled for this day — hit "see all" to edit the others' : 'No dailies yet')
+    }</div>`;
+  }
 
   open.forEach(task => list.appendChild(buildCard(task, 'dailies', {
     done:false, streak: PQ.getStreak(S(), task, viewDate), subState: rec(task.id).subs || {},
     onToggle: () => toggleDaily(task), onToggleSub: id => toggleDailySub(task, id)
   })));
+
+  /* Shown only in "see all" — editable and deletable, but not tickable, since
+     they aren't scheduled for the day you're looking at. */
+  offSchedule.forEach(task => list.appendChild(buildCard(task, 'dailies', {
+    done:false, offSchedule:true, streak:0, subState:{},
+    onToggle: () => {}, onToggleSub: () => {}
+  })));
+
   done.forEach(task => doneList.appendChild(buildCard(task, 'dailies', {
     done:true, streak: PQ.getStreak(S(), task, viewDate), subState: rec(task.id).subs || {},
     onToggle: () => toggleDaily(task), onToggleSub: id => toggleDailySub(task, id)
@@ -1387,7 +1432,12 @@ function renderDailies(){
 
   doneToggle.style.display = done.length ? 'block' : 'none';
   doneToggle.textContent = `${done.length} done ${PQ.sameDay(viewDate, TODAY) ? 'today' : 'this day'} ${doneList.classList.contains('open') ? '▾' : '▸'}`;
-  document.getElementById('dailiesCount').textContent = `${open.length} of ${scheduled.length} left`;
+
+  viewToggle.textContent = dailiesShowAll ? 'today only' : 'see all';
+  viewToggle.classList.toggle('on', dailiesShowAll);
+  document.getElementById('dailiesCount').textContent = dailiesShowAll
+    ? `${mine.length} total`
+    : `${open.length} of ${scheduled.length} left`;
 }
 
 /* ============ TODOS + PROJECTS ============ */
