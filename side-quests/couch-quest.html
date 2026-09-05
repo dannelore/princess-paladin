@@ -16,7 +16,7 @@
   }
 
   /* ---------- toolbar ---------- */
-  .cq-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:18px; }
+  .cq-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:14px; }
   .cq-bar .cq-spacer{ flex:1 1 auto; }
 
   .cq-filter{
@@ -28,6 +28,25 @@
   }
   .cq-filter:hover{ color:#fff; background:var(--pink); border-color:var(--pink); }
   .cq-filter[aria-pressed="true"]{ color:#fff; background:var(--sage); border-color:var(--sage); }
+
+  /* dropdown row */
+  .cq-selects{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px; }
+  .cq-pick{ display:flex; align-items:center; gap:6px; }
+  .cq-pick label{
+    font-family:var(--font-body); font-size:.66rem; font-weight:600;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--gold);
+  }
+  .cq-pick select{
+    font-family:var(--font-body); font-size:.84rem; color:var(--ink);
+    background:var(--panel); border:1px solid var(--line-gold);
+    border-radius:999px; padding:6px 12px; cursor:pointer;
+  }
+  .cq-pick select:focus{ outline:2px solid var(--pink); outline-offset:1px; }
+  .cq-reset{
+    font-family:var(--font-serif); font-style:italic; font-size:.88rem;
+    color:var(--ink-soft); background:none; border:0; cursor:pointer; padding:4px 2px;
+  }
+  .cq-reset:hover{ color:var(--burgundy); }
 
   .cq-count{ font-family:var(--font-serif); font-style:italic; font-size:.95rem; color:var(--ink-soft); }
   .cq-sync{ font-family:var(--font-body); font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); }
@@ -129,18 +148,40 @@
   }
   .cq-ring{ position:absolute; bottom:7px; right:7px; background:rgba(255,253,248,.92); border-radius:50%; padding:3px; }
 
+  /* corner badge for who watches it */
+  .cq-who{
+    position:absolute; top:7px; left:7px;
+    font-family:var(--font-body); font-size:.6rem; font-weight:700;
+    letter-spacing:.1em; text-transform:uppercase; color:#fff;
+    background:rgba(110,36,48,.86); border-radius:999px; padding:3px 8px;
+  }
+  .cq-who[data-who="danni"]{ background:rgba(200,93,135,.9); }
+  .cq-who[data-who="brendon"]{ background:rgba(109,130,89,.92); }
+
   .cq-body{ padding:11px 12px 13px; display:flex; flex-direction:column; gap:7px; }
   .cq-name{ font-family:var(--font-serif); font-weight:600; font-size:1rem; line-height:1.2; margin:0; color:var(--ink); word-break:break-word; }
   .cq-where{ font-family:var(--font-serif); font-style:italic; font-size:.85rem; color:var(--ink-soft); }
 
+  .cq-meta{ display:flex; flex-wrap:wrap; gap:5px; align-items:center; }
+
   .cq-status{
-    align-self:flex-start; font-family:var(--font-body); font-size:.68rem; font-weight:600;
+    font-family:var(--font-body); font-size:.68rem; font-weight:600;
     letter-spacing:.1em; text-transform:uppercase; color:#fff; border:none;
     border-radius:999px; padding:4px 11px; cursor:pointer;
   }
   .cq-status[data-status="want"]{ background:var(--gold); }
   .cq-status[data-status="watching"]{ background:var(--pink); }
   .cq-status[data-status="watched"]{ background:var(--sage-deep); }
+
+  .cq-pri{
+    font-family:var(--font-body); font-size:.66rem; font-weight:600;
+    letter-spacing:.08em; text-transform:uppercase;
+    border-radius:999px; padding:3px 9px;
+    border:1px solid transparent;
+  }
+  .cq-pri[data-tier="high"]{ color:#fff; background:var(--burgundy); }
+  .cq-pri[data-tier="mid"]{ color:var(--gold-deep); background:var(--parchment); border-color:var(--parchment-border); }
+  .cq-pri[data-tier="low"]{ color:var(--ink-soft); background:rgba(46,36,31,.07); }
 
   .cq-tags{ display:flex; flex-wrap:wrap; gap:4px; }
   .cq-tags span{
@@ -161,6 +202,7 @@
   @media (max-width:560px){
     .cq-fields{ grid-template-columns:1fr; }
     .cq-grid{ grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); }
+    .cq-selects{ gap:8px; }
   }
 </style>
 </head>
@@ -195,6 +237,7 @@
     <p class="pp-tagline">Everything we said we'd get around to watching</p>
   </header>
 
+  <!-- status chips -->
   <div class="cq-bar">
     <button class="cq-filter" data-filter="all" aria-pressed="true">All</button>
     <button class="cq-filter" data-filter="want" aria-pressed="false">Want to watch</button>
@@ -202,6 +245,56 @@
     <button class="cq-filter" data-filter="watched" aria-pressed="false">Watched</button>
     <span class="cq-spacer"></span>
     <button class="pp-btn" id="addBtn">Add something</button>
+  </div>
+
+  <!-- dropdown filters + sort -->
+  <div class="cq-selects">
+    <div class="cq-pick">
+      <label for="fltKind">Kind</label>
+      <select id="fltKind">
+        <option value="all">All</option>
+        <option value="series">Series</option>
+        <option value="movie">Films</option>
+      </select>
+    </div>
+
+    <div class="cq-pick">
+      <label for="fltWho">Who</label>
+      <select id="fltWho">
+        <option value="all">All</option>
+        <option value="together">Together</option>
+        <option value="danni">D only</option>
+        <option value="brendon">B only</option>
+      </select>
+    </div>
+
+    <div class="cq-pick">
+      <label for="fltPri">Priority</label>
+      <select id="fltPri">
+        <option value="all">All</option>
+        <option value="high">High</option>
+        <option value="mid">Medium</option>
+        <option value="low">Low</option>
+        <option value="none">Unrated</option>
+      </select>
+    </div>
+
+    <div class="cq-pick">
+      <label for="fltTag">Tag</label>
+      <select id="fltTag"><option value="all">All</option></select>
+    </div>
+
+    <div class="cq-pick">
+      <label for="sortBy">Sort</label>
+      <select id="sortBy">
+        <option value="priority">Priority, high first</option>
+        <option value="progress">Progress, furthest along</option>
+        <option value="title">Title, A–Z</option>
+        <option value="added">Recently added</option>
+      </select>
+    </div>
+
+    <button class="cq-reset" id="resetBtn">Clear filters</button>
   </div>
 
   <div class="cq-bar" style="margin-bottom:14px;">
@@ -242,9 +335,38 @@
         <div class="cq-results" id="results"></div>
       </div>
 
+      <div class="cq-field">
+        <label for="fWho">Who's watching</label>
+        <select id="fWho">
+          <option value="together">Together</option>
+          <option value="danni">D only</option>
+          <option value="brendon">B only</option>
+        </select>
+      </div>
+
       <div class="cq-field hidden" id="runtimeField">
         <label for="fRuntime">Runtime in minutes</label>
         <input id="fRuntime" type="number" min="0" step="1" placeholder="118">
+      </div>
+
+      <div class="cq-field">
+        <label for="fPriD">D's priority</label>
+        <select id="fPriD">
+          <option value="0">Not rated</option>
+          <option value="1">Low</option>
+          <option value="2">Medium</option>
+          <option value="3">High</option>
+        </select>
+      </div>
+
+      <div class="cq-field">
+        <label for="fPriB">B's priority</label>
+        <select id="fPriB">
+          <option value="0">Not rated</option>
+          <option value="1">Low</option>
+          <option value="2">Medium</option>
+          <option value="3">High</option>
+        </select>
       </div>
 
       <div class="cq-field wide">
@@ -307,21 +429,18 @@
    1. PASTE YOUR FIREBASE CONFIG HERE — same block as your quest-log page.
 ------------------------------------------------------------------- */
 const firebaseConfig = {
-  apiKey: "AIzaSyAdNZBoh1pH80-ZFBbOlcrlsLdMi3D62Wg",
+  apiKey: "PASTE_FROM_QUEST_LOG",
   authDomain: "princess-paladin.firebaseapp.com",
   projectId: "princess-paladin",
   storageBucket: "princess-paladin.appspot.com",
-  messagingSenderId: "282931655557",
-  appId: "1:282931655557:web:cae6ccd23f32cb9be54aec"
+  messagingSenderId: "PASTE_FROM_QUEST_LOG",
+  appId: "PASTE_FROM_QUEST_LOG"
 };
 
 /* ------------------------------------------------------------------
-   2. PASTE YOUR TMDB KEY HERE — free, from themoviedb.org.
-   Only films use it. Series come from TVmaze, which needs nothing.
-   Leave it as-is and film lookup simply stays switched off; you can
-   still add films by typing the title, runtime and poster link.
+   2. YOUR TMDB KEY — films only. Series come from TVmaze, no key needed.
 ------------------------------------------------------------------- */
-const TMDB_KEY = "2baed187c3455a853cc94ca735fe024d";
+const TMDB_KEY = "PASTE_YOUR_TMDB_KEY";
 
 const DOC_PATH  = "sidequest/couch-list";
 const CACHE_KEY = "pp_couch_list";
@@ -329,7 +448,7 @@ const TVMAZE    = "https://api.tvmaze.com";
 const TMDB      = "https://api.themoviedb.org/3";
 const TMDB_IMG  = "https://image.tmdb.org/t/p/w500";
 
-const DEFAULT_TAGS = ["Comedy","Drama","Horror","Fantasy","Documentary","Animated","Rewatch","Together","Cozy"];
+const DEFAULT_TAGS = ["Comedy","Drama","Horror","Fantasy","Documentary","Animated","Rewatch","Cozy"];
 
 const HINT_SERIES = "Searches TV shows and pulls in the poster and every season.";
 const HINT_MOVIE  = "Searches films and pulls in the poster and the runtime.";
@@ -338,7 +457,8 @@ const HINT_NOKEY  = "Film lookup needs a TMDB key — see the note near the top 
 const hasTmdb = () => TMDB_KEY && TMDB_KEY.indexOf("PASTE") !== 0;
 
 let state  = { items: [], tagOptions: DEFAULT_TAGS.slice() };
-let editId = null, openId = null, pickedTags = [], filter = "all";
+let editId = null, openId = null, pickedTags = [];
+let filter = "all", fltKind = "all", fltWho = "all", fltPri = "all", fltTag = "all", sortBy = "priority";
 let pendingLookup = null;
 let saving = false, docRef = null, saveTimer = null;
 
@@ -353,12 +473,39 @@ function esc(s){
     ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
 }
 
-/* 118 -> "1h 58m" */
 function hm(min){
   min = Math.max(0, Math.round(min || 0));
   const h = Math.floor(min / 60), m = min % 60;
   if(!h) return m + "m";
   return h + "h" + (m ? " " + m + "m" : "");
+}
+
+/* ---------------- who ---------------- */
+const WHO_LABEL = { together:"Both", danni:"D only", brendon:"B only" };
+
+/* ---------------- priority ----------------
+   Two raters, three levels each, so the average only ever lands on
+   1, 1.5, 2, 2.5 or 3. Five clean labels, no decimals on screen. */
+function priAvg(item){
+  const vals = [item.priD || 0, item.priB || 0].filter(v => v > 0);
+  if(!vals.length) return 0;
+  return vals.reduce((a,b) => a + b, 0) / vals.length;
+}
+
+function priLabel(avg){
+  if(!avg) return "";
+  if(avg >= 3)    return "High";
+  if(avg >= 2.5)  return "Med–High";
+  if(avg >= 2)    return "Medium";
+  if(avg >= 1.5)  return "Low–Med";
+  return "Low";
+}
+
+function priTier(avg){
+  if(!avg) return "none";
+  if(avg >= 2.5) return "high";
+  if(avg >= 1.5) return "mid";
+  return "low";
 }
 
 /* ---------------- progress maths ---------------- */
@@ -373,6 +520,12 @@ function totals(item){
     return { done: done, total: total, kind: total ? "series" : "none" };
   }
   return { done: 0, total: 0, kind: "none" };
+}
+
+function pctOf(item){
+  const t = totals(item);
+  if(t.kind === "none") return item.status === "watched" ? 1 : 0;
+  return t.total ? t.done / t.total : 0;
 }
 
 function position(item){
@@ -399,6 +552,31 @@ function syncStatus(item){
   else                      item.status = "watched";
 }
 
+/* ---------------- migration ----------------
+   Older entries predate who/priority. Fill in sane defaults, and turn the
+   old "Together" tag into the proper field. */
+function migrate(){
+  let touched = false;
+  state.items.forEach(it => {
+    if(!it.who){
+      it.who = "together";
+      touched = true;
+    }
+    if(Array.isArray(it.tags) && it.tags.includes("Together")){
+      it.tags = it.tags.filter(t => t !== "Together");
+      it.who = "together";
+      touched = true;
+    }
+    if(it.priD == null){ it.priD = 0; touched = true; }
+    if(it.priB == null){ it.priB = 0; touched = true; }
+  });
+  if(Array.isArray(state.tagOptions) && state.tagOptions.includes("Together")){
+    state.tagOptions = state.tagOptions.filter(t => t !== "Together");
+    touched = true;
+  }
+  return touched;
+}
+
 /* ---------------- storage ---------------- */
 function loadCache(){
   try{
@@ -409,6 +587,7 @@ function loadCache(){
     }
   }catch(e){}
   if(!Array.isArray(state.tagOptions) || !state.tagOptions.length) state.tagOptions = DEFAULT_TAGS.slice();
+  migrate();
 }
 function writeCache(){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(state)); }catch(e){} }
 
@@ -424,16 +603,20 @@ function startFirebase(){
         items: Array.isArray(d.items) ? d.items : [],
         tagOptions: Array.isArray(d.tagOptions) && d.tagOptions.length ? d.tagOptions : DEFAULT_TAGS.slice()
       };
+      const changed = migrate();
       writeCache();
+      renderTagFilter();
       render();
       if(openId) openDetail(openId);
       setSync("idle","Synced");
+      if(changed) save();          // push the tidied-up records back once
     }, err => { console.error(err); setSync("error","Offline — this device only"); });
   }catch(e){ console.error(e); setSync("error","Offline — this device only"); }
 }
 
 function save(){
   writeCache();
+  renderTagFilter();
   render();
   if(openId) openDetail(openId);
   if(!docRef) return;
@@ -477,7 +660,6 @@ function showResults(rows, onPick){
   box.classList.add("open");
 }
 
-/* --- Series, via TVmaze. No key needed. --- */
 function lookupSeries(q){
   $("lookupHint").textContent = "Searching…";
   fetch(TVMAZE + "/search/shows?q=" + encodeURIComponent(q))
@@ -519,16 +701,12 @@ function pickSeries(r){
     });
 }
 
-/* --- Films, via TMDB. Needs the free key set above. --- */
 function lookupMovie(q){
   if(!hasTmdb()){ $("lookupHint").textContent = HINT_NOKEY; return; }
   $("lookupHint").textContent = "Searching…";
   fetch(TMDB + "/search/movie?api_key=" + encodeURIComponent(TMDB_KEY) +
         "&include_adult=false&query=" + encodeURIComponent(q))
-    .then(r => {
-      if(r.status === 401) throw new Error("bad key");
-      return r.json();
-    })
+    .then(r => { if(r.status === 401) throw new Error("bad key"); return r.json(); })
     .then(data => {
       showResults((data.results || []).slice(0,8).map(m => ({
         raw: m,
@@ -546,7 +724,6 @@ function lookupMovie(q){
     });
 }
 
-/* The search results don't carry runtime, so fetch the one film we picked. */
 function pickMovie(r){
   $("fTitle").value = r.name;
   $("fImage").value = r.full;
@@ -561,14 +738,9 @@ function pickMovie(r){
       pendingLookup = { type:"movie", runtime: mins };
       $("lookupHint").textContent = mins ? ("Runtime " + hm(mins) + ".") : "No runtime listed — type it in.";
     })
-    .catch(e => {
-      console.error(e);
-      $("lookupHint").textContent = "Got the film, but no runtime came back. Type it in.";
-    });
+    .catch(e => { console.error(e); $("lookupHint").textContent = "Got the film, but no runtime came back. Type it in."; });
 }
 
-/* One request gets the show and every episode. Counting episodes per season
-   is more reliable than episodeOrder on shows that are still airing. */
 function fetchSeasons(showId){
   return fetch(TVMAZE + "/shows/" + showId + "?embed=episodes")
     .then(r => r.json())
@@ -576,7 +748,7 @@ function fetchSeasons(showId){
       const eps = (data._embedded && data._embedded.episodes) || [];
       const bySeason = {};
       eps.forEach(ep => {
-        if(!ep.season || ep.number == null) return;   // skip specials
+        if(!ep.season || ep.number == null) return;
         bySeason[ep.season] = (bySeason[ep.season] || 0) + 1;
       });
       return Object.keys(bySeason).map(Number).sort((a,b) => a - b)
@@ -594,16 +766,59 @@ function mergeSeasons(oldSeasons, fresh){
   }));
 }
 
-/* ---------------- render ---------------- */
+/* ---------------- filter + sort ---------------- */
 const LABEL = { want:"Want to watch", watching:"Watching", watched:"Watched" };
 const NEXT  = { want:"watching", watching:"watched", watched:"want" };
 
+function visibleItems(){
+  let rows = state.items.filter(i => {
+    if(filter !== "all"  && i.status !== filter) return false;
+    if(fltKind !== "all" && (i.type || "series") !== fltKind) return false;
+    if(fltWho !== "all"  && (i.who || "together") !== fltWho) return false;
+    if(fltTag !== "all"  && !(i.tags || []).includes(fltTag)) return false;
+    if(fltPri !== "all"){
+      const tier = priTier(priAvg(i));
+      if(fltPri === "none" && tier !== "none") return false;
+      if(fltPri !== "none" && tier !== fltPri) return false;
+    }
+    return true;
+  });
+
+  rows.sort((a,b) => {
+    if(sortBy === "title")    return a.title.localeCompare(b.title, undefined, { sensitivity:"base" });
+    if(sortBy === "added")    return (b.added || 0) - (a.added || 0);
+    if(sortBy === "progress"){
+      const d = pctOf(b) - pctOf(a);
+      return d !== 0 ? d : a.title.localeCompare(b.title);
+    }
+    /* priority: rated things first, then by score, then title */
+    const d = priAvg(b) - priAvg(a);
+    return d !== 0 ? d : a.title.localeCompare(b.title);
+  });
+
+  return rows;
+}
+
+function renderTagFilter(){
+  const sel = $("fltTag");
+  const keep = sel.value;
+  sel.innerHTML = '<option value="all">All</option>';
+  state.tagOptions.forEach(t => {
+    const o = document.createElement("option");
+    o.value = t; o.textContent = t;
+    sel.appendChild(o);
+  });
+  sel.value = state.tagOptions.includes(keep) ? keep : "all";
+  fltTag = sel.value;
+}
+
+/* ---------------- render ---------------- */
 function render(){
   const grid  = $("grid");
-  const shown = state.items.filter(i => filter === "all" || i.status === filter);
+  const shown = visibleItems();
   grid.innerHTML = "";
   $("empty").style.display = shown.length ? "none" : "block";
-  $("empty").textContent = state.items.length ? "Nothing in this filter." : "Nothing here yet. Add the first one.";
+  $("empty").textContent = state.items.length ? "Nothing matches those filters." : "Nothing here yet. Add the first one.";
 
   shown.forEach(item => {
     const t = totals(item);
@@ -620,11 +835,19 @@ function render(){
            data-current="${t.done}" data-total="${t.total}" data-size="38"></div></div>`
       : "";
 
+    const who = item.who || "together";
+    const whoBadge = `<span class="cq-who" data-who="${who}">${esc(WHO_LABEL[who])}</span>`;
+
+    const avg = priAvg(item);
+    const pri = avg
+      ? `<span class="cq-pri" data-tier="${priTier(avg)}">${esc(priLabel(avg))}</span>`
+      : "";
+
     const where = position(item);
     const tags  = (item.tags || []).map(x => `<span>${esc(x)}</span>`).join("");
 
     card.innerHTML = `
-      <div class="cq-posterwrap" data-open="${item.id}">${art}${ring}</div>
+      <div class="cq-posterwrap" data-open="${item.id}">${art}${whoBadge}${ring}</div>
       <div class="cq-tools">
         <button data-edit="${item.id}" aria-label="Edit ${esc(item.title)}">✎</button>
         <button data-del="${item.id}" aria-label="Remove ${esc(item.title)}">✕</button>
@@ -632,7 +855,10 @@ function render(){
       <div class="cq-body">
         <h3 class="cq-name">${esc(item.title)}</h3>
         ${where ? `<div class="cq-where">${esc(where)}</div>` : ""}
-        <button class="cq-status" data-status="${item.status}" data-cycle="${item.id}">${LABEL[item.status]}</button>
+        <div class="cq-meta">
+          <button class="cq-status" data-status="${item.status}" data-cycle="${item.id}">${LABEL[item.status]}</button>
+          ${pri}
+        </div>
         ${tags ? `<div class="cq-tags">${tags}</div>` : ""}
       </div>`;
     grid.appendChild(card);
@@ -641,7 +867,10 @@ function render(){
   PPProgress.draw(grid);
 
   const done = state.items.filter(i => i.status === "watched").length;
-  $("count").textContent = state.items.length ? `${done} watched of ${state.items.length}` : "";
+  const base = state.items.length ? `${done} watched of ${state.items.length}` : "";
+  $("count").textContent = (shown.length !== state.items.length)
+    ? `Showing ${shown.length} of ${state.items.length} · ${base}`
+    : base;
 }
 
 function openDetail(id){
@@ -650,10 +879,19 @@ function openDetail(id){
   openId = id;
 
   const t = totals(item);
+  const avg = priAvg(item);
   $("dTitle").textContent = item.title;
   $("dImg").src = item.image || "";
   $("dImg").style.display = item.image ? "" : "none";
-  $("dMeta").textContent = position(item) || LABEL[item.status];
+
+  const bits = [position(item) || LABEL[item.status], WHO_LABEL[item.who || "together"]];
+  if(avg){
+    const pieces = [];
+    if(item.priD) pieces.push("D " + ["","low","med","high"][item.priD]);
+    if(item.priB) pieces.push("B " + ["","low","med","high"][item.priB]);
+    bits.push(priLabel(avg) + " priority (" + pieces.join(", ") + ")");
+  }
+  $("dMeta").textContent = bits.join(" · ");
 
   const overall = $("dOverall");
   overall.setAttribute("data-current", t.done);
@@ -776,6 +1014,9 @@ function openForm(item){
   $("fImage").value   = item ? (item.image || "") : "";
   $("fStatus").value  = item ? item.status : "want";
   $("fType").value    = item ? (item.type || "series") : "series";
+  $("fWho").value     = item ? (item.who || "together") : "together";
+  $("fPriD").value    = item ? String(item.priD || 0) : "0";
+  $("fPriB").value    = item ? String(item.priB || 0) : "0";
   $("fRuntime").value = item && item.runtime ? item.runtime : "";
   $("fNewTag").value  = "";
   syncTypeUI();
@@ -805,6 +1046,9 @@ $("saveBtn").onclick = () => {
     image: $("fImage").value.trim(),
     status: $("fStatus").value,
     type: $("fType").value,
+    who: $("fWho").value,
+    priD: parseInt($("fPriD").value, 10) || 0,
+    priB: parseInt($("fPriB").value, 10) || 0,
     tags: pickedTags.slice(),
     runtime: isMovie ? (parseInt($("fRuntime").value, 10) || 0) : 0
   };
@@ -864,6 +1108,7 @@ $("fNewTag").onkeydown = e => {
   if(!pickedTags.includes(tag)) pickedTags.push(tag);
   e.target.value = "";
   renderTagPicker();
+  renderTagFilter();
 };
 
 $("grid").onclick = e => {
@@ -901,7 +1146,6 @@ $("grid").onclick = e => {
   if(open) openDetail(open.dataset.open);
 };
 
-/* episode boxes fire this from pp-progress.js */
 $("detailBody").addEventListener("pp-progress-change", e => {
   const box = e.target.closest("[data-season]");
   if(!box || !openId) return;
@@ -939,6 +1183,7 @@ $("detailBody").onchange = e => {
   if(e.target.id === "minInput" && openId) setMinutes(openId, parseInt(e.target.value, 10) || 0);
 };
 
+/* filters */
 document.querySelectorAll(".cq-filter").forEach(btn => {
   btn.onclick = () => {
     filter = btn.dataset.filter;
@@ -947,7 +1192,22 @@ document.querySelectorAll(".cq-filter").forEach(btn => {
   };
 });
 
+$("fltKind").onchange = e => { fltKind = e.target.value; render(); };
+$("fltWho").onchange  = e => { fltWho  = e.target.value; render(); };
+$("fltPri").onchange  = e => { fltPri  = e.target.value; render(); };
+$("fltTag").onchange  = e => { fltTag  = e.target.value; render(); };
+$("sortBy").onchange  = e => { sortBy  = e.target.value; render(); };
+
+$("resetBtn").onclick = () => {
+  filter = fltKind = fltWho = fltPri = fltTag = "all";
+  $("fltKind").value = $("fltWho").value = $("fltPri").value = $("fltTag").value = "all";
+  document.querySelectorAll(".cq-filter").forEach(b =>
+    b.setAttribute("aria-pressed", b.dataset.filter === "all" ? "true" : "false"));
+  render();
+};
+
 loadCache();
+renderTagFilter();
 render();
 startFirebase();
 </script>
