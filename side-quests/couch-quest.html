@@ -756,28 +756,50 @@ function pickMovie(r){
     .catch(e => { console.error(e); $("lookupHint").textContent = "Got the film, but no runtime came back. Type it in."; });
 }
 
+/* Two requests in parallel:
+   - /shows/:id/seasons  → episodeOrder per season (includes unaired episodes)
+   - /shows/:id?embed=episodes → only aired episodes, used to flag which are watchable
+
+   We store both numbers:
+     episodes  = ordered total (may include future episodes)
+     aired     = how many have actually aired
+   Chips only go up to `aired`. The total on the bar and ring is `episodes`
+   so you can see the full season shape, but you can't tap past what's out yet. */
 function fetchSeasons(showId){
-  return fetch(TVMAZE + "/shows/" + showId + "?embed=episodes")
-    .then(r => r.json())
-    .then(data => {
-      const eps = (data._embedded && data._embedded.episodes) || [];
-      const bySeason = {};
-      eps.forEach(ep => {
-        if(!ep.season || ep.number == null) return;
-        bySeason[ep.season] = (bySeason[ep.season] || 0) + 1;
-      });
-      return Object.keys(bySeason).map(Number).sort((a,b) => a - b)
-        .map(n => ({ number:n, episodes:bySeason[n], watched:0 }));
+  return Promise.all([
+    fetch(TVMAZE + "/shows/" + showId + "/seasons").then(r => r.json()),
+    fetch(TVMAZE + "/shows/" + showId + "?embed=episodes").then(r => r.json())
+  ]).then(([seasonData, showData]) => {
+    /* count aired episodes per season */
+    const eps = (showData._embedded && showData._embedded.episodes) || [];
+    const aired = {};
+    eps.forEach(ep => {
+      if(!ep.season || ep.number == null) return;
+      aired[ep.season] = (aired[ep.season] || 0) + 1;
     });
+
+    /* build from the seasons list, which carries episodeOrder */
+    return seasonData
+      .filter(s => s.number != null && s.number > 0)   // skip specials (season 0)
+      .sort((a, b) => a.number - b.number)
+      .map(s => ({
+        number:   s.number,
+        episodes: s.episodeOrder || aired[s.number] || 0,  // ordered total; fall back to aired if missing
+        aired:    aired[s.number] || 0,
+        watched:  0
+      }))
+      .filter(s => s.episodes > 0);   // drop seasons with no episode info yet
+  });
 }
 
 function mergeSeasons(oldSeasons, fresh){
   const prev = {};
   (oldSeasons || []).forEach(s => { prev[s.number] = s.watched || 0; });
   return fresh.map(s => ({
-    number: s.number,
+    number:   s.number,
     episodes: s.episodes,
-    watched: Math.min(prev[s.number] || 0, s.episodes)
+    aired:    s.aired,
+    watched:  Math.min(prev[s.number] || 0, s.aired || s.episodes)
   }));
 }
 
@@ -961,17 +983,22 @@ function openDetail(id){
       item.seasons.forEach(s => {
         const row = document.createElement("div");
         row.className = "cq-block";
+        const airedEps = s.aired != null ? s.aired : s.episodes;
+        const unairedEps = s.episodes - airedEps;
+        const countText = unairedEps > 0
+          ? `${s.watched || 0} of ${airedEps} aired · ${unairedEps} upcoming`
+          : `${s.watched || 0} of ${s.episodes}`;
         row.innerHTML = `
           <div class="cq-block-head">
             <span class="cq-block-name">Season ${s.number}</span>
-            <span class="cq-block-count">${s.watched || 0} of ${s.episodes}</span>
+            <span class="cq-block-count">${countText}</span>
           </div>
           <div class="pp-chips" data-color="pink" data-clickable="true" data-chip-label="EP"
-               data-season="${s.number}" data-current="${s.watched || 0}" data-total="${s.episodes}"></div>
+               data-season="${s.number}" data-current="${s.watched || 0}" data-total="${airedEps}"></div>
           <div class="cq-step">
             <button data-minus="${s.number}">− one</button>
             <button data-plus="${s.number}">+ one</button>
-            <button data-all="${s.number}">Whole season</button>
+            <button data-all="${s.number}">All aired</button>
             <button data-none="${s.number}">Clear</button>
           </div>`;
         body.appendChild(row);
@@ -990,7 +1017,8 @@ function setSeason(itemId, seasonNo, watched){
   if(!item) return;
   const s = (item.seasons || []).find(x => x.number === seasonNo);
   if(!s) return;
-  s.watched = Math.max(0, Math.min(watched, s.episodes));
+  const cap = s.aired != null ? s.aired : s.episodes;  // never mark beyond what's aired
+  s.watched = Math.max(0, Math.min(watched, cap));
   syncStatus(item);
   save();
 }
@@ -1097,7 +1125,7 @@ $("saveBtn").onclick = () => {
     }
     if(item.status === "watched"){
       if(isMovie) item.watchedMin = item.runtime;
-      else item.seasons.forEach(s => { s.watched = s.episodes; });
+      else item.seasons.forEach(s => { s.watched = s.aired != null ? s.aired : s.episodes; });
     }
     state.items.unshift(item);
   }
@@ -1147,7 +1175,7 @@ $("grid").onclick = e => {
         if(item.status === "watched") item.watchedMin = item.runtime;
         if(item.status === "want")    item.watchedMin = 0;
       }else if(t.kind === "series"){
-        if(item.status === "watched") item.seasons.forEach(s => { s.watched = s.episodes; });
+        if(item.status === "watched") item.seasons.forEach(s => { s.watched = s.aired != null ? s.aired : s.episodes; });
         if(item.status === "want")    item.seasons.forEach(s => { s.watched = 0; });
       }
       save();
@@ -1198,9 +1226,10 @@ $("detailBody").onclick = e => {
   const s = (item.seasons || []).find(x => x.number === no);
   if(!s) return;
 
+  const cap = s.aired != null ? s.aired : s.episodes;
   if(attr === "data-plus")  setSeason(openId, no, (s.watched || 0) + 1);
   if(attr === "data-minus") setSeason(openId, no, (s.watched || 0) - 1);
-  if(attr === "data-all")   setSeason(openId, no, s.episodes);
+  if(attr === "data-all")   setSeason(openId, no, cap);
   if(attr === "data-none")  setSeason(openId, no, 0);
 };
 
