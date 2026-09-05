@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monsters · Quest Log</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/pp.css">
+
+<style>
+  :root{
+    --pink-bg:#F6D9E6; --pink-bg-alt:#F2C9DC;
+    --accent:var(--pink); --accent-dark:var(--pink-deep);
+    --sage-dark:var(--sage-deep); --cream:var(--panel); --white:#FFFFFF;
+    --quest-gold:#C9A227; --quest-copper:#B87333; --meow:#7F77DD;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:var(--font-body); color:var(--ink);
+    background-image:
+      radial-gradient(circle at 15% 8%, rgba(255,255,255,0.5), transparent 40%),
+      linear-gradient(135deg, var(--pink-bg) 0%, var(--pink-bg-alt) 100%);
+    background-attachment:fixed; min-height:100vh; padding-bottom:80px;
+  }
+  a{color:inherit;}
+  .ribbon{
+    background:linear-gradient(180deg, var(--pink-bg-alt) 0%, var(--pink-bg) 100%);
+    border-bottom:2px solid rgba(232,124,166,0.35);
+    box-shadow:0 4px 16px rgba(180,90,120,0.12);
+  }
+  .ribbon .pp-nav{ margin:0; padding:10px 24px 0; }
+  .ribbon .pp-emblem{ margin:0; padding-top:12px; }
+  .ribbon .pp-emblem svg{ width:24px; height:24px; }
+  .ribbon-inner{
+    max-width:1000px; margin:0 auto; padding:14px 24px;
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  }
+  .page-title{ font-family:var(--font-display); font-size:26px; font-weight:600; margin:0; flex:1; }
+  .currency{ display:flex; gap:10px; flex-wrap:wrap; }
+  .coin{
+    display:flex; align-items:center; gap:5px;
+    font-family:var(--font-serif); font-weight:600; font-size:15px;
+    background:var(--white); padding:6px 12px; border-radius:20px;
+    box-shadow:0 2px 6px rgba(180,90,120,0.12);
+  }
+  .coin .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .coin.gold{ color:var(--quest-gold); } .coin.gold .dot{ background:var(--quest-gold); }
+  .coin.copper{ color:var(--quest-copper); } .coin.copper .dot{ background:var(--quest-copper); }
+  .coin.meow{ color:var(--meow); } .coin.meow .dot{ background:var(--meow); }
+
+  .wrap{ max-width:1000px; margin:0 auto; padding:0 24px; }
+  .card{
+    background:var(--white); border-radius:var(--radius-md);
+    padding:16px 18px; box-shadow:0 2px 8px rgba(180,90,120,0.08);
+  }
+  .section-title{
+    font-family:var(--font-serif); font-size:19px; font-weight:600;
+    margin:26px 0 12px; color:var(--accent-dark);
+  }
+  .hint{ font-size:12px; color:var(--ink-soft); font-style:italic; }
+  .empty-note{ font-size:12.5px; color:var(--ink-soft); font-style:italic; padding:14px 0; text-align:center; }
+
+  .btn{
+    font-family:var(--font-body); font-size:13px; font-weight:500;
+    background:var(--accent); color:var(--white); border:none;
+    padding:9px 18px; border-radius:16px; cursor:pointer;
+  }
+  .btn:hover{ background:var(--accent-dark); }
+  .btn.quiet{ background:var(--cream); color:var(--ink-soft); border:1px solid rgba(74,59,65,0.18); }
+  .btn.quiet:hover{ background:var(--pink-bg-alt); color:var(--accent-dark); }
+  .btn.sm{ font-size:12px; padding:6px 12px; border-radius:13px; }
+  .btn:disabled{ background:rgba(74,59,65,0.15); color:var(--ink-soft); cursor:not-allowed; }
+
+  label.f{ display:block; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); font-weight:500; margin-bottom:4px; }
+  input[type="text"], input[type="number"]{
+    width:100%; font-family:var(--font-body); font-size:14px;
+    border:1px solid rgba(74,59,65,0.18); border-radius:8px;
+    padding:8px 10px; background:var(--cream); color:var(--ink);
+  }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .grid3{ display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
+  @media (max-width:640px){ .grid2, .grid3{ grid-template-columns:1fr; } }
+
+  .hp-preset{ display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+  .hp-preset button{
+    font-family:var(--font-body); font-size:10.5px; color:var(--ink-soft);
+    background:var(--cream); border:1px solid rgba(74,59,65,0.15);
+    border-radius:10px; padding:4px 9px; cursor:pointer;
+  }
+  .hp-preset button:hover{ background:var(--pink-bg-alt); color:var(--accent-dark); }
+
+  .check-row{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:13.5px; }
+  .check-row input{ width:auto; }
+
+  /* monster cards */
+  .monster{
+    background:var(--white); border-radius:var(--radius-md);
+    padding:16px 18px; margin-bottom:12px;
+    box-shadow:0 2px 8px rgba(180,90,120,0.08);
+    border-left:4px solid var(--ink-soft);
+  }
+  .monster.is-active{ border-left-color:var(--blade); }
+  .monster.is-dead{ opacity:.6; border-left-color:var(--sage); }
+  .m-head{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .m-name{ font-family:var(--font-serif); font-size:19px; font-weight:600; flex:1; }
+  .m-flag{
+    font-size:10.5px; font-weight:500; color:var(--white);
+    background:var(--blade); padding:2px 9px; border-radius:9px;
+  }
+  .m-flag.dead{ background:var(--sage); }
+  .hp-track{
+    height:12px; border-radius:7px; background:rgba(74,59,65,0.12);
+    overflow:hidden; margin:10px 0 6px;
+  }
+  .hp-track i{
+    display:block; height:100%; border-radius:7px;
+    background:linear-gradient(90deg, var(--blade), #7C1F2A);
+    transition:width .4s ease;
+  }
+  .hp-num{ font-size:12px; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+  .m-reward{ font-size:12.5px; color:var(--ink-soft); margin-top:8px; }
+  .m-reward b{ color:var(--ink); font-weight:500; }
+  .m-actions{ display:flex; gap:6px; margin-top:12px; flex-wrap:wrap; }
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(74,59,65,0.5);
+    display:none; align-items:center; justify-content:center; z-index:200; padding:20px;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal-card{
+    background:var(--cream); border-radius:var(--radius-lg);
+    padding:30px 26px; max-width:380px; text-align:center;
+    box-shadow:0 12px 40px rgba(74,59,65,0.3); border:3px solid var(--white);
+  }
+  .modal-card .big-emoji{ font-size:44px; }
+  .modal-card h3{ font-family:var(--font-display); font-size:25px; margin:10px 0 6px; color:var(--accent-dark); }
+  .modal-card p{ font-size:14px; color:var(--ink-soft); line-height:1.5; margin:0; }
+  .modal-card button{
+    margin-top:18px; background:var(--accent); color:var(--white); border:none;
+    padding:10px 24px; border-radius:18px; font-family:var(--font-body); font-size:14px; cursor:pointer;
+  }
+
+  footer{ text-align:center; font-size:12px; color:var(--ink-soft); margin-top:50px; font-style:italic; }
+</style>
+</head>
+<body class="pp-dannelore">
+
+<div class="ribbon">
+  <div class="pp-emblem pp-emblem-sm">
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M8 44 H56" stroke="#9C7440" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="32" cy="10" r="3.5" fill="#9C7440"/>
+      <circle cx="4" cy="18" r="3" fill="#9C7440"/>
+      <circle cx="60" cy="18" r="3" fill="#9C7440"/>
+    </svg>
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <g transform="translate(16,0)">
+        <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
+        <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+        <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
+        <circle cx="16" cy="60" r="3.4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+      </g>
+    </svg>
+  </div>
+  <nav class="pp-nav" aria-label="Main navigation">
+    <a href="/dannelore/quest-log/">Quest Log</a>
+    <a href="/dannelore/quest-log/pets.html">Pets</a>
+    <a href="/dannelore/quest-log/monsters.html" aria-current="page">Monsters</a>
+    <a href="/dannelore">Princess</a>
+    <a href="/">Home</a>
+  </nav>
+  <div class="ribbon-inner">
+    <h1 class="page-title">Monsters</h1>
+    <div class="currency">
+      <div class="coin gold"><span class="dot"></span><span id="goldNum">0</span></div>
+      <div class="coin copper"><span class="dot"></span><span id="copperNum">0</span></div>
+      <div class="coin meow"><span class="dot"></span><span id="meowNum">0</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <h2 class="section-title">Build one</h2>
+  <div class="card">
+    <div class="grid2">
+      <div>
+        <label class="f" for="mName">Name</label>
+        <input type="text" id="mName" placeholder="The Laundry Beast" maxlength="40">
+      </div>
+      <div>
+        <label class="f" for="mHp">Hit points</label>
+        <input type="number" id="mHp" min="10" value="800">
+        <div class="hp-preset">
+          <button type="button" data-hp="300">a few days</button>
+          <button type="button" data-hp="800">about a week</button>
+          <button type="button" data-hp="2000">a fortnight</button>
+          <button type="button" data-hp="5000">a long haul</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="hint" style="margin:10px 0 0;">Damage is whatever a task pays. 100 HP is one gold of work.</p>
+
+    <h3 style="font-family:var(--font-serif);font-size:15px;font-weight:600;margin:18px 0 8px;">Drops</h3>
+    <div class="grid3">
+      <div>
+        <label class="f" for="mGold">Gold</label>
+        <input type="number" id="mGold" min="0" value="0">
+      </div>
+      <div>
+        <label class="f" for="mMeow">Meow Bucks</label>
+        <input type="number" id="mMeow" min="0" value="500">
+      </div>
+      <div>
+        <label class="f" for="mXp">XP</label>
+        <input type="number" id="mXp" min="0" value="200">
+      </div>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="mPet">
+      <label for="mPet">Drops a new companion</label>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="mItem">
+      <label for="mItem">Drops a wardrobe item</label>
+    </div>
+    <p class="hint" style="margin:10px 0 0;">Gold drops come out of the weekly budget, so a fat payout quietly lowers per-task rates that week. Meow Bucks and XP don't.</p>
+
+    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
+      <button class="btn quiet" id="mCancel" style="display:none;">Cancel edit</button>
+      <button class="btn" id="mSave">Add monster</button>
+    </div>
+  </div>
+
+  <h2 class="section-title">In the field</h2>
+  <div id="liveList"></div>
+
+  <h2 class="section-title">Defeated</h2>
+  <div id="deadList"></div>
+
+</div>
+
+<footer>where creativity and chaos meet organization and overthinking 🌷</footer>
+
+<div class="modal-overlay" id="dropModal">
+  <div class="modal-card">
+    <div class="big-emoji">⚔️</div>
+    <h3 id="dropTitle"></h3>
+    <p id="dropBody"></p>
+    <button id="dropClose">Collect</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-quest.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAdNZBoh1pH80-ZFBbOlcrlsLdMi3D62Wg",
+  authDomain: "princess-paladin.firebaseapp.com",
+  projectId: "princess-paladin",
+  storageBucket: "princess-paladin.firebasestorage.app",
+  messagingSenderId: "282931655557",
+  appId: "1:282931655557:web:cae6ccd23f32cb9be54aec",
+  measurementId: "G-E5K2NMCR3Y"
+};
+firebase.initializeApp(firebaseConfig);
+const store = PQ.makeStore(firebase);
+
+const S = () => store.state;
+const save = () => { store.save(); render(); };
+function esc(s){ const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+
+let editingId = null;
+
+document.querySelectorAll('.hp-preset button').forEach(b => {
+  b.onclick = () => { document.getElementById('mHp').value = b.dataset.hp; };
+});
+
+function readForm(){
+  return {
+    name: document.getElementById('mName').value.trim(),
+    maxHp: Math.max(10, parseInt(document.getElementById('mHp').value) || 10),
+    reward: {
+      gold: Math.max(0, parseInt(document.getElementById('mGold').value) || 0),
+      meow: Math.max(0, parseInt(document.getElementById('mMeow').value) || 0),
+      xp:   Math.max(0, parseInt(document.getElementById('mXp').value) || 0),
+      pet:  document.getElementById('mPet').checked,
+      item: document.getElementById('mItem').checked
+    }
+  };
+}
+function resetForm(){
+  document.getElementById('mName').value = '';
+  document.getElementById('mHp').value = 800;
+  document.getElementById('mGold').value = 0;
+  document.getElementById('mMeow').value = 500;
+  document.getElementById('mXp').value = 200;
+  document.getElementById('mPet').checked = false;
+  document.getElementById('mItem').checked = false;
+  editingId = null;
+  document.getElementById('mSave').textContent = 'Add monster';
+  document.getElementById('mCancel').style.display = 'none';
+}
+function loadForm(m){
+  editingId = m.id;
+  document.getElementById('mName').value = m.name;
+  document.getElementById('mHp').value = m.maxHp;
+  document.getElementById('mGold').value = m.reward.gold || 0;
+  document.getElementById('mMeow').value = m.reward.meow || 0;
+  document.getElementById('mXp').value = m.reward.xp || 0;
+  document.getElementById('mPet').checked = !!m.reward.pet;
+  document.getElementById('mItem').checked = !!m.reward.item;
+  document.getElementById('mSave').textContent = 'Save changes';
+  document.getElementById('mCancel').style.display = 'inline-block';
+  document.getElementById('mName').scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+document.getElementById('mCancel').onclick = () => { resetForm(); render(); };
+
+document.getElementById('mSave').onclick = () => {
+  const data = readForm();
+  if(!data.name) { document.getElementById('mName').focus(); return; }
+
+  if(editingId){
+    const m = S().monsters.find(x => x.id === editingId);
+    const spent = m.maxHp - m.hp;
+    Object.assign(m, { name: data.name, maxHp: data.maxHp, reward: data.reward });
+    m.hp = Math.max(0, Math.min(data.maxHp, data.maxHp - spent));
+  } else {
+    const m = {
+      id: 'm' + Math.random().toString(36).slice(2,10),
+      name: data.name,
+      maxHp: data.maxHp,
+      hp: data.maxHp,
+      reward: data.reward,
+      dead: false,
+      created: PQ.TODAY_KEY,
+      killed: null
+    };
+    S().monsters.push(m);
+    if(!PQ.activeMonster(S())) S().activeMonster = m.id;
+  }
+  resetForm();
+  save();
+};
+
+/* ---------- rewards ---------- */
+function rewardText(m){
+  const r = m.reward || {};
+  const bits = [];
+  if(r.gold) bits.push(`<b>${r.gold}g</b>`);
+  if(r.meow) bits.push(`<b>${r.meow}</b> Meow Bucks`);
+  if(r.xp)   bits.push(`<b>${r.xp}</b> XP`);
+  if(r.pet)  bits.push('a <b>new companion</b>');
+  if(r.item) bits.push('a <b>wardrobe item</b>');
+  return bits.length ? 'Drops ' + bits.join(', ') : 'Drops nothing — this one is for the satisfaction';
+}
+
+/* Claiming happens here so the board never has to know about drop tables. */
+function collect(m){
+  const r = m.reward || {};
+  const lines = [];
+  if(r.gold){
+    S().gold += r.gold;
+    PQ.ledgerWeek(S()).monsters += r.gold * 100;
+    lines.push(`${r.gold} gold`);
+  }
+  if(r.meow){ S().meowBucks = (S().meowBucks || 0) + r.meow; lines.push(`${r.meow} Meow Bucks`); }
+  if(r.xp){ PQ.addAccountXP(S(), r.xp); PQ.awardPetXP(S(), r.xp); lines.push(`${r.xp} XP`); }
+  if(r.pet){ S().petTokens = (S().petTokens || 0) + 1; lines.push('a companion waiting on the pets page'); }
+  if(r.item){
+    const pool = PQ.CATALOG.filter(i => !(S().wardrobe[i.id] > 0));
+    const pick = (pool.length ? pool : PQ.CATALOG)[Math.floor(Math.random() * (pool.length ? pool.length : PQ.CATALOG.length))];
+    S().wardrobe[pick.id] = (S().wardrobe[pick.id] || 0) + 1;
+    lines.push(pick.name.toLowerCase());
+  }
+
+  PQ.addFragment(S(), 'subject', m.name.replace(/^the\s+/i, '').trim());
+  const prefix = PQ.randomPrefix(S());
+  if(prefix) PQ.addFragment(S(), 'prefix', prefix);
+
+  m.collected = true;
+  m.killed = m.killed || PQ.TODAY_KEY;
+  if(S().activeMonster === m.id){
+    const next = (S().monsters || []).find(x => !x.dead);
+    S().activeMonster = next ? next.id : null;
+  }
+
+  document.getElementById('dropTitle').textContent = `${m.name} falls`;
+  document.getElementById('dropBody').textContent =
+    (lines.length ? lines.join(', ') + '.' : 'Nothing dropped, but it is done.') +
+    (prefix ? ` New title fragment: "${prefix}".` : '');
+  document.getElementById('dropModal').classList.add('open');
+  save();
+}
+document.getElementById('dropClose').onclick = () => document.getElementById('dropModal').classList.remove('open');
+
+/* ---------- render ---------- */
+function monsterCard(m){
+  const isActive = S().activeMonster === m.id && !m.dead;
+  const pct = m.maxHp ? (m.hp / m.maxHp * 100) : 0;
+  const div = document.createElement('div');
+  div.className = 'monster' + (isActive ? ' is-active' : '') + (m.dead ? ' is-dead' : '');
+  div.innerHTML = `
+    <div class="m-head">
+      <div class="m-name">${esc(m.name)}</div>
+      ${isActive ? '<span class="m-flag">taking damage</span>' : ''}
+      ${m.dead ? '<span class="m-flag dead">defeated</span>' : ''}
+    </div>
+    ${m.dead ? '' : `
+      <div class="hp-track"><i style="width:${pct}%"></i></div>
+      <div class="hp-num">${m.hp} / ${m.maxHp} HP · ${Math.round(pct)}%</div>
+    `}
+    <div class="m-reward">${rewardText(m)}</div>
+    <div class="m-actions"></div>
+  `;
+  const actions = div.querySelector('.m-actions');
+
+  if(m.dead && !m.collected){
+    const b = document.createElement('button');
+    b.className = 'btn sm';
+    b.textContent = 'Collect drops';
+    b.onclick = () => collect(m);
+    actions.appendChild(b);
+  }
+  if(!m.dead && !isActive){
+    const b = document.createElement('button');
+    b.className = 'btn sm';
+    b.textContent = 'Make active';
+    b.onclick = () => { S().activeMonster = m.id; save(); };
+    actions.appendChild(b);
+  }
+  if(!m.dead){
+    const e = document.createElement('button');
+    e.className = 'btn quiet sm';
+    e.textContent = 'Edit';
+    e.onclick = () => loadForm(m);
+    actions.appendChild(e);
+  }
+  const d = document.createElement('button');
+  d.className = 'btn quiet sm';
+  d.textContent = 'Delete';
+  d.onclick = () => {
+    if(!confirm(`Delete ${m.name}?`)) return;
+    S().monsters = S().monsters.filter(x => x.id !== m.id);
+    if(S().activeMonster === m.id){
+      const next = (S().monsters || []).find(x => !x.dead);
+      S().activeMonster = next ? next.id : null;
+    }
+    save();
+  };
+  actions.appendChild(d);
+
+  return div;
+}
+
+function render(){
+  document.getElementById('goldNum').textContent = S().gold;
+  document.getElementById('copperNum').textContent = S().copper;
+  document.getElementById('meowNum').textContent = (S().meowBucks || 0).toLocaleString();
+
+  const live = document.getElementById('liveList');
+  const dead = document.getElementById('deadList');
+  live.innerHTML = ''; dead.innerHTML = '';
+
+  const monsters = S().monsters || [];
+  const alive = monsters.filter(m => !m.dead);
+  const fallen = monsters.filter(m => m.dead);
+
+  if(!alive.length) live.innerHTML = '<div class="card"><p class="empty-note">Nothing to fight. Build one above and every task you finish will chip away at it.</p></div>';
+  alive.sort((a,b) => (S().activeMonster === b.id ? 1 : 0) - (S().activeMonster === a.id ? 1 : 0));
+  alive.forEach(m => live.appendChild(monsterCard(m)));
+
+  if(!fallen.length) dead.innerHTML = '<div class="card"><p class="empty-note">None yet.</p></div>';
+  fallen.forEach(m => dead.appendChild(monsterCard(m)));
+}
+
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible') store.load().then(render);
+});
+
+store.load().then(() => { render(); });
+</script>
+</body>
+</html>

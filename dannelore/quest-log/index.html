@@ -7,18 +7,14 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/pp.css">
 
 <style>
   :root{
-    /* Folder background — the same two stops as the rest of /dannelore/ */
     --pink-bg:#F6D9E6;
     --pink-bg-alt:#F2C9DC;
 
-    /* The names this page already uses, pointed at the canonical palette.
-       --sage, --ink, --ink-soft, --gold and the radius tokens all come
-       straight from pp.css, so they aren't redefined here. */
     --accent:var(--pink);
     --accent-dark:var(--pink-deep);
     --sage-dark:var(--sage-deep);
@@ -26,8 +22,6 @@
     --white:#FFFFFF;
     --dusty-rose:#D8A7B1;
 
-    /* Treasure, not chrome. A bright coin gold that stays distinct from
-       copper at a glance — the canonical --gold is too brown for this. */
     --quest-gold:#C9A227;
     --quest-copper:#B87333;
   }
@@ -49,15 +43,11 @@
 
   a{color:inherit;}
 
-  /* ===== SITE NAVBAR ===== */
-  /* Styling comes from pp.css; these only fit it into the sticky ribbon.
-     The <nav> stays inside .ribbon but outside .ribbon-inner so it renders
-     as its own row above the stats rather than beside them. */
   .ribbon .pp-nav{ margin:0; padding:10px 24px 0; }
   .ribbon .pp-emblem{ margin:0; padding-top:12px; }
   .ribbon .pp-emblem svg{ width:24px; height:24px; }
 
-  /* ===== RIBBON HEADER ===== */
+  /* ===== RIBBON ===== */
   .ribbon{
     position:sticky;
     top:0;
@@ -66,7 +56,6 @@
     border-bottom:2px solid rgba(232,124,166,0.35);
     box-shadow:0 4px 16px rgba(180,90,120,0.12);
   }
-
   .ribbon-inner{
     max-width:1300px;
     margin:0 auto;
@@ -76,588 +65,512 @@
     gap:22px;
   }
 
-  .avatar-frame{
-    position:relative;
-    width:64px;
-    height:64px;
-    border-radius:50%;
-    background:var(--cream);
+  .pet-slot{
+    width:70px; height:70px; flex-shrink:0;
+    border-radius:50%; background:var(--cream);
     border:3px solid var(--white);
     box-shadow:0 0 0 3px var(--accent), 0 4px 10px rgba(180,90,120,0.25);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:30px;
-    flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; text-decoration:none;
   }
+  .pet-slot .pet-art{ width:64px; margin-top:6px; }
+  .pet-slot .pet-art svg{ display:block; }
+  .pet-slot.empty{ font-size:26px; color:var(--ink-soft); }
 
-  .identity{
-    display:flex;
-    flex-direction:column;
-    min-width:150px;
+  .party-strip{ display:flex; gap:4px; flex-shrink:0; }
+  .party-strip a{
+    width:34px; height:34px; border-radius:50%;
+    background:var(--white); border:1.5px solid rgba(232,124,166,0.4);
+    overflow:hidden; display:flex; align-items:flex-end; justify-content:center;
+    text-decoration:none;
   }
-  .identity .name{
-    font-family:var(--font-display);
-    font-size:22px;
-    line-height:1.1;
-    font-weight:600;
-  }
-  .identity .level-tag{
-    font-size:12.5px;
-    color:var(--ink-soft);
-    letter-spacing:.02em;
-  }
+  .party-strip a svg{ width:30px; margin-bottom:-2px; }
+  .party-strip a.hungry{ border-color:var(--blade); }
 
-  .bars{
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-    max-width:380px;
-  }
-  .bar-row{
-    display:flex;
-    align-items:center;
-    gap:8px;
-  }
-  .bar-label{
-    font-size:11px;
-    width:26px;
-    text-align:right;
-    color:var(--ink-soft);
-    font-weight:500;
-  }
+  .identity{ display:flex; flex-direction:column; min-width:150px; }
+  .identity .name{ font-family:var(--font-display); font-size:22px; line-height:1.1; font-weight:600; }
+  .identity .level-tag{ font-size:12.5px; color:var(--ink-soft); letter-spacing:.02em; }
+
+  .bars{ flex:1; display:flex; flex-direction:column; gap:6px; max-width:380px; }
+  .bar-row{ display:flex; align-items:center; gap:8px; }
+  .bar-label{ font-size:11px; width:26px; text-align:right; color:var(--ink-soft); font-weight:500; }
   .bar-track{
-    flex:1;
-    height:9px;
-    border-radius:6px;
+    flex:1; height:9px; border-radius:6px;
     background:rgba(255,255,255,0.6);
     border:1px solid rgba(74,59,65,0.12);
     overflow:hidden;
   }
-  .bar-fill{
-    height:100%;
-    border-radius:6px;
-    transition:width .5s cubic-bezier(.4,0,.2,1);
-  }
-  .bar-fill.xp{background:linear-gradient(90deg,var(--sage),var(--sage-dark));}
-  .bar-num{
-    font-size:10.5px;
-    color:var(--ink-soft);
-    width:64px;
-    font-variant-numeric:tabular-nums;
-  }
+  .bar-fill{ height:100%; border-radius:6px; transition:width .5s cubic-bezier(.4,0,.2,1); }
+  .bar-fill.xp{ background:linear-gradient(90deg,var(--sage),var(--sage-dark)); }
+  .bar-fill.hunger{ background:var(--sage); }
+  .bar-fill.hunger.warn{ background:var(--quest-gold); }
+  .bar-fill.hunger.low{ background:var(--blade); }
+  .bar-fill.hp{ background:linear-gradient(90deg,var(--blade),#7C1F2A); }
+  .bar-num{ font-size:10.5px; color:var(--ink-soft); width:64px; font-variant-numeric:tabular-nums; }
 
-  .currency{
-    display:flex;
-    gap:14px;
-    flex-shrink:0;
-  }
+  .currency{ display:flex; gap:14px; flex-shrink:0; }
   .coin{
-    display:flex;
-    align-items:center;
-    gap:5px;
-    font-family:var(--font-serif);
-    font-weight:600;
-    font-size:16px;
-    background:var(--white);
-    padding:6px 12px;
-    border-radius:20px;
+    display:flex; align-items:center; gap:5px;
+    font-family:var(--font-serif); font-weight:600; font-size:16px;
+    background:var(--white); padding:6px 12px; border-radius:20px;
     box-shadow:0 2px 6px rgba(180,90,120,0.12);
   }
-  .coin.gold{color:var(--quest-gold);}
-  .coin.copper{color:var(--quest-copper);}
-  .coin .dot{
-    width:9px;height:9px;border-radius:50%;
-    display:inline-block;
-  }
-  .coin.gold .dot{background:var(--quest-gold);}
-  .coin.copper .dot{background:var(--quest-copper);}
+  .coin.gold{ color:var(--quest-gold); }
+  .coin.copper{ color:var(--quest-copper); }
+  .coin.meow{ color:#7F77DD; }
+  .coin.meow .dot{ background:#7F77DD; }
+  .coin .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .coin.gold .dot{ background:var(--quest-gold); }
+  .coin.copper .dot{ background:var(--quest-copper); }
 
-  .panel-btns{
-    display:flex;
-    gap:8px;
-    flex-shrink:0;
-  }
+  .panel-btns{ display:flex; gap:8px; flex-shrink:0; }
   .panel-btn{
-    font-family:var(--font-body);
-    font-size:13px;
-    font-weight:500;
-    background:var(--white);
-    border:1.5px solid var(--accent);
-    color:var(--accent-dark);
-    padding:8px 14px;
-    border-radius:18px;
-    cursor:pointer;
+    font-family:var(--font-body); font-size:13px; font-weight:500;
+    background:var(--white); border:1.5px solid var(--accent); color:var(--accent-dark);
+    padding:8px 14px; border-radius:18px; cursor:pointer;
     transition:all .15s ease;
   }
-  .panel-btn:hover{background:var(--accent); color:var(--white);}
+  .panel-btn:hover{ background:var(--accent); color:var(--white); }
+
+  .vacation-flag{
+    display:none;
+    font-size:11.5px; font-weight:500;
+    background:var(--sage); color:var(--white);
+    padding:4px 12px; border-radius:12px;
+  }
+  .vacation-flag.on{ display:inline-block; }
 
   @media (max-width:900px){
-    .ribbon-inner{flex-wrap:wrap; row-gap:10px;}
-    .bars{order:4; max-width:100%; flex-basis:100%;}
+    .ribbon-inner{ flex-wrap:wrap; row-gap:10px; }
+    .bars{ order:4; max-width:100%; flex-basis:100%; }
   }
 
   /* ===== DATE STRIP ===== */
   .date-strip{
-    max-width:1300px;
-    margin:18px auto 0;
-    padding:0 24px;
-    display:flex;
-    align-items:center;
-    gap:14px;
+    max-width:1300px; margin:18px auto 0; padding:0 24px;
+    display:flex; align-items:center; gap:14px;
   }
   .date-strip .line{
-    flex:1;
-    height:1px;
+    flex:1; height:1px;
     background:linear-gradient(90deg, transparent, rgba(232,124,166,0.4), transparent);
   }
   .date-nav{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    font-family:var(--font-serif);
-    font-size:17px;
-    background:var(--white);
-    padding:6px 8px 6px 16px;
-    border-radius:20px;
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--font-serif); font-size:17px;
+    background:var(--white); padding:6px 8px 6px 16px; border-radius:20px;
     box-shadow:0 2px 8px rgba(180,90,120,0.1);
   }
   .date-nav button{
-    width:28px;height:28px;
-    border-radius:50%;
-    border:none;
-    background:var(--pink-bg-alt);
-    color:var(--accent-dark);
-    cursor:pointer;
-    font-size:14px;
-    display:flex;align-items:center;justify-content:center;
+    width:28px; height:28px; border-radius:50%; border:none;
+    background:var(--pink-bg-alt); color:var(--accent-dark);
+    cursor:pointer; font-size:14px;
+    display:flex; align-items:center; justify-content:center;
   }
-  .date-nav button:disabled{opacity:.35; cursor:default;}
-  .date-nav button:hover:not(:disabled){background:var(--accent); color:var(--white);}
+  .date-nav button:disabled{ opacity:.35; cursor:default; }
+  .date-nav button:hover:not(:disabled){ background:var(--accent); color:var(--white); }
   .date-nav .today-pill{
-    font-size:11px;
-    background:var(--sage);
-    color:var(--white);
-    padding:3px 9px;
-    border-radius:10px;
-    cursor:pointer;
-    border:none;
-    font-family:var(--font-body);
+    font-size:11px; background:var(--sage); color:var(--white);
+    padding:3px 9px; border-radius:10px; cursor:pointer; border:none;
+    font-family:var(--font-body); width:auto; height:auto;
   }
-  .past-note{
-    font-size:12px;
-    color:var(--ink-soft);
-    font-style:italic;
+  .past-note{ font-size:12px; color:var(--ink-soft); font-style:italic; }
+
+  /* ===== FILTER PILLS ===== */
+  .filter-strip{
+    max-width:1300px; margin:14px auto 0; padding:0 24px;
+    display:flex; gap:6px; flex-wrap:wrap; align-items:center;
   }
+  .filter-pill{
+    font-family:var(--font-body); font-size:12px; font-weight:500;
+    padding:5px 14px; border-radius:999px; cursor:pointer;
+    border:1px solid rgba(74,59,65,0.18);
+    background:var(--white); color:var(--ink-soft);
+    transition:all .15s ease;
+  }
+  .filter-pill:hover{ border-color:var(--accent); }
+  .filter-pill.on{ color:var(--white); border-color:transparent; }
 
   /* ===== BOARD ===== */
   .board{
-    max-width:1300px;
-    margin:22px auto 0;
-    padding:0 24px;
-    display:grid;
-    grid-template-columns:repeat(4, 1fr);
-    gap:20px;
+    max-width:1300px; margin:22px auto 0; padding:0 24px;
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:20px;
   }
-  @media (max-width:1080px){
-    .board{grid-template-columns:repeat(2, 1fr);}
-  }
-  @media (max-width:560px){
-    .board{grid-template-columns:1fr;}
-  }
+  @media (max-width:1080px){ .board{ grid-template-columns:repeat(2, 1fr); } }
+  @media (max-width:720px){ .board{ grid-template-columns:1fr; } }
 
   .col-head{
-    display:flex;
-    align-items:baseline;
-    justify-content:space-between;
-    margin-bottom:10px;
-    padding:0 4px;
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:10px; padding:0 4px;
   }
-  .col-head h2{
-    font-family:var(--font-serif);
-    font-size:22px;
-    font-weight:600;
-    margin:0;
-  }
-  .col-head .sub{
-    font-size:12px;
-    color:var(--ink-soft);
-  }
+  .col-head h2{ font-family:var(--font-serif); font-size:22px; font-weight:600; margin:0; }
+  .col-head .sub{ font-size:12px; color:var(--ink-soft); }
 
-  .col-dailies h2{color:var(--sage-dark);}
-  .col-todo h2{color:var(--accent-dark);}
-  .col-projects h2{color:var(--quest-copper);}
+  .col-dailies h2{ color:var(--sage-dark); }
+  .col-todos h2{ color:var(--accent-dark); }
+  .col-projects h2{ color:var(--quest-copper); }
 
+  /* ===== ADD ROW ===== */
   .add-row{
-    background:var(--white);
-    border-radius:var(--radius-md);
-    padding:12px 14px;
-    margin-bottom:12px;
+    background:var(--white); border-radius:var(--radius-md);
+    padding:12px 14px; margin-bottom:12px;
     box-shadow:0 2px 8px rgba(180,90,120,0.08);
-    display:flex;
-    flex-direction:column;
-    gap:8px;
+    display:flex; flex-direction:column; gap:8px;
   }
-  .add-row input[type="text"], .add-row textarea, .add-row select, .add-row input[type="date"]{
-    font-family:var(--font-body);
-    font-size:14px;
-    border:1px solid rgba(74,59,65,0.15);
-    border-radius:8px;
-    padding:8px 10px;
-    background:var(--cream);
-    color:var(--ink);
+  .add-row textarea,
+  .add-row input[type="text"],
+  .add-row input[type="date"],
+  .add-row input[type="number"],
+  .add-row select{
+    font-family:var(--font-body); font-size:14px;
+    border:1px solid rgba(74,59,65,0.15); border-radius:8px;
+    padding:8px 10px; background:var(--cream); color:var(--ink);
     width:100%;
   }
-  .add-row input::placeholder{color:var(--ink-soft);}
+  .add-row textarea{ resize:vertical; min-height:52px; line-height:1.5; }
+  .add-row ::placeholder{ color:var(--ink-soft); }
   .add-row-controls{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    flex-wrap:wrap;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px; flex-wrap:wrap;
   }
-  .stars-input{
-    display:flex;
-    gap:3px;
-    cursor:pointer;
+  .mini-select{
+    font-family:var(--font-body); font-size:12px;
+    border-radius:8px; border:1px solid rgba(74,59,65,0.15);
+    background:var(--cream); color:var(--ink); padding:5px 8px;
+    width:auto; flex:1; min-width:90px;
   }
-  .stars-input span{
-    font-size:16px;
-    color:rgba(74,59,65,0.2);
-    transition:color .1s;
-  }
-  .stars-input span.active{color:var(--quest-gold);}
-
-  .priority-select{
-    font-family:var(--font-body);
-    font-size:12px;
-    border-radius:8px;
-    border:1px solid rgba(74,59,65,0.15);
-    background:var(--cream);
-    color:var(--ink);
-    padding:5px 8px;
+  .field-label{
+    font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--ink-soft); font-weight:500;
   }
 
-  .preset-row{
-    display:flex;
-    gap:6px;
-    flex-wrap:wrap;
-  }
+  .stars-input{ display:flex; gap:3px; cursor:pointer; }
+  .stars-input span{ font-size:16px; color:rgba(74,59,65,0.2); transition:color .1s; }
+  .stars-input span.active{ color:var(--quest-gold); }
+
+  .preset-row{ display:flex; gap:6px; flex-wrap:wrap; }
   .preset-row button{
-    font-family:var(--font-body);
-    font-size:10.5px;
-    color:var(--ink-soft);
-    background:var(--cream);
-    border:1px solid rgba(74,59,65,0.15);
-    border-radius:10px;
-    padding:4px 9px;
-    cursor:pointer;
+    font-family:var(--font-body); font-size:10.5px; color:var(--ink-soft);
+    background:var(--cream); border:1px solid rgba(74,59,65,0.15);
+    border-radius:10px; padding:4px 9px; cursor:pointer;
   }
-  .preset-row button:hover{background:var(--pink-bg-alt); color:var(--accent-dark);}
+  .preset-row button:hover{ background:var(--pink-bg-alt); color:var(--accent-dark); }
 
-  .weekday-picker{
-    display:flex;
-    gap:4px;
-    flex-wrap:wrap;
-  }
+  .weekday-picker{ display:flex; gap:4px; flex-wrap:wrap; }
   .weekday-picker button{
-    width:26px;height:26px;
-    border-radius:50%;
-    border:1px solid rgba(74,59,65,0.2);
-    background:var(--cream);
-    font-size:10.5px;
-    font-family:var(--font-body);
-    color:var(--ink-soft);
-    cursor:pointer;
+    width:26px; height:26px; border-radius:50%;
+    border:1px solid rgba(74,59,65,0.2); background:var(--cream);
+    font-size:10.5px; font-family:var(--font-body); color:var(--ink-soft); cursor:pointer;
   }
-  .weekday-picker button.on{
-    background:var(--sage);
-    border-color:var(--sage-dark);
-    color:var(--white);
-  }
+  .weekday-picker button.on{ background:var(--sage); border-color:var(--sage-dark); color:var(--white); }
+
+  .repeat-block{ display:flex; flex-direction:column; gap:8px; }
+  .repeat-detail{ display:none; }
+  .repeat-detail.on{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 
   .add-btn{
-    font-family:var(--font-body);
-    font-weight:500;
-    font-size:13px;
-    background:var(--accent);
-    color:var(--white);
-    border:none;
-    padding:8px 16px;
-    border-radius:16px;
-    cursor:pointer;
-    align-self:flex-end;
+    font-family:var(--font-body); font-weight:500; font-size:13px;
+    background:var(--accent); color:var(--white); border:none;
+    padding:8px 16px; border-radius:16px; cursor:pointer; align-self:flex-end;
   }
-  .add-btn:hover{background:var(--accent-dark);}
-  .add-btn.editing{background:var(--quest-gold);}
+  .add-btn:hover{ background:var(--accent-dark); }
+  .add-btn.editing{ background:var(--quest-gold); }
   .cancel-edit-btn{
-    font-family:var(--font-body);
-    font-size:12px;
-    background:none;
-    border:none;
-    color:var(--ink-soft);
-    text-decoration:underline;
-    cursor:pointer;
-    align-self:flex-end;
+    font-family:var(--font-body); font-size:12px;
+    background:none; border:none; color:var(--ink-soft);
+    text-decoration:underline; cursor:pointer; align-self:flex-end;
   }
 
-  /* task cards */
-  .task-list{
-    display:flex;
-    flex-direction:column;
-    gap:9px;
-  }
+  /* ===== TASK CARDS ===== */
+  .task-list{ display:flex; flex-direction:column; gap:9px; }
   .task-card{
-    background:var(--white);
-    border-radius:var(--radius-md);
+    background:var(--white); border-radius:var(--radius-md);
     padding:12px 14px;
     box-shadow:0 2px 8px rgba(180,90,120,0.08);
     border-left:4px solid var(--dusty-rose);
     transition:opacity .2s, transform .2s;
   }
-  .col-dailies .task-card{border-left-color:var(--sage);}
-  .col-todo .task-card{border-left-color:var(--accent);}
-  .col-projects .task-card{border-left-color:var(--quest-copper);}
-  .col-work .task-card{border-left-color:var(--dusty-rose);}
+  .col-dailies .task-card{ border-left-color:var(--sage); }
+  .col-todos .task-card{ border-left-color:var(--accent); }
+  .col-projects .task-card{ border-left-color:var(--quest-copper); }
+  .task-card.done{ opacity:.55; }
 
-  .task-card.done{opacity:.55;}
-
-  .task-main{
-    display:flex;
-    align-items:flex-start;
-    gap:10px;
-  }
+  .task-main{ display:flex; align-items:flex-start; gap:10px; }
   .check{
-    width:22px;height:22px;
-    border-radius:50%;
-    border:2px solid var(--sage);
-    flex-shrink:0;
-    margin-top:2px;
-    cursor:pointer;
-    display:flex;align-items:center;justify-content:center;
-    font-size:12px;
-    color:transparent;
-    background:var(--white);
+    width:22px; height:22px; border-radius:50%;
+    border:2px solid var(--sage); flex-shrink:0; margin-top:2px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-size:12px; color:transparent; background:var(--white);
     transition:all .15s;
   }
-  .check.checked{
-    background:var(--sage);
-    color:var(--white);
-  }
-  .col-todo .check{border-color:var(--accent);}
-  .col-todo .check.checked{background:var(--accent);}
-  .col-projects .check{border-color:var(--quest-copper);}
-  .col-projects .check.checked{background:var(--quest-copper);}
-  .col-work .check{border-color:var(--dusty-rose);}
-  .col-work .check.checked{background:var(--dusty-rose);}
+  .check.checked{ background:var(--sage); color:var(--white); }
+  .col-todos .check{ border-color:var(--accent); }
+  .col-todos .check.checked{ background:var(--accent); }
+  .col-projects .check{ border-color:var(--quest-copper); }
+  .col-projects .check.checked{ background:var(--quest-copper); }
 
-  .task-body{flex:1; min-width:0;}
+  .task-body{ flex:1; min-width:0; }
   .task-title{
-    font-family:var(--font-serif);
-    font-size:16.5px;
-    font-weight:500;
-    line-height:1.25;
-    cursor:pointer;
+    font-family:var(--font-serif); font-size:16.5px; font-weight:500;
+    line-height:1.25; cursor:pointer;
   }
-  .task-title:hover{text-decoration:underline dotted;}
-  .task-card.done .task-title{text-decoration:line-through; text-decoration-color:var(--ink-soft);}
+  .task-title:hover{ text-decoration:underline dotted; }
+  .task-card.done .task-title{ text-decoration:line-through; text-decoration-color:var(--ink-soft); }
+
   .task-meta{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    margin-top:4px;
-    flex-wrap:wrap;
+    display:flex; align-items:center; gap:8px;
+    margin-top:4px; flex-wrap:wrap;
   }
-  .stars-display{font-size:11px; color:var(--quest-gold); letter-spacing:1px;}
+  .stars-display{ font-size:11px; color:var(--quest-gold); letter-spacing:1px; }
   .streak-chip{
-    font-size:10.5px;
-    background:var(--pink-bg-alt);
-    color:var(--accent-dark);
-    padding:2px 7px;
-    border-radius:8px;
-    font-weight:500;
-  }
-  .weekday-chip{
-    font-size:10px;
-    color:var(--ink-soft);
+    font-size:10.5px; background:var(--pink-bg-alt); color:var(--accent-dark);
+    padding:2px 7px; border-radius:8px; font-weight:500;
   }
   .priority-chip{
-    font-size:10px;
-    padding:2px 7px;
-    border-radius:8px;
-    font-weight:500;
-    color:var(--white);
+    font-size:10px; padding:2px 7px; border-radius:8px;
+    font-weight:500; color:var(--white);
   }
-  .priority-chip.low{background:var(--sage);}
-  .priority-chip.medium{background:var(--quest-gold);}
-  .priority-chip.high{background:var(--accent);}
-  .priority-chip.urgent{background:var(--hp, #D2698E);}
+  .priority-chip.low{ background:var(--sage); }
+  .priority-chip.medium{ background:var(--quest-gold); }
+  .priority-chip.high{ background:var(--accent); }
+  .priority-chip.urgent{ background:var(--blade); }
 
-  .task-actions{
-    display:flex;
-    flex-direction:column;
-    gap:4px;
-    flex-shrink:0;
+  .tag-chip{
+    font-size:10px; padding:2px 8px; border-radius:999px;
+    font-weight:500; color:var(--white);
   }
-  .task-edit, .task-delete{
-    background:none;
-    border:none;
-    color:var(--ink-soft);
-    cursor:pointer;
-    font-size:13px;
-    padding:2px 6px;
+  .due-chip{
+    font-size:10.5px; color:var(--ink-soft);
+    padding:2px 7px; border-radius:8px; background:rgba(74,59,65,0.06);
   }
-  .task-edit:hover{color:var(--accent-dark);}
-  .task-delete:hover{color:var(--accent-dark);}
+  .due-chip.overdue{ background:rgba(178,58,58,0.12); color:var(--blade); font-weight:500; }
+  .repeat-chip{ font-size:10.5px; color:var(--ink-soft); }
+  .payout-chip{
+    font-size:10.5px; color:var(--quest-copper); font-weight:500;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .task-actions{ display:flex; flex-direction:column; gap:4px; flex-shrink:0; }
+  .task-actions button{
+    background:none; border:none; color:var(--ink-soft);
+    cursor:pointer; font-size:13px; padding:2px 6px;
+  }
+  .task-actions button:hover{ color:var(--accent-dark); }
+
+  /* ===== SUBTASKS ===== */
+  .sub-wrap{ margin:8px 0 0 32px; }
+  .sub-progress{
+    height:5px; border-radius:4px; background:rgba(74,59,65,0.1);
+    overflow:hidden; margin-bottom:8px;
+  }
+  .sub-progress i{
+    display:block; height:100%; border-radius:4px;
+    background:var(--sage); transition:width .35s ease;
+  }
+  .sub-row{
+    display:flex; align-items:center; gap:8px;
+    padding:4px 0; border-bottom:1px solid rgba(74,59,65,0.07);
+  }
+  .sub-row:last-of-type{ border-bottom:none; }
+  .sub-check{
+    width:15px; height:15px; border-radius:4px;
+    border:1.5px solid var(--sage); flex-shrink:0; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size:10px; color:transparent; background:var(--white);
+  }
+  .sub-check.checked{ background:var(--sage); color:var(--white); }
+  .sub-text{ flex:1; font-size:13.5px; min-width:0; }
+  .sub-row.done .sub-text{ text-decoration:line-through; color:var(--ink-soft); }
+  .sub-value{ font-size:11px; color:var(--quest-copper); font-variant-numeric:tabular-nums; }
+  .sub-del{
+    background:none; border:none; color:var(--ink-soft);
+    cursor:pointer; font-size:11px; padding:0 2px;
+  }
+  .sub-add{ display:flex; gap:6px; margin-top:8px; }
+  .sub-add input{
+    flex:1; font-family:var(--font-body); font-size:13px;
+    border:1px solid rgba(74,59,65,0.15); border-radius:7px;
+    padding:5px 8px; background:var(--cream); color:var(--ink);
+  }
+  .sub-add button{
+    font-family:var(--font-body); font-size:12px;
+    background:var(--cream); border:1px solid rgba(74,59,65,0.15);
+    border-radius:7px; padding:5px 10px; cursor:pointer; color:var(--ink-soft);
+  }
+  .sub-add button:hover{ background:var(--pink-bg-alt); color:var(--accent-dark); }
+  .bonus-note{
+    font-size:11px; color:var(--ink-soft); font-style:italic; margin-top:6px;
+  }
+
+  .expand-btn{
+    background:none; border:none; cursor:pointer;
+    font-size:11px; color:var(--ink-soft); padding:2px 0 0 32px;
+    font-family:var(--font-body);
+  }
+  .expand-btn:hover{ color:var(--accent-dark); }
+
+  /* ===== DONE SECTION ===== */
+  .done-toggle{
+    width:100%; margin-top:12px;
+    font-family:var(--font-body); font-size:12px; color:var(--ink-soft);
+    background:rgba(255,255,255,0.5); border:1px dashed rgba(74,59,65,0.2);
+    border-radius:var(--radius-md); padding:8px 12px; cursor:pointer;
+    text-align:left;
+  }
+  .done-toggle:hover{ background:var(--white); color:var(--accent-dark); }
+  .done-list{ display:none; flex-direction:column; gap:9px; margin-top:9px; }
+  .done-list.open{ display:flex; }
 
   .empty-note{
-    font-size:12.5px;
-    color:var(--ink-soft);
-    font-style:italic;
-    text-align:center;
-    padding:14px 0;
+    font-size:12.5px; color:var(--ink-soft); font-style:italic;
+    text-align:center; padding:14px 0;
   }
 
-  /* ===== SLIDE PANEL (Shop only) ===== */
+  /* ===== SIDE PANEL ===== */
   .overlay{
-    position:fixed; inset:0;
-    background:rgba(74,59,65,0.35);
-    opacity:0; pointer-events:none;
-    transition:opacity .25s;
-    z-index:90;
+    position:fixed; inset:0; background:rgba(74,59,65,0.35);
+    opacity:0; pointer-events:none; transition:opacity .25s; z-index:90;
   }
-  .overlay.open{opacity:1; pointer-events:auto;}
+  .overlay.open{ opacity:1; pointer-events:auto; }
 
   .side-panel{
-    position:fixed;
-    top:0; right:0;
-    width:380px; max-width:90vw;
-    height:100%;
+    position:fixed; top:0; right:0;
+    width:400px; max-width:92vw; height:100%;
     background:var(--cream);
     box-shadow:-6px 0 24px rgba(74,59,65,0.2);
     transform:translateX(100%);
     transition:transform .3s cubic-bezier(.4,0,.2,1);
-    z-index:100;
-    display:flex;
-    flex-direction:column;
+    z-index:100; display:flex; flex-direction:column;
   }
-  .side-panel.open{transform:translateX(0);}
+  .side-panel.open{ transform:translateX(0); }
 
   .panel-header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:18px 20px;
-    border-bottom:2px solid rgba(232,124,166,0.25);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 20px; border-bottom:2px solid rgba(232,124,166,0.25);
     background:var(--pink-bg-alt);
   }
-  .panel-header h2{
-    font-family:var(--font-serif);
-    font-size:20px;
-    margin:0;
-    color:var(--accent-dark);
-  }
-  .panel-close{
-    background:none;
-    border:none;
-    font-size:18px;
-    color:var(--ink-soft);
-    cursor:pointer;
-  }
+  .panel-header h2{ font-family:var(--font-serif); font-size:20px; margin:0; color:var(--accent-dark); }
+  .panel-close{ background:none; border:none; font-size:18px; color:var(--ink-soft); cursor:pointer; }
+  .panel-content{ flex:1; overflow-y:auto; padding:20px; }
 
-  .panel-content{
-    flex:1;
-    overflow-y:auto;
-    padding:20px;
+  .panel-section-title{
+    font-family:var(--font-serif); font-size:16px; font-weight:600;
+    color:var(--accent-dark); margin:0 0 10px;
   }
+  .panel-section{ margin-bottom:26px; }
 
   .shop-item{
-    background:var(--white);
-    border-radius:var(--radius-md);
-    padding:12px 14px;
-    margin-bottom:10px;
+    background:var(--white); border-radius:var(--radius-md);
+    padding:12px 14px; margin-bottom:10px;
     box-shadow:0 2px 6px rgba(180,90,120,0.08);
   }
-  .shop-item .name-row{display:flex; align-items:center; justify-content:space-between; gap:8px;}
-  .shop-item .name{font-family:var(--font-serif); font-size:16px; font-weight:600; cursor:pointer;}
-  .shop-item .name:hover{text-decoration:underline dotted;}
-  .shop-item .shop-actions{display:flex; gap:2px; flex-shrink:0;}
+  .shop-item .name-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .shop-item .name{ font-family:var(--font-serif); font-size:16px; font-weight:600; cursor:pointer; }
+  .shop-item .name:hover{ text-decoration:underline dotted; }
+  .shop-item .shop-actions{ display:flex; gap:2px; flex-shrink:0; }
   .shop-item .shop-actions button{
     background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:13px; padding:2px 5px;
   }
-  .shop-item .shop-actions button:hover{color:var(--accent-dark);}
-  .shop-item .desc{font-size:12.5px; color:var(--ink-soft); margin:3px 0 8px;}
-  .shop-item .row{display:flex; align-items:center; justify-content:space-between;}
-  .shop-item .price{font-size:13px; font-weight:500;}
-  .shop-item .price .g{color:var(--quest-gold);}
-  .shop-item .price .c{color:var(--quest-copper);}
+  .shop-item .shop-actions button:hover{ color:var(--accent-dark); }
+  .shop-item .desc{ font-size:12.5px; color:var(--ink-soft); margin:3px 0 8px; }
+  .shop-item .row{ display:flex; align-items:center; justify-content:space-between; }
+  .shop-item .price{ font-size:13px; font-weight:500; }
+  .shop-item .price .g{ color:var(--quest-gold); }
+  .shop-item .price .c{ color:var(--quest-copper); }
   .redeem-btn{
-    font-size:12px;
-    background:var(--sage);
-    color:var(--white);
-    border:none;
-    padding:6px 12px;
-    border-radius:12px;
-    cursor:pointer;
+    font-size:12px; background:var(--sage); color:var(--white);
+    border:none; padding:6px 12px; border-radius:12px; cursor:pointer;
   }
-  .redeem-btn:disabled{background:rgba(74,59,65,0.15); cursor:not-allowed;}
+  .redeem-btn:disabled{ background:rgba(74,59,65,0.15); cursor:not-allowed; }
+
+  .tag-editor-row{
+    display:flex; align-items:center; gap:8px; margin-bottom:8px;
+    background:var(--white); border-radius:10px; padding:8px 10px;
+  }
+  .tag-editor-row input[type="text"]{
+    flex:1; font-family:var(--font-body); font-size:13px;
+    border:1px solid rgba(74,59,65,0.15); border-radius:7px;
+    padding:5px 8px; background:var(--cream); color:var(--ink);
+  }
+  .tag-editor-row input[type="color"]{
+    width:32px; height:28px; border:none; background:none; cursor:pointer; padding:0;
+  }
+  .tag-editor-row button{
+    background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:13px;
+  }
+
+  .setting-row{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:12px; padding:10px 0; border-bottom:1px solid rgba(74,59,65,0.08);
+  }
+  .setting-row .label{ font-size:13.5px; }
+  .setting-row .hint{ font-size:11.5px; color:var(--ink-soft); margin-top:2px; }
+  .setting-row input[type="number"]{
+    width:80px; font-family:var(--font-body); font-size:13px;
+    border:1px solid rgba(74,59,65,0.15); border-radius:7px;
+    padding:5px 8px; background:var(--white); color:var(--ink);
+  }
+
+  .toggle{
+    width:46px; height:26px; border-radius:999px;
+    background:rgba(74,59,65,0.2); border:none; cursor:pointer;
+    position:relative; transition:background .2s; flex-shrink:0;
+  }
+  .toggle i{
+    position:absolute; top:3px; left:3px;
+    width:20px; height:20px; border-radius:50%;
+    background:var(--white); transition:transform .2s;
+  }
+  .toggle.on{ background:var(--sage); }
+  .toggle.on i{ transform:translateX(20px); }
+
+  .rate-readout{
+    font-size:12px; color:var(--ink-soft); line-height:1.7;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .danger-btn{
+    font-family:var(--font-body); font-size:12.5px;
+    background:none; border:1px solid var(--blade); color:var(--blade);
+    border-radius:14px; padding:7px 14px; cursor:pointer;
+  }
+  .danger-btn:hover{ background:var(--blade); color:var(--white); }
 
   /* ===== MODALS ===== */
   .modal-overlay{
-    position:fixed; inset:0;
-    background:rgba(74,59,65,0.5);
-    display:none;
-    align-items:center;
-    justify-content:center;
-    z-index:200;
-    padding:20px;
+    position:fixed; inset:0; background:rgba(74,59,65,0.5);
+    display:none; align-items:center; justify-content:center;
+    z-index:200; padding:20px;
   }
-  .modal-overlay.open{display:flex;}
+  .modal-overlay.open{ display:flex; }
   .modal-card{
-    background:var(--cream);
-    border-radius:var(--radius-lg);
-    padding:32px 28px;
-    max-width:360px;
-    text-align:center;
+    background:var(--cream); border-radius:var(--radius-lg);
+    padding:32px 28px; max-width:380px; text-align:center;
     box-shadow:0 12px 40px rgba(74,59,65,0.3);
     border:3px solid var(--white);
   }
-  .modal-card .big-emoji{font-size:44px;}
+  .modal-card .big-emoji{ font-size:44px; }
   .modal-card h3{
-    font-family:var(--font-display);
-    font-size:26px;
-    margin:10px 0 6px;
-    color:var(--accent-dark);
+    font-family:var(--font-display); font-size:26px;
+    margin:10px 0 6px; color:var(--accent-dark);
   }
-  .modal-card p{font-size:14px; color:var(--ink-soft); line-height:1.5;}
+  .modal-card p{ font-size:14px; color:var(--ink-soft); line-height:1.5; margin:0; }
   .modal-card button{
-    margin-top:16px;
-    background:var(--accent);
-    color:var(--white);
-    border:none;
-    padding:10px 24px;
-    border-radius:18px;
-    font-family:var(--font-body);
-    font-size:14px;
-    cursor:pointer;
+    margin-top:18px; background:var(--accent); color:var(--white);
+    border:none; padding:10px 24px; border-radius:18px;
+    font-family:var(--font-body); font-size:14px; cursor:pointer;
   }
 
   footer{
-    text-align:center;
-    font-size:12px;
-    color:var(--ink-soft);
-    margin-top:50px;
-    font-style:italic;
+    text-align:center; font-size:12px; color:var(--ink-soft);
+    margin-top:50px; font-style:italic;
   }
 </style>
 </head>
 <body class="pp-dannelore">
 
-<!-- ===== RIBBON HEADER ===== -->
+<!-- ===== RIBBON ===== -->
 <div class="ribbon">
 
-      
   <div class="pp-emblem pp-emblem-sm">
     <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/>
@@ -675,20 +588,24 @@
       </g>
     </svg>
   </div>
+
   <nav class="pp-nav" aria-label="Main navigation">
-  <a href="/">Home</a>
-  <a href="/dannelore">Princess</a>
-  <a href="/castle">Castle Keep</a>
-  <a href="/side-quests">Side Quests</a>
-  <a href="/templates">Templates</a>
-</nav>
-    <div class="ribbon-inner">
-    <div class="avatar-frame" id="avatarFrame">
-      <span id="avatarBase">🧝‍♀️</span>
-    </div>
+    <a href="/dannelore/quest-log/" aria-current="page">Quest Log</a>
+    <a href="/dannelore/quest-log/pets.html">Pets</a>
+    <a href="/dannelore/quest-log/monsters.html">Monsters</a>
+    <a href="/dannelore">Princess</a>
+    <a href="/castle">Castle Keep</a>
+    <a href="/">Home</a>
+  </nav>
+
+  <div class="ribbon-inner">
+    <a class="pet-slot" id="petSlot" href="/dannelore/quest-log/pets.html" title="Pets">
+      <div class="pet-art" id="petArt"></div>
+    </a>
+    <div class="party-strip" id="partyStrip"></div>
     <div class="identity">
-      <div class="name" id="charName">Danni</div>
-      <div class="level-tag">Level <span id="levelNum">1</span></div>
+      <div class="name" id="petNameLabel">Danni</div>
+      <div class="level-tag">Level <span id="levelNum">1</span> <span class="vacation-flag" id="vacationFlag">vacation</span></div>
     </div>
     <div class="bars">
       <div class="bar-row">
@@ -696,13 +613,25 @@
         <div class="bar-track"><div class="bar-fill xp" id="xpBar" style="width:0%"></div></div>
         <span class="bar-num" id="xpNum">0 / 100</span>
       </div>
+      <div class="bar-row" id="hungerRow" style="display:none;">
+        <span class="bar-label">Fed</span>
+        <div class="bar-track"><div class="bar-fill hunger" id="hungerBar" style="width:100%"></div></div>
+        <span class="bar-num" id="hungerNum">100%</span>
+      </div>
+      <div class="bar-row" id="monsterRow" style="display:none;">
+        <span class="bar-label">HP</span>
+        <div class="bar-track"><div class="bar-fill hp" id="monsterBar" style="width:100%"></div></div>
+        <span class="bar-num" id="monsterNum"></span>
+      </div>
     </div>
     <div class="currency">
       <div class="coin gold"><span class="dot"></span><span id="goldNum">0</span></div>
       <div class="coin copper"><span class="dot"></span><span id="copperNum">0</span></div>
+      <div class="coin meow"><span class="dot"></span><span id="meowNum">0</span></div>
     </div>
     <div class="panel-btns">
-      <button class="panel-btn" id="openShop">🛍 Shop</button>
+      <button class="panel-btn" id="openShop">🎁 Rewards</button>
+      <button class="panel-btn" id="openSettings">⚙ Settings</button>
     </div>
   </div>
 </div>
@@ -712,7 +641,7 @@
   <div class="line"></div>
   <div class="date-nav">
     <button id="prevDay" title="Previous day">‹</button>
-    <span id="dateLabel">Today · Sat, Aug 30</span>
+    <span id="dateLabel">Today</span>
     <button id="nextDay" title="Next day">›</button>
     <button class="today-pill" id="jumpToday">today</button>
   </div>
@@ -722,117 +651,157 @@
   <p class="past-note" id="pastNote"></p>
 </div>
 
+<!-- ===== FILTERS ===== -->
+<div class="filter-strip" id="filterStrip"></div>
+
 <!-- ===== BOARD ===== -->
 <div class="board">
 
-  <!-- DAILIES -->
   <div class="col-dailies">
-    <div class="col-head"><h2>Dailies 🌿</h2><span class="sub" id="dailyCount">0 today</span></div>
-    <div class="add-row" id="dailyAddRow">
-      <input type="text" id="dailyInput" placeholder="Add a daily, e.g. 15 minutes of cleaning">
-      <div class="preset-row" id="dailyPresets"></div>
-      <div class="weekday-picker" id="dailyWeekdays"></div>
-      <div class="add-row-controls">
-        <div class="stars-input" id="dailyStars" data-value="3"></div>
-        <select class="priority-select" id="dailyPriority">
-          <option value="low">Low</option>
-          <option value="medium" selected>Medium</option>
-          <option value="high">High</option>
-          <option value="urgent">Urgent</option>
-        </select>
-      </div>
-      <div class="add-row-controls">
-        <button class="cancel-edit-btn" id="dailyCancelEdit" style="display:none;">cancel edit</button>
-        <button class="add-btn" id="addDaily">Add</button>
-      </div>
-    </div>
-    <div class="task-list" id="dailyList"></div>
-  </div>
-
-  <!-- TO DO -->
-  <div class="col-todo">
-    <div class="col-head"><h2>To Do 🌸</h2><span class="sub" id="todoCount">0 open</span></div>
+    <div class="col-head"><h2>Dailies 🌿</h2><span class="sub" id="dailiesCount">0 today</span></div>
     <div class="add-row">
-      <input type="text" id="todoInput" placeholder="Add a to-do">
+      <textarea id="dailiesInput" placeholder="One daily per line.&#10;Indent with two spaces or a dash to make it a subtask."></textarea>
+      <div class="repeat-block">
+        <select class="mini-select" id="dailiesRepeat" style="flex:none;width:100%;">
+          <option value="weekdays">Repeat on set weekdays</option>
+          <option value="ndays">Repeat every N days</option>
+          <option value="monthly-date">Repeat monthly on a date</option>
+          <option value="monthly-nth">Repeat monthly on a weekday</option>
+        </select>
+        <div class="repeat-detail on" id="repeatWeekdays">
+          <div style="width:100%;">
+            <div class="preset-row" id="dailiesPresets" style="margin-bottom:6px;"></div>
+            <div class="weekday-picker" id="dailiesWeekdays"></div>
+          </div>
+        </div>
+        <div class="repeat-detail" id="repeatNdays">
+          <span class="field-label">every</span>
+          <input type="number" id="dailiesN" min="1" max="90" value="3" style="width:70px;">
+          <span class="field-label">days, starting</span>
+          <input type="date" id="dailiesAnchor" style="width:auto;flex:1;min-width:130px;">
+        </div>
+        <div class="repeat-detail" id="repeatMonthlyDate">
+          <span class="field-label">day</span>
+          <input type="number" id="dailiesDom" min="1" max="31" value="1" style="width:70px;">
+          <span class="field-label">of each month</span>
+        </div>
+        <div class="repeat-detail" id="repeatMonthlyNth">
+          <select class="mini-select" id="dailiesNth">
+            <option value="1">first</option>
+            <option value="2">second</option>
+            <option value="3">third</option>
+            <option value="4">fourth</option>
+            <option value="-1">last</option>
+          </select>
+          <select class="mini-select" id="dailiesNthDow">
+            <option value="0">Sunday</option>
+            <option value="1">Monday</option>
+            <option value="2">Tuesday</option>
+            <option value="3">Wednesday</option>
+            <option value="4">Thursday</option>
+            <option value="5">Friday</option>
+            <option value="6">Saturday</option>
+          </select>
+        </div>
+      </div>
       <div class="add-row-controls">
-        <div class="stars-input" id="todoStars" data-value="3"></div>
-        <select class="priority-select" id="todoPriority">
+        <div class="stars-input" id="dailiesStars" data-value="3" title="Difficulty"></div>
+        <select class="mini-select" id="dailiesPriority">
           <option value="low">Low</option>
           <option value="medium" selected>Medium</option>
           <option value="high">High</option>
           <option value="urgent">Urgent</option>
         </select>
+        <select class="mini-select" id="dailiesTag"></select>
       </div>
       <div class="add-row-controls">
-        <button class="cancel-edit-btn" id="todoCancelEdit" style="display:none;">cancel edit</button>
-        <button class="add-btn" id="addTodo">Add</button>
+        <button class="cancel-edit-btn" id="dailiesCancelEdit" style="display:none;">cancel edit</button>
+        <button class="add-btn" id="addDailies">Add</button>
       </div>
     </div>
-    <div class="task-list" id="todoList"></div>
+    <div class="task-list" id="dailiesList"></div>
+    <button class="done-toggle" id="dailiesDoneToggle" style="display:none;"></button>
+    <div class="done-list" id="dailiesDone"></div>
   </div>
 
-  <!-- WORK (simple list) -->
-  <div class="col-work">
-    <div class="col-head"><h2>Work 💼</h2><span class="sub" id="workCount">0 open</span></div>
+  <div class="col-todos">
+    <div class="col-head"><h2>To Dos 🌸</h2><span class="sub" id="todosCount">0 open</span></div>
     <div class="add-row">
-      <input type="text" id="workInput" placeholder="Add a work to-do">
+      <textarea id="todosInput" placeholder="One to-do per line.&#10;Indent with two spaces or a dash to make it a subtask."></textarea>
       <div class="add-row-controls">
-        <div class="stars-input" id="workStars" data-value="3"></div>
-        <select class="priority-select" id="workPriority">
+        <div class="stars-input" id="todosStars" data-value="3" title="Difficulty"></div>
+        <select class="mini-select" id="todosPriority">
           <option value="low">Low</option>
           <option value="medium" selected>Medium</option>
           <option value="high">High</option>
           <option value="urgent">Urgent</option>
         </select>
+        <select class="mini-select" id="todosTag"></select>
       </div>
       <div class="add-row-controls">
-        <button class="cancel-edit-btn" id="workCancelEdit" style="display:none;">cancel edit</button>
-        <button class="add-btn" id="addWork">Add</button>
+        <span class="field-label">due</span>
+        <input type="date" id="todosDue" style="flex:1;min-width:130px;">
+      </div>
+      <div class="add-row-controls">
+        <button class="cancel-edit-btn" id="todosCancelEdit" style="display:none;">cancel edit</button>
+        <button class="add-btn" id="addTodos">Add</button>
       </div>
     </div>
-    <div class="task-list" id="workList"></div>
+    <div class="task-list" id="todosList"></div>
+    <button class="done-toggle" id="todosDoneToggle" style="display:none;"></button>
+    <div class="done-list" id="todosDone"></div>
   </div>
 
-  <!-- PROJECTS (simple list) -->
   <div class="col-projects">
-    <div class="col-head"><h2>Projects 🗺️</h2><span class="sub" id="projectCount">0 open</span></div>
+    <div class="col-head"><h2>Projects 🗺️</h2><span class="sub" id="projectsCount">0 open</span></div>
     <div class="add-row">
-      <input type="text" id="projectInput" placeholder="Add a project, e.g. Plan the Bach itinerary (May 12\u201319)">
+      <textarea id="projectsInput" placeholder="One project per line.&#10;Indent with two spaces or a dash to make it a subtask."></textarea>
       <div class="add-row-controls">
-        <div class="stars-input" id="projectStars" data-value="4"></div>
-        <select class="priority-select" id="projectPriority">
+        <div class="stars-input" id="projectsStars" data-value="4" title="Difficulty"></div>
+        <select class="mini-select" id="projectsPriority">
           <option value="low">Low</option>
           <option value="medium" selected>Medium</option>
           <option value="high">High</option>
           <option value="urgent">Urgent</option>
         </select>
+        <select class="mini-select" id="projectsTag"></select>
       </div>
       <div class="add-row-controls">
-        <button class="cancel-edit-btn" id="projectCancelEdit" style="display:none;">cancel edit</button>
-        <button class="add-btn" id="addProject">Add</button>
+        <span class="field-label">due</span>
+        <input type="date" id="projectsDue" style="flex:1;min-width:130px;">
+      </div>
+      <div class="add-row-controls">
+        <button class="cancel-edit-btn" id="projectsCancelEdit" style="display:none;">cancel edit</button>
+        <button class="add-btn" id="addProjects">Add</button>
       </div>
     </div>
-    <div class="task-list" id="projectList"></div>
+    <div class="task-list" id="projectsList"></div>
+    <button class="done-toggle" id="projectsDoneToggle" style="display:none;"></button>
+    <div class="done-list" id="projectsDone"></div>
   </div>
 
 </div>
 
 <footer>where creativity and chaos meet organization and overthinking 🌷</footer>
 
-<!-- ===== SIDE PANEL (Shop) ===== -->
+<!-- ===== REWARDS PANEL ===== -->
 <div class="overlay" id="overlay"></div>
-<div class="side-panel" id="sidePanel">
+
+<div class="side-panel" id="shopPanel">
   <div class="panel-header">
-    <h2>Shop</h2>
-    <button class="panel-close" id="closePanel">✕</button>
+    <h2>Rewards</h2>
+    <button class="panel-close" data-close="shopPanel">✕</button>
   </div>
   <div class="panel-content">
+    <p class="rate-readout" style="margin-top:0;">Spend what you've earned. 1 gold is one real dollar.</p>
     <div class="add-row">
-      <input type="text" id="shopName" placeholder="Reward name, e.g. Watch one episode">
+      <input type="text" id="shopName" placeholder="Reward name, e.g. a fancy coffee">
       <input type="text" id="shopDesc" placeholder="Short description (optional)">
       <div class="add-row-controls">
-        <input type="number" id="shopGold" placeholder="gold" min="0" style="width:70px;">
-        <input type="number" id="shopCopper" placeholder="copper" min="0" style="width:70px;">
+        <span class="field-label">gold</span>
+        <input type="number" id="shopGold" min="0" placeholder="0" style="width:80px;">
+        <span class="field-label">copper</span>
+        <input type="number" id="shopCopper" min="0" max="99" placeholder="0" style="width:80px;">
       </div>
       <div class="add-row-controls">
         <button class="cancel-edit-btn" id="shopCancelEdit" style="display:none;">cancel edit</button>
@@ -843,21 +812,76 @@
   </div>
 </div>
 
-<!-- ===== MODALS ===== -->
-<div class="modal-overlay" id="levelModal">
+<!-- ===== SETTINGS PANEL ===== -->
+<div class="side-panel" id="settingsPanel">
+  <div class="panel-header">
+    <h2>Settings</h2>
+    <button class="panel-close" data-close="settingsPanel">✕</button>
+  </div>
+  <div class="panel-content">
+
+    <div class="panel-section">
+      <h3 class="panel-section-title">Vacation mode</h3>
+      <div class="setting-row">
+        <div>
+          <div class="label">Freeze everything</div>
+          <div class="hint">Streaks hold, nothing decays. You can still tick things off.</div>
+        </div>
+        <button class="toggle" id="vacationToggle"><i></i></button>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h3 class="panel-section-title">Tags</h3>
+      <div id="tagEditor"></div>
+      <div class="tag-editor-row">
+        <input type="text" id="newTagName" placeholder="New tag name">
+        <input type="color" id="newTagColor" value="#8FA37E">
+        <button id="addTag" title="Add">＋</button>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h3 class="panel-section-title">Weekly budget</h3>
+      <div class="setting-row">
+        <div><div class="label">Dailies</div></div>
+        <div>$ <input type="number" id="targetDailies" min="0" step="1"></div>
+      </div>
+      <div class="setting-row">
+        <div><div class="label">To Dos</div></div>
+        <div>$ <input type="number" id="targetTodos" min="0" step="1"></div>
+      </div>
+      <div class="setting-row">
+        <div><div class="label">Projects</div></div>
+        <div>$ <input type="number" id="targetProjects" min="0" step="1"></div>
+      </div>
+      <p class="rate-readout" id="rateReadout"></p>
+    </div>
+
+    <div class="panel-section">
+      <h3 class="panel-section-title">Start over</h3>
+      <p class="rate-readout">Wipes every task, reward, tag and coin. There's no undo.</p>
+      <button class="danger-btn" id="wipeAll">Erase everything</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== CELEBRATION MODAL ===== -->
+<div class="modal-overlay" id="celebrateModal">
   <div class="modal-card">
-    <div class="big-emoji">✨</div>
-    <h3>Level <span id="newLevelNum"></span>!</h3>
-    <p>You've grown stronger. Bonus payout: <strong id="levelBonusText"></strong></p>
-    <button onclick="closeModal('levelModal')">Keep going</button>
+    <div class="big-emoji" id="celebrateEmoji">✨</div>
+    <h3 id="celebrateTitle"></h3>
+    <p id="celebrateBody"></p>
+    <button id="celebrateClose">Keep going</button>
   </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-quest.js"></script>
 
 <script>
-/* ============ FIREBASE SETUP ============ */
 const firebaseConfig = {
   apiKey: "AIzaSyAdNZBoh1pH80-ZFBbOlcrlsLdMi3D62Wg",
   authDomain: "princess-paladin.firebaseapp.com",
@@ -868,179 +892,170 @@ const firebaseConfig = {
   measurementId: "G-E5K2NMCR3Y"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-// No login: everything reads/writes this one fixed document. That's the
-// tradeoff for skipping accounts — fine for a private site nobody else
-// knows the address of.
-const docRef = db.collection('questlog').doc('danni-quest-log');
+const store = PQ.makeStore(firebase);
+const S = () => store.state;
 
-/* ============ STATE LAYER ============
-   State lives in Firestore, with localStorage kept only as a same-device
-   cache so the page has something to show instantly on load. */
-const STORE_KEY = 'questlog-danni-v3';
-
-function defaultState(){
-  return {
-    level:1, xp:0, xpToNext:100,
-    gold:0, copper:0,
-    dailies:[], todos:[], projects:[], work:[],
-    shop:[],
-    completions:{}   // date -> { taskId: true }
-  };
-}
-function migrateState(s){
-  if(!s.work) s.work = [];
-  // drop any leftover fields from older versions (HP/closet/day-types)
-  delete s.hp; delete s.maxHp; delete s.closet; delete s.worn;
-  delete s.workDailies; delete s.workTodos; delete s.workProjects;
-  delete s.dayTypes;
-  if(s.dailies) s.dailies.forEach(d => delete d.dayTypes);
-  return s;
-}
-function saveState(){
-  localStorage.setItem(STORE_KEY, JSON.stringify(state));
-  docRef.set(state).catch(err => console.error('Sync to Firestore failed:', err));
-}
-async function loadStateFromFirestore(){
-  const snap = await docRef.get();
-  if(snap.exists){
-    state = migrateState(snap.data());
-  } else {
-    const raw = localStorage.getItem(STORE_KEY);
-    state = raw ? migrateState(JSON.parse(raw)) : defaultState();
-    await docRef.set(state);
-  }
-  localStorage.setItem(STORE_KEY, JSON.stringify(state));
-}
-
-let state = defaultState();
-
-const WEEKDAYS = ['S','M','T','W','T','F','S'];
+const COLUMNS = PQ.COLUMNS;
+const COLUMN_LABEL = { dailies:'Dailies', todos:'To Dos', projects:'Projects' };
 const PRIORITY_LABEL = { low:'Low', medium:'Medium', high:'High', urgent:'Urgent' };
+const PRIORITY_RANK = { urgent:0, high:1, medium:2, low:3 };
 
-/* ============ DATE HELPERS ============ */
-let viewDate = startOfDay(new Date());
-const TODAY = startOfDay(new Date());
-const MIN_DATE = addDays(TODAY, -13);
+const TODAY = PQ.TODAY;
+const MIN_DATE = PQ.MIN_DATE;
+let viewDate = TODAY;
 
-function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
-function addDays(d, n){ const x = new Date(d); x.setDate(x.getDate()+n); return x; }
-function dateKey(d){ return d.toISOString().slice(0,10); }
-function fmtDate(d){
-  const opts = { weekday:'short', month:'short', day:'numeric' };
-  const label = d.toLocaleDateString('en-US', opts);
-  return sameDay(d,TODAY) ? `Today · ${label}` : label;
-}
-function sameDay(a,b){ return dateKey(a)===dateKey(b); }
-
-/* ============ REWARD MATH ============ */
-function computeReward(stars, streak){
-  const baseCopper = stars * 10;
-  const streakBonus = Math.min(streak, 10) * 2;
-  const totalCopper = baseCopper + streakBonus;
-  const xp = stars * 10 + Math.min(streak,10) * 2;
-  return { copper: totalCopper, xp };
-}
-function addCurrency(copperAmount){
-  let totalCopper = state.copper + copperAmount;
-  state.gold += Math.floor(totalCopper/100);
-  state.copper = totalCopper % 100;
-}
-function spendCurrency(gold, copper){
-  const totalHave = state.gold*100 + state.copper;
-  const totalCost = gold*100 + copper;
-  if(totalHave < totalCost) return false;
-  const remaining = totalHave - totalCost;
-  state.gold = Math.floor(remaining/100);
-  state.copper = remaining % 100;
-  return true;
-}
-function addXP(amount){
-  state.xp += amount;
-  while(state.xp >= state.xpToNext){
-    state.xp -= state.xpToNext;
-    state.level += 1;
-    state.xpToNext = Math.round(state.xpToNext * 1.25);
-    levelUpBonus();
-  }
-}
-function levelUpBonus(){
-  const bonusCopper = 20 + state.level * 5;
-  addCurrency(bonusCopper);
-  const g = Math.floor(bonusCopper/100), c = bonusCopper % 100;
-  document.getElementById('newLevelNum').textContent = state.level;
-  document.getElementById('levelBonusText').textContent = `${g}g ${c}c`;
-  openModal('levelModal');
-}
-
-/* ============ STREAK HELPER ============ */
-function getStreak(taskId){
-  let streak = 0;
-  let d = addDays(viewDate, -1);
-  while(d >= MIN_DATE){
-    const rec = state.completions[dateKey(d)];
-    if(rec && rec[taskId]){ streak++; d = addDays(d,-1); }
-    else break;
-  }
-  return streak;
-}
-
-/* ============ UTIL ============ */
-function escapeHtml(str){
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
+/* ============ HELPERS ============ */
+function uid(){ return 'x' + Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
+function escapeHtml(str){ const d = document.createElement('div'); d.textContent = str == null ? '' : str; return d.innerHTML; }
 function starsDisplay(n){ return '★'.repeat(n) + '☆'.repeat(5-n); }
-function uid(){ return crypto.randomUUID(); }
-function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function money(c){ return c >= 100 ? `${Math.floor(c/100)}g ${c%100}c` : `${c}c`; }
+function tagById(id){ return S().tags.find(t => t.id === id) || null; }
+function capital(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
 
-/* ============ RENDER: HEADER ============ */
-function renderHeader(){
-  document.getElementById('levelNum').textContent = state.level;
-  document.getElementById('xpBar').style.width = (state.xp/state.xpToNext*100)+'%';
-  document.getElementById('xpNum').textContent = `${state.xp} / ${state.xpToNext}`;
-  document.getElementById('goldNum').textContent = state.gold;
-  document.getElementById('copperNum').textContent = state.copper;
+function value(task, col){ return PQ.taskValue(S(), task, col, viewDate); }
+function subValue(task, col){ return PQ.subtaskValue(S(), task, col, viewDate); }
+function bonusOf(task, col){ return PQ.bonusValue(S(), task, col, viewDate); }
+
+function isDailyDone(task, d){
+  const rec = (S().completions[PQ.dateKey(d)] || {})[task.id];
+  return !!(rec && rec.done);
+}
+function taskRecord(k, taskId){
+  if(!S().completions[k]) S().completions[k] = {};
+  if(!S().completions[k][taskId]) S().completions[k][taskId] = { subs:{}, done:false };
+  return S().completions[k][taskId];
 }
 
-/* ============ RENDER: DATE STRIP ============ */
-function renderDateStrip(){
-  document.getElementById('dateLabel').textContent = fmtDate(viewDate);
-  document.getElementById('prevDay').disabled = dateKey(viewDate) === dateKey(MIN_DATE);
-  document.getElementById('nextDay').disabled = dateKey(viewDate) === dateKey(TODAY);
-  const note = document.getElementById('pastNote');
-  note.textContent = sameDay(viewDate, TODAY)
-    ? ''
-    : 'Viewing a past day — check off anything you missed to backfill it.';
+/* ============ CELEBRATIONS ============ */
+let celebrationQueue = [];
+function queueCelebration(key, emoji, title, body){
+  if(S().celebrated[key]) return;
+  S().celebrated[key] = true;
+  celebrationQueue.push({ emoji, title, body });
+}
+function flushCelebrations(){
+  if(!celebrationQueue.length) return;
+  const c = celebrationQueue.shift();
+  document.getElementById('celebrateEmoji').textContent = c.emoji;
+  document.getElementById('celebrateTitle').textContent = c.title;
+  document.getElementById('celebrateBody').textContent = c.body;
+  document.getElementById('celebrateModal').classList.add('open');
+}
+document.getElementById('celebrateClose').onclick = () => {
+  document.getElementById('celebrateModal').classList.remove('open');
+  setTimeout(flushCelebrations, 220);
+};
+
+function checkPerfectDay(d){
+  if(PQ.isVacation(S(), d)) return;
+  const scheduled = S().dailies.filter(t => PQ.isScheduled(t, d));
+  if(!scheduled.length || !scheduled.every(t => isDailyDone(t, d))) return;
+  queueCelebration('perfectday-' + PQ.dateKey(d), '🌷', 'Perfect day',
+    `Every daily done for ${d.toLocaleDateString('en-US',{weekday:'long', month:'short', day:'numeric'})}.`);
+  checkPerfectWeek(d);
+}
+function checkPerfectWeek(d){
+  const mon = PQ.mondayOf(d);
+  if(PQ.daysBetween(mon, TODAY) < 6) return;
+  for(let i=0;i<7;i++){
+    const day = PQ.addDays(mon, i);
+    if(PQ.isVacation(S(), day)) continue;
+    const sch = S().dailies.filter(t => PQ.isScheduled(t, day));
+    if(!sch.length) continue;
+    if(!sch.every(t => isDailyDone(t, day))) return;
+  }
+  const key = 'perfectweek-' + PQ.dateKey(mon);
+  if(!S().celebrated[key]) S().petTokens = (S().petTokens || 0) + 1;
+  queueCelebration(key, '👑', 'Perfect week',
+    'Seven for seven. A new companion is waiting on the pets page.');
+}
+function checkStreakMilestone(task){
+  const streak = PQ.getStreak(S(), task, viewDate) + 1;
+  if(![7,30,100].includes(streak)) return;
+  const key = `streak-${task.id}-${streak}`;
+  if(!S().celebrated[key]){
+    const prefix = PQ.randomPrefix(S());
+    if(prefix) PQ.addFragment(S(), 'prefix', prefix);
+    if(streak >= 30) S().petTokens = (S().petTokens || 0) + 1;
+  }
+  queueCelebration(key, '🔥', `${streak} days`,
+    `"${task.title}" has held for ${streak} days straight.` + (streak >= 30 ? ' A new companion is waiting.' : ''));
 }
 
-/* ============ STARS INPUT (for add rows) ============ */
-function setupStarsInput(id){
+/* Called after every completion. Handles XP, pet growth and monster damage. */
+function reward(task, column, copper, xpAmount){
+  PQ.addCurrency(S(), copper, column);
+  PQ.addAccountXP(S(), xpAmount).forEach(lvl =>
+    queueCelebration('levelup-' + lvl, '✨', `Level ${lvl}`,
+      PQ.SLOT_LEVELS.includes(lvl) ? 'A new party slot has opened.' : 'You have grown stronger.'));
+
+  PQ.awardPetXP(S(), xpAmount).forEach(({ pet, stage }) =>
+    queueCelebration(`stage-${pet.id}-${stage.key}`, '🌱', `${pet.name} is a ${stage.name}`,
+      stage.key === 'legend'
+        ? 'Move them to the stable and they will buff everyone still working.'
+        : 'New things unlock in the closet.'));
+
+  const killed = PQ.damageMonster(S(), copper);
+  if(killed){
+    queueCelebration('kill-' + killed.id, '⚔️', `${killed.name} falls`,
+      'Collect the drops on the monsters page.');
+  }
+}
+function unreward(column, copper){
+  PQ.removeCurrency(S(), copper, column);
+}
+
+/* ============ FILTERS ============ */
+let activeTag = null;
+function matchesFilter(task){ return !activeTag || task.tag === activeTag; }
+
+function renderFilters(){
+  const el = document.getElementById('filterStrip');
+  el.innerHTML = '';
+  const all = document.createElement('button');
+  all.className = 'filter-pill' + (activeTag ? '' : ' on');
+  all.textContent = 'All';
+  if(!activeTag) all.style.background = 'var(--ink)';
+  all.onclick = () => { activeTag = null; renderAll(); };
+  el.appendChild(all);
+
+  S().tags.forEach(tag => {
+    const b = document.createElement('button');
+    b.className = 'filter-pill' + (activeTag === tag.id ? ' on' : '');
+    b.textContent = tag.name;
+    if(activeTag === tag.id) b.style.background = tag.color;
+    else b.style.borderColor = tag.color;
+    b.onclick = () => { activeTag = (activeTag === tag.id ? null : tag.id); renderAll(); };
+    el.appendChild(b);
+  });
+}
+
+/* ============ FORMS ============ */
+function setupStars(id){
   const el = document.getElementById(id);
   function draw(){
-    const val = parseInt(el.dataset.value);
+    const val = parseInt(el.dataset.value) || 3;
     el.innerHTML = '';
     for(let i=1;i<=5;i++){
       const s = document.createElement('span');
       s.textContent = '★';
-      if(i<=val) s.classList.add('active');
+      if(i <= val) s.classList.add('active');
       s.onclick = () => { el.dataset.value = i; draw(); };
       el.appendChild(s);
     }
   }
   draw();
 }
-['dailyStars','todoStars','projectStars','workStars'].forEach(setupStarsInput);
+COLUMNS.forEach(c => setupStars(c + 'Stars'));
 
-/* ============ WEEKDAY PICKER (Dailies only) ============ */
 function makeWeekdayPicker(containerId){
   const el = document.getElementById(containerId);
   let days = {0:true,1:true,2:true,3:true,4:true,5:true,6:true};
   function draw(){
     el.innerHTML = '';
-    WEEKDAYS.forEach((label, idx) => {
+    PQ.WEEKDAYS.forEach((label, idx) => {
       const btn = document.createElement('button');
+      btn.type = 'button';
       btn.textContent = label;
       if(days[idx]) btn.classList.add('on');
       btn.onclick = () => { days[idx] = !days[idx]; draw(); };
@@ -1049,298 +1064,445 @@ function makeWeekdayPicker(containerId){
   }
   draw();
   return {
-    get: () => Object.keys(days).filter(d=>days[d]).map(Number),
-    set: (arr) => { days = {0:false,1:false,2:false,3:false,4:false,5:false,6:false}; arr.forEach(d=>days[d]=true); draw(); },
+    get: () => Object.keys(days).filter(d => days[d]).map(Number),
+    set: arr => { days = {0:false,1:false,2:false,3:false,4:false,5:false,6:false}; (arr||[]).forEach(d => days[d] = true); draw(); },
     reset: () => { days = {0:true,1:true,2:true,3:true,4:true,5:true,6:true}; draw(); }
   };
 }
-function makePresetRow(containerId, weekdayPicker){
-  const el = document.getElementById(containerId);
-  const PRESETS = [
+const dailyDays = makeWeekdayPicker('dailiesWeekdays');
+
+(function(){
+  const el = document.getElementById('dailiesPresets');
+  [
     { label:'Every day', days:[0,1,2,3,4,5,6] },
-    { label:'Weekend (Fri–Sun)', days:[5,6,0] },
-    { label:'Clear', days:[] },
-  ];
-  PRESETS.forEach(preset => {
-    const btn = document.createElement('button');
-    btn.textContent = preset.label;
-    btn.onclick = () => weekdayPicker.set(preset.days);
-    el.appendChild(btn);
+    { label:'Weekdays',  days:[1,2,3,4,5] },
+    { label:'Weekends',  days:[0,6] },
+    { label:'Clear',     days:[] }
+  ].forEach(p => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = p.label;
+    b.onclick = () => dailyDays.set(p.days);
+    el.appendChild(b);
+  });
+})();
+
+const repeatSelect = document.getElementById('dailiesRepeat');
+const repeatPanels = {
+  'weekdays':     document.getElementById('repeatWeekdays'),
+  'ndays':        document.getElementById('repeatNdays'),
+  'monthly-date': document.getElementById('repeatMonthlyDate'),
+  'monthly-nth':  document.getElementById('repeatMonthlyNth')
+};
+function syncRepeatPanels(){
+  Object.entries(repeatPanels).forEach(([k, el]) => el.classList.toggle('on', k === repeatSelect.value));
+}
+repeatSelect.onchange = syncRepeatPanels;
+document.getElementById('dailiesAnchor').value = PQ.TODAY_KEY;
+
+function readRepeat(){
+  const type = repeatSelect.value;
+  if(type === 'weekdays')     return { type, days: dailyDays.get() };
+  if(type === 'ndays')        return { type, n: Math.max(1, parseInt(document.getElementById('dailiesN').value) || 1), anchor: document.getElementById('dailiesAnchor').value || PQ.TODAY_KEY };
+  if(type === 'monthly-date') return { type, dom: Math.min(31, Math.max(1, parseInt(document.getElementById('dailiesDom').value) || 1)) };
+  return { type, nth: parseInt(document.getElementById('dailiesNth').value), dow: parseInt(document.getElementById('dailiesNthDow').value) };
+}
+function writeRepeat(r){
+  if(!r) r = { type:'weekdays', days:[0,1,2,3,4,5,6] };
+  repeatSelect.value = r.type;
+  syncRepeatPanels();
+  if(r.type === 'weekdays')          dailyDays.set(r.days);
+  else if(r.type === 'ndays'){       document.getElementById('dailiesN').value = r.n; document.getElementById('dailiesAnchor').value = r.anchor; }
+  else if(r.type === 'monthly-date') document.getElementById('dailiesDom').value = r.dom;
+  else {                             document.getElementById('dailiesNth').value = r.nth; document.getElementById('dailiesNthDow').value = r.dow; }
+}
+
+function renderTagSelects(){
+  COLUMNS.forEach(col => {
+    const sel = document.getElementById(col + 'Tag');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">No tag</option>';
+    S().tags.forEach(t => {
+      const o = document.createElement('option');
+      o.value = t.id; o.textContent = t.name;
+      sel.appendChild(o);
+    });
+    if(current && tagById(current)) sel.value = current;
   });
 }
 
-const dailyWeekdayPicker = makeWeekdayPicker('dailyWeekdays');
-makePresetRow('dailyPresets', dailyWeekdayPicker);
+/* Indented or dashed lines attach to the line above as subtasks. */
+function parseLines(text){
+  const out = [];
+  text.split('\n').forEach(raw => {
+    if(!raw.trim()) return;
+    const isSub = /^(\s{2,}|\t|\s*[-•*]\s)/.test(raw);
+    const title = raw.replace(/^[\s\-•*]+/, '').trim();
+    if(!title) return;
+    if(isSub && out.length) out[out.length-1].subs.push({ id: uid(), title });
+    else out.push({ title, subs: [] });
+  });
+  return out;
+}
 
-/* ============ EDITING STATE ============ */
-let editing = { daily:null, todo:null, project:null, work:null };
+let editing = { dailies:null, todos:null, projects:null };
 
-/* ============ ADD / EDIT: DAILIES ============ */
-function wireDailyForm(prefix, arrayKey, weekdayPicker){
-  const input = document.getElementById(prefix+'Input');
-  const starsEl = document.getElementById(prefix+'Stars');
-  const priorityEl = document.getElementById(prefix+'Priority');
-  const addBtn = document.getElementById('add'+capitalize(prefix));
-  const cancelBtn = document.getElementById(prefix+'CancelEdit');
+COLUMNS.forEach(col => {
+  const input     = document.getElementById(col + 'Input');
+  const starsEl   = document.getElementById(col + 'Stars');
+  const priority  = document.getElementById(col + 'Priority');
+  const tagSel    = document.getElementById(col + 'Tag');
+  const dueEl     = document.getElementById(col + 'Due');
+  const addBtn    = document.getElementById('add' + capital(col));
+  const cancelBtn = document.getElementById(col + 'CancelEdit');
 
   addBtn.onclick = () => {
-    const title = input.value.trim();
-    if(!title) return;
-    const stars = parseInt(starsEl.dataset.value);
-    const priority = priorityEl.value;
-    const days = weekdayPicker.get();
-
-    if(editing[prefix]){
-      const task = state[arrayKey].find(t=>t.id===editing[prefix]);
-      Object.assign(task, { title, stars, priority, days });
-      exitEditMode(prefix);
+    const base = {
+      difficulty: parseInt(starsEl.dataset.value) || 3,
+      priority: priority.value,
+      tag: tagSel.value || null,
+      due: dueEl ? (dueEl.value || null) : null
+    };
+    if(editing[col]){
+      const task = S()[col].find(t => t.id === editing[col]);
+      const title = input.value.trim().split('\n')[0].replace(/^[\s\-•*]+/, '').trim();
+      if(!title) return;
+      Object.assign(task, base, { title });
+      if(col === 'dailies') task.repeat = readRepeat();
+      exitEdit(col);
     } else {
-      state[arrayKey].push({ id: uid(), title, stars, priority, days });
+      const parsed = parseLines(input.value);
+      if(!parsed.length) return;
+      const repeat = col === 'dailies' ? readRepeat() : null;
+      parsed.forEach(p => {
+        const task = Object.assign({
+          id: uid(), title: p.title, subs: p.subs,
+          created: PQ.TODAY_KEY, done:false, doneDate:null
+        }, base);
+        if(repeat) task.repeat = repeat;
+        S()[col].push(task);
+      });
     }
-    resetDailyForm(prefix, weekdayPicker);
+    resetForm(col);
     saveAndRender();
   };
-  cancelBtn.onclick = () => { exitEditMode(prefix); resetDailyForm(prefix, weekdayPicker); };
+  cancelBtn.onclick = () => { exitEdit(col); resetForm(col); };
+});
+
+function resetForm(col){
+  document.getElementById(col + 'Input').value = '';
+  document.getElementById(col + 'Priority').value = 'medium';
+  document.getElementById(col + 'Stars').dataset.value = (col === 'projects' ? 4 : 3);
+  setupStars(col + 'Stars');
+  const due = document.getElementById(col + 'Due');
+  if(due) due.value = '';
+  if(col === 'dailies'){ repeatSelect.value = 'weekdays'; syncRepeatPanels(); dailyDays.reset(); }
 }
-function resetDailyForm(prefix, weekdayPicker){
-  document.getElementById(prefix+'Input').value='';
-  document.getElementById(prefix+'Priority').value='medium';
-  document.getElementById(prefix+'Stars').dataset.value=3;
-  setupStarsInput(prefix+'Stars');
-  weekdayPicker.reset();
-}
-function enterEditMode(prefix, task, weekdayPicker){
-  editing[prefix] = task.id;
-  document.getElementById(prefix+'Input').value = task.title;
-  const priorityEl = document.getElementById(prefix+'Priority');
-  if(priorityEl) priorityEl.value = task.priority || 'medium';
-  document.getElementById(prefix+'Stars').dataset.value = task.stars;
-  setupStarsInput(prefix+'Stars');
-  if(weekdayPicker) weekdayPicker.set(task.days || []);
-  const addBtn = document.getElementById('add'+capitalize(prefix));
+function enterEdit(col, task){
+  editing[col] = task.id;
+  document.getElementById(col + 'Input').value = task.title;
+  document.getElementById(col + 'Priority').value = task.priority || 'medium';
+  document.getElementById(col + 'Stars').dataset.value = task.difficulty || 3;
+  setupStars(col + 'Stars');
+  document.getElementById(col + 'Tag').value = task.tag || '';
+  const due = document.getElementById(col + 'Due');
+  if(due) due.value = task.due || '';
+  if(col === 'dailies') writeRepeat(task.repeat);
+  const addBtn = document.getElementById('add' + capital(col));
   addBtn.textContent = 'Save changes';
   addBtn.classList.add('editing');
-  document.getElementById(prefix+'CancelEdit').style.display = 'inline';
-  document.getElementById(prefix+'Input').scrollIntoView({behavior:'smooth', block:'center'});
+  document.getElementById(col + 'CancelEdit').style.display = 'inline';
+  document.getElementById(col + 'Input').scrollIntoView({ behavior:'smooth', block:'center' });
 }
-function exitEditMode(prefix){
-  editing[prefix] = null;
-  const addBtn = document.getElementById('add'+capitalize(prefix));
+function exitEdit(col){
+  editing[col] = null;
+  const addBtn = document.getElementById('add' + capital(col));
   addBtn.textContent = 'Add';
   addBtn.classList.remove('editing');
-  document.getElementById(prefix+'CancelEdit').style.display = 'none';
+  document.getElementById(col + 'CancelEdit').style.display = 'none';
 }
 
-wireDailyForm('daily', 'dailies', dailyWeekdayPicker);
+/* ============ CARDS ============ */
+const expanded = new Set();
 
-/* ============ ADD / EDIT: TODOS ============ */
-function wireTodoForm(prefix, arrayKey){
-  const input = document.getElementById(prefix+'Input');
-  const starsEl = document.getElementById(prefix+'Stars');
-  const priorityEl = document.getElementById(prefix+'Priority');
-  const addBtn = document.getElementById('add'+capitalize(prefix));
-  const cancelBtn = document.getElementById(prefix+'CancelEdit');
+function metaHtml(task, column, streak){
+  const tag = tagById(task.tag);
+  let html = `<span class="stars-display">${starsDisplay(task.difficulty || 3)}</span>`;
+  html += `<span class="priority-chip ${task.priority || 'medium'}">${PRIORITY_LABEL[task.priority || 'medium']}</span>`;
+  if(tag) html += `<span class="tag-chip" style="background:${tag.color}">${escapeHtml(tag.name)}</span>`;
+  if(column === 'dailies' && task.repeat) html += `<span class="repeat-chip">${PQ.repeatSummary(task)}</span>`;
+  if(task.due){
+    const overdue = PQ.dateKey(viewDate) > task.due && !task.done;
+    const label = PQ.fromKey(task.due).toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    html += `<span class="due-chip ${overdue ? 'overdue' : ''}">${overdue ? 'overdue · ' : 'due '}${label}</span>`;
+  }
+  if(streak > 0) html += `<span class="streak-chip">🔥 ${streak}d</span>`;
+  html += `<span class="payout-chip">${money(value(task, column))}</span>`;
+  return html;
+}
 
-  addBtn.onclick = () => {
-    const title = input.value.trim();
-    if(!title) return;
-    const stars = parseInt(starsEl.dataset.value);
-    const priority = priorityEl ? priorityEl.value : 'medium';
+function buildCard(task, column, opts){
+  const isDone = opts.done;
+  const card = document.createElement('div');
+  card.className = 'task-card' + (isDone ? ' done' : '');
+  const subs = task.subs || [];
+  const subState = opts.subState || {};
+  const doneSubs = subs.filter(s => subState[s.id]).length;
 
-    if(editing[prefix]){
-      const task = state[arrayKey].find(t=>t.id===editing[prefix]);
-      Object.assign(task, { title, stars, priority });
-      exitEditMode(prefix);
+  card.innerHTML = `
+    <div class="task-main">
+      <div class="check ${isDone ? 'checked' : ''}">${isDone ? '✓' : ''}</div>
+      <div class="task-body">
+        <div class="task-title">${escapeHtml(task.title)}</div>
+        <div class="task-meta">${metaHtml(task, column, opts.streak || 0)}</div>
+      </div>
+      <div class="task-actions">
+        <button class="task-edit" title="Edit">✎</button>
+        <button class="task-delete" title="Delete">✕</button>
+      </div>
+    </div>
+  `;
+
+  const isOpen = expanded.has(task.id);
+  if(subs.length || isOpen){
+    const wrap = document.createElement('div');
+    wrap.className = 'sub-wrap';
+    const bar = subs.length ? `<div class="sub-progress"><i style="width:${doneSubs/subs.length*100}%"></i></div>` : '';
+    if(!isOpen && subs.length){
+      wrap.innerHTML = bar;
     } else {
-      state[arrayKey].push({ id: uid(), title, stars, priority, done:false });
+      let inner = bar;
+      subs.forEach(s => {
+        const on = !!subState[s.id];
+        inner += `
+          <div class="sub-row ${on ? 'done' : ''}" data-sub="${s.id}">
+            <div class="sub-check ${on ? 'checked' : ''}">${on ? '✓' : ''}</div>
+            <div class="sub-text">${escapeHtml(s.title)}</div>
+            <span class="sub-value">${subValue(task, column)}c</span>
+            <button class="sub-del" title="Remove">✕</button>
+          </div>`;
+      });
+      if(subs.length) inner += `<div class="bonus-note">All-clear bonus: ${bonusOf(task, column)}c</div>`;
+      inner += `<div class="sub-add"><input type="text" placeholder="Add a subtask"><button type="button">Add</button></div>`;
+      wrap.innerHTML = inner;
     }
-    input.value='';
-    if(priorityEl) priorityEl.value='medium';
-    starsEl.dataset.value=3;
-    setupStarsInput(prefix+'Stars');
+    card.appendChild(wrap);
+  }
+
+  const toggle = document.createElement('button');
+  toggle.className = 'expand-btn';
+  toggle.textContent = subs.length
+    ? (isOpen ? 'hide subtasks' : `${doneSubs}/${subs.length} subtasks`)
+    : (isOpen ? 'hide subtasks' : '+ subtasks');
+  toggle.onclick = () => {
+    if(expanded.has(task.id)) expanded.delete(task.id); else expanded.add(task.id);
+    renderAll();
+  };
+  card.appendChild(toggle);
+
+  card.querySelector('.check').onclick = () => opts.onToggle();
+  card.querySelector('.task-title').onclick = () => enterEdit(column, task);
+  card.querySelector('.task-edit').onclick = () => enterEdit(column, task);
+  card.querySelector('.task-delete').onclick = () => {
+    S()[column] = S()[column].filter(t => t.id !== task.id);
     saveAndRender();
   };
-  cancelBtn.onclick = () => {
-    exitEditMode(prefix);
-    input.value='';
-    if(priorityEl) priorityEl.value='medium';
-    starsEl.dataset.value=3;
-    setupStarsInput(prefix+'Stars');
-  };
-}
-wireTodoForm('todo', 'todos');
-wireTodoForm('work', 'work');
-wireTodoForm('project', 'projects'); // Projects is now a simple list too, same shape as Work/To Do
 
-/* ============ RENDER: DAILIES ============ */
-function renderDailyColumn(){
-  const list = document.getElementById('dailyList');
-  const dow = viewDate.getDay();
-  const key = dateKey(viewDate);
-  const dayRecord = state.completions[key] || {};
-  const scheduled = state.dailies.filter(d => d.days.includes(dow));
-
-  list.innerHTML = '';
-  if(scheduled.length===0){
-    list.innerHTML = '<div class="empty-note">Nothing scheduled for this day yet 🌾</div>';
-  }
-  scheduled.forEach(task => {
-    const isDone = !!dayRecord[task.id];
-    const streak = getStreak(task.id);
-    const card = document.createElement('div');
-    card.className = 'task-card' + (isDone?' done':'');
-    card.innerHTML = `
-      <div class="task-main">
-        <div class="check ${isDone?'checked':''}">${isDone?'✓':''}</div>
-        <div class="task-body">
-          <div class="task-title">${escapeHtml(task.title)}</div>
-          <div class="task-meta">
-            <span class="stars-display">${starsDisplay(task.stars)}</span>
-            <span class="priority-chip ${task.priority||'medium'}">${PRIORITY_LABEL[task.priority||'medium']}</span>
-            ${streak>0?`<span class="streak-chip">🔥 ${streak}d streak</span>`:''}
-          </div>
-        </div>
-        <div class="task-actions">
-          <button class="task-edit" title="Edit">✎</button>
-          <button class="task-delete" title="Delete">✕</button>
-        </div>
-      </div>
-    `;
-    card.querySelector('.check').onclick = () => toggleDaily(task, isDone);
-    card.querySelector('.task-title').onclick = () => enterEditMode('daily', task, dailyWeekdayPicker);
-    card.querySelector('.task-edit').onclick = () => enterEditMode('daily', task, dailyWeekdayPicker);
-    card.querySelector('.task-delete').onclick = () => {
-      state.dailies = state.dailies.filter(d=>d.id!==task.id);
+  card.querySelectorAll('.sub-row').forEach(row => {
+    const subId = row.dataset.sub;
+    row.querySelector('.sub-check').onclick = () => opts.onToggleSub(subId);
+    row.querySelector('.sub-del').onclick = () => {
+      task.subs = task.subs.filter(s => s.id !== subId);
       saveAndRender();
     };
-    list.appendChild(card);
   });
-  document.getElementById('dailyCount').textContent = `${scheduled.length} today`;
+
+  const addWrap = card.querySelector('.sub-add');
+  if(addWrap){
+    const field = addWrap.querySelector('input');
+    const commit = () => {
+      const v = field.value.trim();
+      if(!v) return;
+      if(!task.subs) task.subs = [];
+      task.subs.push({ id: uid(), title: v });
+      saveAndRender();
+    };
+    addWrap.querySelector('button').onclick = commit;
+    field.onkeydown = e => { if(e.key === 'Enter'){ e.preventDefault(); commit(); } };
+  }
+  return card;
 }
 
-function toggleDaily(task, wasDone){
-  const key = dateKey(viewDate);
-  if(!state.completions[key]) state.completions[key] = {};
-  if(wasDone){
-    delete state.completions[key][task.id];
+/* ============ DAILIES ============ */
+function toggleDailySub(task, subId){
+  const rec = taskRecord(PQ.dateKey(viewDate), task.id);
+  if(rec.subs[subId]){
+    delete rec.subs[subId];
+    unreward('dailies', subValue(task, 'dailies'));
   } else {
-    state.completions[key][task.id] = true;
-    const streak = getStreak(task.id);
-    const { copper, xp } = computeReward(task.stars, streak);
-    addCurrency(copper);
-    addXP(xp);
+    rec.subs[subId] = true;
+    reward(task, 'dailies', subValue(task, 'dailies'), Math.max(1, Math.round((task.difficulty || 3) * 1.5)));
+  }
+  saveAndRender();
+}
+function toggleDaily(task){
+  const rec = taskRecord(PQ.dateKey(viewDate), task.id);
+  const subs = task.subs || [];
+  if(rec.done){
+    rec.done = false;
+    unreward('dailies', bonusOf(task, 'dailies'));
+  } else {
+    const allSubs = !subs.length || subs.every(s => rec.subs[s.id]);
+    rec.done = true;
+    reward(task, 'dailies', allSubs ? bonusOf(task, 'dailies') : 0, (task.difficulty || 3) * 8);
+    checkStreakMilestone(task);
+    setTimeout(() => { checkPerfectDay(viewDate); flushCelebrations(); }, 0);
   }
   saveAndRender();
 }
 
-/* ============ RENDER: TODOS / WORK (shared, simple list) ============ */
-function renderSimpleColumn(arrayKey, listElId, countElId, prefix, showPriority){
-  const list = document.getElementById(listElId);
-  list.innerHTML = '';
-  const tasks = state[arrayKey];
-  const open = tasks.filter(t=>!t.done);
-  if(tasks.length===0){
-    list.innerHTML = '<div class="empty-note">Nothing here yet ✨</div>';
+function renderDailies(){
+  const list = document.getElementById('dailiesList');
+  const doneList = document.getElementById('dailiesDone');
+  const doneToggle = document.getElementById('dailiesDoneToggle');
+  list.innerHTML = ''; doneList.innerHTML = '';
+
+  const scheduled = S().dailies.filter(t => PQ.isScheduled(t, viewDate) && matchesFilter(t));
+  const open = scheduled.filter(t => !isDailyDone(t, viewDate));
+  const done = scheduled.filter(t => isDailyDone(t, viewDate));
+
+  if(!open.length){
+    list.innerHTML = `<div class="empty-note">${scheduled.length ? 'All done for this day 🌿' : 'Nothing scheduled for this day'}</div>`;
   }
-  tasks.forEach(task => {
-    const card = document.createElement('div');
-    card.className = 'task-card' + (task.done?' done':'');
-    card.innerHTML = `
-      <div class="task-main">
-        <div class="check ${task.done?'checked':''}">${task.done?'✓':''}</div>
-        <div class="task-body">
-          <div class="task-title">${escapeHtml(task.title)}</div>
-          <div class="task-meta">
-            <span class="stars-display">${starsDisplay(task.stars)}</span>
-            ${showPriority?`<span class="priority-chip ${task.priority||'medium'}">${PRIORITY_LABEL[task.priority||'medium']}</span>`:''}
-          </div>
-        </div>
-        <div class="task-actions">
-          <button class="task-edit" title="Edit">✎</button>
-          <button class="task-delete" title="Delete">✕</button>
-        </div>
-      </div>
-    `;
-    card.querySelector('.check').onclick = () => {
-      task.done = !task.done;
-      if(task.done){
-        const { copper, xp } = computeReward(task.stars, 0);
-        addCurrency(copper); addXP(xp);
-      }
-      saveAndRender();
-    };
-    card.querySelector('.task-title').onclick = () => enterEditMode(prefix, task, null, null);
-    card.querySelector('.task-edit').onclick = () => enterEditMode(prefix, task, null, null);
-    card.querySelector('.task-delete').onclick = () => {
-      state[arrayKey] = state[arrayKey].filter(t=>t.id!==task.id);
-      saveAndRender();
-    };
-    list.appendChild(card);
-  });
-  document.getElementById(countElId).textContent = `${open.length} open`;
+  const rec = id => (S().completions[PQ.dateKey(viewDate)] || {})[id] || { subs:{} };
+
+  open.forEach(task => list.appendChild(buildCard(task, 'dailies', {
+    done:false, streak: PQ.getStreak(S(), task, viewDate), subState: rec(task.id).subs || {},
+    onToggle: () => toggleDaily(task), onToggleSub: id => toggleDailySub(task, id)
+  })));
+  done.forEach(task => doneList.appendChild(buildCard(task, 'dailies', {
+    done:true, streak: PQ.getStreak(S(), task, viewDate), subState: rec(task.id).subs || {},
+    onToggle: () => toggleDaily(task), onToggleSub: id => toggleDailySub(task, id)
+  })));
+
+  doneToggle.style.display = done.length ? 'block' : 'none';
+  doneToggle.textContent = `${done.length} done ${PQ.sameDay(viewDate, TODAY) ? 'today' : 'this day'} ${doneList.classList.contains('open') ? '▾' : '▸'}`;
+  document.getElementById('dailiesCount').textContent = `${open.length} of ${scheduled.length} left`;
 }
 
+/* ============ TODOS + PROJECTS ============ */
+function toggleSimpleSub(task, column, subId){
+  if(!task.subDone) task.subDone = {};
+  if(task.subDone[subId]){
+    delete task.subDone[subId];
+    unreward(column, subValue(task, column));
+  } else {
+    task.subDone[subId] = true;
+    reward(task, column, subValue(task, column), Math.max(1, Math.round((task.difficulty || 3) * 1.5)));
+  }
+  saveAndRender();
+}
+function toggleSimple(task, column){
+  const subs = task.subs || [];
+  if(task.done){
+    task.done = false; task.doneDate = null;
+    unreward(column, bonusOf(task, column));
+  } else {
+    const allSubs = !subs.length || subs.every(s => (task.subDone || {})[s.id]);
+    task.done = true;
+    task.doneDate = PQ.dateKey(viewDate);
+    reward(task, column, allSubs ? bonusOf(task, column) : 0, (task.difficulty || 3) * 8);
+  }
+  saveAndRender();
+}
+function sortTasks(a, b){
+  const p = PRIORITY_RANK[a.priority || 'medium'] - PRIORITY_RANK[b.priority || 'medium'];
+  if(p !== 0) return p;
+  if(a.due && b.due) return a.due < b.due ? -1 : 1;
+  if(a.due) return -1;
+  if(b.due) return 1;
+  return 0;
+}
+function renderSimple(column){
+  const list = document.getElementById(column + 'List');
+  const doneList = document.getElementById(column + 'Done');
+  const doneToggle = document.getElementById(column + 'DoneToggle');
+  list.innerHTML = ''; doneList.innerHTML = '';
 
+  const all = S()[column].filter(matchesFilter);
+  const open = all.filter(t => !t.done).sort(sortTasks);
+  const done = all.filter(t => t.done && t.doneDate === PQ.dateKey(viewDate));
 
-/* ============ SHOP ============ */
+  if(!open.length){
+    list.innerHTML = `<div class="empty-note">${column === 'projects' ? 'No projects on the go' : 'Nothing waiting'}</div>`;
+  }
+  open.forEach(task => list.appendChild(buildCard(task, column, {
+    done:false, subState: task.subDone || {},
+    onToggle: () => toggleSimple(task, column), onToggleSub: id => toggleSimpleSub(task, column, id)
+  })));
+  done.forEach(task => doneList.appendChild(buildCard(task, column, {
+    done:true, subState: task.subDone || {},
+    onToggle: () => toggleSimple(task, column), onToggleSub: id => toggleSimpleSub(task, column, id)
+  })));
+
+  doneToggle.style.display = done.length ? 'block' : 'none';
+  doneToggle.textContent = `${done.length} finished ${PQ.sameDay(viewDate, TODAY) ? 'today' : 'this day'} ${doneList.classList.contains('open') ? '▾' : '▸'}`;
+  document.getElementById(column + 'Count').textContent = `${open.length} open`;
+}
+
+COLUMNS.forEach(col => {
+  document.getElementById(col + 'DoneToggle').onclick = () => {
+    document.getElementById(col + 'Done').classList.toggle('open');
+    renderAll();
+  };
+});
+
+/* ============ REWARDS PANEL ============ */
 let editingShopId = null;
-
 document.getElementById('addShopItem').onclick = () => {
   const name = document.getElementById('shopName').value.trim();
   if(!name) return;
   const desc = document.getElementById('shopDesc').value.trim();
   const gold = parseInt(document.getElementById('shopGold').value) || 0;
   const copper = parseInt(document.getElementById('shopCopper').value) || 0;
-
   if(editingShopId){
-    const item = state.shop.find(s=>s.id===editingShopId);
-    Object.assign(item, { name, desc, gold, copper });
-    exitShopEditMode();
+    Object.assign(S().shop.find(s => s.id === editingShopId), { name, desc, gold, copper });
+    exitShopEdit();
   } else {
-    state.shop.push({ id: uid(), name, desc, gold, copper });
+    S().shop.push({ id: uid(), name, desc, gold, copper });
   }
   resetShopForm();
   saveAndRender();
 };
-document.getElementById('shopCancelEdit').onclick = () => {
-  exitShopEditMode();
-  resetShopForm();
-};
-function resetShopForm(){
-  document.getElementById('shopName').value='';
-  document.getElementById('shopDesc').value='';
-  document.getElementById('shopGold').value='';
-  document.getElementById('shopCopper').value='';
-}
-function enterShopEditMode(item){
+document.getElementById('shopCancelEdit').onclick = () => { exitShopEdit(); resetShopForm(); };
+function resetShopForm(){ ['shopName','shopDesc','shopGold','shopCopper'].forEach(id => document.getElementById(id).value = ''); }
+function enterShopEdit(item){
   editingShopId = item.id;
   document.getElementById('shopName').value = item.name;
   document.getElementById('shopDesc').value = item.desc || '';
   document.getElementById('shopGold').value = item.gold;
   document.getElementById('shopCopper').value = item.copper;
-  const addBtn = document.getElementById('addShopItem');
-  addBtn.textContent = 'Save changes';
-  addBtn.classList.add('editing');
+  const btn = document.getElementById('addShopItem');
+  btn.textContent = 'Save changes';
+  btn.classList.add('editing');
   document.getElementById('shopCancelEdit').style.display = 'inline';
-  document.getElementById('shopName').scrollIntoView({behavior:'smooth', block:'center'});
 }
-function exitShopEditMode(){
+function exitShopEdit(){
   editingShopId = null;
-  const addBtn = document.getElementById('addShopItem');
-  addBtn.textContent = 'Add reward';
-  addBtn.classList.remove('editing');
+  const btn = document.getElementById('addShopItem');
+  btn.textContent = 'Add reward';
+  btn.classList.remove('editing');
   document.getElementById('shopCancelEdit').style.display = 'none';
 }
-
 function renderShop(){
   const el = document.getElementById('shopList');
   el.innerHTML = '';
-  if(state.shop.length===0){
-    el.innerHTML = '<div class="empty-note">Add a reward above — a treat you\'ll actually want to earn.</div>';
+  if(!S().shop.length){
+    el.innerHTML = '<div class="empty-note">Add a reward above — something you actually want.</div>';
     return;
   }
-  state.shop.forEach(item => {
-    const affordable = (state.gold*100+state.copper) >= (item.gold*100+item.copper);
+  S().shop.forEach(item => {
+    const affordable = (S().gold*100 + S().copper) >= (item.gold*100 + item.copper);
     const div = document.createElement('div');
     div.className = 'shop-item';
     div.innerHTML = `
@@ -1351,71 +1513,200 @@ function renderShop(){
           <button class="shop-delete" title="Delete">✕</button>
         </div>
       </div>
-      ${item.desc?`<div class="desc">${escapeHtml(item.desc)}</div>`:''}
+      ${item.desc ? `<div class="desc">${escapeHtml(item.desc)}</div>` : ''}
       <div class="row">
         <span class="price"><span class="g">${item.gold}g</span> <span class="c">${item.copper}c</span></span>
-        <button class="redeem-btn" ${affordable?'':'disabled'}>Redeem</button>
+        <button class="redeem-btn" ${affordable ? '' : 'disabled'}>Redeem</button>
       </div>
     `;
-    div.querySelector('.redeem-btn').onclick = () => {
-      if(spendCurrency(item.gold, item.copper)) saveAndRender();
-    };
-    div.querySelector('.name').onclick = () => enterShopEditMode(item);
-    div.querySelector('.shop-edit').onclick = () => enterShopEditMode(item);
+    div.querySelector('.redeem-btn').onclick = () => { if(PQ.spendCurrency(S(), item.gold, item.copper)) saveAndRender(); };
+    div.querySelector('.name').onclick = () => enterShopEdit(item);
+    div.querySelector('.shop-edit').onclick = () => enterShopEdit(item);
     div.querySelector('.shop-delete').onclick = () => {
-      state.shop = state.shop.filter(s=>s.id!==item.id);
-      if(editingShopId===item.id){ exitShopEditMode(); resetShopForm(); }
+      S().shop = S().shop.filter(s => s.id !== item.id);
+      if(editingShopId === item.id){ exitShopEdit(); resetShopForm(); }
       saveAndRender();
     };
     el.appendChild(div);
   });
 }
 
-/* ============ SHOP PANEL TOGGLE ============ */
-const overlay = document.getElementById('overlay');
-const sidePanel = document.getElementById('sidePanel');
-document.getElementById('openShop').onclick = () => {
-  overlay.classList.add('open');
-  sidePanel.classList.add('open');
-};
-function closePanel(){
-  overlay.classList.remove('open');
-  sidePanel.classList.remove('open');
+/* ============ SETTINGS ============ */
+function renderTagEditor(){
+  const el = document.getElementById('tagEditor');
+  el.innerHTML = '';
+  S().tags.forEach(tag => {
+    const row = document.createElement('div');
+    row.className = 'tag-editor-row';
+    row.innerHTML = `<input type="color" value="${tag.color}"><input type="text" value="${escapeHtml(tag.name)}"><button title="Delete">✕</button>`;
+    const [colorEl, nameEl] = row.querySelectorAll('input');
+    colorEl.onchange = () => { tag.color = colorEl.value; saveAndRender(); };
+    nameEl.onchange = () => { tag.name = nameEl.value.trim() || tag.name; saveAndRender(); };
+    row.querySelector('button').onclick = () => {
+      S().tags = S().tags.filter(t => t.id !== tag.id);
+      COLUMNS.forEach(col => S()[col].forEach(t => { if(t.tag === tag.id) t.tag = null; }));
+      if(activeTag === tag.id) activeTag = null;
+      saveAndRender();
+    };
+    el.appendChild(row);
+  });
 }
-document.getElementById('closePanel').onclick = closePanel;
-overlay.onclick = closePanel;
+document.getElementById('addTag').onclick = () => {
+  const name = document.getElementById('newTagName').value.trim();
+  if(!name) return;
+  S().tags.push({ id: uid(), name, color: document.getElementById('newTagColor').value });
+  document.getElementById('newTagName').value = '';
+  saveAndRender();
+};
+document.getElementById('vacationToggle').onclick = () => {
+  if(PQ.vacationActive(S())) S().vacations.forEach(v => { if(!v.end) v.end = PQ.TODAY_KEY; });
+  else S().vacations.push({ start: PQ.TODAY_KEY, end: null });
+  saveAndRender();
+};
+COLUMNS.forEach(col => {
+  document.getElementById('target' + capital(col)).onchange = e => {
+    S().targets[col] = Math.max(0, Math.round((parseFloat(e.target.value) || 0) * 100));
+    saveAndRender();
+  };
+});
+document.getElementById('wipeAll').onclick = () => {
+  if(!confirm('Erase every task, pet, monster, reward and coin? There is no undo.')) return;
+  store.reset();
+  S().weekStart = PQ.dateKey(PQ.mondayOf(TODAY));
+  S().hungerDate = PQ.TODAY_KEY;
+  activeTag = null;
+  expanded.clear();
+  saveAndRender();
+};
+function renderSettings(){
+  document.getElementById('vacationToggle').classList.toggle('on', PQ.vacationActive(S()));
+  document.getElementById('vacationFlag').classList.toggle('on', PQ.vacationActive(S()));
+  COLUMNS.forEach(col => {
+    const el = document.getElementById('target' + capital(col));
+    if(document.activeElement !== el) el.value = (S().targets[col] / 100).toFixed(0);
+  });
+  const wk = PQ.ledgerWeek(S());
+  const buffs = PQ.legendBuffs(S());
+  let html = COLUMNS.map(col =>
+    `${COLUMN_LABEL[col]}: ${S().rates[col]}c per difficulty point · $${(wk[col]/100).toFixed(2)} this week`
+  ).join('<br>');
+  if(wk.monsters) html += `<br>Monster drops: $${(wk.monsters/100).toFixed(2)} this week`;
+  if(buffs.payout > 1) html += `<br>Legend bonus: +${Math.round((buffs.payout-1)*100)}% payout`;
+  document.getElementById('rateReadout').innerHTML = html;
+  renderTagEditor();
+}
 
-/* ============ MODALS ============ */
-function openModal(id){ document.getElementById(id).classList.add('open'); }
-function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+/* ============ PANELS + DATE NAV ============ */
+const overlay = document.getElementById('overlay');
+function openPanel(id){ overlay.classList.add('open'); document.getElementById(id).classList.add('open'); }
+function closePanels(){ overlay.classList.remove('open'); document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('open')); }
+document.getElementById('openShop').onclick = () => openPanel('shopPanel');
+document.getElementById('openSettings').onclick = () => openPanel('settingsPanel');
+document.querySelectorAll('.panel-close').forEach(b => b.onclick = closePanels);
+overlay.onclick = closePanels;
 
-/* ============ DATE NAV ============ */
 document.getElementById('prevDay').onclick = () => {
-  if(dateKey(viewDate)===dateKey(MIN_DATE)) return;
-  viewDate = addDays(viewDate,-1);
-  renderAll();
+  if(PQ.dateKey(viewDate) === PQ.dateKey(MIN_DATE)) return;
+  viewDate = PQ.addDays(viewDate, -1); renderAll();
 };
 document.getElementById('nextDay').onclick = () => {
-  if(dateKey(viewDate)===dateKey(TODAY)) return;
-  viewDate = addDays(viewDate,1);
-  renderAll();
+  if(PQ.dateKey(viewDate) === PQ.TODAY_KEY) return;
+  viewDate = PQ.addDays(viewDate, 1); renderAll();
 };
 document.getElementById('jumpToday').onclick = () => { viewDate = TODAY; renderAll(); };
 
-/* ============ RENDER ALL ============ */
+/* ============ HEADER ============ */
+function renderHeader(){
+  document.getElementById('levelNum').textContent = S().level;
+  document.getElementById('xpBar').style.width = Math.min(100, S().xp / S().xpToNext * 100) + '%';
+  document.getElementById('xpNum').textContent = `${S().xp} / ${S().xpToNext}`;
+  document.getElementById('goldNum').textContent = S().gold;
+  document.getElementById('copperNum').textContent = S().copper;
+  document.getElementById('meowNum').textContent = (S().meowBucks || 0).toLocaleString();
+
+  const ctx = PQ.makeCtx(S());
+  const active = PQ.activePet(S());
+  const slot = document.getElementById('petSlot');
+  const art = document.getElementById('petArt');
+
+  if(active){
+    slot.classList.remove('empty');
+    art.innerHTML = PQ.petSvg(active, { showBackground:false });
+    document.getElementById('petNameLabel').textContent = active.name;
+    const h = PQ.liveHunger(S(), active, ctx);
+    const row = document.getElementById('hungerRow');
+    row.style.display = 'flex';
+    const bar = document.getElementById('hungerBar');
+    bar.style.width = h + '%';
+    bar.className = 'bar-fill hunger' + (h < 30 ? ' low' : (h < 60 ? ' warn' : ''));
+    document.getElementById('hungerNum').textContent = h + '%';
+  } else {
+    slot.classList.add('empty');
+    art.innerHTML = '<span>🧝‍♀️</span>';
+    document.getElementById('petNameLabel').textContent = 'Danni';
+    document.getElementById('hungerRow').style.display = 'none';
+  }
+
+  const strip = document.getElementById('partyStrip');
+  strip.innerHTML = '';
+  PQ.partyPets(S()).forEach(p => {
+    const h = PQ.liveHunger(S(), p, ctx);
+    const a = document.createElement('a');
+    a.href = '/dannelore/quest-log/pets.html';
+    a.title = `${p.name} · ${h}% fed`;
+    if(h < 30) a.classList.add('hungry');
+    a.innerHTML = PQ.petSvg(p, { showBackground:false });
+    strip.appendChild(a);
+  });
+
+  const m = PQ.activeMonster(S());
+  const mrow = document.getElementById('monsterRow');
+  if(m){
+    mrow.style.display = 'flex';
+    document.getElementById('monsterBar').style.width = (m.hp / m.maxHp * 100) + '%';
+    document.getElementById('monsterNum').textContent = `${m.hp}/${m.maxHp}`;
+  } else {
+    mrow.style.display = 'none';
+  }
+}
+
+function renderDateStrip(){
+  const label = viewDate.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+  document.getElementById('dateLabel').textContent = PQ.sameDay(viewDate, TODAY) ? `Today · ${label}` : label;
+  document.getElementById('prevDay').disabled = PQ.dateKey(viewDate) === PQ.dateKey(MIN_DATE);
+  document.getElementById('nextDay').disabled = PQ.dateKey(viewDate) === PQ.TODAY_KEY;
+  document.getElementById('pastNote').textContent = PQ.sameDay(viewDate, TODAY)
+    ? '' : 'Looking at a past day — tick anything you missed and it counts.';
+}
+
 function renderAll(){
   renderHeader();
   renderDateStrip();
-  renderDailyColumn();
-  renderSimpleColumn('todos','todoList','todoCount','todo', true);
-  renderSimpleColumn('work','workList','workCount','work', true);
-  renderSimpleColumn('projects','projectList','projectCount','project', true);
+  renderFilters();
+  renderTagSelects();
+  renderDailies();
+  renderSimple('todos');
+  renderSimple('projects');
   renderShop();
+  renderSettings();
+  flushCelebrations();
 }
-function saveAndRender(){ saveState(); renderAll(); }
+function saveAndRender(){ store.save(); renderAll(); }
 
-/* ============ INITIAL LOAD ============ */
-loadStateFromFirestore().then(renderAll);
+/* ============ BOOT ============ */
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible'){
+    store.load().then(() => { PQ.settleHunger(S(), PQ.makeCtx(S())); renderAll(); });
+  }
+});
+
+store.load().then(() => {
+  PQ.recalibrate(S());
+  PQ.settleHunger(S(), PQ.makeCtx(S()));
+  PQ.ensureFragments(S());
+  store.save();
+  renderAll();
+});
 </script>
 </body>
 </html>
