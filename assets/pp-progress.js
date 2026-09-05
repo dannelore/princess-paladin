@@ -1,33 +1,12 @@
 /* ==========================================================================
    Princess & Paladin — progress trackers
    /assets/pp-progress.js
-
-     <script src="/assets/pp-progress.js" defer></script>
-
-   Write the numbers in your HTML and this fills in the rest:
-
-     <div class="pp-progress"      data-current="4" data-total="10" data-label="Season 2"></div>
-     <div class="pp-progress-ring" data-current="3" data-total="8"></div>
-     <div class="pp-chips"         data-current="4" data-total="12" data-chip-label="EP"></div>
-     <div class="pp-pips"          data-current="5" data-total="10"></div>
-
-   Everything on the page is drawn automatically on load. After that:
-
-     PPProgress.set(el, 6, 10);     update one tracker
-     PPProgress.draw();             redraw everything (after re-rendering a list)
-     PPProgress.draw(container);    redraw one branch
-
-   Clickable chips and pips fire an event you can listen for:
-
-     el.addEventListener("pp-progress-change", e => {
-       console.log(e.detail.current, e.detail.total);
-     });
    ========================================================================== */
 
 window.PPProgress = (function(){
   "use strict";
 
-  var PIP_LIMIT = 15;   // plain dots collapse past this; chips never do
+  var PIP_LIMIT = 15;
 
   function num(el, attr, fallback){
     var v = parseFloat(el.getAttribute(attr));
@@ -65,7 +44,7 @@ window.PPProgress = (function(){
     }
 
     var label = el.getAttribute("data-label") || "";
-    var text  = el.getAttribute("data-text");      // overrides the count
+    var text  = el.getAttribute("data-text");
     var value = (text != null) ? text : formatValue(el, v);
 
     el.querySelector(".pp-progress-label").textContent = label;
@@ -105,33 +84,49 @@ window.PPProgress = (function(){
   }
 
   /* ---------------- chips ----------------
-     One labelled box per unit. No cap — a 24 episode season draws 24 boxes
-     and they wrap. Clicking EP 7 marks seven watched; clicking EP 7 again
-     when it's already the last one steps back to six. */
+     Each chip is an independent toggle. The watched state is stored as a
+     comma-separated list of 1-based indices in data-watched (e.g. "1,3,5").
+     data-current is kept in sync as the count, for bars and rings that read it.
+
+     To opt out of per-chip toggle mode and use the old sequential behaviour,
+     omit data-watched (or don't set it at all) — the chip row will fall back
+     to filling sequentially from data-current as before. */
+  function watchedSet(el){
+    var raw = el.getAttribute("data-watched");
+    if(!raw) return null;   // no set — sequential mode
+    var set = {};
+    raw.split(",").forEach(function(v){ var n = parseInt(v,10); if(n > 0) set[n] = true; });
+    return set;
+  }
+
   function drawChips(el){
-    var v = clamp(num(el,"data-current",0), num(el,"data-total",0));
-    var word = el.getAttribute("data-chip-label");
-    var clickable = el.getAttribute("data-clickable") === "true";
-    var start = num(el,"data-chip-start",1);
+    var total    = num(el,"data-total",0);
+    var word     = el.getAttribute("data-chip-label");
+    var clickable= el.getAttribute("data-clickable") === "true";
+    var start    = num(el,"data-chip-start",1);
+    var watched  = watchedSet(el);   // null → sequential mode
+    var current  = num(el,"data-current",0);
 
     el.innerHTML = "";
 
-    for(var i = 1; i <= v.total; i++){
-      var n = start + i - 1;
+    for(var i = 1; i <= total; i++){
+      var n   = start + i - 1;
+      var on  = watched ? !!watched[i] : i <= current;
       var chip = document.createElement(clickable ? "button" : "span");
-      var on   = i <= v.current;
-      chip.className = "pp-chip" + (on ? " is-on" : "") + (i === v.current + 1 ? " is-next" : "");
+      chip.className = "pp-chip" + (on ? " is-on" : "");
       chip.setAttribute("data-index", i);
       chip.textContent = word ? (word + " " + n) : String(n);
       if(clickable){
         chip.type = "button";
         chip.setAttribute("aria-pressed", on ? "true" : "false");
+        chip.setAttribute("aria-label", (word || "Episode") + " " + n);
       }
       el.appendChild(chip);
     }
 
-    el.classList.toggle("is-complete", v.total > 0 && v.current >= v.total);
-    setA11y(el, v, el.getAttribute("data-label") || "");
+    var count = watched ? Object.keys(watched).length : current;
+    el.classList.toggle("is-complete", total > 0 && count >= total);
+    setA11y(el, { current: count, total: total, pct: total ? count/total : 0 }, el.getAttribute("data-label") || "");
   }
 
   /* ---------------- pips ---------------- */
@@ -194,8 +189,7 @@ window.PPProgress = (function(){
     drawOne(el);
   }
 
-  /* Clicking a chip or pip sets the count to that position.
-     Clicking the one that's already last steps back, so you can undo. */
+  /* Click handler — chips toggle individually; pips stay sequential */
   document.addEventListener("click", function(e){
     if(!e.target.closest) return;
     var unit = e.target.closest(".pp-chip, .pp-pip");
@@ -203,16 +197,34 @@ window.PPProgress = (function(){
     var box = unit.parentElement;
     if(!box || box.getAttribute("data-clickable") !== "true") return;
 
-    var index   = parseInt(unit.getAttribute("data-index"), 10);
-    var current = parseFloat(box.getAttribute("data-current")) || 0;
-    var total   = parseFloat(box.getAttribute("data-total")) || 0;
-    var next    = (index === current) ? index - 1 : index;
+    var index = parseInt(unit.getAttribute("data-index"), 10);
+    var total = parseFloat(box.getAttribute("data-total")) || 0;
 
-    set(box, next, total);
-    box.dispatchEvent(new CustomEvent("pp-progress-change", {
-      bubbles: true,
-      detail: { current: next, total: total }
-    }));
+    if(unit.classList.contains("pp-chip")){
+      /* per-chip toggle mode */
+      var watched = watchedSet(box) || {};
+      if(watched[index]) delete watched[index];
+      else               watched[index] = true;
+
+      var keys = Object.keys(watched).map(Number).sort(function(a,b){return a-b;});
+      box.setAttribute("data-watched", keys.join(","));
+      box.setAttribute("data-current", keys.length);
+      drawOne(box);
+
+      box.dispatchEvent(new CustomEvent("pp-progress-change", {
+        bubbles: true,
+        detail: { watched: watched, current: keys.length, total: total }
+      }));
+    } else {
+      /* pip sequential mode — unchanged */
+      var current = parseFloat(box.getAttribute("data-current")) || 0;
+      var next    = (index === current) ? index - 1 : index;
+      set(box, next, total);
+      box.dispatchEvent(new CustomEvent("pp-progress-change", {
+        bubbles: true,
+        detail: { current: next, total: total }
+      }));
+    }
   });
 
   if(document.readyState === "loading"){
