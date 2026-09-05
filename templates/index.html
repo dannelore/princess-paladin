@@ -151,7 +151,13 @@
 <body class="pp-templates">
 <div class="pp-wrap">
 
- 
+  <nav class="pp-nav" aria-label="Main navigation">
+    <a href="/">Home</a>
+    <a href="/castle/">Castle</a>
+    <a href="/bach/">The Bach</a>
+    <a href="/dannelore/quest-log/">Quest Log</a>
+    <a href="/templates/" aria-current="page">Templates</a>
+  </nav>
 
   <div class="pp-hero hero">
     <div class="pp-emblem">
@@ -173,21 +179,9 @@
         </g>
       </svg>
     </div>
-
-    <nav class="pp-nav" aria-label="Main navigation">
-      <a href="/">Home</a>
-      <a href="/dannelore/">Princess</a>
-      <a href="/vmprman/">Paladin</a>
-      <a href="/castle/">Castle Keep</a>
-      <a href="/side-quests/">Side Quests</a>
-      <a href="/templates/">Templates</a>
-    </nav>
-    
     <h1>Templates</h1>
     <p class="pp-tagline">every page in the kingdom, ready to borrow</p>
   </div>
-
-  
 
   <button class="pp-btn pp-btn-quiet copy-all" onclick="copyAll(this)">Copy all links</button>
 
@@ -353,7 +347,7 @@
     <summary class="sec-head">
       <h2>Quest Log</h2>
       <span class="path">/dannelore/quest-log</span>
-      <span class="count">1</span>
+      <span class="count">3</span>
       <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
     </summary>
     <div class="sec-body">
@@ -361,6 +355,16 @@
         <a href="/dannelore/quest-log/">Quest Log</a>
         <span class="url">princessandpaladin.com/dannelore/quest-log/</span>
         <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/dannelore/quest-log/')">Copy</button>
+      </div>
+      <div class="link-row">
+        <a href="/dannelore/quest-log/monsters.html">Monsters</a>
+        <span class="url">princessandpaladin.com/dannelore/quest-log/monsters.html</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/dannelore/quest-log/monsters.html')">Copy</button>
+      </div>
+      <div class="link-row">
+        <a href="/dannelore/quest-log/pets.html">Pets</a>
+        <span class="url">princessandpaladin.com/dannelore/quest-log/pets.html</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/dannelore/quest-log/pets.html')">Copy</button>
       </div>
     </div>
   </details>
@@ -433,6 +437,43 @@
     </div>
   </details>
 
+  <details class="pp-panel pp-panel-md section">
+    <summary class="sec-head">
+      <h2>Assets</h2>
+      <span class="path">/assets</span>
+      <span class="count">5</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </summary>
+    <div class="sec-body">
+      <p class="pp-muted" style="margin:0 0 12px;font-size:0.85rem;">Copy gives you the ready-to-paste tag, not the URL.</p>
+      <div class="link-row">
+        <a href="/assets/pp.css">pp.css</a>
+        <span class="url">shared stylesheet</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyText(this,'&lt;link rel=&quot;stylesheet&quot; href=&quot;/assets/pp.css&quot;&gt;')">Copy</button>
+      </div>
+      <div class="link-row">
+        <a href="/assets/pp-progress.css">pp-progress.css</a>
+        <span class="url">tracker styles</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyText(this,'&lt;link rel=&quot;stylesheet&quot; href=&quot;/assets/pp-progress.css&quot;&gt;')">Copy</button>
+      </div>
+      <div class="link-row">
+        <a href="/assets/pp-progress.js">pp-progress.js</a>
+        <span class="url">bar, ring, pip row</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyText(this,'&lt;script src=&quot;/assets/pp-progress.js&quot;&gt;&lt;/script&gt;')">Copy</button>
+      </div>
+      <div class="link-row">
+        <a href="/assets/pp-quest.js">pp-quest.js</a>
+        <span class="url">quest log logic</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyText(this,'&lt;script src=&quot;/assets/pp-quest.js&quot;&gt;&lt;/script&gt;')">Copy</button>
+      </div>
+      <div class="link-row">
+        <a href="/assets/self-care.css">self-care.css</a>
+        <span class="url">shared by the two offices</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyText(this,'&lt;link rel=&quot;stylesheet&quot; href=&quot;/assets/self-care.css&quot;&gt;')">Copy</button>
+      </div>
+    </div>
+  </details>
+
   <footer class="pp-footer">
     <p class="pp-footer-flourish">♕ ───────── ⚔ ───────── ♕</p>
     <p class="pp-footer-estab">Princess &amp; Paladin</p>
@@ -467,6 +508,10 @@
 
   function copyLink(btn, path){
     writeClip(BASE + path).then(() => flash(btn));
+  }
+
+  function copyText(btn, text){
+    writeClip(text).then(() => flash(btn));
   }
 
   function copySnippet(btn, id){
