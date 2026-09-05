@@ -22,20 +22,47 @@
   }
 
   .section{ margin-bottom: 20px; }
-  .section h2{
+
+  /* --- collapsible headers --- */
+  .sec-head{
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    cursor: pointer;
+    list-style: none;
+  }
+  .sec-head::-webkit-details-marker{ display: none; }
+  .sec-head h2{
     font-size: 1.5rem;
-    margin: 0 0 4px;
+    margin: 0;
     color: var(--burgundy);
   }
-  .section .path{
+  .sec-head .path{
     font-family: var(--font-body);
     font-size: 0.72rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--sage-deep);
-    margin-bottom: 14px;
+    flex: 1 1 auto;
   }
+  .sec-head .count{
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+  }
+  .chev{
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    color: var(--gold);
+    transition: transform 0.2s ease;
+  }
+  .section[open] .chev{ transform: rotate(90deg); }
 
+  .sec-body{ padding-top: 14px; }
+
+  /* --- link rows --- */
   .link-row{
     display: flex;
     align-items: center;
@@ -43,7 +70,7 @@
     padding: 9px 0;
     border-top: 1px dashed var(--line-gold);
   }
-  .link-row:first-of-type{ border-top: none; }
+  .link-row:first-child{ border-top: none; }
   .link-row a{
     color: var(--burgundy);
     text-decoration: none;
@@ -74,8 +101,50 @@
 
   .copy-all{ display: block; margin: 0 auto 32px; }
 
+  /* --- emblem snippet --- */
+  .snippet-preview{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 18px 0 22px;
+    border-bottom: 1px dashed var(--line-gold);
+    margin-bottom: 18px;
+  }
+  .snippet-preview .pp-emblem{ margin-bottom: 0; }
+  .snippet-preview .swatch{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+  }
+
+  .snippet-bar{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  pre.snippet{
+    margin: 0;
+    padding: 16px 18px;
+    background: var(--parchment);
+    border: 1px solid var(--parchment-border);
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.76rem;
+    line-height: 1.55;
+    color: var(--ink);
+    white-space: pre;
+    tab-size: 2;
+  }
+
   @media (max-width: 560px){
     .url{ display: none; }
+    .sec-head{ flex-wrap: wrap; }
   }
 </style>
 </head>
@@ -116,135 +185,247 @@
 
   <button class="pp-btn pp-btn-quiet copy-all" onclick="copyAll(this)">Copy all links</button>
 
-  <div class="pp-panel pp-panel-md section">
-    <h2>Home</h2>
-    <div class="path">/</div>
-    <div class="link-row">
-      <a href="/">Main Index</a>
-      <span class="url">princessandpaladin.com/</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/')">Copy</button>
-    </div>
-    <div class="link-row">
-      <a href="/templates/">Templates (this page)</a>
-      <span class="url">princessandpaladin.com/templates/</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/templates/')">Copy</button>
-    </div>
-  </div>
+  <!-- ============ EMBLEM SNIPPET ============ -->
+  <details class="pp-panel pp-panel-md section" open>
+    <summary class="sec-head">
+      <h2>Emblem</h2>
+      <span class="path">tiara &amp; sword</span>
+      <span class="count">markup</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </summary>
 
-  <div class="pp-panel pp-panel-md section">
-    <h2>The Bach</h2>
-    <div class="path">/bach</div>
-    <div class="link-row">
-      <a href="/bach/">Bach Index</a>
-      <span class="url">princessandpaladin.com/bach/</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/bach/')">Copy</button>
-    </div>
-    <div class="link-row">
-      <a href="/bach/dragshow.html">Drag Show</a>
-      <span class="url">princessandpaladin.com/bach/dragshow.html</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/bach/dragshow.html')">Copy</button>
-    </div>
-    <div class="link-row">
-      <a href="/bach/smartypants.html">Smarty Pants</a>
-      <span class="url">princessandpaladin.com/bach/smartypants.html</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/bach/smartypants.html')">Copy</button>
-    </div>
-  </div>
+    <div class="sec-body">
+      <div class="snippet-preview">
+        <div class="pp-emblem">
+          <!-- Tiara -->
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M8 44 H56" stroke="#9C7440" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="32" cy="10" r="3.5" fill="#9C7440"/>
+            <circle cx="4" cy="18" r="3" fill="#9C7440"/>
+            <circle cx="60" cy="18" r="3" fill="#9C7440"/>
+          </svg>
+          <!-- Sword -->
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <g transform="translate(16,0)">
+              <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
+              <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+              <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
+              <circle cx="16" cy="60" r="3.4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+            </g>
+          </svg>
+        </div>
+        <span class="swatch">full size &middot; add <code>pp-emblem-sm</code> for subpages</span>
+      </div>
 
-  <div class="pp-panel pp-panel-md section">
-    <h2>Castle Keeping</h2>
-    <div class="path">/castle</div>
-    <div class="link-row">
-      <a href="/castle/">Castle Index</a>
-      <span class="url">princessandpaladin.com/castle/</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/castle/')">Copy</button>
-    </div>
-    <div class="link-row">
-      <a href="/castle/meal-planner.html">Meal Planner</a>
-      <span class="url">princessandpaladin.com/castle/meal-planner.html</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/castle/meal-planner.html')">Copy</button>
-    </div>
-    <div class="link-row">
-      <a href="/castle/recipe-book.html">Recipe Book</a>
-      <span class="url">princessandpaladin.com/castle/recipe-book.html</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/castle/recipe-book.html')">Copy</button>
-    </div>
-    <div class="link-row">
-      <a href="/castle/recipe-construction.html">Recipe Constructor</a>
-      <span class="url">princessandpaladin.com/castle/recipe-construction.html</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/castle/recipe-construction.html')">Copy</button>
-    </div>
-  </div>
+      <div class="snippet-bar">
+        <span class="pp-label">Paste into any page</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copySnippet(this,'emblem-code')">Copy markup</button>
+      </div>
 
-  <div class="pp-panel pp-panel-md section">
-    <h2>Dannelore</h2>
-    <div class="path">/dannelore</div>
-    <div class="link-row">
-      <a href="/dannelore/">Dannelore Index</a>
-      <span class="url">princessandpaladin.com/dannelore/</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/dannelore/')">Copy</button>
-    </div>
-  </div>
+<pre class="snippet" id="emblem-code">&lt;div class="pp-emblem"&gt;
+  &lt;!-- Tiara --&gt;
+  &lt;svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"&gt;
+    &lt;path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z"
+          fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/&gt;
+    &lt;path d="M8 44 H56" stroke="#9C7440" stroke-width="3" stroke-linecap="round"/&gt;
+    &lt;circle cx="32" cy="10" r="3.5" fill="#9C7440"/&gt;
+    &lt;circle cx="4"  cy="18" r="3"   fill="#9C7440"/&gt;
+    &lt;circle cx="60" cy="18" r="3"   fill="#9C7440"/&gt;
+  &lt;/svg&gt;
 
-  <div class="pp-panel pp-panel-md section">
-    <h2>Quest Log</h2>
-    <div class="path">/dannelore/quest-log</div>
-    <div class="link-row">
-      <a href="/dannelore/quest-log/">Quest Log</a>
-      <span class="url">princessandpaladin.com/dannelore/quest-log/</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/dannelore/quest-log/')">Copy</button>
+  &lt;!-- Sword --&gt;
+  &lt;svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"&gt;
+    &lt;g transform="translate(16,0)"&gt;
+      &lt;path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z"
+            fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/&gt;
+      &lt;rect x="6"  y="40" width="20" height="5"  rx="1.5" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/&gt;
+      &lt;rect x="14" y="45" width="4"  height="15" rx="1.5" fill="#7C1F2A"/&gt;
+      &lt;circle cx="16" cy="60" r="3.4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/&gt;
+    &lt;/g&gt;
+  &lt;/svg&gt;
+&lt;/div&gt;</pre>
     </div>
-  </div>
+  </details>
 
-  <div class="pp-panel pp-panel-md section">
-    <h2>Self-Care</h2>
-    <div class="path">/dannelore/self-care</div>
-    <div class="link-row">
-      <a href="/dannelore/self-care/">Self-Care Index</a>
-      <span class="url">princessandpaladin.com/dannelore/self-care/</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/dannelore/self-care/')">Copy</button>
+  <!-- ============ DIRECTORY ============ -->
+  <details class="pp-panel pp-panel-md section">
+    <summary class="sec-head">
+      <h2>Home</h2>
+      <span class="path">/</span>
+      <span class="count">2</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </summary>
+    <div class="sec-body">
+      <div class="link-row">
+        <a href="/">Main Index</a>
+        <span class="url">princessandpaladin.com/</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/')">Copy</button>
+      </div>
+      <div class="link-row">
+        <a href="/templates/">Templates (this page)</a>
+        <span class="url">princessandpaladin.com/templates/</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/templates/')">Copy</button>
+      </div>
     </div>
-    <div class="link-row">
-      <a href="/dannelore/self-care/morning-office.html">Morning Office</a>
-      <span class="url">princessandpaladin.com/dannelore/self-care/morning-office.html</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/dannelore/self-care/morning-office.html')">Copy</button>
-    </div>
-    <div class="link-row">
-      <a href="/dannelore/self-care/evening-office.html">Evening Office</a>
-      <span class="url">princessandpaladin.com/dannelore/self-care/evening-office.html</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/dannelore/self-care/evening-office.html')">Copy</button>
-    </div>
-    <div class="link-row">
-      <a href="/dannelore/self-care/skincare.html">Skincare</a>
-      <span class="url">princessandpaladin.com/dannelore/self-care/skincare.html</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/dannelore/self-care/skincare.html')">Copy</button>
-    </div>
-  </div>
+  </details>
 
-  <div class="pp-panel pp-panel-md section">
-    <h2>Side Quests</h2>
-    <div class="path">/side-quests</div>
-    <div class="link-row">
-      <a href="/side-quests/">Side Quests Index</a>
-      <span class="url">princessandpaladin.com/side-quests/</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/side-quests/')">Copy</button>
+  <details class="pp-panel pp-panel-md section">
+    <summary class="sec-head">
+      <h2>The Bach</h2>
+      <span class="path">/bach</span>
+      <span class="count">3</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </summary>
+    <div class="sec-body">
+      <div class="link-row">
+        <a href="/bach/">Bach Index</a>
+        <span class="url">princessandpaladin.com/bach/</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/bach/')">Copy</button>
+      </div>
+      <div class="link-row">
+        <a href="/bach/dragshow.html">Drag Show</a>
+        <span class="url">princessandpaladin.com/bach/dragshow.html</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/bach/dragshow.html')">Copy</button>
+      </div>
+      <div class="link-row">
+        <a href="/bach/smartypants.html">Smarty Pants</a>
+        <span class="url">princessandpaladin.com/bach/smartypants.html</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/bach/smartypants.html')">Copy</button>
+      </div>
     </div>
-    <div class="link-row">
-      <a href="/side-quests/couch-quest.html">Couch Quest</a>
-      <span class="url">princessandpaladin.com/side-quests/couch-quest.html</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/side-quests/couch-quest.html')">Copy</button>
-    </div>
-  </div>
+  </details>
 
-  <div class="pp-panel pp-panel-md section">
-    <h2>Paladin Buttons</h2>
-    <div class="path">/vmprman</div>
-    <div class="link-row">
-      <a href="/vmprman/">Vmprman Index</a>
-      <span class="url">princessandpaladin.com/vmprman/</span>
-      <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/vmprman/')">Copy</button>
+  <details class="pp-panel pp-panel-md section">
+    <summary class="sec-head">
+      <h2>Castle Keeping</h2>
+      <span class="path">/castle</span>
+      <span class="count">4</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </summary>
+    <div class="sec-body">
+      <div class="link-row">
+        <a href="/castle/">Castle Index</a>
+        <span class="url">princessandpaladin.com/castle/</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/castle/')">Copy</button>
+      </div>
+      <div class="link-row">
+        <a href="/castle/meal-planner.html">Meal Planner</a>
+        <span class="url">princessandpaladin.com/castle/meal-planner.html</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/castle/meal-planner.html')">Copy</button>
+      </div>
+      <div class="link-row">
+        <a href="/castle/recipe-book.html">Recipe Book</a>
+        <span class="url">princessandpaladin.com/castle/recipe-book.html</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/castle/recipe-book.html')">Copy</button>
+      </div>
+      <div class="link-row">
+        <a href="/castle/recipe-construction.html">Recipe Constructor</a>
+        <span class="url">princessandpaladin.com/castle/recipe-construction.html</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/castle/recipe-construction.html')">Copy</button>
+      </div>
     </div>
-  </div>
+  </details>
+
+  <details class="pp-panel pp-panel-md section">
+    <summary class="sec-head">
+      <h2>Dannelore</h2>
+      <span class="path">/dannelore</span>
+      <span class="count">1</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </summary>
+    <div class="sec-body">
+      <div class="link-row">
+        <a href="/dannelore/">Dannelore Index</a>
+        <span class="url">princessandpaladin.com/dannelore/</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/dannelore/')">Copy</button>
+      </div>
+    </div>
+  </details>
+
+  <details class="pp-panel pp-panel-md section">
+    <summary class="sec-head">
+      <h2>Quest Log</h2>
+      <span class="path">/dannelore/quest-log</span>
+      <span class="count">1</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </summary>
+    <div class="sec-body">
+      <div class="link-row">
+        <a href="/dannelore/quest-log/">Quest Log</a>
+        <span class="url">princessandpaladin.com/dannelore/quest-log/</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/dannelore/quest-log/')">Copy</button>
+      </div>
+    </div>
+  </details>
+
+  <details class="pp-panel pp-panel-md section">
+    <summary class="sec-head">
+      <h2>Self-Care</h2>
+      <span class="path">/dannelore/self-care</span>
+      <span class="count">4</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </summary>
+    <div class="sec-body">
+      <div class="link-row">
+        <a href="/dannelore/self-care/">Self-Care Index</a>
+        <span class="url">princessandpaladin.com/dannelore/self-care/</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/dannelore/self-care/')">Copy</button>
+      </div>
+      <div class="link-row">
+        <a href="/dannelore/self-care/morning-office.html">Morning Office</a>
+        <span class="url">princessandpaladin.com/dannelore/self-care/morning-office.html</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/dannelore/self-care/morning-office.html')">Copy</button>
+      </div>
+      <div class="link-row">
+        <a href="/dannelore/self-care/evening-office.html">Evening Office</a>
+        <span class="url">princessandpaladin.com/dannelore/self-care/evening-office.html</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/dannelore/self-care/evening-office.html')">Copy</button>
+      </div>
+      <div class="link-row">
+        <a href="/dannelore/self-care/skincare.html">Skincare</a>
+        <span class="url">princessandpaladin.com/dannelore/self-care/skincare.html</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/dannelore/self-care/skincare.html')">Copy</button>
+      </div>
+    </div>
+  </details>
+
+  <details class="pp-panel pp-panel-md section">
+    <summary class="sec-head">
+      <h2>Side Quests</h2>
+      <span class="path">/side-quests</span>
+      <span class="count">2</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </summary>
+    <div class="sec-body">
+      <div class="link-row">
+        <a href="/side-quests/">Side Quests Index</a>
+        <span class="url">princessandpaladin.com/side-quests/</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/side-quests/')">Copy</button>
+      </div>
+      <div class="link-row">
+        <a href="/side-quests/couch-quest.html">Couch Quest</a>
+        <span class="url">princessandpaladin.com/side-quests/couch-quest.html</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/side-quests/couch-quest.html')">Copy</button>
+      </div>
+    </div>
+  </details>
+
+  <details class="pp-panel pp-panel-md section">
+    <summary class="sec-head">
+      <h2>Paladin Buttons</h2>
+      <span class="path">/vmprman</span>
+      <span class="count">1</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </summary>
+    <div class="sec-body">
+      <div class="link-row">
+        <a href="/vmprman/">Vmprman Index</a>
+        <span class="url">princessandpaladin.com/vmprman/</span>
+        <button class="pp-btn pp-btn-quiet copy" onclick="copyLink(this,'/vmprman/')">Copy</button>
+      </div>
+    </div>
+  </details>
 
   <footer class="pp-footer">
     <p class="pp-footer-flourish">♕ ───────── ⚔ ───────── ♕</p>
@@ -282,13 +463,17 @@
     writeClip(BASE + path).then(() => flash(btn));
   }
 
+  function copySnippet(btn, id){
+    const el = document.getElementById(id);
+    if (!el) return;
+    writeClip(el.textContent).then(() => flash(btn));
+  }
+
   function copyAll(btn){
-    const rows = document.querySelectorAll('.link-row');
     const lines = [];
-    rows.forEach(row => {
-      const name = row.querySelector('a').textContent.trim();
-      const href = row.querySelector('a').getAttribute('href');
-      lines.push(name + ' — ' + BASE + href);
+    document.querySelectorAll('.link-row').forEach(row => {
+      const link = row.querySelector('a');
+      lines.push(link.textContent.trim() + ' — ' + BASE + link.getAttribute('href'));
     });
     writeClip(lines.join('\n')).then(() => flash(btn));
   }
