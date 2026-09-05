@@ -7,10 +7,11 @@
      <link rel="stylesheet" href="/assets/pp-progress.css">
      <script src="/assets/pp-progress.js" defer></script>
 
-   Three shapes, all driven by the same two numbers:
-     .pp-progress       a bar with a label     — lists, seasons, big totals
+   Four shapes, all driven by the same two numbers:
+     .pp-progress       a bar with a label     — runtimes, big totals
      .pp-progress-ring  a small circle         — corners of cards and tiles
-     .pp-pips           a row of dots          — small counts, under about 15
+     .pp-chips          labelled boxes         — EP 1, EP 2, EP 3 …
+     .pp-pips           a row of plain dots    — small counts, no labels
 
    Uses the pp.css tokens, so it inherits the site palette automatically.
    ========================================================================== */
@@ -18,10 +19,7 @@
 
 /* --------------------------------------------------------------------------
    1. BAR
-   Markup is built for you by pp-progress.js — you only ever write this:
-
-     <div class="pp-progress" data-current="4" data-total="10"
-          data-label="Season 2"></div>
+     <div class="pp-progress" data-current="4" data-total="10" data-label="Season 2"></div>
 
    Optional attributes:
      data-color="pink | sage | gold | burgundy"   default sage
@@ -80,7 +78,6 @@
   transition: width 0.45s cubic-bezier(.4,0,.2,1);
 }
 
-/* Finished bars pick up a soft gold sheen */
 .pp-progress.is-complete .pp-progress-fill{
   background: linear-gradient(90deg, var(--sage-deep), var(--gold));
 }
@@ -89,13 +86,11 @@
   font-weight: 600;
 }
 
-/* Slimmer, no head row — for tight card footers */
 .pp-progress-sm .pp-progress-track{ height: 6px; }
 .pp-progress-sm .pp-progress-head{ margin-bottom: 4px; }
 .pp-progress-sm .pp-progress-label{ font-size: 0.66rem; }
 .pp-progress-sm .pp-progress-value{ font-size: 0.8rem; }
 
-/* Colour variants */
 .pp-progress[data-color="pink"]{     --pp-fill: var(--pink); }
 .pp-progress[data-color="gold"]{     --pp-fill: var(--gold); }
 .pp-progress[data-color="burgundy"]{ --pp-fill: var(--burgundy); }
@@ -110,8 +105,8 @@
    2. RING
      <div class="pp-progress-ring" data-current="3" data-total="8"></div>
 
-   Sits nicely in the corner of a card. Shows the percentage in the middle,
-   or a check when it's done. Size it with data-size (default 46).
+   Sits in the corner of a card. Shows a percentage, or a check when done.
+   Size it with data-size (default 46).
    -------------------------------------------------------------------------- */
 
 .pp-progress-ring{
@@ -150,12 +145,69 @@
 
 
 /* --------------------------------------------------------------------------
-   3. PIPS
+   3. CHIPS
+     <div class="pp-chips" data-current="4" data-total="12" data-chip-label="EP"></div>
+
+   Draws one small labelled box per unit, however many there are — no cap.
+   data-chip-label sets the word in front of the number; leave it off for
+   bare numbers. Add data-clickable="true" to let a tap set the count: the
+   element fires a "pp-progress-change" event with the new value.
+   -------------------------------------------------------------------------- */
+
+.pp-chips{
+  --pp-fill: var(--sage-deep);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+  min-width: 0;
+}
+
+.pp-chip{
+  font-family: var(--font-body);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  padding: 5px 8px;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.pp-chip.is-on{
+  color: #fff;
+  background: var(--pp-fill);
+  border-color: var(--pp-fill);
+}
+
+.pp-chips[data-clickable="true"] .pp-chip{ cursor: pointer; }
+.pp-chips[data-clickable="true"] .pp-chip:hover{
+  transform: translateY(-1px);
+  border-color: var(--pink);
+}
+
+/* The next one up — a soft outline so you can see where you are */
+.pp-chip.is-next{
+  border-color: var(--pink);
+  border-style: dashed;
+  color: var(--pink-deep);
+}
+
+.pp-chips[data-color="pink"]{     --pp-fill: var(--pink); }
+.pp-chips[data-color="gold"]{     --pp-fill: var(--gold); }
+.pp-chips[data-color="burgundy"]{ --pp-fill: var(--burgundy); }
+
+
+/* --------------------------------------------------------------------------
+   4. PIPS
      <div class="pp-pips" data-current="5" data-total="10"></div>
 
-   A row of dots. Best under about fifteen — past that it gets noisy and a
-   bar reads better. Add data-clickable="true" to let a tap set the count:
-   the element fires a "pp-progress-change" event with the new value.
+   Plain unlabelled dots, for when the numbers don't matter. Collapses to a
+   count past fifteen — use .pp-chips when you want every one labelled.
    -------------------------------------------------------------------------- */
 
 .pp-pips{
@@ -185,7 +237,6 @@
 .pp-pips[data-color="pink"]{ --pp-fill: var(--pink); }
 .pp-pips[data-color="gold"]{ --pp-fill: var(--gold); }
 
-/* Overflow note, e.g. "+12" when the total runs long */
 .pp-pips-more{
   font-family: var(--font-serif);
   font-style: italic;
@@ -196,7 +247,7 @@
 
 
 /* --------------------------------------------------------------------------
-   4. STACK
+   5. STACK
    Several bars in a row, e.g. one per season.
    -------------------------------------------------------------------------- */
 
@@ -210,5 +261,6 @@
 @media (prefers-reduced-motion: reduce){
   .pp-progress-fill,
   .pp-progress-ring .pp-ring-fill,
+  .pp-chip,
   .pp-pip{ transition: none; }
 }

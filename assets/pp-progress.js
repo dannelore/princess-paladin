@@ -8,6 +8,7 @@
 
      <div class="pp-progress"      data-current="4" data-total="10" data-label="Season 2"></div>
      <div class="pp-progress-ring" data-current="3" data-total="8"></div>
+     <div class="pp-chips"         data-current="4" data-total="12" data-chip-label="EP"></div>
      <div class="pp-pips"          data-current="5" data-total="10"></div>
 
    Everything on the page is drawn automatically on load. After that:
@@ -16,7 +17,7 @@
      PPProgress.draw();             redraw everything (after re-rendering a list)
      PPProgress.draw(container);    redraw one branch
 
-   Clickable pips fire an event you can listen for:
+   Clickable chips and pips fire an event you can listen for:
 
      el.addEventListener("pp-progress-change", e => {
        console.log(e.detail.current, e.detail.total);
@@ -26,7 +27,7 @@
 window.PPProgress = (function(){
   "use strict";
 
-  var PIP_LIMIT = 15;   // past this many, pips collapse to a count
+  var PIP_LIMIT = 15;   // plain dots collapse past this; chips never do
 
   function num(el, attr, fallback){
     var v = parseFloat(el.getAttribute(attr));
@@ -64,12 +65,12 @@ window.PPProgress = (function(){
     }
 
     var label = el.getAttribute("data-label") || "";
-    var head  = el.querySelector(".pp-progress-head");
-    var value = formatValue(el, v);
+    var text  = el.getAttribute("data-text");      // overrides the count
+    var value = (text != null) ? text : formatValue(el, v);
 
     el.querySelector(".pp-progress-label").textContent = label;
     el.querySelector(".pp-progress-value").textContent = value;
-    head.style.display = (label || value) ? "" : "none";
+    el.querySelector(".pp-progress-head").style.display = (label || value) ? "" : "none";
 
     el.querySelector(".pp-progress-fill").style.width = (v.pct * 100) + "%";
     el.classList.toggle("is-complete", v.total > 0 && v.current >= v.total);
@@ -97,10 +98,39 @@ window.PPProgress = (function(){
     }
 
     el.querySelector(".pp-ring-fill").style.strokeDashoffset = circ * (1 - v.pct);
-    el.querySelector(".pp-ring-text").textContent =
-      done ? "✓" : Math.round(v.pct * 100) + "";
+    el.querySelector(".pp-ring-text").textContent = done ? "✓" : Math.round(v.pct * 100) + "";
     el.classList.toggle("is-complete", done);
 
+    setA11y(el, v, el.getAttribute("data-label") || "");
+  }
+
+  /* ---------------- chips ----------------
+     One labelled box per unit. No cap — a 24 episode season draws 24 boxes
+     and they wrap. Clicking EP 7 marks seven watched; clicking EP 7 again
+     when it's already the last one steps back to six. */
+  function drawChips(el){
+    var v = clamp(num(el,"data-current",0), num(el,"data-total",0));
+    var word = el.getAttribute("data-chip-label");
+    var clickable = el.getAttribute("data-clickable") === "true";
+    var start = num(el,"data-chip-start",1);
+
+    el.innerHTML = "";
+
+    for(var i = 1; i <= v.total; i++){
+      var n = start + i - 1;
+      var chip = document.createElement(clickable ? "button" : "span");
+      var on   = i <= v.current;
+      chip.className = "pp-chip" + (on ? " is-on" : "") + (i === v.current + 1 ? " is-next" : "");
+      chip.setAttribute("data-index", i);
+      chip.textContent = word ? (word + " " + n) : String(n);
+      if(clickable){
+        chip.type = "button";
+        chip.setAttribute("aria-pressed", on ? "true" : "false");
+      }
+      el.appendChild(chip);
+    }
+
+    el.classList.toggle("is-complete", v.total > 0 && v.current >= v.total);
     setA11y(el, v, el.getAttribute("data-label") || "");
   }
 
@@ -140,19 +170,19 @@ window.PPProgress = (function(){
     el.setAttribute("aria-valuemin","0");
     el.setAttribute("aria-valuemax", String(v.total));
     el.setAttribute("aria-valuenow", String(v.current));
-    el.setAttribute("aria-valuetext",
-      (label ? label + ": " : "") + v.current + " of " + v.total);
+    el.setAttribute("aria-valuetext", (label ? label + ": " : "") + v.current + " of " + v.total);
   }
 
   function drawOne(el){
     if(el.classList.contains("pp-progress-ring")) return drawRing(el);
+    if(el.classList.contains("pp-chips"))         return drawChips(el);
     if(el.classList.contains("pp-pips"))          return drawPips(el);
     if(el.classList.contains("pp-progress"))      return drawBar(el);
   }
 
   function draw(root){
     var scope = root || document;
-    var all = scope.querySelectorAll(".pp-progress, .pp-progress-ring, .pp-pips");
+    var all = scope.querySelectorAll(".pp-progress, .pp-progress-ring, .pp-chips, .pp-pips");
     for(var i = 0; i < all.length; i++) drawOne(all[i]);
   }
 
@@ -164,15 +194,16 @@ window.PPProgress = (function(){
     drawOne(el);
   }
 
-  /* Clicking a pip sets the count to that position.
-     Clicking the pip that's already last turns it off, so you can go back. */
+  /* Clicking a chip or pip sets the count to that position.
+     Clicking the one that's already last steps back, so you can undo. */
   document.addEventListener("click", function(e){
-    var pip = e.target.closest ? e.target.closest(".pp-pip") : null;
-    if(!pip) return;
-    var box = pip.parentElement;
+    if(!e.target.closest) return;
+    var unit = e.target.closest(".pp-chip, .pp-pip");
+    if(!unit) return;
+    var box = unit.parentElement;
     if(!box || box.getAttribute("data-clickable") !== "true") return;
 
-    var index   = parseInt(pip.getAttribute("data-index"), 10);
+    var index   = parseInt(unit.getAttribute("data-index"), 10);
     var current = parseFloat(box.getAttribute("data-current")) || 0;
     var total   = parseFloat(box.getAttribute("data-total")) || 0;
     var next    = (index === current) ? index - 1 : index;
