@@ -195,6 +195,52 @@
   }
   .cq-subs .cq-tagpick button[data-light="true"]{ color: var(--ink); }
 
+  /* start / end dates */
+  .cq-dates{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .cq-dates label{
+    font-family: var(--font-body);
+    font-size: .66rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .cq-dates input[type="date"]{
+    font-family: var(--font-body);
+    font-size: .84rem;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 5px 9px;
+  }
+  .cq-dates input[type="date"]:focus{ outline: 2px solid var(--pink); outline-offset: 1px; }
+  .cq-dates .cq-dateclear{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .84rem;
+    color: var(--ink-soft);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    padding: 4px 2px;
+  }
+  .cq-dates .cq-dateclear:hover{ color: var(--burgundy); }
+
+  /* the small date line on a card */
+  .cq-dateline{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .78rem;
+    color: var(--gold-deep);
+  }
+
   .cq-ep-count{
     font-family: var(--font-serif);
     font-style: italic;
@@ -394,6 +440,14 @@
         <optgroup label="Date added">
           <option value="added-desc">Newest first</option>
           <option value="added-asc">Oldest first</option>
+        </optgroup>
+        <optgroup label="Date started">
+          <option value="started-desc">Most recent</option>
+          <option value="started-asc">Earliest</option>
+        </optgroup>
+        <optgroup label="Date finished">
+          <option value="finished-desc">Most recent</option>
+          <option value="finished-asc">Earliest</option>
         </optgroup>
       </select>
     </div>
@@ -617,6 +671,39 @@ function hm(min){
   const h = Math.floor(min / 60), m = min % 60;
   if(!h) return m + "m";
   return h + "h" + (m ? " " + m + "m" : "");
+}
+
+/* ---------------- dates ----------------
+   Stored as plain "YYYY-MM-DD" strings, so they sort as text and never
+   pick up a timezone. Films carry their own pair; series carry a pair
+   per season, and the item-level dates are derived from those. */
+function fmtDate(d){
+  if(!d) return "";
+  const parts = String(d).split("-");
+  if(parts.length !== 3) return "";
+  const dt = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+  if(isNaN(dt)) return "";
+  return dt.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+}
+
+function itemStart(item){
+  if(item.type === "movie") return item.startDate || "";
+  const all = (item.seasons || []).map(s => s.startDate).filter(Boolean).sort();
+  return all.length ? all[0] : "";
+}
+
+function itemEnd(item){
+  if(item.type === "movie") return item.endDate || "";
+  const all = (item.seasons || []).map(s => s.endDate).filter(Boolean).sort();
+  return all.length ? all[all.length - 1] : "";
+}
+
+function dateLine(item){
+  const a = itemStart(item), b = itemEnd(item);
+  if(a && b) return fmtDate(a) + " – " + fmtDate(b);
+  if(b)      return "Finished " + fmtDate(b);
+  if(a)      return "Started " + fmtDate(a);
+  return "";
 }
 
 /* ---------------- who ---------------- */
@@ -946,13 +1033,22 @@ function fetchSeasons(showId){
 function mergeSeasons(oldSeasons, fresh){
   const prev = {};
   (oldSeasons || []).forEach(s => {
-    prev[s.number] = { watchedEps: s.watchedEps || null, watched: s.watched || 0, episodes: s.episodes || 0 };
+    prev[s.number] = {
+      watchedEps: s.watchedEps || null,
+      watched: s.watched || 0,
+      episodes: s.episodes || 0,
+      startDate: s.startDate,
+      endDate: s.endDate
+    };
   });
   return fresh.map(s => {
     const p = prev[s.number];
     const weps = p && p.watchedEps ? p.watchedEps.filter(i => i <= s.episodes) : null;
     const wc   = weps ? weps.length : Math.min(p ? p.watched : 0, s.episodes);
-    return { number: s.number, episodes: s.episodes, watchedEps: weps, watched: wc };
+    const out  = { number: s.number, episodes: s.episodes, watchedEps: weps, watched: wc };
+    if(p && p.startDate) out.startDate = p.startDate;
+    if(p && p.endDate)   out.endDate   = p.endDate;
+    return out;
   });
 }
 
@@ -991,6 +1087,16 @@ function visibleItems(){
     if(key === "progress"){
       const d = (pctOf(b) - pctOf(a)) * flip;
       return d !== 0 ? d : byTitle(a, b);
+    }
+    if(key === "started" || key === "finished"){
+      /* undated items sit at the bottom whichever way you sort */
+      const get = key === "started" ? itemStart : itemEnd;
+      const da = get(a), db = get(b);
+      if(!da && !db) return byTitle(a, b);
+      if(!da) return 1;
+      if(!db) return -1;
+      if(da === db) return byTitle(a, b);
+      return (db > da ? 1 : -1) * flip;
     }
     const pa = priAvg(a), pb = priAvg(b);
     if(!pa && !pb) return byTitle(a, b);
@@ -1090,6 +1196,7 @@ function render(){
       <div class="cq-body">
         <h3 class="cq-name">${esc(item.title)}</h3>
         ${where ? `<div class="cq-where">${esc(where)}</div>` : ""}
+        ${dateLine(item) ? `<div class="cq-dateline">${esc(dateLine(item))}</div>` : ""}
         <div class="cq-meta">
           <button class="cq-status" data-status="${item.status}" data-cycle="${item.id}">${LABEL[item.status]}</button>
           ${pri}${rewatch}
@@ -1142,12 +1249,9 @@ function openDetail(id){
   $("refetchBtn").style.display = (item.type === "series") ? "" : "none";
 
   if(item.type === "movie"){
-    if(!item.runtime){
-      body.innerHTML = `<p class="pp-empty">No runtime set. Edit this one and add it.</p>`;
-    }else{
-      const row = document.createElement("div");
-      row.className = "cq-block";
-      row.innerHTML = `
+    const row = document.createElement("div");
+    row.className = "cq-block";
+    const controls = item.runtime ? `
         <div class="cq-block-head">
           <span class="cq-block-name">Where we are</span>
           <span class="cq-block-count">${hm(item.watchedMin || 0)} of ${hm(item.runtime)}</span>
@@ -1162,9 +1266,19 @@ function openDetail(id){
           <span class="cq-steplabel">min</span>
           <button data-min="finish">Finished</button>
           <button data-min="restart">Start over</button>
+        </div>`
+      : `<p class="pp-empty" style="padding:12px;">No runtime set. Edit this one and add it.</p>`;
+
+    row.innerHTML = controls + `
+        <div class="cq-dates">
+          <label for="mStart">Started</label>
+          <input id="mStart" type="date" data-date="start" value="${item.startDate || ""}">
+          <label for="mEnd">Finished</label>
+          <input id="mEnd" type="date" data-date="end" value="${item.endDate || ""}">
+          ${(item.startDate || item.endDate)
+            ? `<button class="cq-dateclear" data-date-clear="movie">Clear dates</button>` : ""}
         </div>`;
-      body.appendChild(row);
-    }
+    body.appendChild(row);
   }else{
     if(t.kind === "none"){
       body.innerHTML = `<p class="pp-empty">No seasons yet. Use Refresh seasons to pull them in.</p>`;
@@ -1190,6 +1304,16 @@ function openDetail(id){
           <div class="cq-step">
             <button data-season-all="${s.number}">All</button>
             <button data-season-none="${s.number}">Clear</button>
+          </div>
+          <div class="cq-dates">
+            <label for="sStart${s.number}">Started</label>
+            <input id="sStart${s.number}" type="date"
+                   data-date="start" data-date-season="${s.number}" value="${s.startDate || ""}">
+            <label for="sEnd${s.number}">Finished</label>
+            <input id="sEnd${s.number}" type="date"
+                   data-date="end" data-date-season="${s.number}" value="${s.endDate || ""}">
+            ${(s.startDate || s.endDate)
+              ? `<button class="cq-dateclear" data-date-clear="${s.number}">Clear dates</button>` : ""}
           </div>`;
         body.appendChild(row);
       });
@@ -1223,6 +1347,32 @@ function setSeasonTotal(itemId, seasonNo, total){
   s.watchedEps = Array.isArray(s.watchedEps) ? s.watchedEps.filter(i => i <= s.episodes) : null;
   s.watched    = s.watchedEps ? s.watchedEps.length : Math.min(s.watched || 0, s.episodes);
   syncStatus(item);
+  save();
+}
+
+/* seasonNo null → the film's own dates */
+function setDate(itemId, seasonNo, which, value){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item) return;
+  const target = seasonNo == null
+    ? item
+    : (item.seasons || []).find(x => x.number === seasonNo);
+  if(!target) return;
+  const key = which === "start" ? "startDate" : "endDate";
+  if(value) target[key] = value;
+  else      delete target[key];
+  save();
+}
+
+function clearDates(itemId, seasonNo){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item) return;
+  const target = seasonNo == null
+    ? item
+    : (item.seasons || []).find(x => x.number === seasonNo);
+  if(!target) return;
+  delete target.startDate;
+  delete target.endDate;
   save();
 }
 
@@ -1440,20 +1590,39 @@ $("detailBody").onclick = e => {
     const no = parseInt(allBtn.getAttribute("data-season-all"), 10);
     const s  = (item.seasons || []).find(x => x.number === no);
     if(s) setSeasonEps(openId, no, Array.from({length: s.episodes}, (_,i) => i + 1));
+    return;
   }
   if(noneBtn){
     const no = parseInt(noneBtn.getAttribute("data-season-none"), 10);
     if(no) setSeasonEps(openId, no, []);
+    return;
+  }
+
+  const clearBtn = e.target.closest("[data-date-clear]");
+  if(clearBtn){
+    const v = clearBtn.getAttribute("data-date-clear");
+    clearDates(openId, v === "movie" ? null : parseInt(v, 10));
   }
 };
 
 $("detailBody").onchange = e => {
-  if(e.target.id === "minInput" && openId) setMinutes(openId, parseInt(e.target.value, 10) || 0);
+  if(!openId) return;
+
+  if(e.target.id === "minInput") setMinutes(openId, parseInt(e.target.value, 10) || 0);
+
   const totalInput = e.target.closest("[data-season-total]");
-  if(totalInput && openId){
+  if(totalInput){
     const no = parseInt(totalInput.getAttribute("data-season-total"), 10);
     const val = parseInt(totalInput.value, 10);
     if(!isNaN(val)) setSeasonTotal(openId, no, val);
+    return;
+  }
+
+  const dateInput = e.target.closest("[data-date]");
+  if(dateInput){
+    const which  = dateInput.getAttribute("data-date");
+    const seasNo = dateInput.getAttribute("data-date-season");
+    setDate(openId, seasNo == null ? null : parseInt(seasNo, 10), which, dateInput.value);
   }
 };
 
