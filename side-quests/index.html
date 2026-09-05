@@ -80,6 +80,9 @@
     color: var(--ink-soft);
   }
 
+  /* make the inset rose hairline more visible on tiles */
+  .sq-tile::before{ opacity: .65; }
+
   @media (prefers-reduced-motion: reduce){
     .sq-tile:hover .sq-icon{ transform: none; }
   }
@@ -185,7 +188,15 @@
         <h3>Spooky Quest</h3>
         <p>1 September – 31 October</p>
       </a>
-     
+
+      <!-- OPEN SLOTS — to fill one in, copy the Bucket Quest block above,
+           swap the href, icon SVG, h3 and p, then delete one of these divs.
+           For a quick icon: lucide.dev → search → copy SVG → paste here with
+           class="sq-icon" aria-hidden="true" and set a color via CSS. -->
+      <div class="pp-panel pp-panel-tight sq-tile sq-empty"><span>Open slot</span></div>
+      <div class="pp-panel pp-panel-tight sq-tile sq-empty"><span>Open slot</span></div>
+      <div class="pp-panel pp-panel-tight sq-tile sq-empty"><span>Open slot</span></div>
+
     </div>
 
     <footer class="pp-footer">
