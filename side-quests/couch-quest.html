@@ -41,6 +41,7 @@
   .cq-fields{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
   .cq-field{ display:flex; flex-direction:column; gap:5px; min-width:0; }
   .cq-field.wide{ grid-column:1 / -1; }
+  .cq-field.hidden{ display:none; }
 
   .cq-field label{
     font-family:var(--font-body); font-size:.72rem; font-weight:600;
@@ -79,25 +80,32 @@
 
   .cq-actions{ display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
 
-  /* ---------- seasons ---------- */
+  /* ---------- detail ---------- */
   .cq-detail-head{ display:flex; gap:16px; align-items:flex-start; margin-bottom:20px; }
   .cq-detail-head img{ width:84px; aspect-ratio:2/3; object-fit:cover; border-radius:var(--radius-sm); flex-shrink:0; background:var(--parchment); }
   .cq-detail-head h2{ margin:0 0 4px; font-size:1.5rem; }
   .cq-detail-meta{ font-family:var(--font-serif); font-style:italic; color:var(--ink-soft); margin:0 0 10px; }
 
-  .cq-season{ padding:12px 0; border-top:1px solid var(--line); }
-  .cq-season:first-child{ border-top:0; }
-  .cq-season-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:8px; }
-  .cq-season-name{ font-family:var(--font-body); font-size:.72rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); }
-  .cq-season-count{ font-family:var(--font-serif); font-style:italic; font-size:.9rem; color:var(--ink-soft); }
-  .cq-season-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-  .cq-step{ display:flex; gap:6px; }
+  .cq-block{ padding:14px 0; border-top:1px solid var(--line); }
+  .cq-block:first-child{ border-top:0; }
+  .cq-block-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:9px; }
+  .cq-block-name{ font-family:var(--font-body); font-size:.72rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); }
+  .cq-block-count{ font-family:var(--font-serif); font-style:italic; font-size:.9rem; color:var(--ink-soft); }
+
+  .cq-step{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-top:10px; }
   .cq-step button{
-    width:28px; height:28px; font-size:1rem; line-height:1;
+    font-family:var(--font-body); font-size:.78rem; font-weight:500;
+    min-width:34px; height:30px; padding:0 10px; line-height:1;
     color:var(--gold); background:var(--panel); border:1px solid var(--line-gold);
     border-radius:999px; cursor:pointer;
   }
   .cq-step button:hover{ color:#fff; background:var(--pink); border-color:var(--pink); }
+  .cq-step input{
+    font-family:var(--font-body); font-size:.9rem; width:70px; text-align:center;
+    color:var(--ink); background:#fff; border:1px solid var(--line);
+    border-radius:var(--radius-sm); padding:6px 8px;
+  }
+  .cq-step .cq-steplabel{ font-family:var(--font-serif); font-style:italic; font-size:.86rem; color:var(--ink-soft); }
 
   /* ---------- grid ---------- */
   .cq-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:16px; }
@@ -207,16 +215,6 @@
     <h2 class="pp-panel-title" id="formTitle">Add something</h2>
 
     <div class="cq-fields">
-      <div class="cq-field wide">
-        <label for="fTitle">Title</label>
-        <div class="cq-inline">
-          <input id="fTitle" type="text" placeholder="Over the Garden Wall" autocomplete="off">
-          <button class="pp-btn pp-btn-quiet" id="lookupBtn" style="white-space:nowrap;">Look it up</button>
-        </div>
-        <span class="cq-hint" id="lookupHint">Looks up TV shows and pulls in the poster and every season. Films aren't in the database — paste a poster link instead.</span>
-        <div class="cq-results" id="results"></div>
-      </div>
-
       <div class="cq-field">
         <label for="fType">Kind</label>
         <select id="fType">
@@ -232,6 +230,21 @@
           <option value="watching">Watching</option>
           <option value="watched">Watched</option>
         </select>
+      </div>
+
+      <div class="cq-field wide">
+        <label for="fTitle">Title</label>
+        <div class="cq-inline">
+          <input id="fTitle" type="text" placeholder="Over the Garden Wall" autocomplete="off">
+          <button class="pp-btn pp-btn-quiet" id="lookupBtn" style="white-space:nowrap;">Look it up</button>
+        </div>
+        <span class="cq-hint" id="lookupHint"></span>
+        <div class="cq-results" id="results"></div>
+      </div>
+
+      <div class="cq-field hidden" id="runtimeField">
+        <label for="fRuntime">Runtime in minutes</label>
+        <input id="fRuntime" type="number" min="0" step="1" placeholder="118">
       </div>
 
       <div class="cq-field wide">
@@ -258,17 +271,17 @@
     </div>
   </section>
 
-  <!-- ---------------- seasons ---------------- -->
+  <!-- ---------------- detail ---------------- -->
   <section class="pp-panel cq-detail" id="detail">
     <div class="cq-detail-head">
       <img id="dImg" alt="">
       <div style="flex:1 1 auto; min-width:0;">
         <h2 id="dTitle"></h2>
         <p class="cq-detail-meta" id="dMeta"></p>
-        <div class="pp-progress" id="dOverall" data-color="pink" data-format="both"></div>
+        <div class="pp-progress" id="dOverall" data-color="pink"></div>
       </div>
     </div>
-    <div id="seasonList"></div>
+    <div id="detailBody"></div>
     <div class="cq-actions">
       <button class="pp-btn pp-btn-quiet" id="detailClose">Close</button>
       <button class="pp-btn pp-btn-quiet" id="refetchBtn">Refresh seasons</button>
@@ -305,8 +318,12 @@ const firebaseConfig = {
 const DOC_PATH  = "sidequest/couch-list";
 const CACHE_KEY = "pp_couch_list";
 const TVMAZE    = "https://api.tvmaze.com";
+const ITUNES    = "https://itunes.apple.com/search";
 
 const DEFAULT_TAGS = ["Comedy","Drama","Horror","Fantasy","Documentary","Animated","Rewatch","Together","Cozy"];
+
+const HINT_SERIES = "Searches TV shows and pulls in the poster and every season.";
+const HINT_MOVIE  = "Searches films and pulls in the poster and the runtime.";
 
 let state  = { items: [], tagOptions: DEFAULT_TAGS.slice() };
 let editId = null, openId = null, pickedTags = [], filter = "all";
@@ -324,20 +341,37 @@ function esc(s){
     ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
 }
 
+/* 118 -> "1h 58m" */
+function hm(min){
+  min = Math.max(0, Math.round(min || 0));
+  const h = Math.floor(min / 60), m = min % 60;
+  if(!h) return m + "m";
+  return h + "h" + (m ? " " + m + "m" : "");
+}
+
 /* ---------------- progress maths ---------------- */
 function totals(item){
-  if(item.type !== "series" || !Array.isArray(item.seasons) || !item.seasons.length){
-    return { done:0, total:0, hasSeasons:false };
+  if(item.type === "movie"){
+    const total = item.runtime || 0;
+    return { done: Math.min(item.watchedMin || 0, total), total: total, kind: total ? "movie" : "none" };
   }
-  let done = 0, total = 0;
-  item.seasons.forEach(s => { done += (s.watched || 0); total += (s.episodes || 0); });
-  return { done: done, total: total, hasSeasons: true };
+  if(Array.isArray(item.seasons) && item.seasons.length){
+    let done = 0, total = 0;
+    item.seasons.forEach(s => { done += (s.watched || 0); total += (s.episodes || 0); });
+    return { done: done, total: total, kind: total ? "series" : "none" };
+  }
+  return { done: 0, total: 0, kind: "none" };
 }
 
 function position(item){
   const t = totals(item);
-  if(!t.hasSeasons || !t.total) return "";
+  if(t.kind === "none") return "";
   if(t.done >= t.total) return "Finished";
+
+  if(t.kind === "movie"){
+    if(!t.done) return hm(t.total);
+    return "Up to " + hm(t.done) + " of " + hm(t.total);
+  }
   for(const s of item.seasons){
     if((s.watched || 0) < (s.episodes || 0)){
       return "Up next: S" + s.number + " E" + ((s.watched || 0) + 1);
@@ -348,10 +382,10 @@ function position(item){
 
 function syncStatus(item){
   const t = totals(item);
-  if(!t.hasSeasons || !t.total) return;
-  if(t.done === 0)               item.status = "want";
-  else if(t.done < t.total)      item.status = "watching";
-  else                           item.status = "watched";
+  if(t.kind === "none" || !t.total) return;
+  if(t.done === 0)          item.status = "want";
+  else if(t.done < t.total) item.status = "watching";
+  else                      item.status = "watched";
 }
 
 /* ---------------- storage ---------------- */
@@ -403,60 +437,111 @@ function save(){
   }, 500);
 }
 
-/* ---------------- TVmaze ---------------- */
+/* ---------------- lookup ---------------- */
 function lookup(q){
+  return ($("fType").value === "movie") ? lookupMovie(q) : lookupSeries(q);
+}
+
+function showResults(rows, onPick){
+  const box = $("results");
+  box.innerHTML = "";
+  if(!rows.length){
+    $("lookupHint").textContent = "Nothing found. Check the spelling, or fill it in by hand.";
+    box.classList.remove("open");
+    return;
+  }
+  $("lookupHint").textContent = "Pick the right one:";
+  rows.forEach(r => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cq-result";
+    b.innerHTML =
+      (r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy">`
+               : `<div class="cq-poster-none" style="font-size:.8rem;">${esc(r.name)}</div>`) +
+      `<div class="cq-rname">${esc(r.name)}</div>` +
+      `<div class="cq-rmeta">${esc(r.meta)}</div>`;
+    b.onclick = () => onPick(r);
+    box.appendChild(b);
+  });
+  box.classList.add("open");
+}
+
+/* --- TV, via TVmaze --- */
+function lookupSeries(q){
   $("lookupHint").textContent = "Searching…";
   fetch(TVMAZE + "/search/shows?q=" + encodeURIComponent(q))
     .then(r => r.json())
     .then(rows => {
-      const box = $("results");
-      box.innerHTML = "";
-      if(!rows.length){
-        $("lookupHint").textContent = "Nothing found. Check the spelling, or fill it in by hand.";
-        box.classList.remove("open");
-        return;
-      }
-      $("lookupHint").textContent = "Pick the right one:";
-      rows.slice(0,8).forEach(row => {
-        const s    = row.show;
+      showResults(rows.slice(0,8).map(row => {
+        const s = row.show;
         const year = s.premiered ? s.premiered.slice(0,4) : "";
         const net  = (s.network && s.network.name) || (s.webChannel && s.webChannel.name) || "";
-        const img  = s.image ? toHttps(s.image.medium) : "";
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "cq-result";
-        b.innerHTML =
-          (img ? `<img src="${esc(img)}" alt="" loading="lazy">`
-               : `<div class="cq-poster-none" style="font-size:.8rem;">${esc(s.name)}</div>`) +
-          `<div class="cq-rname">${esc(s.name)}</div>` +
-          `<div class="cq-rmeta">${esc([year, net].filter(Boolean).join(" · "))}</div>`;
-        b.onclick = () => choose(s);
-        box.appendChild(b);
-      });
-      box.classList.add("open");
+        return {
+          raw: s,
+          name: s.name,
+          image: s.image ? toHttps(s.image.medium) : "",
+          full:  s.image ? toHttps(s.image.original || s.image.medium) : "",
+          meta: [year, net].filter(Boolean).join(" · ")
+        };
+      }), pickSeries);
     })
     .catch(e => { console.error(e); $("lookupHint").textContent = "Lookup failed — fill it in by hand."; });
 }
 
-function choose(show){
-  $("fTitle").value = show.name;
-  $("fImage").value = show.image ? toHttps(show.image.original || show.image.medium) : "";
-  $("fType").value  = "series";
+function pickSeries(r){
+  $("fTitle").value = r.name;
+  $("fImage").value = r.full;
   $("results").classList.remove("open");
   $("lookupHint").textContent = "Fetching seasons…";
 
-  fetchSeasons(show.id)
+  fetchSeasons(r.raw.id)
     .then(seasons => {
-      pendingLookup = { tvmazeId: show.id, seasons: seasons };
+      pendingLookup = { type:"series", tvmazeId: r.raw.id, seasons: seasons };
       const eps = seasons.reduce((n,s) => n + s.episodes, 0);
       $("lookupHint").textContent =
         seasons.length + (seasons.length === 1 ? " season, " : " seasons, ") + eps + " episodes found.";
     })
     .catch(e => {
       console.error(e);
-      pendingLookup = { tvmazeId: show.id, seasons: [] };
+      pendingLookup = { type:"series", tvmazeId: r.raw.id, seasons: [] };
       $("lookupHint").textContent = "Got the show, but the seasons didn't load. Try Refresh seasons after saving.";
     });
+}
+
+/* --- Films, via the iTunes search API. No key, and it carries the runtime. --- */
+function lookupMovie(q){
+  $("lookupHint").textContent = "Searching…";
+  fetch(ITUNES + "?media=movie&entity=movie&limit=8&term=" + encodeURIComponent(q))
+    .then(r => r.json())
+    .then(data => {
+      const rows = (data.results || []).map(m => {
+        const art  = toHttps(m.artworkUrl100 || "").replace(/\/100x100bb\./, "/600x600bb.");
+        const mins = m.trackTimeMillis ? Math.round(m.trackTimeMillis / 60000) : 0;
+        const year = m.releaseDate ? m.releaseDate.slice(0,4) : "";
+        return {
+          raw: m,
+          name: m.trackName,
+          image: art,
+          full: art,
+          runtime: mins,
+          meta: [year, mins ? hm(mins) : ""].filter(Boolean).join(" · ")
+        };
+      });
+      showResults(rows, pickMovie);
+    })
+    .catch(e => {
+      console.error(e);
+      $("lookupHint").textContent = "Film lookup failed — enter the title, poster link and runtime by hand.";
+    });
+}
+
+function pickMovie(r){
+  $("fTitle").value   = r.name;
+  $("fImage").value   = r.full;
+  $("fRuntime").value = r.runtime || "";
+  $("results").classList.remove("open");
+  pendingLookup = { type:"movie", runtime: r.runtime || 0 };
+  $("lookupHint").textContent = r.runtime ? ("Runtime " + hm(r.runtime) + ".") : "No runtime listed — type it in.";
 }
 
 /* One request gets the show and every episode. Counting episodes per season
@@ -476,7 +561,6 @@ function fetchSeasons(showId){
     });
 }
 
-/* Keep watched counts when a show adds episodes */
 function mergeSeasons(oldSeasons, fresh){
   const prev = {};
   (oldSeasons || []).forEach(s => { prev[s.number] = s.watched || 0; });
@@ -508,7 +592,7 @@ function render(){
            onerror="this.outerHTML='<div class=&quot;cq-poster-none&quot;>${esc(item.title)}</div>'">`
       : `<div class="cq-poster-none">${esc(item.title)}</div>`;
 
-    const ring = (t.hasSeasons && t.total)
+    const ring = (t.kind !== "none")
       ? `<div class="cq-ring"><div class="pp-progress-ring" data-color="pink"
            data-current="${t.done}" data-total="${t.total}" data-size="38"></div></div>`
       : "";
@@ -551,33 +635,62 @@ function openDetail(id){
   const overall = $("dOverall");
   overall.setAttribute("data-current", t.done);
   overall.setAttribute("data-total", t.total || 0);
-  overall.setAttribute("data-label", "Overall");
-  overall.style.display = (t.hasSeasons && t.total) ? "" : "none";
+  overall.setAttribute("data-label", t.kind === "movie" ? "Runtime" : "Overall");
+  overall.setAttribute("data-text",
+    t.kind === "movie" ? (hm(t.done) + " of " + hm(t.total)) : (t.done + " of " + t.total));
+  overall.style.display = (t.kind !== "none") ? "" : "none";
 
-  const list = $("seasonList");
-  list.innerHTML = "";
+  const body = $("detailBody");
+  body.innerHTML = "";
+  $("refetchBtn").style.display = (item.type === "series") ? "" : "none";
 
-  if(!t.hasSeasons){
-    list.innerHTML = `<p class="pp-empty">No seasons yet. If it's a series, use Refresh seasons to pull them in.</p>`;
-  }else{
-    item.seasons.forEach(s => {
+  if(item.type === "movie"){
+    if(!item.runtime){
+      body.innerHTML = `<p class="pp-empty">No runtime set. Edit this one and add it, or use Look it up.</p>`;
+    }else{
       const row = document.createElement("div");
-      row.className = "cq-season";
+      row.className = "cq-block";
       row.innerHTML = `
-        <div class="cq-season-head">
-          <span class="cq-season-name">Season ${s.number}</span>
-          <span class="cq-season-count">${s.watched || 0} of ${s.episodes}</span>
+        <div class="cq-block-head">
+          <span class="cq-block-name">Where we are</span>
+          <span class="cq-block-count">${hm(item.watchedMin || 0)} of ${hm(item.runtime)}</span>
         </div>
-        <div class="cq-season-row">
-          <div class="pp-pips" data-color="pink" data-clickable="true" data-season="${s.number}"
-               data-current="${s.watched || 0}" data-total="${s.episodes}"></div>
-          <div class="cq-step">
-            <button data-minus="${s.number}" aria-label="One fewer episode of season ${s.number}">−</button>
-            <button data-plus="${s.number}" aria-label="One more episode of season ${s.number}">+</button>
-          </div>
+        <div class="cq-step">
+          <button data-min="-15">−15</button>
+          <button data-min="-5">−5</button>
+          <button data-min="5">+5</button>
+          <button data-min="15">+15</button>
+          <span class="cq-steplabel">or jump to</span>
+          <input id="minInput" type="number" min="0" max="${item.runtime}" step="1" value="${item.watchedMin || 0}">
+          <span class="cq-steplabel">min</span>
+          <button data-min="finish">Finished</button>
+          <button data-min="restart">Start over</button>
         </div>`;
-      list.appendChild(row);
-    });
+      body.appendChild(row);
+    }
+  }else{
+    if(t.kind === "none"){
+      body.innerHTML = `<p class="pp-empty">No seasons yet. Use Refresh seasons to pull them in.</p>`;
+    }else{
+      item.seasons.forEach(s => {
+        const row = document.createElement("div");
+        row.className = "cq-block";
+        row.innerHTML = `
+          <div class="cq-block-head">
+            <span class="cq-block-name">Season ${s.number}</span>
+            <span class="cq-block-count">${s.watched || 0} of ${s.episodes}</span>
+          </div>
+          <div class="pp-chips" data-color="pink" data-clickable="true" data-chip-label="EP"
+               data-season="${s.number}" data-current="${s.watched || 0}" data-total="${s.episodes}"></div>
+          <div class="cq-step">
+            <button data-minus="${s.number}">− one</button>
+            <button data-plus="${s.number}">+ one</button>
+            <button data-all="${s.number}">Whole season</button>
+            <button data-none="${s.number}">Clear</button>
+          </div>`;
+        body.appendChild(row);
+      });
+    }
   }
 
   $("detail").classList.add("open");
@@ -592,6 +705,14 @@ function setSeason(itemId, seasonNo, watched){
   const s = (item.seasons || []).find(x => x.number === seasonNo);
   if(!s) return;
   s.watched = Math.max(0, Math.min(watched, s.episodes));
+  syncStatus(item);
+  save();
+}
+
+function setMinutes(itemId, mins){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item || !item.runtime) return;
+  item.watchedMin = Math.max(0, Math.min(Math.round(mins), item.runtime));
   syncStatus(item);
   save();
 }
@@ -613,19 +734,27 @@ function renderTagPicker(){
 }
 
 /* ---------------- form ---------------- */
+function syncTypeUI(){
+  const isMovie = $("fType").value === "movie";
+  $("runtimeField").classList.toggle("hidden", !isMovie);
+  $("lookupHint").textContent = isMovie ? HINT_MOVIE : HINT_SERIES;
+  $("fTitle").placeholder = isMovie ? "Practical Magic" : "Over the Garden Wall";
+  $("results").classList.remove("open");
+}
+
 function openForm(item){
   closeDetail();
   editId = item ? item.id : null;
   pendingLookup = null;
   pickedTags = item ? (item.tags || []).slice() : [];
   $("formTitle").textContent = item ? "Edit" : "Add something";
-  $("fTitle").value  = item ? item.title : "";
-  $("fImage").value  = item ? (item.image || "") : "";
-  $("fStatus").value = item ? item.status : "want";
-  $("fType").value   = item ? (item.type || "series") : "series";
-  $("fNewTag").value = "";
-  $("results").classList.remove("open");
-  $("lookupHint").textContent = "Looks up TV shows and pulls in the poster and every season. Films aren't in the database — paste a poster link instead.";
+  $("fTitle").value   = item ? item.title : "";
+  $("fImage").value   = item ? (item.image || "") : "";
+  $("fStatus").value  = item ? item.status : "want";
+  $("fType").value    = item ? (item.type || "series") : "series";
+  $("fRuntime").value = item && item.runtime ? item.runtime : "";
+  $("fNewTag").value  = "";
+  syncTypeUI();
   $("deleteBtn").style.display = item ? "inline-block" : "none";
   renderTagPicker();
   $("form").classList.add("open");
@@ -637,6 +766,7 @@ function closeForm(){ $("form").classList.remove("open"); editId = null; pickedT
 $("addBtn").onclick      = () => openForm(null);
 $("cancelBtn").onclick   = closeForm;
 $("detailClose").onclick = closeDetail;
+$("fType").onchange      = syncTypeUI;
 
 $("lookupBtn").onclick = () => { const q = $("fTitle").value.trim(); if(q) lookup(q); };
 $("fTitle").onkeydown  = e => { if(e.key === "Enter"){ e.preventDefault(); $("lookupBtn").click(); } };
@@ -645,30 +775,36 @@ $("saveBtn").onclick = () => {
   const title = $("fTitle").value.trim();
   if(!title){ $("fTitle").focus(); return; }
 
+  const isMovie = $("fType").value === "movie";
   const payload = {
     title: title,
     image: $("fImage").value.trim(),
     status: $("fStatus").value,
     type: $("fType").value,
-    tags: pickedTags.slice()
+    tags: pickedTags.slice(),
+    runtime: isMovie ? (parseInt($("fRuntime").value, 10) || 0) : 0
   };
 
   if(editId){
     const i = state.items.findIndex(x => x.id === editId);
     if(i > -1){
       const merged = Object.assign({}, state.items[i], payload);
-      if(pendingLookup){
+      if(pendingLookup && pendingLookup.type === "series"){
         merged.tvmazeId = pendingLookup.tvmazeId;
         merged.seasons  = mergeSeasons(state.items[i].seasons, pendingLookup.seasons);
       }
+      if(isMovie) merged.watchedMin = Math.min(merged.watchedMin || 0, merged.runtime);
       state.items[i] = merged;
     }
   }else{
-    const item = Object.assign({ id: uid(), added: Date.now(), seasons: [] }, payload);
-    if(pendingLookup){
+    const item = Object.assign({ id: uid(), added: Date.now(), seasons: [], watchedMin: 0 }, payload);
+    if(pendingLookup && pendingLookup.type === "series"){
       item.tvmazeId = pendingLookup.tvmazeId;
       item.seasons  = pendingLookup.seasons;
-      if(item.status === "watched") item.seasons.forEach(s => { s.watched = s.episodes; });
+    }
+    if(item.status === "watched"){
+      if(isMovie) item.watchedMin = item.runtime;
+      else item.seasons.forEach(s => { s.watched = s.episodes; });
     }
     state.items.unshift(item);
   }
@@ -713,7 +849,10 @@ $("grid").onclick = e => {
     if(item){
       item.status = NEXT[item.status];
       const t = totals(item);
-      if(t.hasSeasons && t.total){
+      if(t.kind === "movie"){
+        if(item.status === "watched") item.watchedMin = item.runtime;
+        if(item.status === "want")    item.watchedMin = 0;
+      }else if(t.kind === "series"){
         if(item.status === "watched") item.seasons.forEach(s => { s.watched = s.episodes; });
         if(item.status === "want")    item.seasons.forEach(s => { s.watched = 0; });
       }
@@ -738,23 +877,44 @@ $("grid").onclick = e => {
   if(open) openDetail(open.dataset.open);
 };
 
-/* pips fire this from pp-progress.js */
-$("seasonList").addEventListener("pp-progress-change", e => {
+/* episode boxes fire this from pp-progress.js */
+$("detailBody").addEventListener("pp-progress-change", e => {
   const box = e.target.closest("[data-season]");
   if(!box || !openId) return;
   setSeason(openId, parseInt(box.getAttribute("data-season"), 10), e.detail.current);
 });
 
-$("seasonList").onclick = e => {
-  const plus  = e.target.closest("[data-plus]");
-  const minus = e.target.closest("[data-minus]");
-  if((!plus && !minus) || !openId) return;
+$("detailBody").onclick = e => {
+  if(!openId) return;
   const item = state.items.find(x => x.id === openId);
   if(!item) return;
-  const no = parseInt((plus || minus).getAttribute(plus ? "data-plus" : "data-minus"), 10);
+
+  /* film minute buttons */
+  const minBtn = e.target.closest("[data-min]");
+  if(minBtn){
+    const v = minBtn.getAttribute("data-min");
+    if(v === "finish")       setMinutes(openId, item.runtime);
+    else if(v === "restart") setMinutes(openId, 0);
+    else                     setMinutes(openId, (item.watchedMin || 0) + parseInt(v, 10));
+    return;
+  }
+
+  /* season buttons */
+  const btn = e.target.closest("[data-plus],[data-minus],[data-all],[data-none]");
+  if(!btn) return;
+  const attr = ["data-plus","data-minus","data-all","data-none"].find(a => btn.hasAttribute(a));
+  const no = parseInt(btn.getAttribute(attr), 10);
   const s = (item.seasons || []).find(x => x.number === no);
   if(!s) return;
-  setSeason(openId, no, (s.watched || 0) + (plus ? 1 : -1));
+
+  if(attr === "data-plus")  setSeason(openId, no, (s.watched || 0) + 1);
+  if(attr === "data-minus") setSeason(openId, no, (s.watched || 0) - 1);
+  if(attr === "data-all")   setSeason(openId, no, s.episodes);
+  if(attr === "data-none")  setSeason(openId, no, 0);
+};
+
+$("detailBody").onchange = e => {
+  if(e.target.id === "minInput" && openId) setMinutes(openId, parseInt(e.target.value, 10) || 0);
 };
 
 document.querySelectorAll(".cq-filter").forEach(btn => {
