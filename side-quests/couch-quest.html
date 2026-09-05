@@ -304,7 +304,7 @@
 
 <script>
 /* ------------------------------------------------------------------
-   PASTE YOUR CONFIG HERE — the same block as your quest-log page.
+   1. PASTE YOUR FIREBASE CONFIG HERE — same block as your quest-log page.
 ------------------------------------------------------------------- */
 const firebaseConfig = {
   apiKey: "PASTE_FROM_QUEST_LOG",
@@ -315,15 +315,27 @@ const firebaseConfig = {
   appId: "PASTE_FROM_QUEST_LOG"
 };
 
+/* ------------------------------------------------------------------
+   2. PASTE YOUR TMDB KEY HERE — free, from themoviedb.org.
+   Only films use it. Series come from TVmaze, which needs nothing.
+   Leave it as-is and film lookup simply stays switched off; you can
+   still add films by typing the title, runtime and poster link.
+------------------------------------------------------------------- */
+const TMDB_KEY = "PASTE_YOUR_TMDB_KEY";
+
 const DOC_PATH  = "sidequest/couch-list";
 const CACHE_KEY = "pp_couch_list";
 const TVMAZE    = "https://api.tvmaze.com";
-const ITUNES    = "https://itunes.apple.com/search";
+const TMDB      = "https://api.themoviedb.org/3";
+const TMDB_IMG  = "https://image.tmdb.org/t/p/w500";
 
 const DEFAULT_TAGS = ["Comedy","Drama","Horror","Fantasy","Documentary","Animated","Rewatch","Together","Cozy"];
 
 const HINT_SERIES = "Searches TV shows and pulls in the poster and every season.";
 const HINT_MOVIE  = "Searches films and pulls in the poster and the runtime.";
+const HINT_NOKEY  = "Film lookup needs a TMDB key — see the note near the top of this page's code. You can still type the title, runtime and poster link in by hand.";
+
+const hasTmdb = () => TMDB_KEY && TMDB_KEY.indexOf("PASTE") !== 0;
 
 let state  = { items: [], tagOptions: DEFAULT_TAGS.slice() };
 let editId = null, openId = null, pickedTags = [], filter = "all";
@@ -367,7 +379,6 @@ function position(item){
   const t = totals(item);
   if(t.kind === "none") return "";
   if(t.done >= t.total) return "Finished";
-
   if(t.kind === "movie"){
     if(!t.done) return hm(t.total);
     return "Up to " + hm(t.done) + " of " + hm(t.total);
@@ -466,7 +477,7 @@ function showResults(rows, onPick){
   box.classList.add("open");
 }
 
-/* --- TV, via TVmaze --- */
+/* --- Series, via TVmaze. No key needed. --- */
 function lookupSeries(q){
   $("lookupHint").textContent = "Searching…";
   fetch(TVMAZE + "/search/shows?q=" + encodeURIComponent(q))
@@ -508,40 +519,52 @@ function pickSeries(r){
     });
 }
 
-/* --- Films, via the iTunes search API. No key, and it carries the runtime. --- */
+/* --- Films, via TMDB. Needs the free key set above. --- */
 function lookupMovie(q){
+  if(!hasTmdb()){ $("lookupHint").textContent = HINT_NOKEY; return; }
   $("lookupHint").textContent = "Searching…";
-  fetch(ITUNES + "?media=movie&entity=movie&limit=8&term=" + encodeURIComponent(q))
-    .then(r => r.json())
+  fetch(TMDB + "/search/movie?api_key=" + encodeURIComponent(TMDB_KEY) +
+        "&include_adult=false&query=" + encodeURIComponent(q))
+    .then(r => {
+      if(r.status === 401) throw new Error("bad key");
+      return r.json();
+    })
     .then(data => {
-      const rows = (data.results || []).map(m => {
-        const art  = toHttps(m.artworkUrl100 || "").replace(/\/100x100bb\./, "/600x600bb.");
-        const mins = m.trackTimeMillis ? Math.round(m.trackTimeMillis / 60000) : 0;
-        const year = m.releaseDate ? m.releaseDate.slice(0,4) : "";
-        return {
-          raw: m,
-          name: m.trackName,
-          image: art,
-          full: art,
-          runtime: mins,
-          meta: [year, mins ? hm(mins) : ""].filter(Boolean).join(" · ")
-        };
-      });
-      showResults(rows, pickMovie);
+      showResults((data.results || []).slice(0,8).map(m => ({
+        raw: m,
+        name: m.title,
+        image: m.poster_path ? (TMDB_IMG + m.poster_path) : "",
+        full:  m.poster_path ? (TMDB_IMG + m.poster_path) : "",
+        meta: m.release_date ? m.release_date.slice(0,4) : ""
+      })), pickMovie);
     })
     .catch(e => {
       console.error(e);
-      $("lookupHint").textContent = "Film lookup failed — enter the title, poster link and runtime by hand.";
+      $("lookupHint").textContent = (e.message === "bad key")
+        ? "TMDB rejected that key. Check it was copied whole."
+        : "Film lookup failed — fill it in by hand.";
     });
 }
 
+/* The search results don't carry runtime, so fetch the one film we picked. */
 function pickMovie(r){
-  $("fTitle").value   = r.name;
-  $("fImage").value   = r.full;
-  $("fRuntime").value = r.runtime || "";
+  $("fTitle").value = r.name;
+  $("fImage").value = r.full;
   $("results").classList.remove("open");
-  pendingLookup = { type:"movie", runtime: r.runtime || 0 };
-  $("lookupHint").textContent = r.runtime ? ("Runtime " + hm(r.runtime) + ".") : "No runtime listed — type it in.";
+  $("lookupHint").textContent = "Fetching runtime…";
+
+  fetch(TMDB + "/movie/" + r.raw.id + "?api_key=" + encodeURIComponent(TMDB_KEY))
+    .then(res => res.json())
+    .then(d => {
+      const mins = d.runtime || 0;
+      $("fRuntime").value = mins || "";
+      pendingLookup = { type:"movie", runtime: mins };
+      $("lookupHint").textContent = mins ? ("Runtime " + hm(mins) + ".") : "No runtime listed — type it in.";
+    })
+    .catch(e => {
+      console.error(e);
+      $("lookupHint").textContent = "Got the film, but no runtime came back. Type it in.";
+    });
 }
 
 /* One request gets the show and every episode. Counting episodes per season
@@ -646,7 +669,7 @@ function openDetail(id){
 
   if(item.type === "movie"){
     if(!item.runtime){
-      body.innerHTML = `<p class="pp-empty">No runtime set. Edit this one and add it, or use Look it up.</p>`;
+      body.innerHTML = `<p class="pp-empty">No runtime set. Edit this one and add it.</p>`;
     }else{
       const row = document.createElement("div");
       row.className = "cq-block";
@@ -737,7 +760,8 @@ function renderTagPicker(){
 function syncTypeUI(){
   const isMovie = $("fType").value === "movie";
   $("runtimeField").classList.toggle("hidden", !isMovie);
-  $("lookupHint").textContent = isMovie ? HINT_MOVIE : HINT_SERIES;
+  $("lookupHint").textContent = isMovie ? (hasTmdb() ? HINT_MOVIE : HINT_NOKEY) : HINT_SERIES;
+  $("lookupBtn").style.display = (isMovie && !hasTmdb()) ? "none" : "";
   $("fTitle").placeholder = isMovie ? "Practical Magic" : "Over the Garden Wall";
   $("results").classList.remove("open");
 }
@@ -889,7 +913,6 @@ $("detailBody").onclick = e => {
   const item = state.items.find(x => x.id === openId);
   if(!item) return;
 
-  /* film minute buttons */
   const minBtn = e.target.closest("[data-min]");
   if(minBtn){
     const v = minBtn.getAttribute("data-min");
@@ -899,7 +922,6 @@ $("detailBody").onclick = e => {
     return;
   }
 
-  /* season buttons */
   const btn = e.target.closest("[data-plus],[data-minus],[data-all],[data-none]");
   if(!btn) return;
   const attr = ["data-plus","data-minus","data-all","data-none"].find(a => btn.hasAttribute(a));
