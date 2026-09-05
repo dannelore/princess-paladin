@@ -1,0 +1,214 @@
+/* ==========================================================================
+   Princess & Paladin — progress trackers
+   /assets/pp-progress.css
+
+   Load after pp.css, on any page that needs a progress display:
+     <link rel="stylesheet" href="/assets/pp.css">
+     <link rel="stylesheet" href="/assets/pp-progress.css">
+     <script src="/assets/pp-progress.js" defer></script>
+
+   Three shapes, all driven by the same two numbers:
+     .pp-progress       a bar with a label     — lists, seasons, big totals
+     .pp-progress-ring  a small circle         — corners of cards and tiles
+     .pp-pips           a row of dots          — small counts, under about 15
+
+   Uses the pp.css tokens, so it inherits the site palette automatically.
+   ========================================================================== */
+
+
+/* --------------------------------------------------------------------------
+   1. BAR
+   Markup is built for you by pp-progress.js — you only ever write this:
+
+     <div class="pp-progress" data-current="4" data-total="10"
+          data-label="Season 2"></div>
+
+   Optional attributes:
+     data-color="pink | sage | gold | burgundy"   default sage
+     data-format="count | percent | both | none"  default count
+   -------------------------------------------------------------------------- */
+
+.pp-progress{
+  --pp-fill: var(--sage-deep);
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.pp-progress-head{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.pp-progress-label{
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pp-progress-value{
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+
+.pp-progress-track{
+  position: relative;
+  height: 9px;
+  background: rgba(46,36,31,0.10);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.pp-progress-fill{
+  height: 100%;
+  width: 0;
+  background: var(--pp-fill);
+  border-radius: 999px;
+  transition: width 0.45s cubic-bezier(.4,0,.2,1);
+}
+
+/* Finished bars pick up a soft gold sheen */
+.pp-progress.is-complete .pp-progress-fill{
+  background: linear-gradient(90deg, var(--sage-deep), var(--gold));
+}
+.pp-progress.is-complete .pp-progress-value{
+  color: var(--gold-deep);
+  font-weight: 600;
+}
+
+/* Slimmer, no head row — for tight card footers */
+.pp-progress-sm .pp-progress-track{ height: 6px; }
+.pp-progress-sm .pp-progress-head{ margin-bottom: 4px; }
+.pp-progress-sm .pp-progress-label{ font-size: 0.66rem; }
+.pp-progress-sm .pp-progress-value{ font-size: 0.8rem; }
+
+/* Colour variants */
+.pp-progress[data-color="pink"]{     --pp-fill: var(--pink); }
+.pp-progress[data-color="gold"]{     --pp-fill: var(--gold); }
+.pp-progress[data-color="burgundy"]{ --pp-fill: var(--burgundy); }
+.pp-progress[data-color="sage"]{     --pp-fill: var(--sage-deep); }
+
+.pp-progress[data-color="pink"].is-complete .pp-progress-fill{
+  background: linear-gradient(90deg, var(--pink), var(--gold));
+}
+
+
+/* --------------------------------------------------------------------------
+   2. RING
+     <div class="pp-progress-ring" data-current="3" data-total="8"></div>
+
+   Sits nicely in the corner of a card. Shows the percentage in the middle,
+   or a check when it's done. Size it with data-size (default 46).
+   -------------------------------------------------------------------------- */
+
+.pp-progress-ring{
+  --pp-fill: var(--sage-deep);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.pp-progress-ring svg{ display: block; transform: rotate(-90deg); }
+.pp-progress-ring .pp-ring-track{ stroke: rgba(46,36,31,0.12); fill: none; }
+.pp-progress-ring .pp-ring-fill{
+  stroke: var(--pp-fill);
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s cubic-bezier(.4,0,.2,1);
+}
+
+.pp-progress-ring .pp-ring-text{
+  position: absolute;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.pp-progress-ring.is-complete{ --pp-fill: var(--gold); }
+.pp-progress-ring.is-complete .pp-ring-text{ color: var(--gold-deep); font-size: 0.9rem; }
+
+.pp-progress-ring[data-color="pink"]{     --pp-fill: var(--pink); }
+.pp-progress-ring[data-color="gold"]{     --pp-fill: var(--gold); }
+.pp-progress-ring[data-color="burgundy"]{ --pp-fill: var(--burgundy); }
+
+
+/* --------------------------------------------------------------------------
+   3. PIPS
+     <div class="pp-pips" data-current="5" data-total="10"></div>
+
+   A row of dots. Best under about fifteen — past that it gets noisy and a
+   bar reads better. Add data-clickable="true" to let a tap set the count:
+   the element fires a "pp-progress-change" event with the new value.
+   -------------------------------------------------------------------------- */
+
+.pp-pips{
+  --pp-fill: var(--sage-deep);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+
+.pp-pip{
+  width: 11px;
+  height: 11px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: transparent;
+  flex-shrink: 0;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.pp-pip.is-on{ background: var(--pp-fill); border-color: var(--pp-fill); }
+
+.pp-pips[data-clickable="true"] .pp-pip{ cursor: pointer; }
+.pp-pips[data-clickable="true"] .pp-pip:hover{ transform: scale(1.25); }
+
+.pp-pips[data-color="pink"]{ --pp-fill: var(--pink); }
+.pp-pips[data-color="gold"]{ --pp-fill: var(--gold); }
+
+/* Overflow note, e.g. "+12" when the total runs long */
+.pp-pips-more{
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin-left: 2px;
+}
+
+
+/* --------------------------------------------------------------------------
+   4. STACK
+   Several bars in a row, e.g. one per season.
+   -------------------------------------------------------------------------- */
+
+.pp-progress-stack{
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+
+@media (prefers-reduced-motion: reduce){
+  .pp-progress-fill,
+  .pp-progress-ring .pp-ring-fill,
+  .pp-pip{ transition: none; }
+}
