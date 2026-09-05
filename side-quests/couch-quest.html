@@ -126,6 +126,47 @@
     color:var(--ink); background:#fff; border:1px solid var(--line);
     border-radius:var(--radius-sm); padding:6px 8px;
   }
+  .cq-check-label{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-body);
+    font-size: .9rem;
+    color: var(--ink);
+    cursor: pointer;
+    user-select: none;
+  }
+  .cq-check-label input[type="checkbox"]{
+    width: 16px; height: 16px;
+    accent-color: var(--pink);
+    cursor: pointer;
+  }
+
+  /* rewatch badge on card */
+  .cq-rewatch{
+    font-family: var(--font-body);
+    font-size: .66rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--pink-deep);
+    background: var(--panel-tint);
+    border: 1px solid var(--pink);
+    border-radius: 999px;
+    padding: 2px 9px;
+  }
+
+  /* streaming service badges on card */
+  .cq-streams{ display:flex; flex-wrap:wrap; gap:4px; }
+  .cq-stream{
+    font-family: var(--font-body);
+    font-size: .66rem;
+    color: var(--ink-soft);
+    background: rgba(46,36,31,.07);
+    border-radius: 999px;
+    padding: 2px 8px;
+  }
+
   .cq-ep-count{
     font-family: var(--font-serif);
     font-style: italic;
@@ -262,6 +303,7 @@
     <button class="cq-filter" data-filter="want" aria-pressed="false">Want to watch</button>
     <button class="cq-filter" data-filter="watching" aria-pressed="false">Watching</button>
     <button class="cq-filter" data-filter="watched" aria-pressed="false">Watched</button>
+    <button class="cq-filter" data-filter="rewatch" aria-pressed="false">Rewatches</button>
     <span class="cq-spacer"></span>
     <button class="pp-btn" id="addBtn">Add something</button>
   </div>
@@ -299,8 +341,8 @@
     </div>
 
     <div class="cq-pick">
-      <label for="fltTag">Tag</label>
-      <select id="fltTag"><option value="all">All</option></select>
+      <label for="fltStream">Service</label>
+      <select id="fltStream"><option value="all">All</option></select>
     </div>
 
     <div class="cq-pick">
@@ -407,13 +449,14 @@
       </div>
 
       <div class="cq-field wide">
-        <label for="fNewTag">Add a new tag</label>
-        <input id="fNewTag" type="text" placeholder="Press Enter to save" autocomplete="off">
+        <label>Where to watch</label>
+        <div class="cq-tagpick" id="streamPick"></div>
       </div>
 
       <div class="cq-field wide">
-        <label>Tags</label>
-        <div class="cq-tagpick" id="tagPick"></div>
+        <label class="cq-check-label">
+          <input type="checkbox" id="fRewatch"> Rewatch
+        </label>
       </div>
     </div>
 
@@ -461,18 +504,18 @@
    1. PASTE YOUR FIREBASE CONFIG HERE — same block as your quest-log page.
 ------------------------------------------------------------------- */
 const firebaseConfig = {
-  apiKey: "AIzaSyAdNZBoh1pH80-ZFBbOlcrlsLdMi3D62Wg",
+  apiKey: "PASTE_FROM_QUEST_LOG",
   authDomain: "princess-paladin.firebaseapp.com",
   projectId: "princess-paladin",
   storageBucket: "princess-paladin.appspot.com",
-  messagingSenderId: "282931655557",
-  appId: "1:282931655557:web:cae6ccd23f32cb9be54aec"
+  messagingSenderId: "PASTE_FROM_QUEST_LOG",
+  appId: "PASTE_FROM_QUEST_LOG"
 };
 
 /* ------------------------------------------------------------------
    2. YOUR TMDB KEY — films only. Series come from TVmaze, no key needed.
 ------------------------------------------------------------------- */
-const TMDB_KEY = "2baed187c3455a853cc94ca735fe024d";
+const TMDB_KEY = "PASTE_YOUR_TMDB_KEY";
 
 const DOC_PATH  = "sidequest/couch-list";
 const CACHE_KEY = "pp_couch_list";
@@ -480,7 +523,10 @@ const TVMAZE    = "https://api.tvmaze.com";
 const TMDB      = "https://api.themoviedb.org/3";
 const TMDB_IMG  = "https://image.tmdb.org/t/p/w500";
 
-const DEFAULT_TAGS = ["Comedy","Drama","Horror","Fantasy","Documentary","Animated","Rewatch","Cozy"];
+const STREAMING_SERVICES = [
+  "Netflix","Max","Hulu","Disney+","Apple TV+","Prime Video",
+  "Peacock","Paramount+","Shudder","Tubi","Crunchyroll","YouTube","Other"
+];
 
 const HINT_SERIES = "Searches TV shows and pulls in the poster and every season.";
 const HINT_MOVIE  = "Searches films and pulls in the poster and the runtime.";
@@ -488,9 +534,9 @@ const HINT_NOKEY  = "Film lookup needs a TMDB key — see the note near the top 
 
 const hasTmdb = () => TMDB_KEY && TMDB_KEY.indexOf("PASTE") !== 0;
 
-let state  = { items: [], tagOptions: DEFAULT_TAGS.slice() };
-let editId = null, openId = null, pickedTags = [];
-let filter = "all", fltKind = "all", fltWho = "all", fltPri = "all", fltTag = "all";
+let state  = { items: [] };
+let editId = null, openId = null, pickedStreams = [];
+let filter = "all", fltKind = "all", fltWho = "all", fltPri = "all", fltStream = "all";
 let sortBy = "priority-desc";
 let pendingLookup = null;
 let saving = false, docRef = null, saveTimer = null;
@@ -617,11 +663,9 @@ function migrate(){
     }
     if(it.priD == null){ it.priD = 0; touched = true; }
     if(it.priB == null){ it.priB = 0; touched = true; }
+    if(!Array.isArray(it.streams)){ it.streams = []; touched = true; }
+    if(it.rewatch == null){ it.rewatch = false; touched = true; }
   });
-  if(Array.isArray(state.tagOptions) && state.tagOptions.includes("Together")){
-    state.tagOptions = state.tagOptions.filter(t => t !== "Together");
-    touched = true;
-  }
   return touched;
 }
 
@@ -631,10 +675,9 @@ function loadCache(){
     const raw = localStorage.getItem(CACHE_KEY);
     if(raw){
       const p = JSON.parse(raw);
-      if(p && Array.isArray(p.items)) state = p;
+      if(p && Array.isArray(p.items)) state = { items: p.items };
     }
   }catch(e){}
-  if(!Array.isArray(state.tagOptions) || !state.tagOptions.length) state.tagOptions = DEFAULT_TAGS.slice();
   migrate();
 }
 function writeCache(){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(state)); }catch(e){} }
@@ -647,13 +690,10 @@ function startFirebase(){
       if(saving) return;
       if(!snap.exists){ save(); return; }
       const d = snap.data();
-      state = {
-        items: Array.isArray(d.items) ? d.items : [],
-        tagOptions: Array.isArray(d.tagOptions) && d.tagOptions.length ? d.tagOptions : DEFAULT_TAGS.slice()
-      };
+      state = { items: Array.isArray(d.items) ? d.items : [] };
       const changed = migrate();
       writeCache();
-      renderTagFilter();
+      renderStreamFilter();
       render();
       if(openId) openDetail(openId);
       setSync("idle","Synced");
@@ -664,7 +704,7 @@ function startFirebase(){
 
 function save(){
   writeCache();
-  renderTagFilter();
+  renderStreamFilter();
   render();
   if(openId) openDetail(openId);
   if(!docRef) return;
@@ -672,7 +712,7 @@ function save(){
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     saving = true;
-    docRef.set({ items: state.items, tagOptions: state.tagOptions, updated: Date.now() })
+    docRef.set({ items: state.items, updated: Date.now() })
       .then(() => setSync("idle","Synced"))
       .catch(e => { console.error(e); setSync("error","Couldn't save"); })
       .finally(() => { saving = false; });
@@ -842,10 +882,11 @@ function byTitle(a, b){
 
 function visibleItems(){
   let rows = state.items.filter(i => {
+    if(filter === "rewatch")  return !!i.rewatch;
     if(filter !== "all"  && i.status !== filter) return false;
     if(fltKind !== "all" && (i.type || "series") !== fltKind) return false;
     if(fltWho !== "all"  && whoOf(i) !== fltWho) return false;
-    if(fltTag !== "all"  && !(i.tags || []).includes(fltTag)) return false;
+    if(fltStream !== "all" && !(i.streams || []).includes(fltStream)) return false;
     if(fltPri !== "all"){
       const tier = priTier(priAvg(i));
       if(fltPri === "none" && tier !== "none") return false;
@@ -864,7 +905,6 @@ function visibleItems(){
       const d = (pctOf(b) - pctOf(a)) * flip;
       return d !== 0 ? d : byTitle(a, b);
     }
-    /* priority — unrated always sits at the bottom, whichever way you sort */
     const pa = priAvg(a), pb = priAvg(b);
     if(!pa && !pb) return byTitle(a, b);
     if(!pa) return 1;
@@ -876,17 +916,20 @@ function visibleItems(){
   return rows;
 }
 
-function renderTagFilter(){
-  const sel = $("fltTag");
+function renderStreamFilter(){
+  const sel = $("fltStream");
   const keep = sel.value;
   sel.innerHTML = '<option value="all">All</option>';
-  state.tagOptions.forEach(t => {
+  /* only list services that are actually in use */
+  const used = new Set();
+  state.items.forEach(i => (i.streams || []).forEach(s => used.add(s)));
+  STREAMING_SERVICES.filter(s => used.has(s)).forEach(s => {
     const o = document.createElement("option");
-    o.value = t; o.textContent = t;
+    o.value = s; o.textContent = s;
     sel.appendChild(o);
   });
-  sel.value = state.tagOptions.includes(keep) ? keep : "all";
-  fltTag = sel.value;
+  sel.value = used.has(keep) ? keep : "all";
+  fltStream = sel.value;
 }
 
 /* ---------------- render ---------------- */
@@ -919,7 +962,8 @@ function render(){
     const pri = avg ? `<span class="cq-pri" data-tier="${priTier(avg)}">${esc(priLabel(avg))}</span>` : "";
 
     const where = position(item);
-    const tags  = (item.tags || []).map(x => `<span>${esc(x)}</span>`).join("");
+    const streams = (item.streams || []).map(x => `<span class="cq-stream">${esc(x)}</span>`).join("");
+    const rewatch = item.rewatch ? `<span class="cq-rewatch">Rewatch</span>` : "";
 
     card.innerHTML = `
       <div class="cq-posterwrap" data-open="${item.id}">${art}${whoBadge}${ring}</div>
@@ -932,9 +976,9 @@ function render(){
         ${where ? `<div class="cq-where">${esc(where)}</div>` : ""}
         <div class="cq-meta">
           <button class="cq-status" data-status="${item.status}" data-cycle="${item.id}">${LABEL[item.status]}</button>
-          ${pri}
+          ${pri}${rewatch}
         </div>
-        ${tags ? `<div class="cq-tags">${tags}</div>` : ""}
+        ${streams ? `<div class="cq-streams">${streams}</div>` : ""}
       </div>`;
     grid.appendChild(card);
   });
@@ -1074,17 +1118,19 @@ function setMinutes(itemId, mins){
   save();
 }
 
-function renderTagPicker(){
-  const box = $("tagPick");
+function renderStreamPicker(){
+  const box = $("streamPick");
   box.innerHTML = "";
-  state.tagOptions.forEach(tag => {
+  STREAMING_SERVICES.forEach(svc => {
     const b = document.createElement("button");
     b.type = "button";
-    b.textContent = tag;
-    b.setAttribute("aria-pressed", pickedTags.includes(tag) ? "true" : "false");
+    b.textContent = svc;
+    b.setAttribute("aria-pressed", pickedStreams.includes(svc) ? "true" : "false");
     b.onclick = () => {
-      pickedTags = pickedTags.includes(tag) ? pickedTags.filter(t => t !== tag) : pickedTags.concat(tag);
-      renderTagPicker();
+      pickedStreams = pickedStreams.includes(svc)
+        ? pickedStreams.filter(s => s !== svc)
+        : pickedStreams.concat(svc);
+      renderStreamPicker();
     };
     box.appendChild(b);
   });
@@ -1104,24 +1150,24 @@ function openForm(item){
   closeDetail();
   editId = item ? item.id : null;
   pendingLookup = null;
-  pickedTags = item ? (item.tags || []).slice() : [];
+  pickedStreams = item ? (item.streams || []).slice() : [];
   $("formTitle").textContent = item ? "Edit" : "Add something";
-  $("fTitle").value   = item ? item.title : "";
-  $("fImage").value   = item ? (item.image || "") : "";
-  $("fStatus").value  = item ? item.status : "want";
-  $("fType").value    = item ? (item.type || "series") : "series";
-  $("fWho").value     = item ? whoOf(item) : "together";
-  $("fPriD").value    = item ? String(item.priD || 0) : "0";
-  $("fPriB").value    = item ? String(item.priB || 0) : "0";
-  $("fRuntime").value = item && item.runtime ? item.runtime : "";
-  $("fNewTag").value  = "";
+  $("fTitle").value    = item ? item.title : "";
+  $("fImage").value    = item ? (item.image || "") : "";
+  $("fStatus").value   = item ? item.status : "want";
+  $("fType").value     = item ? (item.type || "series") : "series";
+  $("fWho").value      = item ? whoOf(item) : "together";
+  $("fPriD").value     = item ? String(item.priD || 0) : "0";
+  $("fPriB").value     = item ? String(item.priB || 0) : "0";
+  $("fRuntime").value  = item && item.runtime ? item.runtime : "";
+  $("fRewatch").checked = !!(item && item.rewatch);
   syncTypeUI();
   $("deleteBtn").style.display = item ? "inline-block" : "none";
-  renderTagPicker();
+  renderStreamPicker();
   $("form").classList.add("open");
   $("fTitle").focus();
 }
-function closeForm(){ $("form").classList.remove("open"); editId = null; pickedTags = []; pendingLookup = null; }
+function closeForm(){ $("form").classList.remove("open"); editId = null; pickedStreams = []; pendingLookup = null; }
 
 /* ---------------- events ---------------- */
 $("addBtn").onclick      = () => openForm(null);
@@ -1145,7 +1191,8 @@ $("saveBtn").onclick = () => {
     who: $("fWho").value,
     priD: parseInt($("fPriD").value, 10) || 0,
     priB: parseInt($("fPriB").value, 10) || 0,
-    tags: pickedTags.slice(),
+    streams: pickedStreams.slice(),
+    rewatch: $("fRewatch").checked,
     runtime: isMovie ? (parseInt($("fRuntime").value, 10) || 0) : 0
   };
 
@@ -1198,17 +1245,6 @@ $("refetchBtn").onclick = () => {
     .catch(e => { console.error(e); $("dMeta").textContent = "Refresh failed."; });
 };
 
-$("fNewTag").onkeydown = e => {
-  if(e.key !== "Enter") return;
-  e.preventDefault();
-  const tag = e.target.value.trim();
-  if(!tag) return;
-  if(!state.tagOptions.includes(tag)) state.tagOptions.push(tag);
-  if(!pickedTags.includes(tag)) pickedTags.push(tag);
-  e.target.value = "";
-  renderTagPicker();
-  renderTagFilter();
-};
 
 $("grid").onclick = e => {
   const cycle = e.target.closest("[data-cycle]");
@@ -1309,19 +1345,19 @@ document.querySelectorAll(".cq-filter").forEach(btn => {
 $("fltKind").onchange = e => { fltKind = e.target.value; render(); };
 $("fltWho").onchange  = e => { fltWho  = e.target.value; render(); };
 $("fltPri").onchange  = e => { fltPri  = e.target.value; render(); };
-$("fltTag").onchange  = e => { fltTag  = e.target.value; render(); };
+$("fltStream").onchange = e => { fltStream = e.target.value; render(); };
 $("sortBy").onchange  = e => { sortBy  = e.target.value; render(); };
 
 $("resetBtn").onclick = () => {
-  filter = fltKind = fltWho = fltPri = fltTag = "all";
-  $("fltKind").value = $("fltWho").value = $("fltPri").value = $("fltTag").value = "all";
+  filter = fltKind = fltWho = fltPri = fltStream = "all";
+  $("fltKind").value = $("fltWho").value = $("fltPri").value = $("fltStream").value = "all";
   document.querySelectorAll(".cq-filter").forEach(b =>
     b.setAttribute("aria-pressed", b.dataset.filter === "all" ? "true" : "false"));
   render();
 };
 
 loadCache();
-renderTagFilter();
+renderStreamFilter();
 render();
 startFirebase();
 </script>
