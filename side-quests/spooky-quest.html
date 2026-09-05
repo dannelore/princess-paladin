@@ -1,0 +1,1883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spooky Quest — Princess &amp; Paladin</title>
+
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/pp-progress.css">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  .pp-spooky{
+    background-image: linear-gradient(160deg,#E6D6E8 0%,#CDB0D2 55%,#B99BC4 100%);
+    background-attachment: fixed;
+  }
+
+  /* spooky accents, kept warm rather than goth */
+  :root{
+    --pumpkin: #C96A2E;
+    --dusk:    #6B4A78;
+    --moss:    #5A7150;
+  }
+
+  /* the one colour that isn't in pp.css — family green-teal */
+  :root{ --family: #5A8A7A; }
+
+  /* ---------- toolbar ---------- */
+  .cq-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:14px; }
+  .cq-bar .cq-spacer{ flex:1 1 auto; }
+
+  .cq-filter{
+    font-family:var(--font-body); font-size:.74rem; font-weight:500;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--gold);
+    background:var(--panel); border:1px solid var(--line-gold);
+    border-radius:999px; padding:7px 15px; cursor:pointer;
+    transition:color .15s ease, background .15s ease, border-color .15s ease;
+  }
+  .cq-filter:hover{ color:#fff; background:var(--pink); border-color:var(--pink); }
+  .cq-filter[aria-pressed="true"]{ color:#fff; background:var(--sage); border-color:var(--sage); }
+
+  .cq-selects{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px; }
+  .cq-pick{ display:flex; align-items:center; gap:6px; }
+  .cq-pick label{
+    font-family:var(--font-body); font-size:.66rem; font-weight:600;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--gold);
+  }
+  .cq-pick select{
+    font-family:var(--font-body); font-size:.84rem; color:var(--ink);
+    background:var(--panel); border:1px solid var(--line-gold);
+    border-radius:999px; padding:6px 12px; cursor:pointer;
+  }
+  .cq-pick select:focus{ outline:2px solid var(--pink); outline-offset:1px; }
+  .cq-reset{
+    font-family:var(--font-serif); font-style:italic; font-size:.88rem;
+    color:var(--ink-soft); background:none; border:0; cursor:pointer; padding:4px 2px;
+  }
+  .cq-reset:hover{ color:var(--burgundy); }
+
+  .cq-count{ font-family:var(--font-serif); font-style:italic; font-size:.95rem; color:var(--ink-soft); }
+  .cq-sync{ font-family:var(--font-body); font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); }
+  .cq-sync[data-state="saving"]{ color:var(--gold); }
+  .cq-sync[data-state="error"]{ color:var(--blade); }
+
+  /* ---------- form + detail ---------- */
+  .cq-form, .cq-detail{ display:none; margin-bottom:22px; }
+  .cq-form.open, .cq-detail.open{ display:block; }
+
+  .cq-fields{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .cq-field{ display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .cq-field.wide{ grid-column:1 / -1; }
+  .cq-field.hidden{ display:none; }
+
+  .cq-field label{
+    font-family:var(--font-body); font-size:.72rem; font-weight:600;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--gold);
+  }
+  .cq-field input, .cq-field select{
+    font-family:var(--font-body); font-size:.95rem; color:var(--ink);
+    background:#fff; border:1px solid var(--line);
+    border-radius:var(--radius-sm); padding:9px 12px; width:100%;
+  }
+  .cq-field input:focus, .cq-field select:focus{ outline:2px solid var(--pink); outline-offset:1px; }
+
+  .cq-hint{ font-family:var(--font-serif); font-style:italic; font-size:.85rem; color:var(--ink-soft); }
+  .cq-inline{ display:flex; gap:8px; align-items:flex-start; }
+  .cq-inline input{ flex:1 1 auto; }
+
+  .cq-results{ display:none; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); gap:10px; margin-top:12px; }
+  .cq-results.open{ display:grid; }
+  .cq-result{
+    text-align:left; padding:0; overflow:hidden; cursor:pointer;
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:var(--radius-sm); transition:border-color .15s ease, transform .15s ease;
+  }
+  .cq-result:hover{ border-color:var(--pink); transform:translateY(-2px); }
+  .cq-result img{ width:100%; aspect-ratio:2/3; object-fit:cover; display:block; background:var(--parchment); }
+  .cq-rname{ font-family:var(--font-serif); font-weight:600; font-size:.86rem; line-height:1.2; padding:7px 8px 2px; color:var(--ink); }
+  .cq-rmeta{ font-family:var(--font-body); font-size:.7rem; color:var(--ink-soft); padding:0 8px 8px; }
+
+  .cq-tagpick{ display:flex; flex-wrap:wrap; gap:6px; }
+  .cq-tagpick button{
+    font-family:var(--font-body); font-size:.74rem; color:var(--ink-soft);
+    background:var(--parchment); border:1px solid var(--parchment-border);
+    border-radius:999px; padding:4px 11px; cursor:pointer;
+  }
+  .cq-tagpick button[aria-pressed="true"]{ color:#fff; background:var(--sage); border-color:var(--sage); }
+
+  .cq-actions{ display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+
+  /* ---------- detail ---------- */
+  .cq-detail-head{ display:flex; gap:16px; align-items:flex-start; margin-bottom:20px; }
+  .cq-detail-head img{ width:84px; aspect-ratio:2/3; object-fit:cover; border-radius:var(--radius-sm); flex-shrink:0; background:var(--parchment); }
+  .cq-detail-head h2{ margin:0 0 4px; font-size:1.5rem; }
+  .cq-detail-meta{ font-family:var(--font-serif); font-style:italic; color:var(--ink-soft); margin:0 0 10px; }
+
+  .cq-block{ padding:14px 0; border-top:1px solid var(--line); }
+  .cq-block:first-child{ border-top:0; }
+  .cq-block-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:9px; }
+  .cq-block-name{ font-family:var(--font-body); font-size:.72rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); }
+  .cq-block-count{ font-family:var(--font-serif); font-style:italic; font-size:.9rem; color:var(--ink-soft); }
+
+  .cq-step{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+  .cq-step button{
+    font-family:var(--font-body); font-size:.78rem; font-weight:500;
+    min-width:34px; height:30px; padding:0 10px; line-height:1;
+    color:var(--gold); background:var(--panel); border:1px solid var(--line-gold);
+    border-radius:999px; cursor:pointer;
+  }
+  .cq-step button:hover{ color:#fff; background:var(--pink); border-color:var(--pink); }
+  .cq-step input{
+    font-family:var(--font-body); font-size:.9rem; width:70px; text-align:center;
+    color:var(--ink); background:#fff; border:1px solid var(--line);
+    border-radius:var(--radius-sm); padding:6px 8px;
+  }
+  .cq-check-label{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-body);
+    font-size: .9rem;
+    color: var(--ink);
+    cursor: pointer;
+    user-select: none;
+  }
+  .cq-check-label input[type="checkbox"]{
+    width: 16px; height: 16px;
+    accent-color: var(--pink);
+    cursor: pointer;
+  }
+
+  /* rewatch badge on card */
+  .cq-rewatch{
+    font-family: var(--font-body);
+    font-size: .66rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--pink-deep);
+    background: var(--panel-tint);
+    border: 1px solid var(--pink);
+    border-radius: 999px;
+    padding: 2px 9px;
+  }
+
+  /* streaming service badges on card — colour comes from an inline style */
+  .cq-streams{ display:flex; flex-wrap:wrap; gap:3px; }
+  .cq-stream{
+    font-family: var(--font-body);
+    font-size: .62rem;
+    font-weight: 600;
+    letter-spacing: .02em;
+    color: #fff;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 2px 6px;
+    white-space: nowrap;
+  }
+  /* pale swatches need dark text */
+  .cq-stream[data-light="true"]{ color: var(--ink); }
+
+  /* a service we don't pay for — hollow, with a dotted edge */
+  .cq-stream[data-sub="false"]{
+    background: transparent !important;
+    border-style: dotted;
+    opacity: .75;
+  }
+  .cq-stream[data-sub="false"]::after{ content: " ✦"; font-size: .6rem; }
+
+  /* the subscriptions panel */
+  .cq-subs{ display:none; margin-bottom:22px; }
+  .cq-subs.open{ display:block; }
+  .cq-subs .cq-tagpick button{
+    color: #fff;
+    border-color: transparent;
+    opacity: .38;
+    filter: grayscale(.6);
+  }
+  .cq-subs .cq-tagpick button[aria-pressed="true"]{
+    opacity: 1;
+    filter: none;
+  }
+  .cq-subs .cq-tagpick button[data-light="true"]{ color: var(--ink); }
+
+  /* ---------- season banner ---------- */
+  .sp-banner{
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 22px;
+    margin-bottom: 18px;
+    background:
+      radial-gradient(ellipse at 12% 30%, rgba(201,106,46,.14), transparent 60%),
+      var(--parchment);
+    border: 1px solid var(--parchment-border);
+    border-radius: var(--radius-md);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.4), var(--lift);
+  }
+  .sp-moon{ width: 44px; height: 44px; flex-shrink: 0; }
+  .sp-bats{ width: 80px; height: 32px; flex-shrink: 0; margin-left: auto; opacity: .9; }
+  .sp-banner-text{ min-width: 0; }
+  .sp-banner-title{
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: var(--burgundy);
+    margin: 0;
+  }
+  .sp-banner-sub{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .92rem;
+    color: var(--ink-soft);
+    margin: 2px 0 0;
+  }
+  .sp-banner.is-off .sp-banner-title{ color: var(--dusk); }
+
+  @media (max-width:560px){
+    .sp-bats{ display: none; }
+    .sp-banner{ padding: 14px 16px; gap: 12px; }
+  }
+
+  /* ---------- tradition + year badges ---------- */
+  .sp-tradition{
+    font-family: var(--font-body);
+    font-size: .66rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--pumpkin);
+    border-radius: 999px;
+    padding: 3px 9px;
+  }
+  .sp-years{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .76rem;
+    color: var(--dusk);
+  }
+  .sp-years b{ font-style: normal; font-weight: 600; }
+
+  /* the status pill leans autumnal here */
+  .cq-status[data-status="want"]{ background: var(--dusk); }
+  .cq-status[data-status="watching"]{ background: var(--pumpkin); }
+
+  /* start / end dates */
+  .cq-dates{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .cq-dates label{
+    font-family: var(--font-body);
+    font-size: .66rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .cq-dates input[type="date"]{
+    font-family: var(--font-body);
+    font-size: .84rem;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 5px 9px;
+  }
+  .cq-dates input[type="date"]:focus{ outline: 2px solid var(--pink); outline-offset: 1px; }
+  .cq-dates .cq-dateclear{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .84rem;
+    color: var(--ink-soft);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    padding: 4px 2px;
+  }
+  .cq-dates .cq-dateclear:hover{ color: var(--burgundy); }
+
+  /* the small date line on a card */
+  .cq-dateline{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .78rem;
+    color: var(--gold-deep);
+  }
+
+  .cq-ep-count{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .9rem;
+    color: var(--ink);
+    background: transparent;
+    border: 0;
+    border-bottom: 1px dashed var(--line-strong);
+    border-radius: 0;
+    width: 2.6em;
+    text-align: center;
+    padding: 0 2px;
+  }
+  .cq-ep-count:focus{ outline: none; border-bottom-color: var(--pink); }
+
+  .cq-step .cq-steplabel{ font-family:var(--font-serif); font-style:italic; font-size:.86rem; color:var(--ink-soft); }
+
+  /* ---------- grid ---------- */
+  .cq-grid{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px; }
+  @media (max-width:900px){ .cq-grid{ grid-template-columns:repeat(4,minmax(0,1fr)); } }
+  @media (max-width:700px){ .cq-grid{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+
+  .cq-card{
+    position:relative; display:flex; flex-direction:column; padding:0; overflow:hidden;
+    border-radius:var(--radius-sm); background:var(--panel); border:1px solid var(--line);
+    box-shadow:var(--lift); transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .cq-card:hover{ transform:translateY(-3px); box-shadow:var(--lift-lg); }
+  .cq-card.is-done{ opacity:.62; }
+
+  .cq-posterwrap{ position:relative; cursor:pointer; }
+  .cq-poster{ aspect-ratio:2/3; width:100%; object-fit:cover; display:block; background:var(--parchment); }
+  .cq-poster-none{
+    aspect-ratio:2/3; display:flex; align-items:center; justify-content:center;
+    padding:14px; text-align:center;
+    background:radial-gradient(ellipse at 30% 25%,rgba(156,116,64,.14),transparent 60%),var(--parchment);
+    font-family:var(--font-serif); font-style:italic; font-size:.95rem;
+    color:var(--gold-deep); line-height:1.3;
+  }
+  .cq-ring{ position:absolute; bottom:7px; right:7px; background:rgba(255,253,248,.92); border-radius:50%; padding:3px; }
+
+  /* who badge — top left of the poster */
+  .cq-who{
+    position:absolute; top:7px; left:7px;
+    font-family:var(--font-body); font-size:.6rem; font-weight:700;
+    letter-spacing:.1em; text-transform:uppercase;
+    border-radius:999px; padding:3px 8px;
+    border:1px solid transparent;
+  }
+  /* cream needs a hairline or it vanishes on a pale poster */
+  .cq-who[data-who="together"]{ color:var(--ink);  background:#F7F1E4; border-color:var(--gold); }
+  .cq-who[data-who="danni"]{    color:#fff;        background:var(--pink); }
+  .cq-who[data-who="brendon"]{  color:#fff;        background:var(--blade); }
+  .cq-who[data-who="family"]{   color:#fff;        background:var(--family); }
+
+  .cq-body{ padding:11px 12px 13px; display:flex; flex-direction:column; gap:7px; }
+  .cq-name{ font-family:var(--font-serif); font-weight:600; font-size:1rem; line-height:1.2; margin:0; color:var(--ink); word-break:break-word; }
+  .cq-where{ font-family:var(--font-serif); font-style:italic; font-size:.85rem; color:var(--ink-soft); }
+
+  .cq-meta{ display:flex; flex-wrap:wrap; gap:5px; align-items:center; }
+
+  .cq-status{
+    font-family:var(--font-body); font-size:.68rem; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; color:#fff; border:none;
+    border-radius:999px; padding:4px 11px; cursor:pointer;
+  }
+  .cq-status[data-status="want"]{ background:var(--gold); }
+  .cq-status[data-status="watching"]{ background:var(--pink); }
+  .cq-status[data-status="watched"]{ background:var(--sage-deep); }
+
+  .cq-pri{
+    font-family:var(--font-body); font-size:.66rem; font-weight:600;
+    letter-spacing:.08em; text-transform:uppercase;
+    border-radius:999px; padding:3px 9px; border:1px solid transparent;
+  }
+  .cq-pri[data-tier="high"]{ color:#fff; background:var(--burgundy); }
+  .cq-pri[data-tier="mid"]{ color:var(--gold-deep); background:var(--parchment); border-color:var(--parchment-border); }
+  .cq-pri[data-tier="low"]{ color:var(--ink-soft); background:rgba(46,36,31,.07); }
+
+  .cq-tags{ display:flex; flex-wrap:wrap; gap:4px; }
+  .cq-tags span{
+    font-family:var(--font-body); font-size:.68rem; color:var(--ink-soft);
+    background:rgba(46,36,31,.07); border-radius:999px; padding:2px 8px;
+  }
+
+  .cq-tools{ position:absolute; top:7px; right:7px; display:flex; gap:5px; opacity:0; transition:opacity .15s ease; }
+  .cq-card:hover .cq-tools, .cq-card:focus-within .cq-tools{ opacity:1; }
+  .cq-tools button{
+    width:26px; height:26px; display:flex; align-items:center; justify-content:center;
+    font-size:.8rem; color:var(--ink); background:rgba(255,253,248,.94);
+    border:1px solid var(--line); border-radius:999px; cursor:pointer; line-height:1;
+  }
+  .cq-tools button:hover{ color:#fff; background:var(--burgundy); border-color:var(--burgundy); }
+  @media (hover:none){ .cq-tools{ opacity:1; } }
+
+  @media (max-width:560px){
+    .cq-fields{ grid-template-columns:1fr; }
+    .cq-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .cq-selects{ gap:8px; }
+  }
+</style>
+</head>
+
+<body class="pp-spooky">
+<div class="pp-wrap">
+
+  <nav class="pp-nav" style="margin-top:28px;">
+    <a href="/">Home</a>
+    <a href="/castle-keep/">Castle Keeping</a>
+    <a href="/dannelore/quest-log/">Quest Log</a>
+    <a href="/side-quest/">Side Quests</a>
+    <a href="/templates/">Templates</a>
+  </nav>
+
+  <header class="pp-hero" style="padding:8px 0 28px;">
+    <div class="pp-emblem pp-emblem-sm">
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#C85D87" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M8 44 H56" stroke="#C85D87" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="32" cy="10" r="3.5" fill="#9C7440"/><circle cx="4" cy="19" r="2.5" fill="#9C7440"/>
+        <circle cx="60" cy="19" r="2.5" fill="#9C7440"/><circle cx="32" cy="36" r="3" fill="#9C7440"/>
+      </svg>
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M32 4 L38 14 V38 H26 V14 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="2" stroke-linejoin="round"/>
+        <rect x="14" y="38" width="36" height="6" rx="3" fill="#9C7440"/>
+        <rect x="29" y="44" width="6" height="12" fill="#9C7440"/>
+        <circle cx="32" cy="58" r="4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <h1 class="pp-title" style="font-size:clamp(2.2rem,6vw,3.6rem);">Spooky Quest</h1>
+    <p class="pp-tagline">Haunted evenings, September through October</p>
+  </header>
+
+  <!-- ---------------- season banner ---------------- -->
+  <div class="sp-banner" id="banner">
+    <svg class="sp-moon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <circle cx="24" cy="24" r="15" fill="#F2E3B8" stroke="#C9B688" stroke-width="1.5"/>
+      <circle cx="18" cy="19" r="3" fill="#DCC89A" opacity=".8"/>
+      <circle cx="29" cy="27" r="4" fill="#DCC89A" opacity=".6"/>
+      <circle cx="21" cy="31" r="2" fill="#DCC89A" opacity=".7"/>
+    </svg>
+    <div class="sp-banner-text">
+      <p class="sp-banner-title" id="bannerTitle"></p>
+      <p class="sp-banner-sub" id="bannerSub"></p>
+    </div>
+    <svg class="sp-bats" viewBox="0 0 80 32" fill="none" aria-hidden="true">
+      <path d="M6 14 C10 8 12 13 16 10 C20 13 22 8 26 14 C22 13 20 18 16 15 C12 18 10 13 6 14 Z" fill="#6B4A78"/>
+      <path d="M34 22 C37 18 38 21 41 19 C44 21 45 18 48 22 C45 21 44 25 41 23 C38 25 37 21 34 22 Z" fill="#6B4A78" opacity=".7"/>
+      <path d="M56 11 C59 7 60 10 63 8 C66 10 67 7 70 11 C67 10 66 14 63 12 C60 14 59 10 56 11 Z" fill="#6B4A78" opacity=".5"/>
+    </svg>
+  </div>
+
+  <div class="cq-bar">
+    <button class="cq-filter" data-filter="all" aria-pressed="true">All</button>
+    <button class="cq-filter" data-filter="want" aria-pressed="false">TBW</button>
+    <button class="cq-filter" data-filter="watching" aria-pressed="false">Watching</button>
+    <button class="cq-filter" data-filter="watched" aria-pressed="false">Watched</button>
+    <button class="cq-filter" data-filter="rewatch" aria-pressed="false">Rewatches</button>
+    <button class="cq-filter" data-filter="tradition" aria-pressed="false">Traditions</button>
+    <button class="cq-filter" data-filter="unseen" aria-pressed="false">Not yet this year</button>
+    <span class="cq-spacer"></span>
+    <button class="pp-btn" id="addBtn">Add something</button>
+  </div>
+
+  <div class="cq-selects">
+    <div class="cq-pick">
+      <label for="fltKind">Kind</label>
+      <select id="fltKind">
+        <option value="all">All</option>
+        <option value="series">Series</option>
+        <option value="movie">Films</option>
+      </select>
+    </div>
+
+    <div class="cq-pick">
+      <label for="fltWho">Who</label>
+      <select id="fltWho">
+        <option value="all">All</option>
+        <option value="together">Together</option>
+        <option value="danni">D only</option>
+        <option value="brendon">B only</option>
+        <option value="family">Family</option>
+      </select>
+    </div>
+
+    <div class="cq-pick">
+      <label for="fltPri">Priority</label>
+      <select id="fltPri">
+        <option value="all">All</option>
+        <option value="high">High</option>
+        <option value="mid">Medium</option>
+        <option value="low">Low</option>
+        <option value="none">Unrated</option>
+      </select>
+    </div>
+
+    <div class="cq-pick">
+      <label for="fltYear">Year</label>
+      <select id="fltYear"><option value="all">Any year</option></select>
+    </div>
+
+    <div class="cq-pick">
+      <label for="fltStream">Service</label>
+      <select id="fltStream">
+        <option value="all">All</option>
+        <option value="__subbed">Only what we have</option>
+      </select>
+    </div>
+
+    <div class="cq-pick">
+      <label for="sortBy">Sort</label>
+      <select id="sortBy">
+        <optgroup label="Priority">
+          <option value="priority-desc">High first</option>
+          <option value="priority-asc">Low first</option>
+        </optgroup>
+        <optgroup label="Progress">
+          <option value="progress-desc">Furthest along</option>
+          <option value="progress-asc">Least started</option>
+        </optgroup>
+        <optgroup label="Title">
+          <option value="title-asc">A–Z</option>
+          <option value="title-desc">Z–A</option>
+        </optgroup>
+        <optgroup label="Date added">
+          <option value="added-desc">Newest first</option>
+          <option value="added-asc">Oldest first</option>
+        </optgroup>
+        <optgroup label="Date started">
+          <option value="started-desc">Most recent</option>
+          <option value="started-asc">Earliest</option>
+        </optgroup>
+        <optgroup label="Date finished">
+          <option value="finished-desc">Most recent</option>
+          <option value="finished-asc">Earliest</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <button class="cq-reset" id="resetBtn">Clear filters</button>
+    <button class="cq-reset" id="subsBtn">Our services</button>
+  </div>
+
+  <!-- ---------------- subscriptions ---------------- -->
+  <section class="pp-panel cq-subs" id="subs">
+    <h2 class="pp-panel-title">What we subscribe to</h2>
+    <p class="cq-hint" style="margin:0 0 14px;">
+      Tap to toggle. Services you don't have show faded on cards, so you can
+      see at a glance when something needs a rental or a friend's login.
+    </p>
+    <div class="cq-tagpick" id="subsPick"></div>
+    <div class="cq-actions">
+      <button class="pp-btn pp-btn-quiet" id="subsClose">Done</button>
+    </div>
+  </section>
+
+  <div class="cq-bar" style="margin-bottom:14px;">
+    <span class="cq-count" id="count"></span>
+    <span class="cq-spacer"></span>
+    <span class="cq-sync" id="sync" data-state="idle">Connecting</span>
+  </div>
+
+  <!-- ---------------- add / edit ---------------- -->
+  <section class="pp-panel cq-form" id="form">
+    <h2 class="pp-panel-title" id="formTitle">Add something</h2>
+
+    <div class="cq-fields">
+      <div class="cq-field">
+        <label for="fType">Kind</label>
+        <select id="fType">
+          <option value="series">Series</option>
+          <option value="movie">Film</option>
+        </select>
+      </div>
+
+      <div class="cq-field">
+        <label for="fStatus">Status</label>
+        <select id="fStatus">
+          <option value="want">TBW (to be watched)</option>
+          <option value="watching">Watching</option>
+          <option value="watched">Watched</option>
+        </select>
+      </div>
+
+      <div class="cq-field wide">
+        <label for="fTitle">Title</label>
+        <div class="cq-inline">
+          <input id="fTitle" type="text" placeholder="Over the Garden Wall" autocomplete="off">
+          <button class="pp-btn pp-btn-quiet" id="lookupBtn" style="white-space:nowrap;">Look it up</button>
+        </div>
+        <span class="cq-hint" id="lookupHint"></span>
+        <div class="cq-results" id="results"></div>
+      </div>
+
+      <div class="cq-field">
+        <label for="fWho">Who's watching</label>
+        <select id="fWho">
+          <option value="together">Together</option>
+          <option value="danni">D only</option>
+          <option value="brendon">B only</option>
+          <option value="family">Family</option>
+        </select>
+      </div>
+
+      <div class="cq-field hidden" id="runtimeField">
+        <label for="fRuntime">Runtime in minutes</label>
+        <input id="fRuntime" type="number" min="0" step="1" placeholder="118">
+      </div>
+
+      <div class="cq-field">
+        <label for="fPriD">D's priority</label>
+        <select id="fPriD">
+          <option value="0">Not rated</option>
+          <option value="1">Low</option>
+          <option value="2">Medium</option>
+          <option value="3">High</option>
+        </select>
+      </div>
+
+      <div class="cq-field">
+        <label for="fPriB">B's priority</label>
+        <select id="fPriB">
+          <option value="0">Not rated</option>
+          <option value="1">Low</option>
+          <option value="2">Medium</option>
+          <option value="3">High</option>
+        </select>
+      </div>
+
+      <div class="cq-field wide">
+        <label for="fImage">Poster image link</label>
+        <input id="fImage" type="url" placeholder="https://… (optional)" autocomplete="off">
+      </div>
+
+      <div class="cq-field wide">
+        <label>Where to watch</label>
+        <div class="cq-tagpick" id="streamPick"></div>
+      </div>
+
+      <div class="cq-field wide">
+        <label class="cq-check-label">
+          <input type="checkbox" id="fRewatch"> Rewatch
+        </label>
+        <label class="cq-check-label">
+          <input type="checkbox" id="fTradition"> Annual tradition — we watch this every year
+        </label>
+      </div>
+    </div>
+
+    <div class="cq-actions">
+      <button class="pp-btn" id="saveBtn">Save</button>
+      <button class="pp-btn pp-btn-quiet" id="cancelBtn">Cancel</button>
+      <span class="cq-spacer"></span>
+      <button class="pp-btn pp-btn-quiet" id="deleteBtn" style="display:none;">Delete</button>
+    </div>
+  </section>
+
+  <!-- ---------------- detail ---------------- -->
+  <section class="pp-panel cq-detail" id="detail">
+    <div class="cq-detail-head">
+      <img id="dImg" alt="">
+      <div style="flex:1 1 auto; min-width:0;">
+        <h2 id="dTitle"></h2>
+        <p class="cq-detail-meta" id="dMeta"></p>
+        <div class="pp-progress" id="dOverall" data-color="pink"></div>
+      </div>
+    </div>
+    <div id="detailBody"></div>
+    <div class="cq-actions">
+      <button class="pp-btn pp-btn-quiet" id="detailClose">Close</button>
+      <button class="pp-btn pp-btn-quiet" id="refetchBtn">Refresh seasons</button>
+    </div>
+  </section>
+
+  <div class="cq-grid" id="grid"></div>
+  <p class="pp-empty" id="empty" style="display:none;">Nothing here yet. Add the first one.</p>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">♕ ───────── ⚔ ───────── ♕</p>
+    <p><a class="pp-back" href="/side-quest/">Back to Side Quests</a></p>
+  </footer>
+
+</div>
+
+<script src="/assets/pp-progress.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<script>
+/* ------------------------------------------------------------------
+   1. PASTE YOUR FIREBASE CONFIG HERE — same block as your quest-log page.
+------------------------------------------------------------------- */
+const firebaseConfig = {
+  apiKey: "PASTE_FROM_QUEST_LOG",
+  authDomain: "princess-paladin.firebaseapp.com",
+  projectId: "princess-paladin",
+  storageBucket: "princess-paladin.appspot.com",
+  messagingSenderId: "PASTE_FROM_QUEST_LOG",
+  appId: "PASTE_FROM_QUEST_LOG"
+};
+
+/* ------------------------------------------------------------------
+   2. YOUR TMDB KEY — films only. Series come from TVmaze, no key needed.
+------------------------------------------------------------------- */
+const TMDB_KEY = "PASTE_YOUR_TMDB_KEY";
+
+const DOC_PATH  = "sidequest/spooky-list";
+const CACHE_KEY = "pp_spooky_list";
+const TVMAZE    = "https://api.tvmaze.com";
+const TMDB      = "https://api.themoviedb.org/3";
+const TMDB_IMG  = "https://image.tmdb.org/t/p/w500";
+
+/* Each service carries its own colour. `light: true` means the swatch is pale
+   enough to need dark text. Subscription state is stored separately, in
+   state.subs — see the Services panel. */
+const STREAMING_SERVICES = [
+  { name:"Netflix",     short:"Netflix",   color:"#B23A3A" },
+  { name:"HBO Max",     short:"HBO",       color:"#5A3B8C" },
+  { name:"Hulu",        short:"Hulu",      color:"#4E8C63" },
+  { name:"Disney+",     short:"Disney+",   color:"#2D3E68" },
+  { name:"Apple TV+",   short:"Apple",     color:"#3A3A3C" },
+  { name:"Prime Video", short:"Prime",     color:"#2E6E8C" },
+  { name:"Peacock",     short:"Peacock",   color:"#C96A2E" },
+  { name:"Paramount+",  short:"Para+",     color:"#2F5EA8" },
+  { name:"DropOut",     short:"DropOut",   color:"#E0B33A", light:true },
+  { name:"YouTube",     short:"YouTube",   color:"#8C2F2F" },
+  { name:"Other",       short:"Other",     color:"#6B5E54" }
+];
+
+const SERVICE_BY_NAME = {};
+STREAMING_SERVICES.forEach(s => { SERVICE_BY_NAME[s.name] = s; });
+
+const HINT_SERIES = "Searches TV shows and pulls in the poster and every season.";
+const HINT_MOVIE  = "Searches films and pulls in the poster and the runtime.";
+const HINT_NOKEY  = "Film lookup needs a TMDB key — see the note near the top of this page's code. You can still type the title, runtime and poster link in by hand.";
+
+const hasTmdb = () => TMDB_KEY && TMDB_KEY.indexOf("PASTE") !== 0;
+
+let state  = { items: [], subs: null };   // subs: array of subscribed service names
+let editId = null, openId = null, pickedStreams = [];
+let filter = "all", fltKind = "all", fltWho = "all", fltPri = "all", fltStream = "all", fltYear = "all";
+let sortBy = "priority-desc";
+let pendingLookup = null;
+let saving = false, docRef = null, saveTimer = null;
+
+const $ = id => document.getElementById(id);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const toHttps = u => (u || "").replace(/^http:\/\//, "https://");
+
+function setSync(s, t){ const e = $("sync"); e.dataset.state = s; e.textContent = t; }
+
+function esc(s){
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+}
+
+function hm(min){
+  min = Math.max(0, Math.round(min || 0));
+  const h = Math.floor(min / 60), m = min % 60;
+  if(!h) return m + "m";
+  return h + "h" + (m ? " " + m + "m" : "");
+}
+
+/* ---------------- spooky season ----------------
+   The season runs 1 September to 31 October. Outside those dates we still
+   pick a "current" season year so history keeps working: before September
+   we're still counting the year that just passed. */
+function seasonInfo(){
+  const now   = new Date();
+  const y     = now.getFullYear();
+  const start = new Date(y, 8, 1);      // 1 Sep
+  const end   = new Date(y, 9, 31, 23, 59, 59);  // 31 Oct
+
+  if(now >= start && now <= end){
+    const daysLeft = Math.ceil((end - now) / 86400000);
+    return { year: y, inSeason: true, daysLeft: daysLeft };
+  }
+  if(now < start){
+    const daysTo = Math.ceil((start - now) / 86400000);
+    /* before September — last completed season is the previous year */
+    return { year: y - 1, inSeason: false, daysTo: daysTo, nextYear: y };
+  }
+  /* November or December — season just ended */
+  const nextStart = new Date(y + 1, 8, 1);
+  return { year: y, inSeason: false, daysTo: Math.ceil((nextStart - now) / 86400000), nextYear: y + 1 };
+}
+
+const SEASON = seasonInfo();
+
+function renderBanner(){
+  const el  = $("banner");
+  const ttl = $("bannerTitle");
+  const sub = $("bannerSub");
+  if(!el) return;
+
+  const seen = state.items.filter(i => (i.years || []).includes(SEASON.year)).length;
+  const total = state.items.length;
+
+  if(SEASON.inSeason){
+    el.classList.remove("is-off");
+    ttl.textContent = "Spooky season is here — " + SEASON.daysLeft +
+      (SEASON.daysLeft === 1 ? " day left" : " days left");
+    sub.textContent = total
+      ? seen + " of " + total + " watched this year"
+      : "Nothing on the list yet.";
+  }else{
+    el.classList.add("is-off");
+    ttl.textContent = SEASON.daysTo + (SEASON.daysTo === 1 ? " day" : " days") +
+      " until spooky season";
+    sub.textContent = "Last season you watched " + seen +
+      (seen === 1 ? " thing" : " things") + " · " + SEASON.year;
+  }
+}
+
+/* record the current season year when something gets finished */
+function markYear(item){
+  if(!Array.isArray(item.years)) item.years = [];
+  if(!item.years.includes(SEASON.year)) item.years.push(SEASON.year);
+  item.years.sort((a,b) => a - b);
+}
+
+function seenThisYear(item){
+  return (item.years || []).includes(SEASON.year);
+}
+
+/* ---------------- dates ----------------
+   Stored as plain "YYYY-MM-DD" strings, so they sort as text and never
+   pick up a timezone. Films carry their own pair; series carry a pair
+   per season, and the item-level dates are derived from those. */
+function fmtDate(d){
+  if(!d) return "";
+  const parts = String(d).split("-");
+  if(parts.length !== 3) return "";
+  const dt = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+  if(isNaN(dt)) return "";
+  return dt.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+}
+
+function itemStart(item){
+  if(item.type === "movie") return item.startDate || "";
+  const all = (item.seasons || []).map(s => s.startDate).filter(Boolean).sort();
+  return all.length ? all[0] : "";
+}
+
+function itemEnd(item){
+  if(item.type === "movie") return item.endDate || "";
+  const all = (item.seasons || []).map(s => s.endDate).filter(Boolean).sort();
+  return all.length ? all[all.length - 1] : "";
+}
+
+function dateLine(item){
+  const a = itemStart(item), b = itemEnd(item);
+  if(a && b) return fmtDate(a) + " – " + fmtDate(b);
+  if(b)      return "Finished " + fmtDate(b);
+  if(a)      return "Started " + fmtDate(a);
+  return "";
+}
+
+/* ---------------- who ---------------- */
+const WHO_LABEL = { together:"Together", danni:"D only", brendon:"B only", family:"Family" };
+const WHO_KEYS  = ["together","danni","brendon","family"];
+const whoOf = it => WHO_KEYS.includes(it.who) ? it.who : "together";
+
+/* ---------------- priority ----------------
+   Two raters, three levels each, so the average only ever lands on
+   1, 1.5, 2, 2.5 or 3. Five clean labels, no decimals on screen. */
+function priAvg(item){
+  const vals = [item.priD || 0, item.priB || 0].filter(v => v > 0);
+  if(!vals.length) return 0;
+  return vals.reduce((a,b) => a + b, 0) / vals.length;
+}
+
+function priLabel(avg){
+  if(!avg) return "";
+  if(avg >= 3)   return "High";
+  if(avg >= 2.5) return "Med–High";
+  if(avg >= 2)   return "Medium";
+  if(avg >= 1.5) return "Low–Med";
+  return "Low";
+}
+
+function priTier(avg){
+  if(!avg) return "none";
+  if(avg >= 2.5) return "high";
+  if(avg >= 1.5) return "mid";
+  return "low";
+}
+
+/* ---------------- progress maths ---------------- */
+/* watchedCount: how many distinct episodes watched in a season,
+   from the watchedEps array if it exists, otherwise s.watched */
+function watchedCount(s){
+  if(Array.isArray(s.watchedEps)) return s.watchedEps.length;
+  return s.watched || 0;
+}
+
+function totals(item){
+  if(item.type === "movie"){
+    const total = item.runtime || 0;
+    return { done: Math.min(item.watchedMin || 0, total), total: total, kind: total ? "movie" : "none" };
+  }
+  if(Array.isArray(item.seasons) && item.seasons.length){
+    let done = 0, total = 0;
+    item.seasons.forEach(s => { done += watchedCount(s); total += (s.episodes || 0); });
+    return { done: done, total: total, kind: total ? "series" : "none" };
+  }
+  return { done: 0, total: 0, kind: "none" };
+}
+
+function pctOf(item){
+  const t = totals(item);
+  if(t.kind === "none") return item.status === "watched" ? 1 : 0;
+  return t.total ? t.done / t.total : 0;
+}
+
+function position(item){
+  const t = totals(item);
+  if(t.kind === "none") return "";
+  if(t.done >= t.total) return "Finished";
+  if(t.kind === "movie"){
+    if(!t.done) return hm(t.total);
+    return "Up to " + hm(t.done) + " of " + hm(t.total);
+  }
+  for(const s of item.seasons){
+    const eps = Array.isArray(s.watchedEps) ? s.watchedEps : [];
+    const wc  = watchedCount(s);
+    if(wc < (s.episodes || 0)){
+      /* find first unwatched episode index */
+      let next = 1;
+      if(eps.length){
+        const set = {};
+        eps.forEach(i => { set[i] = true; });
+        while(set[next] && next <= s.episodes) next++;
+      }else{
+        next = wc + 1;
+      }
+      return "Up next: S" + s.number + " E" + next;
+    }
+  }
+  return "";
+}
+
+function syncStatus(item){
+  const t = totals(item);
+  if(t.kind === "none" || !t.total) return;
+  if(t.done === 0)          item.status = "want";
+  else if(t.done < t.total) item.status = "watching";
+  else                      item.status = "watched";
+  if(item.status === "watched") markYear(item);
+}
+
+/* ---------------- migration ---------------- */
+function migrate(){
+  let touched = false;
+  state.items.forEach(it => {
+    if(!WHO_KEYS.includes(it.who)){ it.who = "together"; touched = true; }
+    if(Array.isArray(it.tags) && it.tags.includes("Together")){
+      it.tags = it.tags.filter(t => t !== "Together");
+      it.who = "together";
+      touched = true;
+    }
+    if(it.priD == null){ it.priD = 0; touched = true; }
+    if(it.priB == null){ it.priB = 0; touched = true; }
+    if(!Array.isArray(it.streams)){ it.streams = []; touched = true; }
+    if(it.rewatch == null){ it.rewatch = false; touched = true; }
+    if(!Array.isArray(it.years)){ it.years = []; touched = true; }
+    if(it.tradition == null){ it.tradition = false; touched = true; }
+    /* anything already marked watched counts for the current season */
+    if(it.status === "watched" && !it.years.includes(SEASON.year)){
+      it.years.push(SEASON.year); it.years.sort((a,b) => a - b); touched = true;
+    }
+    /* "Max" was renamed to "HBO Max" */
+    if(it.streams.includes("Max")){
+      it.streams = it.streams.map(s => s === "Max" ? "HBO Max" : s);
+      touched = true;
+    }
+    /* services we no longer list fall back to Other */
+    const known = it.streams.filter(s => SERVICE_BY_NAME[s] || s === "Other");
+    const dropped = it.streams.length !== known.length;
+    if(dropped){
+      it.streams = Array.from(new Set(known.concat("Other")));
+      touched = true;
+    }
+  });
+  if(!Array.isArray(state.subs)){
+    /* first run — assume you have everything, you can untick from the panel */
+    state.subs = STREAMING_SERVICES.map(s => s.name);
+    touched = true;
+  }
+  return touched;
+}
+
+const isSubbed = name => !Array.isArray(state.subs) || state.subs.includes(name);
+
+/* ---------------- storage ---------------- */
+function loadCache(){
+  try{
+    const raw = localStorage.getItem(CACHE_KEY);
+    if(raw){
+      const p = JSON.parse(raw);
+      if(p && Array.isArray(p.items)) state = { items: p.items, subs: p.subs || null };
+    }
+  }catch(e){}
+  migrate();
+}
+function writeCache(){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(state)); }catch(e){} }
+
+function startFirebase(){
+  try{
+    firebase.initializeApp(firebaseConfig);
+    docRef = firebase.firestore().doc(DOC_PATH);
+    docRef.onSnapshot(snap => {
+      if(saving) return;
+      if(!snap.exists){ save(); return; }
+      const d = snap.data();
+      state = {
+        items: Array.isArray(d.items) ? d.items : [],
+        subs:  Array.isArray(d.subs)  ? d.subs  : null
+      };
+      const changed = migrate();
+      writeCache();
+      renderStreamFilter();
+      renderYearFilter();
+      renderSubsPicker();
+      renderBanner();
+      render();
+      if(openId) openDetail(openId);
+      setSync("idle","Synced");
+      if(changed) save();
+    }, err => { console.error(err); setSync("error","Offline — this device only"); });
+  }catch(e){ console.error(e); setSync("error","Offline — this device only"); }
+}
+
+function save(){
+  writeCache();
+  renderStreamFilter();
+  renderYearFilter();
+  renderSubsPicker();
+  renderBanner();
+  render();
+  if(openId) openDetail(openId);
+  if(!docRef) return;
+  setSync("saving","Saving");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saving = true;
+    docRef.set({ items: state.items, subs: state.subs, updated: Date.now() })
+      .then(() => setSync("idle","Synced"))
+      .catch(e => { console.error(e); setSync("error","Couldn't save"); })
+      .finally(() => { saving = false; });
+  }, 500);
+}
+
+/* ---------------- lookup ---------------- */
+function lookup(q){
+  return ($("fType").value === "movie") ? lookupMovie(q) : lookupSeries(q);
+}
+
+function showResults(rows, onPick){
+  const box = $("results");
+  box.innerHTML = "";
+  if(!rows.length){
+    $("lookupHint").textContent = "Nothing found. Check the spelling, or fill it in by hand.";
+    box.classList.remove("open");
+    return;
+  }
+  $("lookupHint").textContent = "Pick the right one:";
+  rows.forEach(r => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cq-result";
+    b.innerHTML =
+      (r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy">`
+               : `<div class="cq-poster-none" style="font-size:.8rem;">${esc(r.name)}</div>`) +
+      `<div class="cq-rname">${esc(r.name)}</div>` +
+      `<div class="cq-rmeta">${esc(r.meta)}</div>`;
+    b.onclick = () => onPick(r);
+    box.appendChild(b);
+  });
+  box.classList.add("open");
+}
+
+function lookupSeries(q){
+  $("lookupHint").textContent = "Searching…";
+  fetch(TVMAZE + "/search/shows?q=" + encodeURIComponent(q))
+    .then(r => r.json())
+    .then(rows => {
+      showResults(rows.slice(0,8).map(row => {
+        const s = row.show;
+        const year = s.premiered ? s.premiered.slice(0,4) : "";
+        const net  = (s.network && s.network.name) || (s.webChannel && s.webChannel.name) || "";
+        return {
+          raw: s,
+          name: s.name,
+          image: s.image ? toHttps(s.image.medium) : "",
+          full:  s.image ? toHttps(s.image.original || s.image.medium) : "",
+          meta: [year, net].filter(Boolean).join(" · ")
+        };
+      }), pickSeries);
+    })
+    .catch(e => { console.error(e); $("lookupHint").textContent = "Lookup failed — fill it in by hand."; });
+}
+
+function pickSeries(r){
+  $("fTitle").value = r.name;
+  $("fImage").value = r.full;
+  $("results").classList.remove("open");
+  $("lookupHint").textContent = "Fetching seasons…";
+
+  fetchSeasons(r.raw.id)
+    .then(seasons => {
+      pendingLookup = { type:"series", tvmazeId: r.raw.id, seasons: seasons };
+      const eps = seasons.reduce((n,s) => n + s.episodes, 0);
+      $("lookupHint").textContent =
+        seasons.length + (seasons.length === 1 ? " season, " : " seasons, ") + eps + " episodes found.";
+    })
+    .catch(e => {
+      console.error(e);
+      pendingLookup = { type:"series", tvmazeId: r.raw.id, seasons: [] };
+      $("lookupHint").textContent = "Got the show, but the seasons didn't load. Try Refresh seasons after saving.";
+    });
+}
+
+function lookupMovie(q){
+  if(!hasTmdb()){ $("lookupHint").textContent = HINT_NOKEY; return; }
+  $("lookupHint").textContent = "Searching…";
+  fetch(TMDB + "/search/movie?api_key=" + encodeURIComponent(TMDB_KEY) +
+        "&include_adult=false&query=" + encodeURIComponent(q))
+    .then(r => { if(r.status === 401) throw new Error("bad key"); return r.json(); })
+    .then(data => {
+      showResults((data.results || []).slice(0,8).map(m => ({
+        raw: m,
+        name: m.title,
+        image: m.poster_path ? (TMDB_IMG + m.poster_path) : "",
+        full:  m.poster_path ? (TMDB_IMG + m.poster_path) : "",
+        meta: m.release_date ? m.release_date.slice(0,4) : ""
+      })), pickMovie);
+    })
+    .catch(e => {
+      console.error(e);
+      $("lookupHint").textContent = (e.message === "bad key")
+        ? "TMDB rejected that key. Check it was copied whole."
+        : "Film lookup failed — fill it in by hand.";
+    });
+}
+
+function pickMovie(r){
+  $("fTitle").value = r.name;
+  $("fImage").value = r.full;
+  $("results").classList.remove("open");
+  $("lookupHint").textContent = "Fetching runtime…";
+
+  fetch(TMDB + "/movie/" + r.raw.id + "?api_key=" + encodeURIComponent(TMDB_KEY))
+    .then(res => res.json())
+    .then(d => {
+      const mins = d.runtime || 0;
+      $("fRuntime").value = mins || "";
+      pendingLookup = { type:"movie", runtime: mins };
+      $("lookupHint").textContent = mins ? ("Runtime " + hm(mins) + ".") : "No runtime listed — type it in.";
+    })
+    .catch(e => { console.error(e); $("lookupHint").textContent = "Got the film, but no runtime came back. Type it in."; });
+}
+
+/* One request: the seasons endpoint gives us episodeOrder (total ordered
+   episodes including unaired). We store just that number — the user manually
+   updates it if they want to track a mid-season airing show. */
+function fetchSeasons(showId){
+  return fetch(TVMAZE + "/shows/" + showId + "/seasons")
+    .then(r => r.json())
+    .then(seasonData => {
+      /* also fetch aired episodes as a fallback for episodeOrder */
+      return fetch(TVMAZE + "/shows/" + showId + "?embed=episodes")
+        .then(r => r.json())
+        .then(showData => {
+          const eps = (showData._embedded && showData._embedded.episodes) || [];
+          const aired = {};
+          eps.forEach(ep => {
+            if(!ep.season || ep.number == null) return;
+            aired[ep.season] = (aired[ep.season] || 0) + 1;
+          });
+          return seasonData
+            .filter(s => s.number != null && s.number > 0)
+            .sort((a, b) => a.number - b.number)
+            .map(s => ({
+              number:   s.number,
+              episodes: s.episodeOrder || aired[s.number] || 0,
+              watched:  0
+            }))
+            .filter(s => s.episodes > 0);
+        });
+    });
+}
+
+function mergeSeasons(oldSeasons, fresh){
+  const prev = {};
+  (oldSeasons || []).forEach(s => {
+    prev[s.number] = {
+      watchedEps: s.watchedEps || null,
+      watched: s.watched || 0,
+      episodes: s.episodes || 0,
+      startDate: s.startDate,
+      endDate: s.endDate
+    };
+  });
+  return fresh.map(s => {
+    const p = prev[s.number];
+    const weps = p && p.watchedEps ? p.watchedEps.filter(i => i <= s.episodes) : null;
+    const wc   = weps ? weps.length : Math.min(p ? p.watched : 0, s.episodes);
+    const out  = { number: s.number, episodes: s.episodes, watchedEps: weps, watched: wc };
+    if(p && p.startDate) out.startDate = p.startDate;
+    if(p && p.endDate)   out.endDate   = p.endDate;
+    return out;
+  });
+}
+
+/* ---------------- filter + sort ---------------- */
+const LABEL = { want:"TBW", watching:"Watching", watched:"Watched" };
+const NEXT  = { want:"watching", watching:"watched", watched:"want" };
+
+function byTitle(a, b){
+  return a.title.localeCompare(b.title, undefined, { sensitivity:"base" });
+}
+
+function visibleItems(){
+  let rows = state.items.filter(i => {
+    if(filter === "rewatch"   && !i.rewatch)   return false;
+    if(filter === "tradition" && !i.tradition) return false;
+    if(filter === "unseen"    && seenThisYear(i)) return false;
+    const statusFilters = ["want","watching","watched"];
+    if(statusFilters.includes(filter) && i.status !== filter) return false;
+    if(fltKind !== "all" && (i.type || "series") !== fltKind) return false;
+    if(fltWho !== "all"  && whoOf(i) !== fltWho) return false;
+    if(fltStream === "__subbed"){
+      const st = i.streams || [];
+      if(!st.length || !st.some(isSubbed)) return false;
+    }else if(fltStream !== "all" && !(i.streams || []).includes(fltStream)) return false;
+    if(fltYear !== "all" && !(i.years || []).includes(parseInt(fltYear, 10))) return false;
+    if(fltPri !== "all"){
+      const tier = priTier(priAvg(i));
+      if(fltPri === "none" && tier !== "none") return false;
+      if(fltPri !== "none" && tier !== fltPri) return false;
+    }
+    return true;
+  });
+
+  const [key, dir] = sortBy.split("-");
+  const flip = dir === "asc" ? -1 : 1;
+
+  rows.sort((a, b) => {
+    if(key === "title") return byTitle(a, b) * (dir === "asc" ? 1 : -1);
+    if(key === "added") return ((b.added || 0) - (a.added || 0)) * flip;
+    if(key === "progress"){
+      const d = (pctOf(b) - pctOf(a)) * flip;
+      return d !== 0 ? d : byTitle(a, b);
+    }
+    if(key === "started" || key === "finished"){
+      /* undated items sit at the bottom whichever way you sort */
+      const get = key === "started" ? itemStart : itemEnd;
+      const da = get(a), db = get(b);
+      if(!da && !db) return byTitle(a, b);
+      if(!da) return 1;
+      if(!db) return -1;
+      if(da === db) return byTitle(a, b);
+      return (db > da ? 1 : -1) * flip;
+    }
+    const pa = priAvg(a), pb = priAvg(b);
+    if(!pa && !pb) return byTitle(a, b);
+    if(!pa) return 1;
+    if(!pb) return -1;
+    const d = (pb - pa) * flip;
+    return d !== 0 ? d : byTitle(a, b);
+  });
+
+  return rows;
+}
+
+function renderYearFilter(){
+  const sel = $("fltYear");
+  if(!sel) return;
+  const keep = sel.value;
+  const years = new Set();
+  state.items.forEach(i => (i.years || []).forEach(y => years.add(y)));
+  sel.innerHTML = '<option value="all">Any year</option>';
+  Array.from(years).sort((a,b) => b - a).forEach(y => {
+    const o = document.createElement("option");
+    o.value = String(y);
+    o.textContent = y + (y === SEASON.year ? " (this year)" : "");
+    sel.appendChild(o);
+  });
+  sel.value = years.has(parseInt(keep, 10)) ? keep : "all";
+  fltYear = sel.value;
+}
+
+function renderStreamFilter(){
+  const sel = $("fltStream");
+  const keep = sel.value;
+  sel.innerHTML = '<option value="all">All</option>' +
+                  '<option value="__subbed">Only what we have</option>';
+  const used = new Set();
+  state.items.forEach(i => (i.streams || []).forEach(s => used.add(s)));
+  STREAMING_SERVICES.filter(s => used.has(s.name)).forEach(s => {
+    const o = document.createElement("option");
+    o.value = s.name;
+    o.textContent = s.name + (isSubbed(s.name) ? "" : " (not subscribed)");
+    sel.appendChild(o);
+  });
+  sel.value = (keep === "__subbed" || used.has(keep)) ? keep : "all";
+  fltStream = sel.value;
+}
+
+function renderSubsPicker(){
+  const box = $("subsPick");
+  if(!box) return;
+  box.innerHTML = "";
+  STREAMING_SERVICES.forEach(svc => {
+    const on = isSubbed(svc.name);
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = svc.name;
+    b.style.background = svc.color;
+    if(svc.light) b.setAttribute("data-light","true");
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.onclick = () => {
+      const cur = Array.isArray(state.subs) ? state.subs.slice() : STREAMING_SERVICES.map(s => s.name);
+      state.subs = cur.includes(svc.name) ? cur.filter(s => s !== svc.name) : cur.concat(svc.name);
+      save();
+    };
+    box.appendChild(b);
+  });
+}
+
+/* ---------------- render ---------------- */
+function render(){
+  const grid  = $("grid");
+  const shown = visibleItems();
+  grid.innerHTML = "";
+  $("empty").style.display = shown.length ? "none" : "block";
+  $("empty").textContent = state.items.length ? "Nothing matches those filters." : "Nothing here yet. Add the first one.";
+
+  shown.forEach(item => {
+    const t = totals(item);
+    const card = document.createElement("div");
+    card.className = "cq-card" + (item.status === "watched" ? " is-done" : "");
+
+    const art = item.image
+      ? `<img class="cq-poster" src="${esc(item.image)}" alt="" loading="lazy"
+           onerror="this.outerHTML='<div class=&quot;cq-poster-none&quot;>${esc(item.title)}</div>'">`
+      : `<div class="cq-poster-none">${esc(item.title)}</div>`;
+
+    const ring = (t.kind !== "none")
+      ? `<div class="cq-ring"><div class="pp-progress-ring" data-color="pink"
+           data-current="${t.done}" data-total="${t.total}" data-size="38"></div></div>`
+      : "";
+
+    const who = whoOf(item);
+    const whoBadge = `<span class="cq-who" data-who="${who}">${esc(WHO_LABEL[who])}</span>`;
+
+    const avg = priAvg(item);
+    const pri = avg ? `<span class="cq-pri" data-tier="${priTier(avg)}">${esc(priLabel(avg))}</span>` : "";
+
+    const where = position(item);
+    const streams = (item.streams || []).map(x => {
+      const svc = SERVICE_BY_NAME[x];
+      const col = svc ? svc.color : "#6B5E54";
+      const lbl = svc && svc.short ? svc.short : x;
+      const sub = isSubbed(x);
+      return `<span class="cq-stream" data-sub="${sub}" ${svc && svc.light ? 'data-light="true"' : ""}
+        style="background:${col};${sub ? "" : `color:${col};border-color:${col};`}"
+        title="${esc(x)}${sub ? "" : " — not subscribed"}">${esc(lbl)}</span>`;
+    }).join("");
+    const rewatch = item.rewatch ? `<span class="cq-rewatch">Rewatch</span>` : "";
+    const tradition = item.tradition ? `<span class="sp-tradition">Annual</span>` : "";
+
+    const yrs = (item.years || []).slice().sort((a,b) => b - a);
+    let yearLine = "";
+    if(yrs.length){
+      const thisYear = yrs.includes(SEASON.year);
+      const others   = yrs.filter(y => y !== SEASON.year);
+      yearLine = thisYear
+        ? `<div class="sp-years"><b>Seen this year</b>${others.length ? " · also " + others.join(", ") : ""}</div>`
+        : `<div class="sp-years">Last seen ${yrs[0]}</div>`;
+    }
+
+    card.innerHTML = `
+      <div class="cq-posterwrap" data-open="${item.id}">${art}${whoBadge}${ring}</div>
+      <div class="cq-tools">
+        <button data-edit="${item.id}" aria-label="Edit ${esc(item.title)}">✎</button>
+        <button data-del="${item.id}" aria-label="Remove ${esc(item.title)}">✕</button>
+      </div>
+      <div class="cq-body">
+        <h3 class="cq-name">${esc(item.title)}</h3>
+        ${where ? `<div class="cq-where">${esc(where)}</div>` : ""}
+        ${dateLine(item) ? `<div class="cq-dateline">${esc(dateLine(item))}</div>` : ""}
+        <div class="cq-meta">
+          <button class="cq-status" data-status="${item.status}" data-cycle="${item.id}">${LABEL[item.status]}</button>
+          ${pri}${rewatch}${tradition}
+        </div>
+        ${yearLine}
+        ${streams ? `<div class="cq-streams">${streams}</div>` : ""}
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  PPProgress.draw(grid);
+
+  const done = state.items.filter(i => i.status === "watched").length;
+  const base = state.items.length ? `${done} watched of ${state.items.length}` : "";
+  $("count").textContent = (shown.length !== state.items.length)
+    ? `Showing ${shown.length} of ${state.items.length} · ${base}`
+    : base;
+}
+
+function openDetail(id){
+  const item = state.items.find(x => x.id === id);
+  if(!item){ closeDetail(); return; }
+  openId = id;
+
+  const t = totals(item);
+  const avg = priAvg(item);
+  $("dTitle").textContent = item.title;
+  $("dImg").src = item.image || "";
+  $("dImg").style.display = item.image ? "" : "none";
+
+  const bits = [position(item) || LABEL[item.status], WHO_LABEL[whoOf(item)]];
+  if(avg){
+    const words = ["","low","med","high"];
+    const pieces = [];
+    if(item.priD) pieces.push("D " + words[item.priD]);
+    if(item.priB) pieces.push("B " + words[item.priB]);
+    bits.push(priLabel(avg) + " priority (" + pieces.join(", ") + ")");
+  }
+  $("dMeta").textContent = bits.join(" · ");
+
+  const overall = $("dOverall");
+  overall.setAttribute("data-current", t.done);
+  overall.setAttribute("data-total", t.total || 0);
+  overall.setAttribute("data-label", t.kind === "movie" ? "Runtime" : "Overall");
+  overall.setAttribute("data-text",
+    t.kind === "movie" ? (hm(t.done) + " of " + hm(t.total)) : (t.done + " of " + t.total));
+  overall.style.display = (t.kind !== "none") ? "" : "none";
+
+  const body = $("detailBody");
+  body.innerHTML = "";
+  $("refetchBtn").style.display = (item.type === "series") ? "" : "none";
+
+  if(item.type === "movie"){
+    const row = document.createElement("div");
+    row.className = "cq-block";
+    const controls = item.runtime ? `
+        <div class="cq-block-head">
+          <span class="cq-block-name">Where we are</span>
+          <span class="cq-block-count">${hm(item.watchedMin || 0)} of ${hm(item.runtime)}</span>
+        </div>
+        <div class="cq-step">
+          <button data-min="-15">−15</button>
+          <button data-min="-5">−5</button>
+          <button data-min="5">+5</button>
+          <button data-min="15">+15</button>
+          <span class="cq-steplabel">or jump to</span>
+          <input id="minInput" type="number" min="0" max="${item.runtime}" step="1" value="${item.watchedMin || 0}">
+          <span class="cq-steplabel">min</span>
+          <button data-min="finish">Finished</button>
+          <button data-min="restart">Start over</button>
+        </div>`
+      : `<p class="pp-empty" style="padding:12px;">No runtime set. Edit this one and add it.</p>`;
+
+    row.innerHTML = controls + `
+        <div class="cq-dates">
+          <label for="mStart">Started</label>
+          <input id="mStart" type="date" data-date="start" value="${item.startDate || ""}">
+          <label for="mEnd">Finished</label>
+          <input id="mEnd" type="date" data-date="end" value="${item.endDate || ""}">
+          ${(item.startDate || item.endDate)
+            ? `<button class="cq-dateclear" data-date-clear="movie">Clear dates</button>` : ""}
+        </div>`;
+    body.appendChild(row);
+  }else{
+    if(t.kind === "none"){
+      body.innerHTML = `<p class="pp-empty">No seasons yet. Use Refresh seasons to pull them in.</p>`;
+    }else{
+      item.seasons.forEach(s => {
+        const row = document.createElement("div");
+        row.className = "cq-block";
+        const wc      = watchedCount(s);
+        const wepsStr = Array.isArray(s.watchedEps) ? s.watchedEps.join(",") : "";
+        row.innerHTML = `
+          <div class="cq-block-head">
+            <span class="cq-block-name">Season ${s.number}</span>
+            <span class="cq-block-count">${wc} of <input
+              class="cq-ep-count" type="number" min="0" step="1"
+              data-season-total="${s.number}" value="${s.episodes}"
+              title="Total episodes — edit when a new one drops"> ep</span>
+          </div>
+          <div class="pp-chips" data-color="pink" data-clickable="true" data-chip-label="EP"
+               data-season="${s.number}"
+               data-current="${wc}"
+               data-total="${s.episodes}"
+               ${wepsStr ? `data-watched="${wepsStr}"` : ""}></div>
+          <div class="cq-step">
+            <button data-season-all="${s.number}">All</button>
+            <button data-season-none="${s.number}">Clear</button>
+          </div>
+          <div class="cq-dates">
+            <label for="sStart${s.number}">Started</label>
+            <input id="sStart${s.number}" type="date"
+                   data-date="start" data-date-season="${s.number}" value="${s.startDate || ""}">
+            <label for="sEnd${s.number}">Finished</label>
+            <input id="sEnd${s.number}" type="date"
+                   data-date="end" data-date-season="${s.number}" value="${s.endDate || ""}">
+            ${(s.startDate || s.endDate)
+              ? `<button class="cq-dateclear" data-date-clear="${s.number}">Clear dates</button>` : ""}
+          </div>`;
+        body.appendChild(row);
+      });
+    }
+  }
+
+  $("detail").classList.add("open");
+  PPProgress.draw($("detail"));
+}
+
+function closeDetail(){ openId = null; $("detail").classList.remove("open"); }
+
+/* Save a set of watched episode indices for a season */
+function setSeasonEps(itemId, seasonNo, watchedEps){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item) return;
+  const s = (item.seasons || []).find(x => x.number === seasonNo);
+  if(!s) return;
+  s.watchedEps = watchedEps.filter(i => i >= 1 && i <= s.episodes);
+  s.watched    = s.watchedEps.length;
+  syncStatus(item);
+  save();
+}
+
+function setSeasonTotal(itemId, seasonNo, total){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item) return;
+  const s = (item.seasons || []).find(x => x.number === seasonNo);
+  if(!s) return;
+  s.episodes   = Math.max(0, total);
+  s.watchedEps = Array.isArray(s.watchedEps) ? s.watchedEps.filter(i => i <= s.episodes) : null;
+  s.watched    = s.watchedEps ? s.watchedEps.length : Math.min(s.watched || 0, s.episodes);
+  syncStatus(item);
+  save();
+}
+
+/* seasonNo null → the film's own dates */
+function setDate(itemId, seasonNo, which, value){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item) return;
+  const target = seasonNo == null
+    ? item
+    : (item.seasons || []).find(x => x.number === seasonNo);
+  if(!target) return;
+  const key = which === "start" ? "startDate" : "endDate";
+  if(value) target[key] = value;
+  else      delete target[key];
+  save();
+}
+
+function clearDates(itemId, seasonNo){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item) return;
+  const target = seasonNo == null
+    ? item
+    : (item.seasons || []).find(x => x.number === seasonNo);
+  if(!target) return;
+  delete target.startDate;
+  delete target.endDate;
+  save();
+}
+
+function setMinutes(itemId, mins){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item || !item.runtime) return;
+  item.watchedMin = Math.max(0, Math.min(Math.round(mins), item.runtime));
+  syncStatus(item);
+  save();
+}
+
+function renderStreamPicker(){
+  const box = $("streamPick");
+  box.innerHTML = "";
+  STREAMING_SERVICES.forEach(svc => {
+    const on = pickedStreams.includes(svc.name);
+    const sub = isSubbed(svc.name);
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = svc.name + (sub ? "" : " ✦");
+    b.title = sub ? svc.name : svc.name + " — not subscribed";
+    if(svc.light) b.setAttribute("data-light","true");
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    if(on){
+      b.style.background  = svc.color;
+      b.style.borderColor = svc.color;
+      b.style.color       = svc.light ? "var(--ink)" : "#fff";
+    }
+    b.onclick = () => {
+      pickedStreams = on ? pickedStreams.filter(s => s !== svc.name) : pickedStreams.concat(svc.name);
+      renderStreamPicker();
+    };
+    box.appendChild(b);
+  });
+}
+
+/* ---------------- form ---------------- */
+function syncTypeUI(){
+  const isMovie = $("fType").value === "movie";
+  $("runtimeField").classList.toggle("hidden", !isMovie);
+  $("lookupHint").textContent = isMovie ? (hasTmdb() ? HINT_MOVIE : HINT_NOKEY) : HINT_SERIES;
+  $("lookupBtn").style.display = (isMovie && !hasTmdb()) ? "none" : "";
+  $("fTitle").placeholder = isMovie ? "Practical Magic" : "Over the Garden Wall";
+  $("results").classList.remove("open");
+}
+
+function openForm(item){
+  closeDetail();
+  $("subs").classList.remove("open");
+  editId = item ? item.id : null;
+  pendingLookup = null;
+  pickedStreams = item ? (item.streams || []).slice() : [];
+  $("formTitle").textContent = item ? "Edit" : "Add something";
+  $("fTitle").value    = item ? item.title : "";
+  $("fImage").value    = item ? (item.image || "") : "";
+  $("fStatus").value   = item ? item.status : "want";
+  $("fType").value     = item ? (item.type || "series") : "series";
+  $("fWho").value      = item ? whoOf(item) : "together";
+  $("fPriD").value     = item ? String(item.priD || 0) : "0";
+  $("fPriB").value     = item ? String(item.priB || 0) : "0";
+  $("fRuntime").value  = item && item.runtime ? item.runtime : "";
+  $("fRewatch").checked   = !!(item && item.rewatch);
+  $("fTradition").checked = !!(item && item.tradition);
+  syncTypeUI();
+  $("deleteBtn").style.display = item ? "inline-block" : "none";
+  renderStreamPicker();
+  $("form").classList.add("open");
+  $("fTitle").focus();
+}
+function closeForm(){ $("form").classList.remove("open"); editId = null; pickedStreams = []; pendingLookup = null; }
+
+/* ---------------- events ---------------- */
+$("addBtn").onclick      = () => openForm(null);
+$("cancelBtn").onclick   = closeForm;
+$("detailClose").onclick = closeDetail;
+$("fType").onchange      = syncTypeUI;
+
+$("lookupBtn").onclick = () => { const q = $("fTitle").value.trim(); if(q) lookup(q); };
+$("fTitle").onkeydown  = e => { if(e.key === "Enter"){ e.preventDefault(); $("lookupBtn").click(); } };
+
+$("saveBtn").onclick = () => {
+  const title = $("fTitle").value.trim();
+  if(!title){ $("fTitle").focus(); return; }
+
+  const isMovie = $("fType").value === "movie";
+  const payload = {
+    title: title,
+    image: $("fImage").value.trim(),
+    status: $("fStatus").value,
+    type: $("fType").value,
+    who: $("fWho").value,
+    priD: parseInt($("fPriD").value, 10) || 0,
+    priB: parseInt($("fPriB").value, 10) || 0,
+    streams: pickedStreams.slice(),
+    rewatch: $("fRewatch").checked,
+    tradition: $("fTradition").checked,
+    runtime: isMovie ? (parseInt($("fRuntime").value, 10) || 0) : 0
+  };
+
+  if(editId){
+    const i = state.items.findIndex(x => x.id === editId);
+    if(i > -1){
+      const merged = Object.assign({}, state.items[i], payload);
+      if(pendingLookup && pendingLookup.type === "series"){
+        merged.tvmazeId = pendingLookup.tvmazeId;
+        merged.seasons  = mergeSeasons(state.items[i].seasons, pendingLookup.seasons);
+      }
+      if(isMovie) merged.watchedMin = Math.min(merged.watchedMin || 0, merged.runtime);
+      state.items[i] = merged;
+    }
+  }else{
+    const item = Object.assign({ id: uid(), added: Date.now(), seasons: [], watchedMin: 0, years: [] }, payload);
+    if(pendingLookup && pendingLookup.type === "series"){
+      item.tvmazeId = pendingLookup.tvmazeId;
+      item.seasons  = pendingLookup.seasons;
+    }
+    if(item.status === "watched"){
+      markYear(item);
+      if(isMovie) item.watchedMin = item.runtime;
+      else item.seasons.forEach(s => {
+        s.watchedEps = Array.from({length: s.episodes}, (_,i) => i + 1);
+        s.watched    = s.episodes;
+      });
+    }
+    state.items.unshift(item);
+  }
+  closeForm();
+  save();
+};
+
+$("deleteBtn").onclick = () => {
+  if(!editId) return;
+  const item = state.items.find(x => x.id === editId);
+  if(!confirm(`Remove "${item ? item.title : "this"}" from the list?`)) return;
+  state.items = state.items.filter(x => x.id !== editId);
+  closeForm();
+  save();
+};
+
+$("refetchBtn").onclick = () => {
+  const item = state.items.find(x => x.id === openId);
+  if(!item) return;
+  if(!item.tvmazeId){ alert("This one wasn't added by lookup. Edit it and use Look it up first."); return; }
+  $("dMeta").textContent = "Refreshing…";
+  fetchSeasons(item.tvmazeId)
+    .then(fresh => { item.seasons = mergeSeasons(item.seasons, fresh); syncStatus(item); save(); })
+    .catch(e => { console.error(e); $("dMeta").textContent = "Refresh failed."; });
+};
+
+
+$("grid").onclick = e => {
+  const cycle = e.target.closest("[data-cycle]");
+  if(cycle){
+    const item = state.items.find(x => x.id === cycle.dataset.cycle);
+    if(item){
+      item.status = NEXT[item.status];
+      if(item.status === "watched") markYear(item);
+      const t = totals(item);
+      if(t.kind === "movie"){
+        if(item.status === "watched") item.watchedMin = item.runtime;
+        if(item.status === "want")    item.watchedMin = 0;
+      }else if(t.kind === "series"){
+        if(item.status === "watched") item.seasons.forEach(s => {
+          s.watchedEps = Array.from({length: s.episodes}, (_,i) => i + 1);
+          s.watched    = s.episodes;
+        });
+        if(item.status === "want") item.seasons.forEach(s => { s.watchedEps = []; s.watched = 0; });
+      }
+      save();
+    }
+    return;
+  }
+  const edit = e.target.closest("[data-edit]");
+  if(edit){ const i = state.items.find(x => x.id === edit.dataset.edit); if(i) openForm(i); return; }
+
+  const del = e.target.closest("[data-del]");
+  if(del){
+    const i = state.items.find(x => x.id === del.dataset.del);
+    if(i && confirm(`Remove "${i.title}" from the list?`)){
+      if(openId === i.id) closeDetail();
+      state.items = state.items.filter(x => x.id !== i.id);
+      save();
+    }
+    return;
+  }
+  const open = e.target.closest("[data-open]");
+  if(open) openDetail(open.dataset.open);
+};
+
+/* chips fire this with e.detail.watched (the new set object) */
+$("detailBody").addEventListener("pp-progress-change", e => {
+  const box = e.target.closest("[data-season]");
+  if(!box || !openId) return;
+  const no = parseInt(box.getAttribute("data-season"), 10);
+  if(e.detail.watched != null){
+    /* per-chip toggle — convert the set object to a sorted array */
+    const eps = Object.keys(e.detail.watched).map(Number).sort((a,b) => a - b);
+    setSeasonEps(openId, no, eps);
+  }
+});
+
+$("detailBody").onclick = e => {
+  if(!openId) return;
+  const item = state.items.find(x => x.id === openId);
+  if(!item) return;
+
+  const minBtn = e.target.closest("[data-min]");
+  if(minBtn){
+    const v = minBtn.getAttribute("data-min");
+    if(v === "finish")       setMinutes(openId, item.runtime);
+    else if(v === "restart") setMinutes(openId, 0);
+    else                     setMinutes(openId, (item.watchedMin || 0) + parseInt(v, 10));
+    return;
+  }
+
+  const allBtn  = e.target.closest("[data-season-all]");
+  const noneBtn = e.target.closest("[data-season-none]");
+  if(allBtn){
+    const no = parseInt(allBtn.getAttribute("data-season-all"), 10);
+    const s  = (item.seasons || []).find(x => x.number === no);
+    if(s) setSeasonEps(openId, no, Array.from({length: s.episodes}, (_,i) => i + 1));
+    return;
+  }
+  if(noneBtn){
+    const no = parseInt(noneBtn.getAttribute("data-season-none"), 10);
+    if(no) setSeasonEps(openId, no, []);
+    return;
+  }
+
+  const clearBtn = e.target.closest("[data-date-clear]");
+  if(clearBtn){
+    const v = clearBtn.getAttribute("data-date-clear");
+    clearDates(openId, v === "movie" ? null : parseInt(v, 10));
+  }
+};
+
+$("detailBody").onchange = e => {
+  if(!openId) return;
+
+  if(e.target.id === "minInput") setMinutes(openId, parseInt(e.target.value, 10) || 0);
+
+  const totalInput = e.target.closest("[data-season-total]");
+  if(totalInput){
+    const no = parseInt(totalInput.getAttribute("data-season-total"), 10);
+    const val = parseInt(totalInput.value, 10);
+    if(!isNaN(val)) setSeasonTotal(openId, no, val);
+    return;
+  }
+
+  const dateInput = e.target.closest("[data-date]");
+  if(dateInput){
+    const which  = dateInput.getAttribute("data-date");
+    const seasNo = dateInput.getAttribute("data-date-season");
+    setDate(openId, seasNo == null ? null : parseInt(seasNo, 10), which, dateInput.value);
+  }
+};
+
+/* filters */
+document.querySelectorAll(".cq-filter").forEach(btn => {
+  btn.onclick = () => {
+    filter = btn.dataset.filter;
+    document.querySelectorAll(".cq-filter").forEach(b => b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+    render();
+  };
+});
+
+$("fltKind").onchange = e => { fltKind = e.target.value; render(); };
+$("fltWho").onchange  = e => { fltWho  = e.target.value; render(); };
+$("fltPri").onchange  = e => { fltPri  = e.target.value; render(); };
+$("fltStream").onchange = e => { fltStream = e.target.value; render(); };
+$("fltYear").onchange   = e => { fltYear   = e.target.value; render(); };
+$("sortBy").onchange  = e => { sortBy  = e.target.value; render(); };
+
+$("resetBtn").onclick = () => {
+  filter = fltKind = fltWho = fltPri = fltStream = fltYear = "all";
+  $("fltKind").value = $("fltWho").value = $("fltPri").value = $("fltStream").value = $("fltYear").value = "all";
+  document.querySelectorAll(".cq-filter").forEach(b =>
+    b.setAttribute("aria-pressed", b.dataset.filter === "all" ? "true" : "false"));
+  render();
+};
+
+$("subsBtn").onclick = () => {
+  const panel = $("subs");
+  const opening = !panel.classList.contains("open");
+  closeForm();
+  closeDetail();
+  panel.classList.toggle("open", opening);
+  if(opening) renderSubsPicker();
+};
+$("subsClose").onclick = () => $("subs").classList.remove("open");
+
+loadCache();
+renderStreamFilter();
+renderYearFilter();
+renderSubsPicker();
+renderBanner();
+render();
+startFirebase();
+</script>
+</body>
+</html>
