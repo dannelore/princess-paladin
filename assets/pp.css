@@ -90,6 +90,7 @@ body[class*="pp-"]{
 .pp-castle{    background-image: linear-gradient(135deg,#E7E5DF 0%,#D9D6CC 100%); }
 .pp-dannelore{ background-image: linear-gradient(135deg,#F6D9E6 0%,#F2C9DC 100%); }
 .pp-templates{ background-image: linear-gradient(135deg,#EAEFE3 0%,#DDE5D3 100%); }
+.pp-sidequest{ background-image: linear-gradient(135deg,#EFEAF4 0%,#DFD5EC 100%); }
 
 
 /* --------------------------------------------------------------------------
