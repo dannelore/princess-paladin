@@ -544,6 +544,13 @@ function priTier(avg){
 }
 
 /* ---------------- progress maths ---------------- */
+/* watchedCount: how many distinct episodes watched in a season,
+   from the watchedEps array if it exists, otherwise s.watched */
+function watchedCount(s){
+  if(Array.isArray(s.watchedEps)) return s.watchedEps.length;
+  return s.watched || 0;
+}
+
 function totals(item){
   if(item.type === "movie"){
     const total = item.runtime || 0;
@@ -551,7 +558,7 @@ function totals(item){
   }
   if(Array.isArray(item.seasons) && item.seasons.length){
     let done = 0, total = 0;
-    item.seasons.forEach(s => { done += (s.watched || 0); total += (s.episodes || 0); });
+    item.seasons.forEach(s => { done += watchedCount(s); total += (s.episodes || 0); });
     return { done: done, total: total, kind: total ? "series" : "none" };
   }
   return { done: 0, total: 0, kind: "none" };
@@ -572,8 +579,19 @@ function position(item){
     return "Up to " + hm(t.done) + " of " + hm(t.total);
   }
   for(const s of item.seasons){
-    if((s.watched || 0) < (s.episodes || 0)){
-      return "Up next: S" + s.number + " E" + ((s.watched || 0) + 1);
+    const eps = Array.isArray(s.watchedEps) ? s.watchedEps : [];
+    const wc  = watchedCount(s);
+    if(wc < (s.episodes || 0)){
+      /* find first unwatched episode index */
+      let next = 1;
+      if(eps.length){
+        const set = {};
+        eps.forEach(i => { set[i] = true; });
+        while(set[next] && next <= s.episodes) next++;
+      }else{
+        next = wc + 1;
+      }
+      return "Up next: S" + s.number + " E" + next;
     }
   }
   return "";
@@ -803,12 +821,15 @@ function fetchSeasons(showId){
 
 function mergeSeasons(oldSeasons, fresh){
   const prev = {};
-  (oldSeasons || []).forEach(s => { prev[s.number] = { watched: s.watched || 0, episodes: s.episodes || 0 }; });
-  return fresh.map(s => ({
-    number:   s.number,
-    episodes: s.episodes,
-    watched:  Math.min(prev[s.number] ? prev[s.number].watched : 0, s.episodes)
-  }));
+  (oldSeasons || []).forEach(s => {
+    prev[s.number] = { watchedEps: s.watchedEps || null, watched: s.watched || 0, episodes: s.episodes || 0 };
+  });
+  return fresh.map(s => {
+    const p = prev[s.number];
+    const weps = p && p.watchedEps ? p.watchedEps.filter(i => i <= s.episodes) : null;
+    const wc   = weps ? weps.length : Math.min(p ? p.watched : 0, s.episodes);
+    return { number: s.number, episodes: s.episodes, watchedEps: weps, watched: wc };
+  });
 }
 
 /* ---------------- filter + sort ---------------- */
@@ -991,20 +1012,24 @@ function openDetail(id){
       item.seasons.forEach(s => {
         const row = document.createElement("div");
         row.className = "cq-block";
+        const wc      = watchedCount(s);
+        const wepsStr = Array.isArray(s.watchedEps) ? s.watchedEps.join(",") : "";
         row.innerHTML = `
           <div class="cq-block-head">
             <span class="cq-block-name">Season ${s.number}</span>
-            <span class="cq-block-count">${s.watched || 0} of <input
+            <span class="cq-block-count">${wc} of <input
               class="cq-ep-count" type="number" min="0" step="1"
               data-season-total="${s.number}" value="${s.episodes}"
-              title="Total episodes available to watch"> ep</span>
+              title="Total episodes — edit when a new one drops"> ep</span>
           </div>
           <div class="pp-chips" data-color="pink" data-clickable="true" data-chip-label="EP"
-               data-season="${s.number}" data-current="${s.watched || 0}" data-total="${s.episodes}"></div>
+               data-season="${s.number}"
+               data-current="${wc}"
+               data-total="${s.episodes}"
+               ${wepsStr ? `data-watched="${wepsStr}"` : ""}></div>
           <div class="cq-step">
-            <button data-minus="${s.number}">− one</button>
-            <button data-plus="${s.number}">+ one</button>
-            <button data-none="${s.number}">Clear</button>
+            <button data-season-all="${s.number}">All</button>
+            <button data-season-none="${s.number}">Clear</button>
           </div>`;
         body.appendChild(row);
       });
@@ -1017,12 +1042,14 @@ function openDetail(id){
 
 function closeDetail(){ openId = null; $("detail").classList.remove("open"); }
 
-function setSeason(itemId, seasonNo, watched){
+/* Save a set of watched episode indices for a season */
+function setSeasonEps(itemId, seasonNo, watchedEps){
   const item = state.items.find(x => x.id === itemId);
   if(!item) return;
   const s = (item.seasons || []).find(x => x.number === seasonNo);
   if(!s) return;
-  s.watched = Math.max(0, Math.min(watched, s.episodes));
+  s.watchedEps = watchedEps.filter(i => i >= 1 && i <= s.episodes);
+  s.watched    = s.watchedEps.length;
   syncStatus(item);
   save();
 }
@@ -1032,8 +1059,9 @@ function setSeasonTotal(itemId, seasonNo, total){
   if(!item) return;
   const s = (item.seasons || []).find(x => x.number === seasonNo);
   if(!s) return;
-  s.episodes = Math.max(0, total);
-  s.watched  = Math.min(s.watched || 0, s.episodes);
+  s.episodes   = Math.max(0, total);
+  s.watchedEps = Array.isArray(s.watchedEps) ? s.watchedEps.filter(i => i <= s.episodes) : null;
+  s.watched    = s.watchedEps ? s.watchedEps.length : Math.min(s.watched || 0, s.episodes);
   syncStatus(item);
   save();
 }
@@ -1140,7 +1168,10 @@ $("saveBtn").onclick = () => {
     }
     if(item.status === "watched"){
       if(isMovie) item.watchedMin = item.runtime;
-      else item.seasons.forEach(s => { s.watched = s.episodes; });
+      else item.seasons.forEach(s => {
+        s.watchedEps = Array.from({length: s.episodes}, (_,i) => i + 1);
+        s.watched    = s.episodes;
+      });
     }
     state.items.unshift(item);
   }
@@ -1190,8 +1221,11 @@ $("grid").onclick = e => {
         if(item.status === "watched") item.watchedMin = item.runtime;
         if(item.status === "want")    item.watchedMin = 0;
       }else if(t.kind === "series"){
-        if(item.status === "watched") item.seasons.forEach(s => { s.watched = s.episodes; });
-        if(item.status === "want")    item.seasons.forEach(s => { s.watched = 0; });
+        if(item.status === "watched") item.seasons.forEach(s => {
+          s.watchedEps = Array.from({length: s.episodes}, (_,i) => i + 1);
+          s.watched    = s.episodes;
+        });
+        if(item.status === "want") item.seasons.forEach(s => { s.watchedEps = []; s.watched = 0; });
       }
       save();
     }
@@ -1214,10 +1248,16 @@ $("grid").onclick = e => {
   if(open) openDetail(open.dataset.open);
 };
 
+/* chips fire this with e.detail.watched (the new set object) */
 $("detailBody").addEventListener("pp-progress-change", e => {
   const box = e.target.closest("[data-season]");
   if(!box || !openId) return;
-  setSeason(openId, parseInt(box.getAttribute("data-season"), 10), e.detail.current);
+  const no = parseInt(box.getAttribute("data-season"), 10);
+  if(e.detail.watched != null){
+    /* per-chip toggle — convert the set object to a sorted array */
+    const eps = Object.keys(e.detail.watched).map(Number).sort((a,b) => a - b);
+    setSeasonEps(openId, no, eps);
+  }
 });
 
 $("detailBody").onclick = e => {
@@ -1234,16 +1274,17 @@ $("detailBody").onclick = e => {
     return;
   }
 
-  const btn = e.target.closest("[data-plus],[data-minus],[data-none]");
-  if(!btn) return;
-  const attr = ["data-plus","data-minus","data-none"].find(a => btn.hasAttribute(a));
-  const no = parseInt(btn.getAttribute(attr), 10);
-  const s = (item.seasons || []).find(x => x.number === no);
-  if(!s) return;
-
-  if(attr === "data-plus")  setSeason(openId, no, (s.watched || 0) + 1);
-  if(attr === "data-minus") setSeason(openId, no, (s.watched || 0) - 1);
-  if(attr === "data-none")  setSeason(openId, no, 0);
+  const allBtn  = e.target.closest("[data-season-all]");
+  const noneBtn = e.target.closest("[data-season-none]");
+  if(allBtn){
+    const no = parseInt(allBtn.getAttribute("data-season-all"), 10);
+    const s  = (item.seasons || []).find(x => x.number === no);
+    if(s) setSeasonEps(openId, no, Array.from({length: s.episodes}, (_,i) => i + 1));
+  }
+  if(noneBtn){
+    const no = parseInt(noneBtn.getAttribute("data-season-none"), 10);
+    if(no) setSeasonEps(openId, no, []);
+  }
 };
 
 $("detailBody").onchange = e => {
