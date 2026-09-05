@@ -156,16 +156,44 @@
     padding: 2px 9px;
   }
 
-  /* streaming service badges on card */
+  /* streaming service badges on card — colour comes from an inline style */
   .cq-streams{ display:flex; flex-wrap:wrap; gap:4px; }
   .cq-stream{
     font-family: var(--font-body);
     font-size: .66rem;
-    color: var(--ink-soft);
-    background: rgba(46,36,31,.07);
+    font-weight: 600;
+    letter-spacing: .03em;
+    color: #fff;
+    border: 1px solid transparent;
     border-radius: 999px;
     padding: 2px 8px;
+    white-space: nowrap;
   }
+  /* pale swatches need dark text */
+  .cq-stream[data-light="true"]{ color: var(--ink); }
+
+  /* a service we don't pay for — hollow, with a dotted edge */
+  .cq-stream[data-sub="false"]{
+    background: transparent !important;
+    border-style: dotted;
+    opacity: .75;
+  }
+  .cq-stream[data-sub="false"]::after{ content: " ✦"; font-size: .6rem; }
+
+  /* the subscriptions panel */
+  .cq-subs{ display:none; margin-bottom:22px; }
+  .cq-subs.open{ display:block; }
+  .cq-subs .cq-tagpick button{
+    color: #fff;
+    border-color: transparent;
+    opacity: .38;
+    filter: grayscale(.6);
+  }
+  .cq-subs .cq-tagpick button[aria-pressed="true"]{
+    opacity: 1;
+    filter: none;
+  }
+  .cq-subs .cq-tagpick button[data-light="true"]{ color: var(--ink); }
 
   .cq-ep-count{
     font-family: var(--font-serif);
@@ -342,7 +370,10 @@
 
     <div class="cq-pick">
       <label for="fltStream">Service</label>
-      <select id="fltStream"><option value="all">All</option></select>
+      <select id="fltStream">
+        <option value="all">All</option>
+        <option value="__subbed">Only what we have</option>
+      </select>
     </div>
 
     <div class="cq-pick">
@@ -368,7 +399,21 @@
     </div>
 
     <button class="cq-reset" id="resetBtn">Clear filters</button>
+    <button class="cq-reset" id="subsBtn">Our services</button>
   </div>
+
+  <!-- ---------------- subscriptions ---------------- -->
+  <section class="pp-panel cq-subs" id="subs">
+    <h2 class="pp-panel-title">What we subscribe to</h2>
+    <p class="cq-hint" style="margin:0 0 14px;">
+      Tap to toggle. Services you don't have show faded on cards, so you can
+      see at a glance when something needs a rental or a friend's login.
+    </p>
+    <div class="cq-tagpick" id="subsPick"></div>
+    <div class="cq-actions">
+      <button class="pp-btn pp-btn-quiet" id="subsClose">Done</button>
+    </div>
+  </section>
 
   <div class="cq-bar" style="margin-bottom:14px;">
     <span class="cq-count" id="count"></span>
@@ -523,10 +568,25 @@ const TVMAZE    = "https://api.tvmaze.com";
 const TMDB      = "https://api.themoviedb.org/3";
 const TMDB_IMG  = "https://image.tmdb.org/t/p/w500";
 
+/* Each service carries its own colour. `light: true` means the swatch is pale
+   enough to need dark text. Subscription state is stored separately, in
+   state.subs — see the Services panel. */
 const STREAMING_SERVICES = [
-  "Netflix","Max","Hulu","Disney+","Apple TV+","Prime Video",
-  "Peacock","Paramount+","Shudder","Tubi","Crunchyroll","YouTube","Other"
+  { name:"Netflix",     color:"#B23A3A" },
+  { name:"HBO Max",     color:"#5A3B8C" },
+  { name:"Hulu",        color:"#4E8C63" },
+  { name:"Disney+",     color:"#2D3E68" },
+  { name:"Apple TV+",   color:"#3A3A3C" },
+  { name:"Prime Video", color:"#2E6E8C" },
+  { name:"Peacock",     color:"#C96A2E" },
+  { name:"Paramount+",  color:"#2F5EA8" },
+  { name:"DropOut",     color:"#E0B33A", light:true },
+  { name:"YouTube",     color:"#8C2F2F" },
+  { name:"Other",       color:"#6B5E54" }
 ];
+
+const SERVICE_BY_NAME = {};
+STREAMING_SERVICES.forEach(s => { SERVICE_BY_NAME[s.name] = s; });
 
 const HINT_SERIES = "Searches TV shows and pulls in the poster and every season.";
 const HINT_MOVIE  = "Searches films and pulls in the poster and the runtime.";
@@ -534,7 +594,7 @@ const HINT_NOKEY  = "Film lookup needs a TMDB key — see the note near the top 
 
 const hasTmdb = () => TMDB_KEY && TMDB_KEY.indexOf("PASTE") !== 0;
 
-let state  = { items: [] };
+let state  = { items: [], subs: null };   // subs: array of subscribed service names
 let editId = null, openId = null, pickedStreams = [];
 let filter = "all", fltKind = "all", fltWho = "all", fltPri = "all", fltStream = "all";
 let sortBy = "priority-desc";
@@ -665,9 +725,28 @@ function migrate(){
     if(it.priB == null){ it.priB = 0; touched = true; }
     if(!Array.isArray(it.streams)){ it.streams = []; touched = true; }
     if(it.rewatch == null){ it.rewatch = false; touched = true; }
+    /* "Max" was renamed to "HBO Max" */
+    if(it.streams.includes("Max")){
+      it.streams = it.streams.map(s => s === "Max" ? "HBO Max" : s);
+      touched = true;
+    }
+    /* services we no longer list fall back to Other */
+    const known = it.streams.filter(s => SERVICE_BY_NAME[s] || s === "Other");
+    const dropped = it.streams.length !== known.length;
+    if(dropped){
+      it.streams = Array.from(new Set(known.concat("Other")));
+      touched = true;
+    }
   });
+  if(!Array.isArray(state.subs)){
+    /* first run — assume you have everything, you can untick from the panel */
+    state.subs = STREAMING_SERVICES.map(s => s.name);
+    touched = true;
+  }
   return touched;
 }
+
+const isSubbed = name => !Array.isArray(state.subs) || state.subs.includes(name);
 
 /* ---------------- storage ---------------- */
 function loadCache(){
@@ -675,7 +754,7 @@ function loadCache(){
     const raw = localStorage.getItem(CACHE_KEY);
     if(raw){
       const p = JSON.parse(raw);
-      if(p && Array.isArray(p.items)) state = { items: p.items };
+      if(p && Array.isArray(p.items)) state = { items: p.items, subs: p.subs || null };
     }
   }catch(e){}
   migrate();
@@ -690,10 +769,14 @@ function startFirebase(){
       if(saving) return;
       if(!snap.exists){ save(); return; }
       const d = snap.data();
-      state = { items: Array.isArray(d.items) ? d.items : [] };
+      state = {
+        items: Array.isArray(d.items) ? d.items : [],
+        subs:  Array.isArray(d.subs)  ? d.subs  : null
+      };
       const changed = migrate();
       writeCache();
       renderStreamFilter();
+      renderSubsPicker();
       render();
       if(openId) openDetail(openId);
       setSync("idle","Synced");
@@ -705,6 +788,7 @@ function startFirebase(){
 function save(){
   writeCache();
   renderStreamFilter();
+  renderSubsPicker();
   render();
   if(openId) openDetail(openId);
   if(!docRef) return;
@@ -712,7 +796,7 @@ function save(){
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     saving = true;
-    docRef.set({ items: state.items, updated: Date.now() })
+    docRef.set({ items: state.items, subs: state.subs, updated: Date.now() })
       .then(() => setSync("idle","Synced"))
       .catch(e => { console.error(e); setSync("error","Couldn't save"); })
       .finally(() => { saving = false; });
@@ -886,7 +970,10 @@ function visibleItems(){
     if(filter !== "all"  && i.status !== filter) return false;
     if(fltKind !== "all" && (i.type || "series") !== fltKind) return false;
     if(fltWho !== "all"  && whoOf(i) !== fltWho) return false;
-    if(fltStream !== "all" && !(i.streams || []).includes(fltStream)) return false;
+    if(fltStream === "__subbed"){
+      const st = i.streams || [];
+      if(!st.length || !st.some(isSubbed)) return false;
+    }else if(fltStream !== "all" && !(i.streams || []).includes(fltStream)) return false;
     if(fltPri !== "all"){
       const tier = priTier(priAvg(i));
       if(fltPri === "none" && tier !== "none") return false;
@@ -919,17 +1006,39 @@ function visibleItems(){
 function renderStreamFilter(){
   const sel = $("fltStream");
   const keep = sel.value;
-  sel.innerHTML = '<option value="all">All</option>';
-  /* only list services that are actually in use */
+  sel.innerHTML = '<option value="all">All</option>' +
+                  '<option value="__subbed">Only what we have</option>';
   const used = new Set();
   state.items.forEach(i => (i.streams || []).forEach(s => used.add(s)));
-  STREAMING_SERVICES.filter(s => used.has(s)).forEach(s => {
+  STREAMING_SERVICES.filter(s => used.has(s.name)).forEach(s => {
     const o = document.createElement("option");
-    o.value = s; o.textContent = s;
+    o.value = s.name;
+    o.textContent = s.name + (isSubbed(s.name) ? "" : " (not subscribed)");
     sel.appendChild(o);
   });
-  sel.value = used.has(keep) ? keep : "all";
+  sel.value = (keep === "__subbed" || used.has(keep)) ? keep : "all";
   fltStream = sel.value;
+}
+
+function renderSubsPicker(){
+  const box = $("subsPick");
+  if(!box) return;
+  box.innerHTML = "";
+  STREAMING_SERVICES.forEach(svc => {
+    const on = isSubbed(svc.name);
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = svc.name;
+    b.style.background = svc.color;
+    if(svc.light) b.setAttribute("data-light","true");
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.onclick = () => {
+      const cur = Array.isArray(state.subs) ? state.subs.slice() : STREAMING_SERVICES.map(s => s.name);
+      state.subs = cur.includes(svc.name) ? cur.filter(s => s !== svc.name) : cur.concat(svc.name);
+      save();
+    };
+    box.appendChild(b);
+  });
 }
 
 /* ---------------- render ---------------- */
@@ -962,7 +1071,14 @@ function render(){
     const pri = avg ? `<span class="cq-pri" data-tier="${priTier(avg)}">${esc(priLabel(avg))}</span>` : "";
 
     const where = position(item);
-    const streams = (item.streams || []).map(x => `<span class="cq-stream">${esc(x)}</span>`).join("");
+    const streams = (item.streams || []).map(x => {
+      const svc = SERVICE_BY_NAME[x];
+      const col = svc ? svc.color : "#6B5E54";
+      const sub = isSubbed(x);
+      return `<span class="cq-stream" data-sub="${sub}" ${svc && svc.light ? 'data-light="true"' : ""}
+        style="background:${col};${sub ? "" : `color:${col};border-color:${col};`}"
+        title="${esc(x)}${sub ? "" : " — not subscribed"}">${esc(x)}</span>`;
+    }).join("");
     const rewatch = item.rewatch ? `<span class="cq-rewatch">Rewatch</span>` : "";
 
     card.innerHTML = `
@@ -1122,14 +1238,21 @@ function renderStreamPicker(){
   const box = $("streamPick");
   box.innerHTML = "";
   STREAMING_SERVICES.forEach(svc => {
+    const on = pickedStreams.includes(svc.name);
+    const sub = isSubbed(svc.name);
     const b = document.createElement("button");
     b.type = "button";
-    b.textContent = svc;
-    b.setAttribute("aria-pressed", pickedStreams.includes(svc) ? "true" : "false");
+    b.textContent = svc.name + (sub ? "" : " ✦");
+    b.title = sub ? svc.name : svc.name + " — not subscribed";
+    if(svc.light) b.setAttribute("data-light","true");
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    if(on){
+      b.style.background  = svc.color;
+      b.style.borderColor = svc.color;
+      b.style.color       = svc.light ? "var(--ink)" : "#fff";
+    }
     b.onclick = () => {
-      pickedStreams = pickedStreams.includes(svc)
-        ? pickedStreams.filter(s => s !== svc)
-        : pickedStreams.concat(svc);
+      pickedStreams = on ? pickedStreams.filter(s => s !== svc.name) : pickedStreams.concat(svc.name);
       renderStreamPicker();
     };
     box.appendChild(b);
@@ -1148,6 +1271,7 @@ function syncTypeUI(){
 
 function openForm(item){
   closeDetail();
+  $("subs").classList.remove("open");
   editId = item ? item.id : null;
   pendingLookup = null;
   pickedStreams = item ? (item.streams || []).slice() : [];
@@ -1356,8 +1480,19 @@ $("resetBtn").onclick = () => {
   render();
 };
 
+$("subsBtn").onclick = () => {
+  const panel = $("subs");
+  const opening = !panel.classList.contains("open");
+  closeForm();
+  closeDetail();
+  panel.classList.toggle("open", opening);
+  if(opening) renderSubsPicker();
+};
+$("subsClose").onclick = () => $("subs").classList.remove("open");
+
 loadCache();
 renderStreamFilter();
+renderSubsPicker();
 render();
 startFirebase();
 </script>
