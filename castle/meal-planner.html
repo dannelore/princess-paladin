@@ -515,26 +515,84 @@ function norm(name){ return name.trim().toLowerCase().replace(/\s+/g,' '); }
 const PANTRY_ITEMS_KEY = 'pp_pantry_items';
 const PANTRY_CHECKED_KEY = 'pp_pantry_checked';
 const DEFAULT_PANTRY_GROUPS = {
-  'Spices': [
-    'salt','black pepper','garlic powder','Italian seasoning','red pepper flakes',
-    'cumin','chili powder','taco seasoning','onion soup mix'
+ {
+     'Basics': [
+    'butter',
+    'eggs',
+    'garlic',
+    'milk',
+    'olive oil',
+    'potatoes',
+    'rice',
+    'bread',
+    'cooking spray'
   ],
-  'Condiments': [
-    'Dijon mustard','ketchup','mustard','mayo','salsa','relish','bleu cheese','honey mustard',
-    'honey','soy sauce','Worcestershire sauce','BBQ sauce','pasta sauce','taco sauce'
-  ],
+  
   'Fridge': [
-    'butter','milk','eggs','shredded cheese','Parmesan cheese','sour cream'
+    'cream cheese',
+    'grated cheese',
+    'salsa',
+    'shredded cheese',
+    'sliced cheese',
+    'sour cream'
   ],
-  'Basics': [
-    'olive oil','cooking spray','apple cider vinegar','cornstarch','red cooking wine',
-    'baked beans','canned corn'
+
+  'Pantry': [
+    'alfredo sauce',
+    'apple cider vinegar',
+    'cornstarch',
+    'egg noodles',
+    'pasta',
+    'pasta sauce',
+    'peanut butter',
+    'Nutella',
+    'red cooking wine',
+    'soy sauce',
+    'taco sauce',
+    'Worcestershire sauce'
   ],
-  'Dry Goods': [
-    'pasta','egg noodles','Kraft Mac & Cheese','white rice','brown rice','bread','wraps','ramen',
-    'cereal','tortilla chips','potato chips','variety chips','peanut butter','Nutella','Pop-Tarts'
+  
+  'Condiments': [
+    'BBQ sauce',
+    'bleu cheese dressing',
+    'Dijon mustard',
+    'honey mustard dressing',
+    'ketchup',
+    'mayo',
+    'relish',
+    'yellow mustard'
+  ],
+  
+  'Kids': [
+    'cereal',
+    'frozen chicken fries',
+    'Kraft Mac & Cheese',
+    'Pop-tarts',
+    'ramen',
+    'variety chips',
+    'wraps'
+  ],
+
+  'Snacks': [
+    'ice cream',
+    'potato chips',
+    'rainbow sherbet',
+    'tortilla chips'
+  ],
+  
+  'Spices': [
+    'black pepper',
+    'chili powder',
+    'cumin',
+    'garlic powder',
+    'honey',
+    'Italian seasoning',
+    'onion soup mix',
+    'red pepper flakes',
+    'salt',
+    'taco seasoning'
   ]
-};
+}
 
 // Where items land if they came from an older shape and aren't in the defaults
 const LEGACY_GROUP_FALLBACK = {
