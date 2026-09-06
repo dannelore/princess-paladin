@@ -597,7 +597,7 @@ const DEFAULT_PANTRY_GROUPS = {
 const LEGACY_GROUP_FALLBACK = {
   'Spices': 'Spices',
   'Fridge / Freezer': 'Fridge',
-  'Pantry': 'Dry Goods'
+  'Pantry': 'Pantry'
 };
 
 const PANTRY_GROUP_NAMES = Object.keys(DEFAULT_PANTRY_GROUPS);
@@ -629,11 +629,11 @@ function getPantryGroups(){
 
   if (Array.isArray(stored)){
     PANTRY_GROUP_NAMES.forEach(g => DEFAULT_PANTRY_GROUPS[g].forEach(i => place(i, g)));
-    stored.forEach(item => place(item, 'Dry Goods'));
+    stored.forEach(item => place(item, 'Pantry'));
   } else if (stored && typeof stored === 'object'){
     PANTRY_GROUP_NAMES.forEach(g => DEFAULT_PANTRY_GROUPS[g].forEach(i => place(i, g)));
     Object.keys(stored).forEach(oldGroup => {
-      const fallback = LEGACY_GROUP_FALLBACK[oldGroup] || 'Dry Goods';
+      const fallback = LEGACY_GROUP_FALLBACK[oldGroup] || 'Pantry';
       (Array.isArray(stored[oldGroup]) ? stored[oldGroup] : []).forEach(item => place(item, fallback));
     });
   } else {
