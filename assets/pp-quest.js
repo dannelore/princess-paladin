@@ -15,28 +15,34 @@ const PQ = (function(){
 
 /* ---------- stages ---------- */
 const STAGES = [
-  { key:'baby',   name:'Baby',   at:0,     dressable:['hat','held'] },
-  { key:'child',  name:'Child',  at:800,   dressable:['hat','held'] },
-  { key:'teen',   name:'Teen',   at:2500,  dressable:['hat','hair','top','held','accessory','background'] },
-  { key:'adult',  name:'Adult',  at:7200,  dressable:['hat','hair','top','held','accessory','background'] },
-  { key:'legend', name:'Legend', at:18000, dressable:['hat','hair','top','held','accessory','background'] }
+  { key:'baby',   name:'Baby',   at:0,     dressable:false },
+  { key:'child',  name:'Child',  at:800,   dressable:true  },
+  { key:'teen',   name:'Teen',   at:2500,  dressable:true  },
+  { key:'adult',  name:'Adult',  at:7200,  dressable:true  },
+  { key:'legend', name:'Legend', at:18000, dressable:false }
 ];
+
+/* Baby is on all fours and Legend is a celestial sitting form, so neither
+   wears anything. Garment art is drawn for the standing pose only. */
 
 const SLOTS = [
   { key:'background', name:'Background' },
-  { key:'hair',       name:'Hair' },
+  { key:'bottoms',    name:'Bottoms' },
   { key:'top',        name:'Top' },
+  { key:'shoes',      name:'Shoes' },
   { key:'hat',        name:'Hat' },
-  { key:'accessory',  name:'Accessory' },
   { key:'held',       name:'Held' }
 ];
+
+/* Layer order, back to front. */
+const LAYERS = ['background','bottoms','shoes','top','hat','held'];
 
 /* ---------- species ---------- */
 const SPECIES = {
   cat: {
     name:'Cat',
-    bodyColors:  ['#ED93B1','#F4C0D1','#B4B2A9','#444441','#FAC775','#9FE1CB'],
-    accentColors:['#D4537E','#993556','#888780','#2C2C2A','#EF9F27','#5DCAA5'],
+    bodyColors:  ['#2C2C2A','#ED93B1','#F4C0D1','#B4B2A9','#444441','#FAC775','#9FE1CB'],
+    accentColors:['#C9A227','#D4537E','#993556','#888780','#2C2C2A','#EF9F27','#5DCAA5'],
     buff: { key:'payout', label:'Coin sense', text:'+12% on every payout' }
   },
   penguin: {
@@ -57,33 +63,14 @@ const SPECIES_KEYS = Object.keys(SPECIES);
 
 /* ---------- wardrobe ---------- */
 const CATALOG = [
-  { id:'hat-crown',    slot:'hat',        name:'Little crown',    price:900,  unlock:1  },
-  { id:'hat-bow',      slot:'hat',        name:'Big bow',         price:300,  unlock:1  },
-  { id:'hat-wizard',   slot:'hat',        name:'Wizard hat',      price:750,  unlock:4  },
-  { id:'hat-flower',   slot:'hat',        name:'Flower crown',    price:450,  unlock:3  },
-
-  { id:'hair-braids',  slot:'hair',       name:'Braids',          price:500,  unlock:5  },
-  { id:'hair-curls',   slot:'hair',       name:'Curls',           price:500,  unlock:5  },
-  { id:'hair-long',    slot:'hair',       name:'Long hair',       price:650,  unlock:8  },
-
-  { id:'top-scarf',    slot:'top',        name:'Scarf',           price:350,  unlock:5  },
-  { id:'top-cape',     slot:'top',        name:'Cape',            price:800,  unlock:9  },
-  { id:'top-apron',    slot:'top',        name:'Apron',           price:400,  unlock:6  },
-  { id:'top-armour',   slot:'top',        name:'Little armour',   price:1200, unlock:14 },
-
-  { id:'held-sword',   slot:'held',       name:'Tiny sword',      price:700,  unlock:6  },
-  { id:'held-book',    slot:'held',       name:'Heavy book',      price:400,  unlock:2  },
-  { id:'held-lantern', slot:'held',       name:'Lantern',         price:550,  unlock:7  },
-
-  { id:'acc-glasses',  slot:'accessory',  name:'Round glasses',   price:400,  unlock:5  },
-  { id:'acc-collar',   slot:'accessory',  name:'Bell collar',     price:300,  unlock:5  },
-  { id:'acc-freckles', slot:'accessory',  name:'Freckles',        price:200,  unlock:5  },
-
-  { id:'bg-meadow',    slot:'background', name:'Meadow',          price:600,  unlock:5  },
-  { id:'bg-night',     slot:'background', name:'Night sky',       price:600,  unlock:8  },
-  { id:'bg-hearth',    slot:'background', name:'Hearth',          price:600,  unlock:10 },
-  { id:'bg-rose',      slot:'background', name:'Rose window',     price:900,  unlock:12 }
+  { id:'hat-beanie',   slot:'hat',        name:'Cat-ear beanie', price:600, unlock:1, fit:{} },
+  { id:'top-hoodie',   slot:'top',        name:'Paw hoodie',     price:800, unlock:1, fit:{} },
+  { id:'bot-shorts',   slot:'bottoms',    name:'Cargo shorts',   price:550, unlock:1, fit:{} },
+  { id:'shoe-hitops',  slot:'shoes',      name:'Paw hi-tops',    price:650, unlock:2, fit:{} }
 ];
+
+/* Colours no longer come from hex values — the art is rendered, so an
+   alternate look is an alternate image. Kept as a stub for now. */
 
 const FOOD = [
   { id:'food-kibble', name:'Plain kibble', price:40,  hunger:25, xp:0,   desc:'Does the job.' },
@@ -93,7 +80,7 @@ const FOOD = [
   { id:'treat-star',  name:'Star biscuit', price:1400, hunger:60, xp:1500, desc:'Expensive. Worth it.' }
 ];
 
-const RECOLOR_PRICE = 750;
+const RECOLOR_PRICE = 0;
 
 /* ---------- title fragments ---------- */
 const STARTER_PREFIXES  = ['Small','Sleepy','Gentle','Stubborn'];
@@ -119,7 +106,7 @@ function stageProgress(pet){
   if(!nxt) return 1;
   return Math.min(1, ((pet.xp || 0) - cur.at) / (nxt.at - cur.at));
 }
-function canWear(pet, slot){ return stageOf(pet).dressable.includes(slot); }
+function canWear(pet){ return stageOf(pet).dressable === true; }
 
 function mood(pet){
   const h = pet.hunger == null ? 100 : pet.hunger;
@@ -271,17 +258,12 @@ function damageMonster(state, amount){
 
 /* ---------- pet creation ---------- */
 function rollPetOptions(count){
+  const pool = SPECIES_KEYS.slice();
   const opts = [];
-  for(let i=0;i<count;i++){
-    const species = SPECIES_KEYS[Math.floor(Math.random()*SPECIES_KEYS.length)];
+  for(let i=0;i<count && pool.length;i++){
+    const species = pool.splice(Math.floor(Math.random()*pool.length), 1)[0];
     const s = SPECIES[species];
-    opts.push({
-      species,
-      colors: {
-        body:   s.bodyColors[Math.floor(Math.random()*s.bodyColors.length)],
-        accent: s.accentColors[Math.floor(Math.random()*s.accentColors.length)]
-      }
-    });
+    opts.push({ species, colors:{ body:s.bodyColors[0], accent:s.accentColors[0] } });
   }
   return opts;
 }
@@ -299,186 +281,85 @@ function makePet(species, colors, name){
 
 /* ==========================================================================
    DRAWING
-   One skeleton. Species changes ears, face and body silhouette; stage changes
-   proportion. Every garment is drawn against the same coordinates, so
-   anything fits anything.
+   Pets are rendered PNGs, one per species and stage, stacked with garment
+   images on top. Everything is positioned in percentages of the frame, so it
+   scales from a 34px header icon up to the closet without re-tuning.
+
+   Expected files:
+     /assets/pets/{species}-{stage}.png      e.g. cat-teen.png
+     /assets/wardrobe/{itemId}.png           e.g. hat-beanie.png
    ========================================================================== */
 
-const GEO = {
-  baby:   { headR:30, headY:52, bodyRx:19, bodyRy:19, bodyY:95, eyeY:52, eyeX:10, eyeR:4.0 },
-  child:  { headR:29, headY:52, bodyRx:22, bodyRy:22, bodyY:93, eyeY:52, eyeX:10, eyeR:3.8 },
-  teen:   { headR:28, headY:52, bodyRx:25, bodyRy:25, bodyY:91, eyeY:51, eyeX:10, eyeR:3.6 },
-  adult:  { headR:27, headY:51, bodyRx:27, bodyRy:27, bodyY:89, eyeY:50, eyeX:10, eyeR:3.5 },
-  legend: { headR:27, headY:51, bodyRx:28, bodyRy:28, bodyY:88, eyeY:50, eyeX:10, eyeR:3.5 }
-};
+const PET_ART = '/assets/pets/';
+const ITEM_ART = '/assets/wardrobe/';
 
-function backgroundSvg(id){
-  if(id === 'bg-meadow') return `<rect x="0" y="0" width="100" height="120" rx="10" fill="#EAF3DE"/><ellipse cx="50" cy="112" rx="52" ry="16" fill="#C0DD97"/>`;
-  if(id === 'bg-night')  return `<rect x="0" y="0" width="100" height="120" rx="10" fill="#26215C"/><circle cx="22" cy="22" r="2" fill="#CECBF6"/><circle cx="76" cy="16" r="1.6" fill="#CECBF6"/><circle cx="60" cy="30" r="1.4" fill="#CECBF6"/><circle cx="34" cy="38" r="1.4" fill="#CECBF6"/><circle cx="84" cy="42" r="2" fill="#CECBF6"/>`;
-  if(id === 'bg-hearth') return `<rect x="0" y="0" width="100" height="120" rx="10" fill="#FAEEDA"/><rect x="18" y="60" width="64" height="60" fill="#F5C4B3"/><path d="M50 78 Q58 92 50 104 Q42 92 50 78 Z" fill="#EF9F27"/>`;
-  if(id === 'bg-rose')   return `<rect x="0" y="0" width="100" height="120" rx="10" fill="#FBEAF0"/><circle cx="50" cy="46" r="34" fill="none" stroke="#ED93B1" stroke-width="2"/><circle cx="50" cy="46" r="22" fill="none" stroke="#ED93B1" stroke-width="1.5"/><circle cx="50" cy="46" r="10" fill="#F4C0D1"/>`;
-  return '';
+/* Frame aspect ratio, width:height. The art is portrait. */
+const FRAME_RATIO = 2 / 3;
+
+function petImageUrl(pet){ return `${PET_ART}${pet.species}-${stageOf(pet).key}.png`; }
+function itemImageUrl(id){ return `${ITEM_ART}${id}.png`; }
+
+/* A garment's placement for a given stage, as percentages of the frame.
+   Produced by the fitting tool and pasted into CATALOG entries. */
+function fitFor(item, stageKey){
+  const f = (item.fit || {})[stageKey];
+  return f || { x:50, y:50, w:60 };
 }
 
-function earsSvg(species, g, colors){
-  const y = g.headY, r = g.headR;
-  if(species === 'cat'){
-    return `<path d="M${50-r*0.72} ${y-r*0.55} L${50-r*0.88} ${y-r*1.5} L${50-r*0.16} ${y-r*1.02} Z" fill="${colors.body}"/>
-            <path d="M${50+r*0.72} ${y-r*0.55} L${50+r*0.88} ${y-r*1.5} L${50+r*0.16} ${y-r*1.02} Z" fill="${colors.body}"/>`;
-  }
-  if(species === 'panda'){
-    return `<circle cx="${50-r*0.85}" cy="${y-r*0.8}" r="${r*0.38}" fill="${colors.accent}"/>
-            <circle cx="${50+r*0.85}" cy="${y-r*0.8}" r="${r*0.38}" fill="${colors.accent}"/>`;
-  }
-  return '';
+function layerStyle(fit){
+  return `position:absolute;left:${fit.x}%;top:${fit.y}%;width:${fit.w}%;`
+       + `transform:translate(-50%,-50%)${fit.r ? ` rotate(${fit.r}deg)` : ''};`
+       + `pointer-events:none;`;
 }
 
-function faceSvg(species, g, colors, m){
-  const { headY:y, headR:r, eyeX:ex, eyeR:er } = g;
-  const eyeY = g.eyeY;
-  let out = '';
-
-  if(species === 'panda'){
-    out += `<ellipse cx="${50-ex}" cy="${eyeY-1}" rx="${er*2.3}" ry="${er*2.6}" fill="${colors.accent}"/>
-            <ellipse cx="${50+ex}" cy="${eyeY-1}" rx="${er*2.3}" ry="${er*2.6}" fill="${colors.accent}"/>`;
-  }
-  if(species === 'penguin'){
-    out += `<ellipse cx="50" cy="${y+r*0.22}" rx="${r*0.64}" ry="${r*0.72}" fill="${colors.accent}"/>`;
-  }
-
-  const eyeFill = species === 'panda' ? colors.body : (species === 'penguin' ? '#2C2C2A' : '#4B1528');
-  if(m === 'low'){
-    out += `<path d="M${50-ex-er} ${eyeY} Q${50-ex} ${eyeY+er*1.4} ${50-ex+er} ${eyeY}" stroke="${eyeFill}" stroke-width="2" fill="none" stroke-linecap="round"/>
-            <path d="M${50+ex-er} ${eyeY} Q${50+ex} ${eyeY+er*1.4} ${50+ex+er} ${eyeY}" stroke="${eyeFill}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
-  } else {
-    out += `<circle cx="${50-ex}" cy="${eyeY}" r="${er}" fill="${eyeFill}"/>
-            <circle cx="${50+ex}" cy="${eyeY}" r="${er}" fill="${eyeFill}"/>`;
-  }
-
-  const mouthY = y + r*0.42;
-  if(species === 'penguin'){
-    out += `<path d="M${50-6} ${mouthY-2} L${50+6} ${mouthY-2} L50 ${mouthY+7} Z" fill="#EF9F27"/>`;
-  } else if(m === 'happy'){
-    out += `<path d="M${50-5} ${mouthY} Q50 ${mouthY+5} ${50+5} ${mouthY}" stroke="#4B1528" stroke-width="2" fill="none" stroke-linecap="round"/>`;
-  } else if(m === 'uneasy'){
-    out += `<path d="M${50-5} ${mouthY+2} L${50+5} ${mouthY+2}" stroke="#4B1528" stroke-width="2" fill="none" stroke-linecap="round"/>`;
-  } else {
-    out += `<path d="M${50-5} ${mouthY+4} Q50 ${mouthY-2} ${50+5} ${mouthY+4}" stroke="#4B1528" stroke-width="2" fill="none" stroke-linecap="round"/>`;
-  }
-  return out;
+function escapeAttr(s){
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 }
 
-function garmentSvg(id, g){
-  const y = g.headY, r = g.headR, by = g.bodyY, brx = g.bodyRx;
-  switch(id){
-    case 'hat-crown':
-      return `<path d="M${50-r*0.8} ${y-r*0.86} L${50-r*0.86} ${y-r*1.42} L${50-r*0.3} ${y-r*1.06} L50 ${y-r*1.58} L${50+r*0.3} ${y-r*1.06} L${50+r*0.86} ${y-r*1.42} L${50+r*0.8} ${y-r*0.86} Z" fill="#C9A227" stroke="#7C5B30" stroke-width="1.2" stroke-linejoin="round"/>`;
-    case 'hat-bow':
-      return `<path d="M${50-r*0.9} ${y-r*0.95} L${50-r*0.2} ${y-r*1.2} L${50-r*0.9} ${y-r*1.45} Z" fill="#E87CA6"/>
-              <path d="M${50+r*0.9} ${y-r*0.95} L${50+r*0.2} ${y-r*1.2} L${50+r*0.9} ${y-r*1.45} Z" fill="#E87CA6"/>
-              <circle cx="50" cy="${y-r*1.2}" r="4" fill="#C85D87"/>`;
-    case 'hat-wizard':
-      return `<path d="M${50-r*0.78} ${y-r*0.9} L50 ${y-r*2.1} L${50+r*0.78} ${y-r*0.9} Z" fill="#534AB7"/>
-              <rect x="${50-r*0.95}" y="${y-r*0.98}" width="${r*1.9}" height="6" rx="3" fill="#3C3489"/>`;
-    case 'hat-flower':
-      return `<circle cx="${50-r*0.6}" cy="${y-r*0.98}" r="5" fill="#ED93B1"/>
-              <circle cx="50" cy="${y-r*1.12}" r="5.5" fill="#F4C0D1"/>
-              <circle cx="${50+r*0.6}" cy="${y-r*0.98}" r="5" fill="#ED93B1"/>
-              <circle cx="50" cy="${y-r*1.12}" r="2" fill="#C9A227"/>`;
-
-    case 'hair-braids':
-      return `<path d="M${50-r} ${y-r*0.2} Q${50-r*1.25} ${y+r*0.9} ${50-r*0.8} ${y+r*1.35}" stroke="#7C5B30" stroke-width="7" fill="none" stroke-linecap="round"/>
-              <path d="M${50+r} ${y-r*0.2} Q${50+r*1.25} ${y+r*0.9} ${50+r*0.8} ${y+r*1.35}" stroke="#7C5B30" stroke-width="7" fill="none" stroke-linecap="round"/>`;
-    case 'hair-curls':
-      return `<circle cx="${50-r*0.95}" cy="${y-r*0.5}" r="7" fill="#6E2430"/>
-              <circle cx="${50+r*0.95}" cy="${y-r*0.5}" r="7" fill="#6E2430"/>
-              <circle cx="${50-r*0.5}" cy="${y-r*0.95}" r="7" fill="#6E2430"/>
-              <circle cx="${50+r*0.5}" cy="${y-r*0.95}" r="7" fill="#6E2430"/>`;
-    case 'hair-long':
-      return `<path d="M${50-r} ${y-r*0.35} Q${50-r*1.3} ${y+r*1.6} ${50-r*0.55} ${y+r*2.0} L${50-r*0.35} ${y+r*1.2} Z" fill="#2C2C2A"/>
-              <path d="M${50+r} ${y-r*0.35} Q${50+r*1.3} ${y+r*1.6} ${50+r*0.55} ${y+r*2.0} L${50+r*0.35} ${y+r*1.2} Z" fill="#2C2C2A"/>`;
-
-    case 'top-scarf':
-      return `<rect x="${50-brx*0.85}" y="${by-brx*0.92}" width="${brx*1.7}" height="9" rx="4" fill="#B23A3A"/>
-              <rect x="${50+brx*0.15}" y="${by-brx*0.75}" width="8" height="18" rx="3" fill="#B23A3A"/>`;
-    case 'top-cape':
-      return `<path d="M${50-brx*0.9} ${by-brx*0.85} Q${50-brx*1.5} ${by+brx*0.7} ${50-brx*0.5} ${by+brx*1.0} L${50+brx*0.5} ${by+brx*1.0} Q${50+brx*1.5} ${by+brx*0.7} ${50+brx*0.9} ${by-brx*0.85} Z" fill="#6E2430" opacity="0.92"/>`;
-    case 'top-apron':
-      return `<path d="M${50-brx*0.5} ${by-brx*0.8} L${50+brx*0.5} ${by-brx*0.8} L${50+brx*0.62} ${by+brx*0.85} L${50-brx*0.62} ${by+brx*0.85} Z" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="1"/>
-              <rect x="${50-brx*0.5}" y="${by-brx*0.85}" width="${brx}" height="4" rx="2" fill="#8FA37E"/>`;
-    case 'top-armour':
-      return `<path d="M${50-brx*0.72} ${by-brx*0.78} L${50+brx*0.72} ${by-brx*0.78} L${50+brx*0.6} ${by+brx*0.6} L${50-brx*0.6} ${by+brx*0.6} Z" fill="#B4B2A9" stroke="#5F5E5A" stroke-width="1.4"/>
-              <path d="M50 ${by-brx*0.78} L50 ${by+brx*0.6}" stroke="#5F5E5A" stroke-width="1.2"/>`;
-
-    case 'held-sword':
-      return `<rect x="${50+brx*0.92}" y="${by-22}" width="4" height="26" rx="1.5" fill="#B23A3A"/>
-              <rect x="${50+brx*0.62}" y="${by+4}" width="14" height="4" rx="2" fill="#9C7440"/>
-              <rect x="${50+brx*0.86}" y="${by+8}" width="6" height="9" rx="2" fill="#7C1F2A"/>`;
-    case 'held-book':
-      return `<rect x="${50+brx*0.62}" y="${by-6}" width="18" height="14" rx="2" fill="#6E2430"/>
-              <rect x="${50+brx*0.68}" y="${by-4}" width="14" height="10" rx="1" fill="#F7F1E4"/>`;
-    case 'held-lantern':
-      return `<path d="M${50+brx*0.92} ${by-20} L${50+brx*0.92} ${by-9}" stroke="#7C5B30" stroke-width="2"/>
-              <rect x="${50+brx*0.66}" y="${by-9}" width="14" height="15" rx="3" fill="#C9A227" stroke="#7C5B30" stroke-width="1.2"/>`;
-
-    case 'acc-glasses':
-      return `<circle cx="${50-g.eyeX}" cy="${g.eyeY}" r="${g.eyeR*2.1}" fill="none" stroke="#7C5B30" stroke-width="1.6"/>
-              <circle cx="${50+g.eyeX}" cy="${g.eyeY}" r="${g.eyeR*2.1}" fill="none" stroke="#7C5B30" stroke-width="1.6"/>
-              <path d="M${50-g.eyeX+g.eyeR*2.1} ${g.eyeY} L${50+g.eyeX-g.eyeR*2.1} ${g.eyeY}" stroke="#7C5B30" stroke-width="1.6"/>`;
-    case 'acc-collar':
-      return `<rect x="${50-brx*0.62}" y="${by-brx*0.98}" width="${brx*1.24}" height="6" rx="3" fill="#E87CA6"/>
-              <circle cx="50" cy="${by-brx*0.78}" r="4" fill="#C9A227"/>`;
-    case 'acc-freckles':
-      return `<circle cx="${50-g.eyeX-4}" cy="${g.eyeY+9}" r="1.4" fill="#C85D87"/>
-              <circle cx="${50-g.eyeX+1}" cy="${g.eyeY+12}" r="1.4" fill="#C85D87"/>
-              <circle cx="${50+g.eyeX+4}" cy="${g.eyeY+9}" r="1.4" fill="#C85D87"/>
-              <circle cx="${50+g.eyeX-1}" cy="${g.eyeY+12}" r="1.4" fill="#C85D87"/>`;
-  }
-  return '';
-}
-
-/* Draws a pet. opts: { size, showBackground } */
+/* Returns an HTML string. Callers drop it straight into innerHTML. */
 function petSvg(pet, opts){
   opts = opts || {};
   const stage = stageOf(pet);
-  const g = GEO[stage.key];
-  const colors = pet.colors || { body:'#ED93B1', accent:'#D4537E' };
-  const m = mood(pet);
-  const outfit = pet.outfit || {};
-  const wearable = s => canWear(pet, s) && outfit[s];
+  const outfit = (canWear(pet) && pet.outfit) ? pet.outfit : {};
+  const alt = `${pet.name || 'pet'}, a ${SPECIES[pet.species].name.toLowerCase()} at ${stage.name.toLowerCase()} stage`;
 
-  let svg = `<svg viewBox="0 0 100 120" width="100%" ${opts.size ? `style="max-width:${opts.size}px"` : ''} role="img" aria-label="${escapeAttr(pet.name)}, a ${SPECIES[pet.species].name.toLowerCase()} at ${stage.name.toLowerCase()} stage">`;
+  let html = `<div class="pq-pet" role="img" aria-label="${escapeAttr(alt)}" `
+           + `style="position:relative;width:100%;padding-bottom:${(1/FRAME_RATIO)*100}%;`
+           + `${opts.size ? `max-width:${opts.size}px;` : ''}">`;
 
-  if(opts.showBackground !== false && wearable('background')) svg += backgroundSvg(outfit.background);
-  if(wearable('hair') && outfit.hair === 'hair-long') svg += garmentSvg('hair-long', g);
-
-  svg += `<ellipse cx="50" cy="${g.bodyY}" rx="${g.bodyRx}" ry="${g.bodyRy}" fill="${colors.body}"/>`;
-  if(pet.species === 'penguin'){
-    svg += `<ellipse cx="50" cy="${g.bodyY+3}" rx="${g.bodyRx*0.62}" ry="${g.bodyRy*0.78}" fill="${colors.accent}"/>`;
+  if(opts.showBackground !== false && outfit.background){
+    html += `<img src="${itemImageUrl(outfit.background)}" alt="" `
+          + `style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:8px;" `
+          + `onerror="this.style.display='none'">`;
   }
 
-  if(wearable('top')) svg += garmentSvg(outfit.top, g);
+  /* Garments behind the body */
+  ['bottoms','shoes'].forEach(slot => {
+    if(!outfit[slot]) return;
+    const item = CATALOG.find(i => i.id === outfit[slot]);
+    if(!item) return;
+    html += `<img src="${itemImageUrl(item.id)}" alt="" style="${layerStyle(fitFor(item, stage.key))}z-index:1;" onerror="this.style.display='none'">`;
+  });
 
-  svg += earsSvg(pet.species, g, colors);
-  svg += `<circle cx="50" cy="${g.headY}" r="${g.headR}" fill="${colors.body}"/>`;
+  html += `<img src="${petImageUrl(pet)}" alt="" `
+        + `style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:2;" `
+        + `onerror="this.dataset.missing=1;this.style.display='none'">`;
 
-  if(wearable('hair') && outfit.hair !== 'hair-long') svg += garmentSvg(outfit.hair, g);
-
-  svg += faceSvg(pet.species, g, colors, m);
-
-  if(wearable('accessory')) svg += garmentSvg(outfit.accessory, g);
-  if(wearable('hat'))       svg += garmentSvg(outfit.hat, g);
-  if(wearable('held'))      svg += garmentSvg(outfit.held, g);
+  /* Garments in front of the body */
+  ['top','hat','held'].forEach(slot => {
+    if(!outfit[slot]) return;
+    const item = CATALOG.find(i => i.id === outfit[slot]);
+    if(!item) return;
+    html += `<img src="${itemImageUrl(item.id)}" alt="" style="${layerStyle(fitFor(item, stage.key))}z-index:3;" onerror="this.style.display='none'">`;
+  });
 
   if(stage.key === 'legend'){
-    svg += `<circle cx="22" cy="24" r="2.2" fill="#C9A227"/><circle cx="78" cy="20" r="1.8" fill="#C9A227"/><circle cx="84" cy="70" r="2" fill="#C9A227"/>`;
+    html += `<span aria-hidden="true" style="position:absolute;top:4%;right:6%;z-index:4;font-size:0.9em;color:#C9A227;">\u2726</span>`;
   }
 
-  svg += `</svg>`;
-  return svg;
+  html += `</div>`;
+  return html;
 }
-
-function escapeAttr(s){ return String(s == null ? '' : s).replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 
 /* ==========================================================================
    DATES
@@ -512,6 +393,20 @@ const STREAK_PER_DAY = 0.02;
 const STREAK_CAP_DAYS = 20;
 const MEOW_PER_GOLD = 500;
 
+/* Everyone starts with one companion, so something is growing from day one. */
+function starterPet(){
+  return {
+    id: 'p-woodrow',
+    species: 'cat',
+    name: 'Lord Woodrow',
+    colors: { body:'#2C2C2A', accent:'#C9A227' },
+    tier: 'active',
+    xp: 0, hunger: 100,
+    outfit: {},
+    title: null
+  };
+}
+
 function defaultState(){
   return {
     version: 5,
@@ -532,13 +427,14 @@ function defaultState(){
     weekStart:null,
     ledger:{},
     celebrated:{},
-    pets:[], petTokens:0, hungerDate:null,
+    pets:[starterPet()], petTokens:0, hungerDate:null, starterGiven:true,
     wardrobe:{}, fragments:{ prefix:[], subject:[] },
     monsters:[], activeMonster:null
   };
 }
 
 function migrate(s){
+  const hadStarter = s.starterGiven === true;
   const d = defaultState();
   for(const k in d){ if(s[k] === undefined) s[k] = d[k]; }
   if(!Array.isArray(s.tags) || !s.tags.length) s.tags = d.tags;
@@ -548,6 +444,7 @@ function migrate(s){
   s.rates   = Object.assign({}, SEED_RATES, s.rates || {});
   if(!s.fragments || !Array.isArray(s.fragments.prefix)) s.fragments = { prefix:[], subject:[] };
   if(typeof s.wardrobe !== 'object' || s.wardrobe === null) s.wardrobe = {};
+  if(!hadStarter && !s.pets.length){ s.pets = [starterPet()]; s.starterGiven = true; }
   delete s.work; delete s.hp; delete s.maxHp; delete s.closet; delete s.worn;
   return s;
 }
@@ -778,6 +675,7 @@ function addAccountXP(state, amount){
 return {
   STAGES, SLOTS, SPECIES, SPECIES_KEYS, CATALOG, FOOD, RECOLOR_PRICE,
   CONNECTORS, SLOT_LEVELS, COLUMNS, WEEKDAYS, DOW_FULL, MEOW_PER_GOLD,
+  LAYERS, PET_ART, ITEM_ART, FRAME_RATIO, petImageUrl, itemImageUrl, fitFor,
   TODAY, TODAY_KEY, MIN_DATE, BACKFILL_DAYS, SEED_RATES, DEFAULT_TARGETS,
   startOfDay, addDays, dateKey, fromKey, sameDay, daysBetween, mondayOf,
   defaultState, migrate, makeStore,
