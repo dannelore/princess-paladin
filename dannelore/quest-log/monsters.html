@@ -128,7 +128,20 @@
     --sage-dark:   #8FA37E;
     --dusty-rose:  #9C7440;
   }
-  html.pp-paladin body{ color:#F7F1E4; }
+  /* The page background is painted by .pp-dannelore in pp.css with literal
+     hex, so overriding --pink-bg alone does nothing. Repaint it here, using
+     the same gradient as .pp-vmprman. */
+  html.pp-paladin body{
+    background-image:
+      radial-gradient(circle at 15% 8%, rgba(255,255,255,0.10), transparent 40%),
+      linear-gradient(135deg,#7C1F2A 0%,#5A1720 100%) !important;
+    --accent:      #9C7440;
+    --accent-deep: #7C5B30;
+    --accent-soft: rgba(156,116,64,0.20);
+    --panel:       #FFFDF8;
+    --panel-tint:  #FFF7EC;
+    color:#F7F1E4;
+  }
 
   /* type that sits straight on the burgundy */
   html.pp-paladin .col-head h2,
