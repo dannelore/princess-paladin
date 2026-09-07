@@ -132,35 +132,24 @@
 
   /* type that sits straight on the burgundy */
   html.pp-paladin .col-head h2,
-  html.pp-paladin .section-title,
-  html.pp-paladin .page-title,
-  html.pp-paladin .pp-ribbon-title{ color:#F7F1E4; }
+  html.pp-paladin .section-title{ color:#F7F1E4; }
   html.pp-paladin .col-head .sub,
   html.pp-paladin .past-note,
   html.pp-paladin footer,
   html.pp-paladin .empty-note,
-  html.pp-paladin .slot-hint,
-  html.pp-paladin #slotHint,
-  html.pp-paladin .pp-ribbon-eyebrow{ color:#E5C79A; }
+  html.pp-paladin #slotHint{ color:#E5C79A; }
 
-  /* the ribbon reads as carved stone rather than blush */
-  html.pp-paladin .ribbon,
-  html.pp-paladin .pp-ribbon{
-    background:linear-gradient(180deg,#5A1720 0%,#7C1F2A 100%);
-    border-bottom-color:rgba(156,116,64,0.55);
-  }
-  html.pp-paladin .identity .name,
-  html.pp-paladin .identity .level-tag,
-  html.pp-paladin .bar-label,
-  html.pp-paladin .bar-num{ color:#F7F1E4; }
-  html.pp-paladin .bar-track{ background:rgba(247,241,228,0.18); border-color:rgba(247,241,228,0.22); }
+  /* The ribbon stays cream, same as everywhere else on the site — only the
+     page behind it goes red. So anything inside the ribbon keeps its normal
+     ink colour and only the accents shift to gold. */
+  html.pp-paladin .pp-ribbon{ border-bottom-color:rgba(156,116,64,0.45); }
   html.pp-paladin .bar-fill.xp{ background:linear-gradient(90deg,#C9A227,#9C7440); }
 
   html.pp-paladin .pet-slot{
-    border-color:#F7F1E4;
-    box-shadow:0 0 0 3px #9C7440, 0 4px 10px rgba(0,0,0,0.35);
+    border-color:#FFFDF8;
+    box-shadow:0 0 0 3px #9C7440, 0 4px 10px rgba(92,23,32,0.28);
   }
-  html.pp-paladin .party-strip a{ border-color:rgba(156,116,64,0.6); }
+  html.pp-paladin .party-strip a{ border-color:rgba(156,116,64,0.55); }
 
   html.pp-paladin .panel-btn{ border-color:#9C7440; color:#7C5B30; }
   html.pp-paladin .panel-btn:hover{ background:#9C7440; color:#FFFDF8; }
