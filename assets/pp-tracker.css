@@ -13,8 +13,9 @@
    ========================================================================== */
 
 :root{
-  /* the one colour the tracker needs that isn't in pp.css */
-  --family: #5A8A7A;
+  /* the two colours the tracker needs that aren't in pp.css */
+  --family:  #5A8A7A;
+  --unavail: #4A4441;   /* nothing we have — the pill and the line beneath */
 }
 
 .cq-bar .cq-spacer{ flex:1 1 auto; }
@@ -273,17 +274,18 @@
     .cq-selects{ gap:8px; }
   }
 
-  /* --- the sash ---
-     A thin black band laid across the poster when none of the services a
-     title is on are ones we have. Lives inside .cq-posterwrap so it clips
-     to the art rather than running over the card body. */
-  .cq-posterwrap{ overflow:hidden; }
-  .cq-sash{ position:absolute; inset:0; overflow:hidden; pointer-events:none; }
-  .cq-sash::before{
-    content:"";
-    position:absolute; left:-30%; right:-30%; top:50%;
-    height:10px;
-    background:var(--ink);
-    box-shadow:0 0 0 1px rgba(247,241,228,.45);
-    transform:translateY(-50%) rotate(-30deg);
+  /* --- unavailable ---
+     Shown when none of the services a title is on are ones we have. The pill
+     sits centred at the top of the poster, between the who badge on the left
+     and the edit tools on the right. The line under the title picks up the
+     same grey so the two read as a pair. */
+  .cq-unavail{
+    position:absolute; top:7px; left:50%; transform:translateX(-50%);
+    font-family:var(--font-body); font-size:.6rem; font-weight:700;
+    letter-spacing:.1em; text-transform:uppercase;
+    color:#fff; background:var(--unavail);
+    border:1px solid transparent; border-radius:999px;
+    padding:3px 10px; white-space:nowrap;
   }
+  .cq-card.is-unavail .cq-where,
+  .cq-card.is-unavail .cq-dateline{ color:var(--unavail); }
