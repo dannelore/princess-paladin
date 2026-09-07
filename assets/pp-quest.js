@@ -37,27 +37,30 @@ const SLOTS = [
 /* Layer order, back to front. */
 const LAYERS = ['background','bottoms','shoes','top','hat','held'];
 
-/* ---------- species ---------- */
+/* ---------- species ----------
+   `furs` lists the colourways you have art for. Adding one is a filename
+   plus a word here — nothing else in the app needs to change. */
 const SPECIES = {
   cat: {
     name:'Cat',
-    bodyColors:  ['#2C2C2A','#ED93B1','#F4C0D1','#B4B2A9','#444441','#FAC775','#9FE1CB'],
-    accentColors:['#C9A227','#D4537E','#993556','#888780','#2C2C2A','#EF9F27','#5DCAA5'],
+    furs:['black'],
     buff: { key:'payout', label:'Coin sense', text:'+12% on every payout' }
   },
   penguin: {
     name:'Penguin',
-    bodyColors:  ['#444441','#2C2C2A','#185FA5','#534AB7','#72243E','#0F6E56'],
-    accentColors:['#F1EFE8','#D3D1C7','#B5D4F4','#CECBF6','#F4C0D1','#9FE1CB'],
+    furs:['classic'],
     buff: { key:'hunger', label:'Cold blooded', text:'party hunger drains 20% slower' }
   },
   panda: {
     name:'Panda',
-    bodyColors:  ['#F1EFE8','#FAEEDA','#E1F5EE','#FBEAF0','#EEEDFE','#D3D1C7'],
-    accentColors:['#2C2C2A','#444441','#0F6E56','#993556','#534AB7','#5F5E5A'],
+    furs:['classic'],
     buff: { key:'xp', label:'Slow wisdom', text:'+20% XP from everything' }
   }
 };
+
+/* Eyes are their own layer, so any eye goes with any fur. */
+const EYE_COLORS = ['blue','green','orange','pink','purple','yellow'];
+const EYE_SHAPES = ['round','slit'];
 
 const SPECIES_KEYS = Object.keys(SPECIES);
 
@@ -80,7 +83,7 @@ const FOOD = [
   { id:'treat-star',  name:'Star biscuit', price:1400, hunger:60, xp:1500, desc:'Expensive. Worth it.' }
 ];
 
-const RECOLOR_PRICE = 0;
+const RECOLOR_PRICE = 400;
 
 /* ---------- title fragments ---------- */
 const STARTER_PREFIXES  = ['Small','Sleepy','Gentle','Stubborn'];
@@ -262,16 +265,20 @@ function rollPetOptions(count){
   const opts = [];
   for(let i=0;i<count && pool.length;i++){
     const species = pool.splice(Math.floor(Math.random()*pool.length), 1)[0];
-    const s = SPECIES[species];
-    opts.push({ species, colors:{ body:s.bodyColors[0], accent:s.accentColors[0] } });
+    opts.push({ species, fur: SPECIES[species].furs[0] });
   }
   return opts;
 }
-function makePet(species, colors, name){
+
+function makePet(species, look, name){
+  look = look || {};
   return {
     id: 'p' + Math.random().toString(36).slice(2,10),
-    species, name: name || 'Unnamed',
-    colors: { body: colors.body, accent: colors.accent },
+    species,
+    name: name || 'Unnamed',
+    fur: look.fur || SPECIES[species].furs[0],
+    eyeColor: look.eyeColor || 'yellow',
+    eyeShape: look.eyeShape || 'round',
     tier: 'stable',
     xp: 0, hunger: 100,
     outfit: {},
@@ -290,13 +297,19 @@ function makePet(species, colors, name){
      /assets/wardrobe/{itemId}.png           e.g. hat-beanie.png
    ========================================================================== */
 
-const PET_ART = '/assets/pets/';
+const PET_ART  = '/assets/pets/';
+const EYE_ART  = '/assets/eyes/';
 const ITEM_ART = '/assets/wardrobe/';
 
 /* Frame aspect ratio, width:height. The art is portrait. */
 const FRAME_RATIO = 2 / 3;
 
-function petImageUrl(pet){ return `${PET_ART}${pet.species}-${stageOf(pet).key}.png`; }
+function petImageUrl(pet){
+  return `${PET_ART}${pet.species}-${pet.fur || 'black'}-${stageOf(pet).key}.png`;
+}
+function eyeImageUrl(pet){
+  return `${EYE_ART}${pet.eyeColor || 'yellow'}-${stageOf(pet).key}-${pet.eyeShape || 'round'}.png`;
+}
 function itemImageUrl(id){ return `${ITEM_ART}${id}.png`; }
 
 /* A garment's placement for a given stage, as percentages of the frame.
@@ -307,7 +320,11 @@ function fitFor(item, stageKey){
 }
 
 function layerStyle(fit){
+  /* h is optional — leave it out and the image keeps its own aspect ratio.
+     Set it to squash or stretch a garment onto a differently proportioned
+     stage, which is how one image covers child, teen and adult. */
   return `position:absolute;left:${fit.x}%;top:${fit.y}%;width:${fit.w}%;`
+       + (fit.h ? `height:${fit.h}%;` : '')
        + `transform:translate(-50%,-50%)${fit.r ? ` rotate(${fit.r}deg)` : ''};`
        + `pointer-events:none;`;
 }
@@ -341,20 +358,22 @@ function petSvg(pet, opts){
     html += `<img src="${itemImageUrl(item.id)}" alt="" style="${layerStyle(fitFor(item, stage.key))}z-index:1;" onerror="this.style.display='none'">`;
   });
 
-  html += `<img src="${petImageUrl(pet)}" alt="" `
-        + `style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:2;" `
+  const full = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;';
+  html += `<img src="${petImageUrl(pet)}" alt="" style="${full}z-index:2;" `
         + `onerror="this.dataset.missing=1;this.style.display='none'">`;
+  html += `<img src="${eyeImageUrl(pet)}" alt="" style="${full}z-index:3;" `
+        + `onerror="this.style.display='none'">`;
 
   /* Garments in front of the body */
   ['top','hat','held'].forEach(slot => {
     if(!outfit[slot]) return;
     const item = CATALOG.find(i => i.id === outfit[slot]);
     if(!item) return;
-    html += `<img src="${itemImageUrl(item.id)}" alt="" style="${layerStyle(fitFor(item, stage.key))}z-index:3;" onerror="this.style.display='none'">`;
+    html += `<img src="${itemImageUrl(item.id)}" alt="" style="${layerStyle(fitFor(item, stage.key))}z-index:4;" onerror="this.style.display='none'">`;
   });
 
   if(stage.key === 'legend'){
-    html += `<span aria-hidden="true" style="position:absolute;top:4%;right:6%;z-index:4;font-size:0.9em;color:#C9A227;">\u2726</span>`;
+    html += `<span aria-hidden="true" style="position:absolute;top:4%;right:6%;z-index:5;font-size:0.9em;color:#C9A227;">\u2726</span>`;
   }
 
   html += `</div>`;
@@ -399,7 +418,9 @@ function starterPet(){
     id: 'p-woodrow',
     species: 'cat',
     name: 'Lord Woodrow',
-    colors: { body:'#2C2C2A', accent:'#C9A227' },
+    fur: 'black',
+    eyeColor: 'yellow',
+    eyeShape: 'slit',
     tier: 'active',
     xp: 0, hunger: 100,
     outfit: {},
@@ -445,6 +466,13 @@ function migrate(s){
   if(!s.fragments || !Array.isArray(s.fragments.prefix)) s.fragments = { prefix:[], subject:[] };
   if(typeof s.wardrobe !== 'object' || s.wardrobe === null) s.wardrobe = {};
   if(!hadStarter && !s.pets.length){ s.pets = [starterPet()]; s.starterGiven = true; }
+  /* pets used to store hex colours; art is per-file now */
+  s.pets.forEach(p => {
+    if(!p.fur) p.fur = (SPECIES[p.species] || SPECIES.cat).furs[0];
+    if(!p.eyeColor) p.eyeColor = 'yellow';
+    if(!p.eyeShape) p.eyeShape = 'round';
+    delete p.colors;
+  });
   delete s.work; delete s.hp; delete s.maxHp; delete s.closet; delete s.worn;
   return s;
 }
@@ -675,6 +703,7 @@ function addAccountXP(state, amount){
 return {
   STAGES, SLOTS, SPECIES, SPECIES_KEYS, CATALOG, FOOD, RECOLOR_PRICE,
   CONNECTORS, SLOT_LEVELS, COLUMNS, WEEKDAYS, DOW_FULL, MEOW_PER_GOLD,
+  EYE_COLORS, EYE_SHAPES, EYE_ART, eyeImageUrl,
   LAYERS, PET_ART, ITEM_ART, FRAME_RATIO, petImageUrl, itemImageUrl, fitFor,
   TODAY, TODAY_KEY, MIN_DATE, BACKFILL_DAYS, SEED_RATES, DEFAULT_TARGETS,
   startOfDay, addDays, dateKey, fromKey, sameDay, daysBetween, mondayOf,
