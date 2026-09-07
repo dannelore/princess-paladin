@@ -248,15 +248,30 @@ function titleText(pet){
 }
 
 /* ---------- monsters ---------- */
-function activeMonster(state){
-  return (state.monsters || []).find(m => m.id === state.activeMonster && !m.dead) || null;
+function activeMonster(ms){
+  if(!ms) return null;
+  return (ms.monsters || []).find(m => m.id === ms.activeMonster && !m.dead) || null;
 }
-function damageMonster(state, amount){
-  const m = activeMonster(state);
+
+function damageMonster(ms, amount, who){
+  const m = activeMonster(ms);
   if(!m || amount <= 0) return null;
   m.hp = Math.max(0, m.hp - amount);
-  if(m.hp === 0){ m.dead = true; return m; }
+  if(!ms.damage[m.id]) ms.damage[m.id] = {};
+  ms.damage[m.id][who] = (ms.damage[m.id][who] || 0) + amount;
+  if(m.hp === 0){ m.dead = true; m.killed = m.killed || TODAY_KEY; return m; }
   return null;
+}
+
+function hasCollected(ms, monsterId, who){
+  return !!((ms.collected || {})[monsterId] || {})[who];
+}
+function collectorCount(ms, monsterId){
+  return Object.keys((ms.collected || {})[monsterId] || {}).length;
+}
+function markCollected(ms, monsterId, who){
+  if(!ms.collected[monsterId]) ms.collected[monsterId] = {};
+  ms.collected[monsterId][who] = true;
 }
 
 /* ---------- pet creation ---------- */
@@ -450,7 +465,6 @@ function defaultState(){
     celebrated:{},
     pets:[starterPet()], petTokens:0, hungerDate:null, starterGiven:true,
     wardrobe:{}, fragments:{ prefix:[], subject:[] },
-    monsters:[], activeMonster:null
   };
 }
 
@@ -460,7 +474,7 @@ function migrate(s){
   for(const k in d){ if(s[k] === undefined) s[k] = d[k]; }
   if(!Array.isArray(s.tags) || !s.tags.length) s.tags = d.tags;
   COLUMNS.forEach(k => { if(!Array.isArray(s[k])) s[k] = []; });
-  ['pets','monsters','shop','vacations'].forEach(k => { if(!Array.isArray(s[k])) s[k] = []; });
+  ['pets','shop','vacations'].forEach(k => { if(!Array.isArray(s[k])) s[k] = []; });
   s.targets = Object.assign({}, DEFAULT_TARGETS, s.targets || {});
   s.rates   = Object.assign({}, SEED_RATES, s.rates || {});
   if(!s.fragments || !Array.isArray(s.fragments.prefix)) s.fragments = { prefix:[], subject:[] };
@@ -474,14 +488,44 @@ function migrate(s){
     delete p.colors;
   });
   delete s.work; delete s.hp; delete s.maxHp; delete s.closet; delete s.worn;
+  delete s.monsters; delete s.activeMonster;   /* monsters are shared now */
   return s;
 }
 
-const STORE_KEY = 'questlog-danni-v5';
+/* ==========================================================================
+   PEOPLE
+   One set of files serves both logs. ?who=brendon switches which document
+   is loaded; everything except monsters is per person.
+   ========================================================================== */
+const PEOPLE = {
+  danni:   { name:'Danni',   doc:'danni-quest-log',   emoji:'\uD83E\uDDDD\u200D\u2640\uFE0F' },
+  brendon: { name:'Brendon', doc:'brendon-quest-log', emoji:'\uD83E\uDDDB\u200D\u2642\uFE0F' }
+};
 
-function makeStore(firebase){
+function currentPerson(){
+  let who = 'danni';
+  try{
+    const q = new URLSearchParams(location.search).get('who');
+    if(q && PEOPLE[q.toLowerCase()]) who = q.toLowerCase();
+  }catch(e){}
+  return who;
+}
+
+/* Keeps ?who= on internal links so you don't fall back into the other log. */
+function personLink(href){
+  const who = currentPerson();
+  if(who === 'danni') return href;
+  return href + (href.includes('?') ? '&' : '?') + 'who=' + who;
+}
+
+const MONSTER_DOC = 'shared-monsters';
+const STORE_KEY = 'questlog-v6';
+
+function makeStore(firebase, who){
+  who = who || currentPerson();
   const db = firebase.firestore();
-  const ref = db.collection('questlog').doc('danni-quest-log');
+  const ref = db.collection('questlog').doc(PEOPLE[who].doc);
+  const localKey = STORE_KEY + '-' + who;
   let state = defaultState();
 
   return {
@@ -493,23 +537,87 @@ function makeStore(firebase){
         if(snap.exists){
           state = migrate(snap.data());
         } else {
-          const raw = localStorage.getItem(STORE_KEY);
+          const raw = localStorage.getItem(localKey);
           state = raw ? migrate(JSON.parse(raw)) : defaultState();
           await ref.set(state);
         }
       } catch(err){
         console.error('Firestore read failed, using local copy:', err);
-        const raw = localStorage.getItem(STORE_KEY);
+        const raw = localStorage.getItem(localKey);
         state = raw ? migrate(JSON.parse(raw)) : defaultState();
       }
-      localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      localStorage.setItem(localKey, JSON.stringify(state));
       return state;
     },
+    who,
+    person: PEOPLE[who],
     save(){
-      localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      localStorage.setItem(localKey, JSON.stringify(state));
       ref.set(state).catch(err => console.error('Sync to Firestore failed:', err));
     },
     reset(){ state = defaultState(); return state; }
+  };
+}
+
+/* ==========================================================================
+   SHARED MONSTERS
+   Lives in its own document so both logs damage the same creature.
+   `damage` records who dealt what; `collected` records who has taken their
+   share, so neither person can claim the other's half.
+   ========================================================================== */
+function defaultMonsterState(){
+  return { version:1, monsters:[], activeMonster:null, damage:{}, collected:{} };
+}
+
+function migrateMonsters(m){
+  const d = defaultMonsterState();
+  for(const k in d){ if(m[k] === undefined) m[k] = d[k]; }
+  if(!Array.isArray(m.monsters)) m.monsters = [];
+  return m;
+}
+
+function makeMonsterStore(firebase){
+  const db = firebase.firestore();
+  const ref = db.collection('questlog').doc(MONSTER_DOC);
+  const localKey = STORE_KEY + '-monsters';
+  let state = defaultMonsterState();
+  return {
+    get state(){ return state; },
+    async load(){
+      try{
+        const snap = await ref.get();
+        if(snap.exists) state = migrateMonsters(snap.data());
+        else {
+          const raw = localStorage.getItem(localKey);
+          state = raw ? migrateMonsters(JSON.parse(raw)) : defaultMonsterState();
+          await ref.set(state);
+        }
+      }catch(err){
+        console.error('Monster read failed, using local copy:', err);
+        const raw = localStorage.getItem(localKey);
+        state = raw ? migrateMonsters(JSON.parse(raw)) : defaultMonsterState();
+      }
+      localStorage.setItem(localKey, JSON.stringify(state));
+      return state;
+    },
+    save(){
+      localStorage.setItem(localKey, JSON.stringify(state));
+      ref.set(state).catch(err => console.error('Monster sync failed:', err));
+    },
+    reset(){ state = defaultMonsterState(); return state; }
+  };
+}
+
+/* Half each, rounded so the first to collect takes the odd penny.
+   Pets and wardrobe items can't be halved — they go to whoever collects first. */
+function splitReward(reward, isFirst){
+  const half = n => isFirst ? Math.ceil((n||0)/2) : Math.floor((n||0)/2);
+  return {
+    gold: half(reward.gold),
+    meow: half(reward.meow),
+    xp:   half(reward.xp),
+    pet:  !!reward.pet  && isFirst,
+    item: !!reward.item && isFirst
   };
 }
 
@@ -708,6 +816,9 @@ return {
   TODAY, TODAY_KEY, MIN_DATE, BACKFILL_DAYS, SEED_RATES, DEFAULT_TARGETS,
   startOfDay, addDays, dateKey, fromKey, sameDay, daysBetween, mondayOf,
   defaultState, migrate, makeStore,
+  PEOPLE, currentPerson, personLink, MONSTER_DOC,
+  defaultMonsterState, makeMonsterStore, splitReward,
+  hasCollected, collectorCount, markCollected,
   isScheduled, repeatSummary, makeCtx, isVacation, vacationActive,
   ageMultiplier, getStreak, taskValue, subtaskValue, bonusValue,
   addCurrency, removeCurrency, spendCurrency, ledgerWeek, recalibrate,
