@@ -272,3 +272,18 @@
     .cq-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
     .cq-selects{ gap:8px; }
   }
+
+  /* --- the sash ---
+     A thin black band laid across the poster when none of the services a
+     title is on are ones we have. Lives inside .cq-posterwrap so it clips
+     to the art rather than running over the card body. */
+  .cq-posterwrap{ overflow:hidden; }
+  .cq-sash{ position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+  .cq-sash::before{
+    content:"";
+    position:absolute; left:-30%; right:-30%; top:50%;
+    height:10px;
+    background:var(--ink);
+    box-shadow:0 0 0 1px rgba(247,241,228,.45);
+    transform:translateY(-50%) rotate(-30deg);
+  }
