@@ -1156,11 +1156,12 @@ function render(){
     }).join("");
     const rewatch = item.rewatch ? `<span class="cq-rewatch">Rewatch</span>` : "";
 
-    /* Nothing it's on is anything we have — draw the sash. An item with no
-       service listed at all is unknown rather than unavailable, so it's clean. */
+    /* Nothing it's on is anything we have. An item with no service listed at
+       all is unknown rather than unavailable, so it stays clean. */
     const onNothing = (item.streams || []).length > 0 && !(item.streams || []).some(isSubbed);
-    const sash = onNothing
-      ? `<span class="cq-sash" title="Not on anything we have"></span>` : "";
+    const unavail = onNothing
+      ? `<span class="cq-unavail" title="Not on anything we have">Unavailable</span>` : "";
+    if(onNothing) card.classList.add("is-unavail");
     const tradition = item.tradition ? `<span class="sp-tradition">Annual</span>` : "";
 
     const yrs = (item.years || []).slice().sort((a,b) => b - a);
@@ -1174,7 +1175,7 @@ function render(){
     }
 
     card.innerHTML = `
-      <div class="cq-posterwrap" data-open="${item.id}">${art}${sash}${whoBadge}${ring}</div>
+      <div class="cq-posterwrap" data-open="${item.id}">${art}${unavail}${whoBadge}${ring}</div>
       <div class="cq-tools">
         <button data-edit="${item.id}" aria-label="Edit ${esc(item.title)}">✎</button>
         <button data-del="${item.id}" aria-label="Remove ${esc(item.title)}">✕</button>
