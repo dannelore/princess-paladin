@@ -92,6 +92,14 @@
     color:var(--ink); padding:3px 6px; width:100%; max-width:190px;
   }
   .pet-name-row input:hover, .pet-name-row input:focus{ border-color:rgba(74,59,65,0.18); background:var(--cream); outline:none; }
+  /* an unnamed starter shouldn't look like a bug */
+  .pet-name-row input.needs-name{
+    border-color:var(--accent); background:var(--cream);
+    animation:nudge 2.4s ease-in-out 3;
+  }
+  .pet-name-row input.needs-name::placeholder{ color:var(--accent-dark); opacity:.85; }
+  @keyframes nudge{ 0%,100%{ box-shadow:0 0 0 0 rgba(232,124,166,0); } 50%{ box-shadow:0 0 0 4px rgba(232,124,166,0.18); } }
+  @media (prefers-reduced-motion: reduce){ .pet-name-row input.needs-name{ animation:none; } }
   .pet-title{ font-family:var(--font-serif); font-style:italic; font-size:14px; color:var(--gold); min-height:20px; }
   .pet-sub{ font-size:12px; color:var(--ink-soft); margin-top:4px; }
 
@@ -552,7 +560,7 @@ function renderRoster(){
     div.className = 'roster-card' + (pet.id === (selected() || {}).id ? ' selected' : '') + (pet.tier === 'stable' ? ' stable-pet' : '');
     div.innerHTML = `
       <div class="thumb">${PQ.petSvg(pet, { showBackground:false })}</div>
-      <div class="rname">${esc(pet.name)}</div>
+      <div class="rname">${esc(pet.name || 'Unnamed')}</div>
       <div class="rtier ${pet.tier}">${pet.tier}</div>
       <div class="rhunger"><i style="width:${pet.tier === 'stable' ? 100 : hunger}%"></i></div>
     `;
@@ -579,6 +587,8 @@ function renderPet(){
   document.getElementById('petArt').innerHTML = PQ.petSvg(pet, {});
   const nameEl = document.getElementById('petName');
   if(document.activeElement !== nameEl) nameEl.value = pet.name;
+  nameEl.placeholder = 'Name them';
+  nameEl.classList.toggle('needs-name', !pet.name);
   document.getElementById('petTitle').textContent = PQ.titleText(pet) || '—';
   document.getElementById('petSub').textContent =
     `${PQ.SPECIES[pet.species].name} · ${stage.name} · level ${PQ.petLevel(pet)}`;
@@ -609,7 +619,9 @@ function renderPet(){
 
 document.getElementById('petName').onchange = e => {
   const pet = selected(); if(!pet) return;
-  pet.name = e.target.value.trim() || pet.name;
+  const v = e.target.value.trim();
+  if(!v && !pet.name) return;          /* still unnamed — leave the prompt up */
+  pet.name = v || pet.name;
   save();
 };
 
@@ -827,7 +839,7 @@ function renderLegends(){
     row.innerHTML = `
       <div class="lart">${PQ.petSvg(pet, { showBackground:false })}</div>
       <div class="sgrow">
-        <div class="lname">${esc(pet.name)}</div>
+        <div class="lname">${esc(pet.name || 'Unnamed')}</div>
         <div class="lbuff">${esc(buff.label)} — ${esc(buff.text)}</div>
       </div>
     `;

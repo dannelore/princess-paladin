@@ -1744,7 +1744,7 @@ function renderHeader(){
   if(active){
     slot.classList.remove('empty');
     art.innerHTML = PQ.petSvg(active, { showBackground:false });
-    document.getElementById('petNameLabel').textContent = active.name;
+    document.getElementById('petNameLabel').textContent = active.name || 'Unnamed';
     const h = PQ.liveHunger(S(), active, ctx);
     const row = document.getElementById('hungerRow');
     row.style.display = 'flex';
