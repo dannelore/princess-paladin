@@ -45,7 +45,7 @@
   }
   #garment.behind{ z-index:1; }
   #garment.dragging{ cursor:grabbing; }
-  #garment img{ width:100%; display:block; pointer-events:none; }
+  #garment img{ width:100%; height:auto; display:block; pointer-events:none; }
 
   label.f{ display:block; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); font-weight:500; margin:14px 0 5px; }
   select, input[type="file"], input[type="text"]{
@@ -117,8 +117,12 @@
         <input type="file" id="fileIn" accept="image/png,image/webp">
         <p class="hint" style="margin:6px 0 0;">Pick the file off your computer — you don't have to upload it to the repo first.</p>
 
-        <label class="f">Size <span id="sizeOut" class="hint"></span></label>
+        <label class="f">Width <span id="sizeOut" class="hint"></span></label>
         <input type="range" id="sizeRange" min="5" max="160" step="0.5" value="60">
+
+        <label class="f">Height <span id="hOut" class="hint"></span></label>
+        <input type="range" id="hRange" min="0" max="160" step="0.5" value="0">
+        <p class="hint" style="margin:4px 0 0;">Leave height at 0 to keep the garment's own shape. Raise it to squash or stretch onto a chunkier stage.</p>
 
         <label class="f">Rotation <span id="rotOut" class="hint"></span></label>
         <input type="range" id="rotRange" min="-45" max="45" step="1" value="0">
@@ -156,7 +160,7 @@ const garmentEl = document.getElementById('garment');
 const garmentImg= document.getElementById('garmentImg');
 const bodyImg   = document.getElementById('bodyImg');
 
-let pos = { x:50, y:50, w:60, r:0 };
+let pos = { x:50, y:50, w:60, h:0, r:0 };
 
 /* ---------- setup ---------- */
 (function(){
@@ -186,11 +190,11 @@ function renderChips(){
 
 function loadBody(){
   bodyImg.removeAttribute('data-missing');
-  bodyImg.src = `${PQ.PET_ART}${species}-${stage}.png`;
+  bodyImg.src = `${PQ.PET_ART}${species}-${PQ.SPECIES[species].furs[0]}-${stage}.png`;
   const warn = document.getElementById('bodyWarn');
   bodyImg.onerror = () => {
     warn.style.display = 'block';
-    warn.textContent = `Can't find /assets/pets/${species}-${stage}.png — upload it to the repo first, or the body won't show.`;
+    warn.textContent = `Can't find ${PQ.PET_ART}${species}-${PQ.SPECIES[species].furs[0]}-${stage}.png — upload it to the repo first, or the body won't show.`;
   };
   bodyImg.onload = () => { warn.style.display = 'none'; };
 }
@@ -212,14 +216,19 @@ function apply(){
   garmentEl.style.left = pos.x + '%';
   garmentEl.style.top  = pos.y + '%';
   garmentEl.style.width = pos.w + '%';
+  garmentEl.style.height = pos.h ? pos.h + '%' : 'auto';
+  garmentImg.style.height = pos.h ? '100%' : 'auto';
   garmentEl.style.transform = `translate(-50%,-50%) rotate(${pos.r}deg)`;
   document.getElementById('sizeRange').value = pos.w;
+  document.getElementById('hRange').value = pos.h;
   document.getElementById('rotRange').value = pos.r;
   document.getElementById('sizeOut').textContent = pos.w.toFixed(1) + '%';
+  document.getElementById('hOut').textContent = pos.h ? pos.h.toFixed(1) + '%' : 'auto';
   document.getElementById('rotOut').textContent = pos.r + '°';
 }
 
 document.getElementById('sizeRange').oninput = e => { pos.w = parseFloat(e.target.value); apply(); };
+document.getElementById('hRange').oninput    = e => { pos.h = parseFloat(e.target.value); apply(); };
 document.getElementById('rotRange').oninput  = e => { pos.r = parseInt(e.target.value); apply(); };
 document.getElementById('behindBtn').onclick = () => {
   garmentEl.classList.toggle('behind');
@@ -263,6 +272,7 @@ document.getElementById('recordBtn').onclick = () => {
     x: +pos.x.toFixed(1),
     y: +pos.y.toFixed(1),
     w: +pos.w.toFixed(1),
+    h: pos.h ? +pos.h.toFixed(1) : 0,
     r: pos.r || 0,
     behind: garmentEl.classList.contains('behind')
   };
@@ -273,7 +283,7 @@ document.getElementById('recordBtn').onclick = () => {
 function loadRecorded(){
   const r = recorded[itemId] && recorded[itemId][stage];
   if(r){
-    pos = { x:r.x, y:r.y, w:r.w, r:r.r };
+    pos = { x:r.x, y:r.y, w:r.w, h:r.h || 0, r:r.r };
     garmentEl.classList.toggle('behind', !!r.behind);
     apply();
   }
@@ -289,6 +299,7 @@ function renderOut(){
     const inner = Object.keys(per).map(s => {
       const f = per[s];
       const bits = [`x:${f.x}`, `y:${f.y}`, `w:${f.w}`];
+      if(f.h) bits.push(`h:${f.h}`);
       if(f.r) bits.push(`r:${f.r}`);
       if(f.behind) bits.push('behind:true');
       return `    ${s}:{ ${bits.join(', ')} }`;

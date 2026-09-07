@@ -138,6 +138,26 @@
   .tier-btn.on{ background:var(--sage); border-color:var(--sage-dark); color:var(--white); }
   .tier-btn:disabled{ opacity:.4; cursor:not-allowed; }
 
+  .look-panel{ margin-top:16px; padding-top:14px; border-top:1px solid rgba(74,59,65,0.1); text-align:left; }
+  .look-row{ display:flex; align-items:center; gap:10px; margin-bottom:9px; }
+  .look-label{
+    font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--ink-soft); font-weight:500; width:42px; flex-shrink:0;
+  }
+  .swatches{ display:flex; gap:6px; flex-wrap:wrap; }
+  .swatch{
+    width:26px; height:26px; border-radius:50%;
+    border:2px solid rgba(74,59,65,0.18); cursor:pointer; padding:0;
+    transition:transform .12s, border-color .12s;
+  }
+  .swatch:hover{ transform:scale(1.12); }
+  .swatch.on{ border-color:var(--ink); }
+  .swatch.text{
+    width:auto; height:auto; border-radius:12px; padding:5px 12px;
+    font-family:var(--font-body); font-size:11.5px; background:var(--cream); color:var(--ink-soft);
+  }
+  .swatch.text.on{ background:var(--sage); border-color:var(--sage-deep); color:var(--white); }
+
   /* wardrobe */
   .slot-tabs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
   .slot-tab{
@@ -311,6 +331,21 @@
         </div>
         <p class="hint" id="tierHint" style="margin:8px 0 0;"></p>
 
+        <div class="look-panel">
+          <div class="look-row">
+            <span class="look-label">Fur</span>
+            <div class="swatches" id="furSwatches"></div>
+          </div>
+          <div class="look-row">
+            <span class="look-label">Eyes</span>
+            <div class="swatches" id="eyeSwatches"></div>
+          </div>
+          <div class="look-row">
+            <span class="look-label">Pupil</span>
+            <div class="swatches" id="shapeSwatches"></div>
+          </div>
+          <p class="hint" id="lookHint" style="margin:8px 0 0;"></p>
+        </div>
 
       </div>
 
@@ -377,6 +412,10 @@
     <h3>A new companion</h3>
     <p class="sub">Pick one. Species decides which buff it gives once it reaches Legend.</p>
     <div class="choice-grid" id="choiceGrid"></div>
+    <div class="look-panel" style="border-top:none;">
+      <div class="look-row"><span class="look-label">Eyes</span><div class="swatches" id="claimEyes"></div></div>
+      <div class="look-row"><span class="look-label">Pupil</span><div class="swatches" id="claimShapes"></div></div>
+    </div>
     <input type="text" id="newPetName" placeholder="Name them" maxlength="24">
     <div class="modal-actions">
       <button class="btn quiet" id="claimCancel">Later</button>
@@ -401,6 +440,15 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const store = PQ.makeStore(firebase);
+
+const SWATCH = {
+  black:'#2C2C2A', classic:'#3B3B38', white:'#F1EFE8', ginger:'#E08A3C',
+  grey:'#9A968D', cream:'#EBD9B8', brown:'#7C5B30', calico:'#D9A05B',
+  blue:'#7FB1E8', green:'#7BD063', orange:'#F58220', pink:'#F86BB0',
+  purple:'#7B27B0', yellow:'#F5D22B', red:'#C7402F', teal:'#3FB6A8',
+  amber:'#E5A020', silver:'#C3C7CC', copper:'#B87333', violet:'#9B6BD8'
+};
+const swatchColor = k => SWATCH[k] || '#B4B2A9';
 
 let selectedId = null;
 let activeSlot = 'hat';
@@ -511,6 +559,47 @@ document.querySelectorAll('.tier-btn').forEach(btn => {
     save();
   };
 });
+
+/* ---------- appearance ----------
+   Changing a look is free on a Baby (you're still deciding who they are) and
+   costs Meow Bucks after that. */
+function lookCost(pet){ return PQ.stageOf(pet).key === 'baby' ? 0 : PQ.RECOLOR_PRICE; }
+
+function applyLook(pet, field, value){
+  if(pet[field] === value) return;
+  const cost = lookCost(pet);
+  if(cost && S().meowBucks < cost) return;
+  if(cost) S().meowBucks -= cost;
+  pet[field] = value;
+  save();
+}
+
+function renderSwatchRow(id, values, current, field, textual){
+  const pet = selected();
+  const el = document.getElementById(id);
+  el.innerHTML = '';
+  values.forEach(v => {
+    const b = document.createElement('button');
+    b.className = 'swatch' + (textual ? ' text' : '') + (v === current ? ' on' : '');
+    if(textual) b.textContent = v;
+    else b.style.background = swatchColor(v);
+    b.title = v;
+    b.setAttribute('aria-label', v);
+    b.onclick = () => applyLook(pet, field, v);
+    el.appendChild(b);
+  });
+}
+
+function renderLook(){
+  const pet = selected(); if(!pet) return;
+  renderSwatchRow('furSwatches',   PQ.SPECIES[pet.species].furs, pet.fur,      'fur');
+  renderSwatchRow('eyeSwatches',   PQ.EYE_COLORS,                pet.eyeColor, 'eyeColor');
+  renderSwatchRow('shapeSwatches', PQ.EYE_SHAPES,                pet.eyeShape, 'eyeShape', true);
+  const cost = lookCost(pet);
+  document.getElementById('lookHint').textContent = cost
+    ? `Changing a look costs ${cost} Meow Bucks. You have ${(S().meowBucks||0).toLocaleString()}.`
+    : 'Free while they are a Baby — change as much as you like.';
+}
 
 /* ---------- wardrobe ---------- */
 function renderSlots(){
@@ -692,11 +781,14 @@ document.getElementById('claimBtn').onclick = () => {
   renderChoices();
   document.getElementById('claimModal').classList.add('open');
 };
+let claimEye = 'yellow', claimShape = 'round';
+
 function renderChoices(){
   const grid = document.getElementById('choiceGrid');
   grid.innerHTML = '';
   claimChoices.forEach((c, i) => {
-    const ghost = { species:c.species, colors:c.colors, xp:2500, tier:'stable', outfit:{}, name:PQ.SPECIES[c.species].name };
+    const ghost = { species:c.species, fur:c.fur, eyeColor:claimEye, eyeShape:claimShape,
+                    xp:2500, tier:'stable', outfit:{}, name:PQ.SPECIES[c.species].name };
     const div = document.createElement('div');
     div.className = 'choice' + (i === claimPick ? ' on' : '');
     div.innerHTML = `
@@ -707,13 +799,33 @@ function renderChoices(){
     div.onclick = () => { claimPick = i; renderChoices(); };
     grid.appendChild(div);
   });
+
+  const eyes = document.getElementById('claimEyes');
+  eyes.innerHTML = '';
+  PQ.EYE_COLORS.forEach(v => {
+    const b = document.createElement('button');
+    b.className = 'swatch' + (v === claimEye ? ' on' : '');
+    b.style.background = swatchColor(v);
+    b.title = v; b.setAttribute('aria-label', v);
+    b.onclick = () => { claimEye = v; renderChoices(); };
+    eyes.appendChild(b);
+  });
+  const shapes = document.getElementById('claimShapes');
+  shapes.innerHTML = '';
+  PQ.EYE_SHAPES.forEach(v => {
+    const b = document.createElement('button');
+    b.className = 'swatch text' + (v === claimShape ? ' on' : '');
+    b.textContent = v;
+    b.onclick = () => { claimShape = v; renderChoices(); };
+    shapes.appendChild(b);
+  });
 }
 document.getElementById('claimCancel').onclick = () => document.getElementById('claimModal').classList.remove('open');
 document.getElementById('claimConfirm').onclick = () => {
   const name = document.getElementById('newPetName').value.trim();
   if(!name) { document.getElementById('newPetName').focus(); return; }
   const c = claimChoices[claimPick];
-  const pet = PQ.makePet(c.species, c.colors, name);
+  const pet = PQ.makePet(c.species, { fur:c.fur, eyeColor:claimEye, eyeShape:claimShape }, name);
   if(!PQ.activePet(S())) pet.tier = 'active';
   S().pets.push(pet);
   S().petTokens = Math.max(0, (S().petTokens || 0) - 1);
@@ -732,6 +844,7 @@ function render(){
   if(selected()){
     selectedId = selected().id;
     renderPet();
+    renderLook();
     renderSlots();
     renderTitle();
   }
