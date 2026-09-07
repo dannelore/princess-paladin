@@ -7,6 +7,27 @@
 
    Page-specific rules stay in that page's own <style> block.
    Exception: the two self-care flowcharts share /assets/self-care.css
+
+   CONTENTS
+     1. Fonts
+     2. Tokens
+     3. Section palettes          <- accent + tint + background, per folder
+     4. Base
+     5. Layout
+     6. Panels
+     7. Navigation
+     8. Hero + emblem
+     9. Ribbon                    <- the compact subpage header
+    10. Link cards + tiles
+    11. Parchment callout
+    12. Buttons, pills, tags
+    13. Form controls
+    14. Shared widgets           <- modal, coin, toggle, chip, card
+    15. Legacy component names   <- .panel .btn .tag .empty .title, etc.
+    16. Footer
+    17. Dannelore type override
+    18. Utilities
+    19. Motion + print
    ========================================================================== */
 
 
@@ -41,11 +62,36 @@
   --ink-soft:  #6B5E54;
   --blade-deep:#7C1F2A;
 
+  /* --- two extra hues, for the sections that already had them --- */
+  --dusk:        #6B4A78;   /* side quests */
+  --dusk-deep:   #523862;
+  --pumpkin:     #C96A2E;   /* spooky quest */
+  --pumpkin-deep:#A4501C;
+
+  /* --- quest-log currency --- */
+  --quest-gold:   #C9A227;
+  --quest-copper: #B87333;
+  --meow:         #7F77DD;
+
+  /* --- the section accent ---
+     Every folder overrides these in section 3. Panels, nav pills, buttons
+     and the inset hairline all read from here, so a folder changes color
+     by setting a few variables and nothing else. Default is pink. */
+  --accent:      var(--pink);
+  --accent-deep: var(--pink-deep);
+  --accent-soft: rgba(232,124,166,0.14);   /* washes and tints */
+  --on-accent:   #fff;                     /* text that sits on the accent */
+
+  /* The inset panel line. Points at the accent so panels follow the folder.
+     Set this one line to var(--pink) to put the rose hairline back sitewide. */
+  --hairline: var(--accent);
+
   /* --- surfaces --- */
   --panel:            #FFFDF8;
   --panel-tint:       #FFF7FA;   /* panel on hover */
   --parchment:        #EDE1C3;
   --parchment-border: #C9B688;
+  --white:            #FFFFFF;
 
   /* --- lines --- */
   --line:        rgba(46,36,31,0.16);
@@ -77,20 +123,93 @@
 
 
 /* --------------------------------------------------------------------------
-   3. FOLDER BACKGROUNDS
+   3. SECTION PALETTES
    Put the matching class on <body>. Subfolders use the parent's class:
    every page under /castle/ gets class="pp-castle", and so on.
+
+   Each folder sets its background AND its accent. Nothing else needs to
+   change — the components below all follow the accent.
    -------------------------------------------------------------------------- */
 
 body[class*="pp-"]{
   background-attachment: fixed;
 }
 
-.pp-home{      background-image: linear-gradient(135deg,#F7F1E4 0%,#EFE4CE 100%); }
-.pp-castle{    background-image: linear-gradient(135deg,#E7E5DF 0%,#D9D6CC 100%); }
-.pp-dannelore{ background-image: linear-gradient(135deg,#F6D9E6 0%,#F2C9DC 100%); }
-.pp-templates{ background-image: linear-gradient(135deg,#EAEFE3 0%,#DDE5D3 100%); }
-.pp-sidequest{ background-image: linear-gradient(135deg,#EFEAF4 0%,#DFD5EC 100%); }
+/* --- home: cream and rose --- */
+.pp-home{
+  background-image: linear-gradient(135deg,#F7F1E4 0%,#EFE4CE 100%);
+  --accent:      var(--pink);
+  --accent-deep: var(--pink-deep);
+  --accent-soft: rgba(232,124,166,0.14);
+  --panel:       #FFFDF8;
+  --panel-tint:  #FFF7FA;
+}
+
+/* --- castle: stone and sage --- */
+.pp-castle{
+  background-image: linear-gradient(135deg,#E7E5DF 0%,#D9D6CC 100%);
+  --accent:      var(--sage);
+  --accent-deep: var(--sage-deep);
+  --accent-soft: rgba(143,163,126,0.14);
+  --panel:       #FDFDF9;
+  --panel-tint:  #F6F8F1;
+}
+
+/* --- dannelore: rose on rose --- */
+.pp-dannelore{
+  background-image:
+    radial-gradient(circle at 15% 8%, rgba(255,255,255,0.5), transparent 40%),
+    linear-gradient(135deg,#F6D9E6 0%,#F2C9DC 100%);
+  --accent:      var(--pink);
+  --accent-deep: var(--pink-deep);
+  --accent-soft: rgba(232,124,166,0.16);
+  --panel:       #FFFDFA;
+  --panel-tint:  #FFF5F9;
+}
+
+/* --- side quests: lavender and dusk --- */
+.pp-sidequest{
+  background-image: linear-gradient(135deg,#EFEAF4 0%,#DFD5EC 100%);
+  --accent:      var(--dusk);
+  --accent-deep: var(--dusk-deep);
+  --accent-soft: rgba(107,74,120,0.13);
+  --panel:       #FEFCFF;
+  --panel-tint:  #F8F3FB;
+}
+
+/* --- spooky quest: dusk background, pumpkin accent --- */
+.pp-spooky{
+  background-image: linear-gradient(160deg,#E6D6E8 0%,#CDB0D2 55%,#B99BC4 100%);
+  --accent:      var(--pumpkin);
+  --accent-deep: var(--pumpkin-deep);
+  --accent-soft: rgba(201,106,46,0.14);
+  --panel:       #FFFCF7;
+  --panel-tint:  #FDF3E9;
+}
+
+/* --- templates: soft green --- */
+.pp-templates{
+  background-image: linear-gradient(135deg,#EAEFE3 0%,#DDE5D3 100%);
+  --accent:      var(--sage);
+  --accent-deep: var(--sage-deep);
+  --accent-soft: rgba(143,163,126,0.14);
+  --panel:       #FDFEFA;
+  --panel-tint:  #F4F8EE;
+}
+
+/* --- vmprman: the dark one. Gold accent, cream type. --- */
+.pp-vmprman{
+  background-image: linear-gradient(135deg,#7C1F2A 0%,#5A1720 100%);
+  --accent:      var(--gold);
+  --accent-deep: var(--gold-deep);
+  --accent-soft: rgba(156,116,64,0.20);
+  --panel:       #FFFDF8;
+  --panel-tint:  #FFF7EC;
+  color: #F7F1E4;
+}
+.pp-vmprman .pp-title{ color: #F7F1E4; }
+.pp-vmprman .pp-tagline{ color: #E5C79A; }
+.pp-vmprman .pp-footer{ color: rgba(247,241,228,0.72); }
 
 
 /* --------------------------------------------------------------------------
@@ -98,6 +217,8 @@ body[class*="pp-"]{
    -------------------------------------------------------------------------- */
 
 *{ box-sizing: border-box; }
+
+html{ scroll-behavior: smooth; }
 
 body{
   margin: 0;
@@ -109,11 +230,11 @@ body{
   -webkit-font-smoothing: antialiased;
 }
 
-a{ color: var(--sage-deep); text-decoration: none; }
+a{ color: var(--accent-deep); text-decoration: none; }
 a:hover{ text-decoration: underline; }
 
 :focus-visible{
-  outline: 2px solid var(--pink-deep);
+  outline: 2px solid var(--accent-deep);
   outline-offset: 2px;
 }
 
@@ -135,6 +256,13 @@ h1,h2,h3,h4{
 
 .pp-wrap{
   max-width: calc(var(--content) + (var(--pad-x) * 2));
+  margin: 0 auto;
+  padding: 0 var(--pad-x);
+}
+
+/* A wider wrap, for the board-style pages */
+.pp-wrap-wide{
+  max-width: calc(1300px + (var(--pad-x) * 2));
   margin: 0 auto;
   padding: 0 var(--pad-x);
 }
@@ -169,8 +297,8 @@ h1,h2,h3,h4{
 
 /* --------------------------------------------------------------------------
    6. PANELS
-   Every panel carries the inset rose hairline. It needs room to breathe —
-   keep at least 20px of padding, or use .pp-panel-tight on small cards.
+   Every panel carries the inset hairline, in the folder's accent. It needs
+   room to breathe — keep at least 20px of padding, or use .pp-panel-tight.
    -------------------------------------------------------------------------- */
 
 .pp-panel{
@@ -186,7 +314,7 @@ h1,h2,h3,h4{
   content: "";
   position: absolute;
   inset: 8px;
-  border: 1px solid var(--pink);
+  border: 1px solid var(--hairline);
   border-radius: calc(var(--radius-sm) - 6px);
   opacity: 0.35;
   pointer-events: none;
@@ -257,18 +385,54 @@ h1,h2,h3,h4{
 .pp-nav a:focus-visible,
 .navbar a:focus-visible,
 .site-nav a:focus-visible{
-  color: #fff;
-  background: var(--pink);
-  border-color: var(--pink);
+  color: var(--on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
   text-decoration: none;
 }
 
 /* Marks the page you're currently on */
 .pp-nav a[aria-current="page"],
-.navbar a[aria-current="page"]{
-  color: #fff;
-  background: var(--sage);
-  border-color: var(--sage);
+.navbar a[aria-current="page"],
+.site-nav a[aria-current="page"]{
+  color: var(--on-accent);
+  background: var(--accent-deep);
+  border-color: var(--accent-deep);
+}
+
+/* A second, quieter row of links — used for section sub-navigation */
+.pp-subnav{
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 22px;
+  padding: 0;
+  list-style: none;
+}
+.pp-subnav a{
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 5px 13px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.pp-subnav a:hover,
+.pp-subnav a:focus-visible{
+  color: var(--accent-deep);
+  background: var(--accent-soft);
+  text-decoration: none;
+}
+.pp-subnav a[aria-current="page"]{
+  color: var(--accent-deep);
+  background: var(--accent-soft);
+  font-weight: 600;
 }
 
 /* Small italic back-link, for subpages */
@@ -286,8 +450,10 @@ h1,h2,h3,h4{
 
 /* --------------------------------------------------------------------------
    8. HERO + EMBLEM
-   Both icons are 64x64 now, so they sit on one baseline without any
-   flex-end trickery. Markup for the pair is in the snippet below section 13.
+   The full masthead. Folder index pages use this; deeper pages use the
+   ribbon in section 9 instead.
+
+   The emblem markup is canonical — copy it from /templates/, never redraw it.
    -------------------------------------------------------------------------- */
 
 .pp-hero{
@@ -311,6 +477,9 @@ h1,h2,h3,h4{
 /* Subpages carry the emblem too, just smaller so it doesn't crowd the title */
 .pp-emblem-sm{ gap: 10px; margin-bottom: 6px; }
 .pp-emblem-sm svg{ width: 30px; height: 30px; }
+
+/* The nav sits between the emblem and the title inside a hero */
+.pp-hero .pp-nav{ margin: 28px 0 32px; }
 
 .pp-title{
   font-family: var(--font-serif);
@@ -346,7 +515,110 @@ h1,h2,h3,h4{
 
 
 /* --------------------------------------------------------------------------
-   9. LINK CARDS + TILES
+   9. RIBBON
+   The compact header for pages below a folder index. Sticks to the top,
+   carries the small emblem, the page name and the same six nav links.
+
+     <header class="pp-ribbon">
+       <div class="pp-ribbon-inner">
+         <a class="pp-ribbon-mark" href="/">…emblem…</a>
+         <div class="pp-ribbon-titles">
+           <span class="pp-ribbon-eyebrow">Castle Keep</span>
+           <span class="pp-ribbon-title">Meal Planner</span>
+         </div>
+         <nav class="pp-nav">…</nav>
+       </div>
+     </header>
+
+   Pages that need a live status row (the quest log) add .pp-ribbon-extra
+   inside .pp-ribbon-inner and fill it themselves.
+   -------------------------------------------------------------------------- */
+
+.pp-ribbon{
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  margin-bottom: 22px;
+  background: var(--panel);
+  border-bottom: 2px solid var(--accent-soft);
+  box-shadow: 0 4px 16px rgba(46,36,31,0.08);
+}
+
+.pp-ribbon-inner{
+  max-width: calc(1300px + (var(--pad-x) * 2));
+  margin: 0 auto;
+  padding: 12px var(--pad-x);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.pp-ribbon-mark{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+.pp-ribbon-mark svg{ width: 30px; height: 30px; }
+.pp-ribbon-mark:hover{ text-decoration: none; }
+
+.pp-ribbon-titles{
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-right: auto;
+}
+.pp-ribbon-eyebrow{
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+  line-height: 1.4;
+}
+.pp-ribbon-title{
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.3rem;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+/* The nav shrinks inside a ribbon and loses the hero's bottom margin */
+.pp-ribbon .pp-nav{
+  margin: 0;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.pp-ribbon .pp-nav a{
+  font-size: 0.68rem;
+  padding: 6px 13px;
+  background: transparent;
+}
+
+/* Full-width row underneath, for live status readouts */
+.pp-ribbon-extra{
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 760px){
+  .pp-ribbon-inner{ gap: 12px; }
+  .pp-ribbon .pp-nav{ flex: 1 1 100%; justify-content: center; }
+  .pp-ribbon-title{ font-size: 1.1rem; }
+}
+
+
+/* --------------------------------------------------------------------------
+   10. LINK CARDS + TILES
    -------------------------------------------------------------------------- */
 
 .pp-cards{
@@ -371,7 +643,7 @@ h1,h2,h3,h4{
 .pp-card:hover,
 .pp-card:focus-visible{
   transform: translateY(-3px);
-  border-color: var(--burgundy);
+  border-color: var(--accent);
   box-shadow: var(--lift-lg);
   text-decoration: none;
 }
@@ -382,6 +654,69 @@ h1,h2,h3,h4{
   font-size: 1.05rem;
   line-height: 1.2;
   margin: 0;
+}
+
+/* Square tile grid — side quests, self care, the dannelore wander-to list */
+.pp-tiles{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 18px;
+  margin: 0 0 40px;
+}
+
+.pp-tile{
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
+  padding: 18px;
+  color: var(--ink);
+  text-decoration: none;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.pp-tile:hover,
+.pp-tile:focus-visible{
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  box-shadow: var(--lift-lg);
+  text-decoration: none;
+}
+.pp-tile::before{ opacity: .65; }
+.pp-tile h3{
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.08rem;
+  line-height: 1.2;
+  margin: 0;
+}
+.pp-tile p{
+  font-family: var(--font-body);
+  font-size: .74rem;
+  color: var(--ink-soft);
+  line-height: 1.35;
+  margin: 0;
+}
+.pp-tile-icon{ width: 54px; height: 54px; display: block; transition: transform .22s ease; }
+.pp-tile:hover .pp-tile-icon{ transform: scale(1.06) rotate(-2deg); }
+
+/* Empty slot, waiting to be filled in */
+.pp-tile-empty{
+  border-style: dashed;
+  border-color: var(--line-strong);
+  background: rgba(255,253,248,.55);
+  box-shadow: none;
+  cursor: default;
+}
+.pp-tile-empty::before{ display: none; }
+.pp-tile-empty:hover{ transform: none; box-shadow: none; border-color: var(--line-strong); }
+.pp-tile-empty span{
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: .95rem;
+  color: var(--ink-soft);
 }
 
 /* Horizontal link row, like the home sidebar */
@@ -401,15 +736,15 @@ h1,h2,h3,h4{
 .pp-linkbox:focus-visible{
   transform: translateX(3px);
   box-shadow: var(--lift-lg);
-  color: var(--pink-deep);
+  color: var(--accent-deep);
   text-decoration: none;
 }
 .pp-linkbox:hover svg,
-.pp-linkbox:focus-visible svg{ color: var(--pink); }
+.pp-linkbox:focus-visible svg{ color: var(--accent); }
 
 
 /* --------------------------------------------------------------------------
-   10. PARCHMENT CALLOUT
+   11. PARCHMENT CALLOUT
    -------------------------------------------------------------------------- */
 
 .pp-parchment{
@@ -442,7 +777,7 @@ h1,h2,h3,h4{
 
 
 /* --------------------------------------------------------------------------
-   11. BUTTONS, PILLS, TAGS
+   12. BUTTONS, PILLS, TAGS
    -------------------------------------------------------------------------- */
 
 .pp-btn{
@@ -450,8 +785,8 @@ h1,h2,h3,h4{
   font-family: var(--font-body);
   font-size: 0.92rem;
   font-weight: 500;
-  color: #fff;
-  background: var(--pink);
+  color: var(--on-accent);
+  background: var(--accent);
   border: none;
   border-radius: 999px;
   padding: 10px 22px;
@@ -461,7 +796,7 @@ h1,h2,h3,h4{
 }
 .pp-btn:hover,
 .pp-btn:focus-visible{
-  background: var(--pink-deep);
+  background: var(--accent-deep);
   transform: translateY(-2px);
   text-decoration: none;
 }
@@ -474,10 +809,14 @@ h1,h2,h3,h4{
 }
 .pp-btn-quiet:hover,
 .pp-btn-quiet:focus-visible{
-  color: #fff;
-  background: var(--pink);
-  border-color: var(--pink);
+  color: var(--on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
 }
+
+.pp-btn-sm{ padding: 6px 14px; font-size: 0.8rem; }
+.pp-btn-danger{ background: var(--burgundy); }
+.pp-btn-danger:hover{ background: var(--blade-deep); }
 
 .pp-tag{
   display: inline-block;
@@ -493,6 +832,25 @@ h1,h2,h3,h4{
   color: var(--ink-soft);
 }
 
+/* Toggleable filter pill */
+.pp-pill{
+  font-family: var(--font-body);
+  font-size: 0.74rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: var(--panel);
+  border: 1px solid var(--line-gold);
+  border-radius: 999px;
+  padding: 7px 15px;
+  cursor: pointer;
+  transition: color .15s ease, background .15s ease, border-color .15s ease;
+}
+.pp-pill:hover{ color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
+.pp-pill[aria-pressed="true"],
+.pp-pill.on{ color: var(--on-accent); background: var(--accent-deep); border-color: var(--accent-deep); }
+
 /* Small uppercase label. Gold is low-contrast at body size, so this
    is the only place it should be used for text. */
 .pp-label{
@@ -506,7 +864,344 @@ h1,h2,h3,h4{
 
 
 /* --------------------------------------------------------------------------
-   12. FOOTER
+   13. FORM CONTROLS
+   The same input treatment was written out on six pages. It lives here now.
+   -------------------------------------------------------------------------- */
+
+.pp-field{ display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+
+.pp-field > label,
+.pp-field-label{
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.pp-input,
+.pp-field input,
+.pp-field select,
+.pp-field textarea{
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  width: 100%;
+}
+.pp-input:focus,
+.pp-field input:focus,
+.pp-field select:focus,
+.pp-field textarea:focus{
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.pp-field textarea{ min-height: 90px; resize: vertical; }
+
+.pp-hint{
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.pp-check{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--ink);
+  cursor: pointer;
+  user-select: none;
+}
+.pp-check input[type="checkbox"]{
+  width: 16px; height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+
+/* --------------------------------------------------------------------------
+   14. SHARED WIDGETS
+   Pieces that three or more pages had each written out for themselves.
+   -------------------------------------------------------------------------- */
+
+/* --- modal --- */
+.pp-modal{
+  position: fixed;
+  inset: 0;
+  background: rgba(46,36,31,0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+.pp-modal.open{ display: flex; }
+.pp-modal-card{
+  background: var(--panel);
+  border: 3px solid var(--white);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  max-width: 380px;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(46,36,31,0.3);
+}
+.pp-modal-card h3{
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  margin: 10px 0 6px;
+  color: var(--accent-deep);
+}
+.pp-modal-card p{ font-size: 0.88rem; color: var(--ink-soft); line-height: 1.5; margin: 0; }
+
+/* --- dimming overlay for slide-in panels --- */
+.pp-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(46,36,31,0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease;
+  z-index: 90;
+}
+.pp-overlay.open{ opacity: 1; pointer-events: auto; }
+
+/* --- currency chips --- */
+.pp-coin{
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1rem;
+  background: var(--white);
+  padding: 6px 12px;
+  border-radius: 20px;
+  box-shadow: var(--lift);
+}
+.pp-coin .dot{ width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.pp-coin.gold{ color: #C9A227; }
+.pp-coin.gold .dot{ background: #C9A227; }
+.pp-coin.copper{ color: #B87333; }
+.pp-coin.copper .dot{ background: #B87333; }
+.pp-coin.meow{ color: #7F77DD; }
+.pp-coin.meow .dot{ background: #7F77DD; }
+
+/* --- switch --- */
+.pp-toggle{
+  width: 46px; height: 26px;
+  border-radius: 999px;
+  background: rgba(46,36,31,0.2);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background .2s;
+  flex-shrink: 0;
+}
+.pp-toggle i{
+  position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--white);
+  transition: transform .2s;
+}
+.pp-toggle.on{ background: var(--sage); }
+.pp-toggle.on i{ transform: translateX(20px); }
+
+/* --- selectable chip --- */
+.pp-chip{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: var(--ink);
+  cursor: pointer;
+  user-select: none;
+}
+.pp-chip.checked,
+.pp-chip[aria-pressed="true"]{
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.pp-chip-group{ display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* --- plain card, no hairline --- */
+.pp-plaincard{
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.pp-plaincard.inactive{ opacity: .6; }
+
+
+/* --------------------------------------------------------------------------
+   15. LEGACY COMPONENT NAMES
+   The castle, quest-log and side-quest pages were each carrying their own
+   copy of these. They are defined once here so the pages don't have to.
+
+   New pages should use the pp- names above. These stay so the existing
+   markup keeps working without a rewrite.
+   -------------------------------------------------------------------------- */
+
+.display{ font-family: var(--font-display); font-weight: 400; }
+
+.header{ text-align: center; padding: 10px 0 24px; }
+.title{ font-size: 2.3rem; margin: 6px 0 2px; }
+.tagline{ font-family: var(--font-serif); font-style: italic; color: var(--gold); margin: 0; }
+
+.back{
+  display: inline-block;
+  margin: 0 10px 10px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1rem;
+  text-decoration: none;
+  color: var(--ink-soft);
+}
+.back:hover{ color: var(--accent-deep); }
+
+.panel{
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 26px 28px;
+  box-shadow: var(--lift);
+  margin-bottom: 18px;
+}
+.panel::before{
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border: 1px solid var(--hairline);
+  border-radius: calc(var(--radius-lg) - 8px);
+  opacity: .35;
+  pointer-events: none;
+}
+
+.btn{
+  font-family: var(--font-body);
+  font-weight: 500;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 20px;
+  cursor: pointer;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: .9rem;
+  transition: background .15s ease;
+}
+.btn:hover{ background: var(--accent-deep); }
+.btn.secondary{ background: transparent; color: var(--accent-deep); border: 1px solid var(--accent); }
+.btn.quiet{ background: var(--panel); color: var(--ink-soft); border: 1px solid var(--line); }
+.btn.small{ padding: 6px 14px; font-size: .8rem; }
+.btn.danger{ background: var(--burgundy); }
+
+.tag{
+  display: inline-block;
+  font-size: .72rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(46,36,31,.08);
+  margin: 0 5px 5px 0;
+}
+.tag.inactive-tag{
+  background: var(--parchment);
+  border: 1px solid var(--parchment-border);
+  color: var(--ink-soft);
+}
+
+.empty{
+  text-align: center;
+  padding: 30px;
+  color: var(--ink-soft);
+  font-style: italic;
+  font-family: var(--font-serif);
+}
+
+.hint{ font-size: .78rem; color: var(--ink-soft); font-style: italic; }
+
+/* The shell wrapper the castle pages use in place of .pp-wrap */
+.shell{
+  max-width: calc(var(--content) + 36px);
+  margin: 0 auto;
+  padding: 24px 18px 70px;
+}
+.shell-wide{
+  max-width: calc(var(--content) + var(--sidebar) + var(--gap) + 36px);
+}
+
+.modal-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(46,36,31,0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+.modal-overlay.open{ display: flex; }
+
+
+/* --- quest log: coin readouts, the status row and section headings.
+       Shared by the quest board, the pets page and the monsters page. --- */
+
+.currency{ display: flex; gap: 12px; flex-wrap: wrap; flex-shrink: 0; }
+
+.coin{
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 16px;
+  background: var(--white);
+  padding: 6px 12px;
+  border-radius: 20px;
+  box-shadow: var(--lift);
+}
+.coin .dot{ width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.coin.gold{ color: var(--quest-gold); }
+.coin.gold .dot{ background: var(--quest-gold); }
+.coin.copper{ color: var(--quest-copper); }
+.coin.copper .dot{ background: var(--quest-copper); }
+.coin.meow{ color: var(--meow); }
+.coin.meow .dot{ background: var(--meow); }
+
+.section-title{
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 600;
+  margin: 26px 0 12px;
+  color: var(--accent-deep);
+}
+
+footer{
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 50px;
+  font-style: italic;
+}
+
+
+/* --------------------------------------------------------------------------
+   16. FOOTER
    -------------------------------------------------------------------------- */
 
 .pp-footer{
@@ -532,7 +1227,7 @@ h1,h2,h3,h4{
 
 
 /* --------------------------------------------------------------------------
-   13. DANNELORE TYPE OVERRIDE
+   17. DANNELORE TYPE OVERRIDE
    Everything under /dannelore/ keeps its own voice. Colors stay canonical;
    only the typefaces change.
    -------------------------------------------------------------------------- */
@@ -565,7 +1260,7 @@ h1,h2,h3,h4{
 
 
 /* --------------------------------------------------------------------------
-   14. UTILITIES
+   18. UTILITIES
    -------------------------------------------------------------------------- */
 
 .pp-center{ text-align: center; }
@@ -599,16 +1294,19 @@ h1,h2,h3,h4{
 
 
 /* --------------------------------------------------------------------------
-   15. MOTION + PRINT
+   19. MOTION + PRINT
    -------------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce){
   *{ transition: none !important; animation: none !important; }
+  html{ scroll-behavior: auto; }
+  .pp-tile:hover .pp-tile-icon{ transform: none; }
 }
 
 @media print{
   body{ background-image: none !important; }
-  .pp-nav, .navbar, .site-nav{ display: none; }
-  .pp-panel{ box-shadow: none; }
-  .pp-panel::before{ display: none; }
+  .pp-nav, .pp-subnav, .navbar, .site-nav{ display: none; }
+  .pp-ribbon{ position: static; box-shadow: none; }
+  .pp-panel, .panel{ box-shadow: none; }
+  .pp-panel::before, .panel::before{ display: none; }
 }
