@@ -5,17 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bucket Quest — Princess &amp; Paladin</title>
 
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/pp.css">
 <link rel="stylesheet" href="/assets/pp-progress.css">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
-  .pp-bucket{
-    background-image: linear-gradient(150deg,#EDF2E6 0%,#DCE6CE 55%,#C9D8BA 100%);
-    background-attachment: fixed;
-  }
-
-  :root{ --bucket: #6D8259; }
+  /* Palette and background come from .pp-sidequest in pp.css, same as
+     Couch Quest and Spooky Quest. Everything below is Bucket Quest's own. */
 
   /* ---------- toolbar ---------- */
   .bq-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:14px; }
@@ -242,7 +239,7 @@
   .bq-art-none{
     aspect-ratio:4/3; display:flex; align-items:center; justify-content:center;
     padding:14px; text-align:center;
-    background:radial-gradient(ellipse at 30% 25%,rgba(109,130,89,.16),transparent 62%),var(--parchment);
+    background:radial-gradient(ellipse at 30% 25%,rgba(156,116,64,.14),transparent 60%),var(--parchment);
     font-family:var(--font-serif); font-style:italic; font-size:.95rem;
     color:var(--gold-deep); line-height:1.3;
   }
@@ -311,36 +308,53 @@
 </style>
 </head>
 
-<body class="pp-bucket">
-<div class="pp-wrap">
+<body class="pp-sidequest">
 
-  <nav class="pp-nav" style="margin-top:28px;">
-    <a href="/">Home</a>
-    <a href="/dannelore/">Princess</a>
-    <a href="/vmprman/">Paladin</a>
-    <a href="/castle/">Castle Keep</a>
-    <a href="/side-quests/">Side Quests</a>
-    <a href="/templates/">Templates</a>
-  </nav>
-
-  <header class="pp-hero" style="padding:8px 0 28px;">
-    <div class="pp-emblem pp-emblem-sm">
-      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#C85D87" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M8 44 H56" stroke="#C85D87" stroke-width="3" stroke-linecap="round"/>
-        <circle cx="32" cy="10" r="3.5" fill="#9C7440"/><circle cx="4" cy="19" r="2.5" fill="#9C7440"/>
-        <circle cx="60" cy="19" r="2.5" fill="#9C7440"/><circle cx="32" cy="36" r="3" fill="#9C7440"/>
-      </svg>
-      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M32 4 L38 14 V38 H26 V14 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="2" stroke-linejoin="round"/>
-        <rect x="14" y="38" width="36" height="6" rx="3" fill="#9C7440"/>
-        <rect x="29" y="44" width="6" height="12" fill="#9C7440"/>
-        <circle cx="32" cy="58" r="4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.5"/>
-      </svg>
+<header class="pp-ribbon">
+  <div class="pp-ribbon-inner">
+    <a class="pp-ribbon-mark" href="/" aria-label="Princess &amp; Paladin home">
+      <span class="pp-emblem pp-emblem-sm" style="margin:0;">
+        <!-- Tiara -->
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M8 44 H56" stroke="#9C7440" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="32" cy="10" r="3.5" fill="#9C7440"/>
+          <circle cx="4" cy="18" r="3" fill="#9C7440"/>
+          <circle cx="60" cy="18" r="3" fill="#9C7440"/>
+        </svg>
+        <!-- Sword -->
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g transform="translate(16,0)">
+            <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
+            <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+            <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
+            <circle cx="16" cy="60" r="3.4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+          </g>
+        </svg>
+      </span>
+    </a>
+    <div class="pp-ribbon-titles">
+      <span class="pp-ribbon-eyebrow">Side Quests</span>
+      <span class="pp-ribbon-title">Bucket Quest</span>
     </div>
-    <h1 class="pp-title" style="font-size:clamp(2.2rem,6vw,3.6rem);">Bucket Quest</h1>
-    <p class="pp-tagline">Everything we mean to do together</p>
-  </header>
+    <nav class="pp-nav" aria-label="Main navigation">
+      <a href="/">Home</a>
+      <a href="/dannelore/">Princess</a>
+      <a href="/vmprman/">Paladin</a>
+      <a href="/castle/">Castle Keep</a>
+      <a href="/side-quests/" aria-current="page">Side Quests</a>
+      <a href="/templates/">Templates</a>
+    </nav>
+  </div>
+</header>
+
+<div class="pp-wrap">
+  <nav class="pp-subnav" aria-label="Section navigation">
+    <a href="/side-quests/">Side Quests</a>
+    <a href="/side-quests/bucket-quest.html" aria-current="page">Bucket Quest</a>
+    <a href="/side-quests/couch-quest.html">Couch Quest</a>
+    <a href="/side-quests/spooky-quest.html">Spooky Quest</a>
+  </nav>
 
   <!-- ---------------- tally ---------------- -->
   <div class="bq-banner">
@@ -361,6 +375,7 @@
 
   <div class="bq-bar">
     <button class="bq-filter" data-filter="all" aria-pressed="true">All</button>
+    <button class="bq-filter" data-filter="unfinished" aria-pressed="false">Unfinished</button>
     <button class="bq-filter" data-filter="someday" aria-pressed="false">Someday</button>
     <button class="bq-filter" data-filter="planning" aria-pressed="false">Planning</button>
     <button class="bq-filter" data-filter="done" aria-pressed="false">Done</button>
@@ -544,12 +559,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <script>
-/* ------------------------------------------------------------------
-   PASTE YOUR FIREBASE CONFIG HERE — same block as your other pages.
-   No TMDB key needed on this one; there's nothing to look up.
-------------------------------------------------------------------- */
+/* Same project as the other trackers. No TMDB key on this one — there's
+   nothing to look up. */
 const firebaseConfig = {
-  apiKey: "PASTE_FROM_QUEST_LOG",
+  apiKey: "AIzaSyAdNZBoh1pH80-ZFBbOlcrlsLdMi3D62Wg",
   authDomain: "princess-paladin.firebaseapp.com",
   projectId: "princess-paladin",
   storageBucket: "princess-paladin.appspot.com",
@@ -755,7 +768,9 @@ function byTitle(a, b){
 
 function visibleItems(){
   let rows = state.items.filter(i => {
-    if(filter !== "all" && i.status !== filter) return false;
+    if(filter === "unfinished" && i.status === "done") return false;
+    const statusFilters = ["someday","planning","done"];
+    if(statusFilters.includes(filter) && i.status !== filter) return false;
     if(fltWho !== "all" && whoOf(i) !== fltWho) return false;
     if(fltCat !== "all" && !(i.cats || []).includes(fltCat)) return false;
     if(fltPri !== "all"){
