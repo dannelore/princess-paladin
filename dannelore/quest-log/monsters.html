@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/pp.css">
 
 <style>
@@ -17,48 +18,11 @@
     --sage-dark:var(--sage-deep); --cream:var(--panel); --white:#FFFFFF;
     --quest-gold:#C9A227; --quest-copper:#B87333; --meow:#7F77DD;
   }
-  *{box-sizing:border-box;}
-  body{
-    margin:0; font-family:var(--font-body); color:var(--ink);
-    background-image:
-      radial-gradient(circle at 15% 8%, rgba(255,255,255,0.5), transparent 40%),
-      linear-gradient(135deg, var(--pink-bg) 0%, var(--pink-bg-alt) 100%);
-    background-attachment:fixed; min-height:100vh; padding-bottom:80px;
-  }
-  a{color:inherit;}
-  .ribbon{
-    background:linear-gradient(180deg, var(--pink-bg-alt) 0%, var(--pink-bg) 100%);
-    border-bottom:2px solid rgba(232,124,166,0.35);
-    box-shadow:0 4px 16px rgba(180,90,120,0.12);
-  }
-  .ribbon .pp-nav{ margin:0; padding:10px 24px 0; }
-  .ribbon .pp-emblem{ margin:0; padding-top:12px; }
-  .ribbon .pp-emblem svg{ width:24px; height:24px; }
-  .ribbon-inner{
-    max-width:1000px; margin:0 auto; padding:14px 24px;
-    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
-  }
-  .page-title{ font-family:var(--font-display); font-size:26px; font-weight:600; margin:0; flex:1; }
-  .currency{ display:flex; gap:10px; flex-wrap:wrap; }
-  .coin{
-    display:flex; align-items:center; gap:5px;
-    font-family:var(--font-serif); font-weight:600; font-size:15px;
-    background:var(--white); padding:6px 12px; border-radius:20px;
-    box-shadow:0 2px 6px rgba(180,90,120,0.12);
-  }
-  .coin .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
-  .coin.gold{ color:var(--quest-gold); } .coin.gold .dot{ background:var(--quest-gold); }
-  .coin.copper{ color:var(--quest-copper); } .coin.copper .dot{ background:var(--quest-copper); }
-  .coin.meow{ color:var(--meow); } .coin.meow .dot{ background:var(--meow); }
 
   .wrap{ max-width:1000px; margin:0 auto; padding:0 24px; }
   .card{
     background:var(--white); border-radius:var(--radius-md);
     padding:16px 18px; box-shadow:0 2px 8px rgba(180,90,120,0.08);
-  }
-  .section-title{
-    font-family:var(--font-serif); font-size:19px; font-weight:600;
-    margin:26px 0 12px; color:var(--accent-dark);
   }
   .hint{ font-size:12px; color:var(--ink-soft); font-style:italic; }
   .empty-note{ font-size:12.5px; color:var(--ink-soft); font-style:italic; padding:14px 0; text-align:center; }
@@ -124,12 +88,6 @@
   .m-reward{ font-size:12.5px; color:var(--ink-soft); margin-top:8px; }
   .m-reward b{ color:var(--ink); font-weight:500; }
   .m-actions{ display:flex; gap:6px; margin-top:12px; flex-wrap:wrap; }
-
-  .modal-overlay{
-    position:fixed; inset:0; background:rgba(74,59,65,0.5);
-    display:none; align-items:center; justify-content:center; z-index:200; padding:20px;
-  }
-  .modal-overlay.open{ display:flex; }
   .modal-card{
     background:var(--cream); border-radius:var(--radius-lg);
     padding:30px 26px; max-width:380px; text-align:center;
@@ -141,46 +99,63 @@
   .modal-card button{
     margin-top:18px; background:var(--accent); color:var(--white); border:none;
     padding:10px 24px; border-radius:18px; font-family:var(--font-body); font-size:14px; cursor:pointer;
-  }
-
-  footer{ text-align:center; font-size:12px; color:var(--ink-soft); margin-top:50px; font-style:italic; }
-</style>
+  }</style>
 </head>
 <body class="pp-dannelore">
 
-<div class="ribbon">
-  <div class="pp-emblem pp-emblem-sm">
-    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M8 44 H56" stroke="#9C7440" stroke-width="3" stroke-linecap="round"/>
-      <circle cx="32" cy="10" r="3.5" fill="#9C7440"/>
-      <circle cx="4" cy="18" r="3" fill="#9C7440"/>
-      <circle cx="60" cy="18" r="3" fill="#9C7440"/>
-    </svg>
-    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <g transform="translate(16,0)">
-        <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
-        <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
-        <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
-        <circle cx="16" cy="60" r="3.4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
-      </g>
-    </svg>
-  </div>
-  <nav class="pp-nav" aria-label="Main navigation">
-    <a href="/dannelore/quest-log/">Quest Log</a>
-    <a href="/dannelore/quest-log/pets.html">Pets</a>
-    <a href="/dannelore/quest-log/monsters.html" aria-current="page">Monsters</a>
-    <a href="/dannelore">Princess</a>
-    <a href="/">Home</a>
-  </nav>
-  <div class="ribbon-inner">
-    <h1 class="page-title">Monsters</h1>
-    <div class="currency">
-      <div class="coin gold"><span class="dot"></span><span id="goldNum">0</span></div>
-      <div class="coin copper"><span class="dot"></span><span id="copperNum">0</span></div>
-      <div class="coin meow"><span class="dot"></span><span id="meowNum">0</span></div>
+<header class="pp-ribbon">
+  <div class="pp-ribbon-inner">
+    <a class="pp-ribbon-mark" href="/" aria-label="Princess &amp; Paladin home">
+      <span class="pp-emblem pp-emblem-sm" style="margin:0;">
+        <!-- Tiara -->
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M8 44 H56" stroke="#9C7440" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="32" cy="10" r="3.5" fill="#9C7440"/>
+          <circle cx="4" cy="18" r="3" fill="#9C7440"/>
+          <circle cx="60" cy="18" r="3" fill="#9C7440"/>
+        </svg>
+        <!-- Sword -->
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g transform="translate(16,0)">
+            <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
+            <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+            <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
+            <circle cx="16" cy="60" r="3.4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+          </g>
+        </svg>
+      </span>
+    </a>
+    <div class="pp-ribbon-titles">
+      <span class="pp-ribbon-eyebrow">Quest Log</span>
+      <span class="pp-ribbon-title">Monsters</span>
+    </div>
+    <nav class="pp-nav" aria-label="Main navigation">
+      <a href="/">Home</a>
+      <a href="/dannelore/" aria-current="page">Princess</a>
+      <a href="/vmprman/">Paladin</a>
+      <a href="/castle/">Castle Keep</a>
+      <a href="/side-quests/">Side Quests</a>
+      <a href="/templates/">Templates</a>
+    </nav>
+    <div class="pp-ribbon-extra">
+      <div class="currency">
+            <div class="coin gold"><span class="dot"></span><span id="goldNum">0</span></div>
+            <div class="coin copper"><span class="dot"></span><span id="copperNum">0</span></div>
+            <div class="coin meow"><span class="dot"></span><span id="meowNum">0</span></div>
+          </div>
     </div>
   </div>
+</header>
+
+<div class="pp-wrap-wide">
+  <nav class="pp-subnav" aria-label="Section navigation">
+    <a href="/dannelore/quest-log/">Quest Board</a>
+    <a href="/dannelore/quest-log/pets.html">Pets</a>
+    <a href="/dannelore/quest-log/monsters.html" aria-current="page">Monsters</a>
+    <a href="/dannelore/quest-log/fit.html">Fitting Room</a>
+    <a href="/dannelore/self-care/">Self Care</a>
+  </nav>
 </div>
 
 <div class="wrap">
