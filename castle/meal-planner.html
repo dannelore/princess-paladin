@@ -498,16 +498,93 @@ function renderWeekPanel(){
   });
 }
 
-const CATEGORY_KEYWORDS = {
-  Produce: ['lettuce','onion','garlic','tomato','pepper','carrot','celery','potato','spinach','kale','herb','basil','cilantro','parsley','lemon','lime','apple','avocado','mushroom','broccoli','cucumber','zucchini','ginger','scallion','cabbage','corn','squash'],
-  Meat: ['chicken','beef','pork','turkey','sausage','bacon','steak','shrimp','fish','salmon','tilapia','ham'],
-  Dairy: ['milk','cheese','butter','cream','yogurt','sour cream','egg','parmesan','mozzarella','cheddar'],
-  Frozen: ['frozen'],
-  Pantry: ['flour','sugar','rice','pasta','oil','vinegar','sauce','broth','stock','bean','can','spice','salt','baking','bread','tortilla']
+/* ============ SHOPPING-LIST CATEGORIES ============
+   THIS is the list to edit. Each grocery item on the shopping list is matched
+   against the names below and filed under whichever category you put it in.
+   To move an item, just move its name from one list to another — no other code
+   needs to change. Matching is by whole words and ignores plurals, quantities,
+   and units, so "6 oz of frozen corn" still finds "corn (frozen)".            */
+const SHOPPING_CATEGORIES = {
+  Produce:      ['asparagus','bell peppers','celery','corn (fresh)','green beans (fresh)','mushrooms','onion','spinach'],
+  Meat:         ['beef chuck roast','chicken breast','chicken thighs','ground beef','ground turkey','kielbasa','pork shoulder'],
+  Dairy:        ['butter','cream cheese','eggs','grated cheese','milk','shredded cheese','sliced cheese'],
+  Refrigerated: ['desired pizza toppings','Garlic & Herb cream cheese','refrigerated pizza crust','salsa','sour cream'],
+  Frozen:       ['corn (frozen)','frozen chicken fries','frozen Chinese chicken','frozen garlic bread','frozen hamburger patties','green beans (frozen)','zucchini fries'],
+  Spices:       ['bay leaves','black pepper','chili powder','cumin','garlic powder','honey','Italian seasoning','onion soup mix','parsley','red pepper flakes','salt','seasoning of choice','taco seasoning','thyme'],
+  Snacks:       ['potato chips','tortilla chips','variety chips'],
+  Condiments:   ['BBQ sauce','bleu cheese dressing','desired burger toppings','Dijon mustard','honey mustard dressing','ketchup','mayo','relish','tomato paste','yellow mustard'],
+  Pantry:       ['alfredo sauce','apple cider vinegar','baked beans','beef broth','black beans','bread','canned corn','cereal','chicken broth','cooking spray','cornstarch','cream of mushroom/chicken soup','egg noodles','garlic','gravy','Kraft Mac & Cheese','Nutella','olive oil','pasta','pasta sauce','peanut butter','pizza sauce','potatoes','ramen','red cooking wine','rice','soy sauce','taco sauce','tomato sauce','vegetable broth','Worcestershire sauce','wraps'],
 };
+
+// The order aisles appear in on the shopping list (roughly how you walk a store).
+const CATEGORY_ORDER = ['Produce','Meat','Dairy','Refrigerated','Frozen','Pantry','Spices','Snacks','Condiments','Other'];
+
+// On a tie — an item's name fully matches two different list entries with the
+// same number of words — the category earlier in this list wins. (So "garlic
+// salt" counts as Spices, not Pantry.)
+const CATEGORY_TIE_PRIORITY = ['Frozen','Spices','Condiments','Snacks','Refrigerated','Meat','Dairy','Produce','Pantry'];
+
+// A light safety net for recipe wording that doesn't appear in the lists above
+// at all. You shouldn't need to touch this — the lists above are the real
+// control. Anything that matches nothing here lands in "Other".
+const CATEGORY_FALLBACK = {
+  Frozen:     ['frozen','ice cream','sherbet','popsicle'],
+  Spices:     ['pepper flakes','black pepper','ground pepper','seasoning','paprika','oregano','cinnamon','nutmeg','turmeric','bay leaf'],
+  Condiments: ['mustard','ketchup','dressing','relish','mayo'],
+  Snacks:     ['chips'],
+  Pantry:     ['cream of','broth','stock','soup','sauce','cornstarch','peanut butter','egg noodle','vinegar','oil','flour','bean','pasta','noodle','rice','bread','cereal','tortilla','wrap'],
+  Produce:    ['lettuce','onion','tomato','carrot','celery','spinach','mushroom','broccoli','zucchini','cabbage','pepper','corn','potato','apple','lemon','lime','garlic'],
+  Meat:       ['chicken','beef','pork','turkey','sausage','bacon','steak','shrimp','fish','salmon','kielbasa','ham'],
+  Dairy:      ['milk','cheese','butter','cream','yogurt','egg','parmesan','mozzarella','cheddar'],
+};
+
+// Words that carry no sorting meaning, stripped before matching.
+const CATEGORY_STOPWORDS = new Set(['of','the','a','and','with','in','to','for','fat','free','condensed','desired','choice']);
+
+function catSingular(w){
+  if (w.length < 4) return w;
+  if (/ies$/.test(w)) return w.slice(0,-3)+'y';
+  if (/oes$/.test(w)) return w.slice(0,-2);
+  if (/(s|x|z|ch|sh)es$/.test(w)) return w.slice(0,-2);
+  if (/ss$/.test(w)) return w;
+  if (/s$/.test(w)) return w.slice(0,-1);
+  return w;
+}
+function catTokens(str){
+  return [...new Set(
+    String(str).toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
+      .map(catSingular).filter(t => t && !CATEGORY_STOPWORDS.has(t))
+  )];
+}
+
+// Pre-tokenize the master list once
+const CATEGORY_MASTER = [];
+for (const [cat, items] of Object.entries(SHOPPING_CATEGORIES))
+  for (const raw of items) CATEGORY_MASTER.push({ cat, toks: catTokens(raw) });
+
+function catTieRank(c){ const i = CATEGORY_TIE_PRIORITY.indexOf(c); return i < 0 ? 99 : i; }
+
 function categorize(name){
+  const inSet = new Set(catTokens(name));
+  let best = null;
+  // An item matches a list entry when every word of that entry is present in
+  // the item's name. The entry with the MOST matched words wins (so "garlic
+  // powder" beats a bare "garlic"); ties break by CATEGORY_TIE_PRIORITY.
+  for (const m of CATEGORY_MASTER){
+    if (m.toks.length && m.toks.every(t => inSet.has(t))){
+      if (!best
+          || m.toks.length > best.toks.length
+          || (m.toks.length === best.toks.length && catTieRank(m.cat) < catTieRank(best.cat))){
+        best = m;
+      }
+    }
+  }
+  if (best) return best.cat;
+
   const n = name.toLowerCase();
-  for (const [cat, words] of Object.entries(CATEGORY_KEYWORDS)) if (words.some(w => n.includes(w))) return cat;
+  for (const c of ['Frozen','Spices','Condiments','Snacks','Pantry','Produce','Meat','Dairy']){
+    if ((CATEGORY_FALLBACK[c] || []).some(w => n.includes(w))) return c;
+  }
   return 'Other';
 }
 function norm(name){ return name.trim().toLowerCase().replace(/\s+/g,' '); }
@@ -889,7 +966,8 @@ function renderShopList(){
   });
 
   const wrap = document.getElementById('shopList');
-  const cats = Object.keys(grouped).sort();
+  const catRank = (c) => { const i = CATEGORY_ORDER.indexOf(c); return i < 0 ? CATEGORY_ORDER.length : i; };
+  const cats = Object.keys(grouped).sort((a,b) => catRank(a) - catRank(b) || a.localeCompare(b));
   if (!cats.length){ wrap.innerHTML = '<p class="empty">Assign some dinners (or hit Build My Week) to generate a list.</p>'; return; }
 
   wrap.innerHTML = cats.map(cat => `
