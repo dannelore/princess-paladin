@@ -22,8 +22,13 @@ const STAGES = [
   { key:'legend', name:'Legend', at:18000, dressable:false }
 ];
 
-/* Baby is on all fours and Legend is a celestial sitting form, so neither
-   wears anything. Garment art is drawn for the standing pose only. */
+/* `dressable` covers GARMENTS only — hats, tops, bottoms, shoes, held items.
+   Those are drawn for the standing pose, which Baby and Legend don't use, so
+   clothing unlocks at Child and closes again at Legend.
+
+   Backgrounds are a separate matter. They sit behind the pet and don't touch
+   the pose at all, so every stage can use one — a Baby with nothing else in
+   the wardrobe can still be given a scene. See canWear() below. */
 
 const SLOTS = [
   { key:'background', name:'Background' },
@@ -64,16 +69,40 @@ const EYE_SHAPES = ['round','slit'];
 
 const SPECIES_KEYS = Object.keys(SPECIES);
 
-/* ---------- wardrobe ---------- */
+/* ---------- wardrobe ----------
+   Garments need a PNG at /assets/wardrobe/{id}.png. Backgrounds don't: give
+   one a `color` and it paints a flat fill instead of loading an image, so a
+   plain-colour scene costs nothing to add and can never show a broken tile.
+
+   To add an illustrated background later, drop the file in and add an entry
+   WITHOUT a `color` — the renderer falls back to the image path on its own.
+
+   `unlock` is the pet level the item appears at. Levels run 1 + xp/250, so
+   the ladder below lands roughly: 1 straight away, 4 around Child, 11 around
+   Teen, 20 well into Adult. Nothing is ever taken away once it's bought. */
 const CATALOG = [
   { id:'hat-beanie',   slot:'hat',        name:'Cat-ear beanie', price:600, unlock:1, fit:{} },
   { id:'top-hoodie',   slot:'top',        name:'Paw hoodie',     price:800, unlock:1, fit:{} },
   { id:'bot-shorts',   slot:'bottoms',    name:'Cargo shorts',   price:550, unlock:1, fit:{} },
-  { id:'shoe-hitops',  slot:'shoes',      name:'Paw hi-tops',    price:650, unlock:2, fit:{} }
+  { id:'shoe-hitops',  slot:'shoes',      name:'Paw hi-tops',    price:650, unlock:2, fit:{} },
+
+  /* --- plain-colour backgrounds, drawn from the canonical palette --- */
+  { id:'bg-cream',     slot:'background', name:'Cream',      price:100,  unlock:1,  color:'#F7F1E4' },
+  { id:'bg-rose',      slot:'background', name:'Rose',       price:100,  unlock:1,  color:'#F6D9E6' },
+  { id:'bg-sage',      slot:'background', name:'Sage',       price:150,  unlock:4,  color:'#C7D2BA' },
+  { id:'bg-sky',       slot:'background', name:'Sky',        price:150,  unlock:4,  color:'#BFD6E8' },
+  { id:'bg-parchment', slot:'background', name:'Parchment',  price:220,  unlock:8,  color:'#EDE1C3' },
+  { id:'bg-dusk',      slot:'background', name:'Dusk',       price:300,  unlock:11, color:'#6B4A78' },
+  { id:'bg-burgundy',  slot:'background', name:'Burgundy',   price:300,  unlock:11, color:'#6E2430' },
+  { id:'bg-midnight',  slot:'background', name:'Midnight',   price:450,  unlock:20, color:'#2E241F' }
 ];
 
-/* Colours no longer come from hex values — the art is rendered, so an
-   alternate look is an alternate image. Kept as a stub for now. */
+function catalogItem(id){ return CATALOG.find(i => i.id === id) || null; }
+
+/* Items a given pet can actually see in the shop right now. */
+function itemsForSlot(pet, slotKey){
+  return CATALOG.filter(i => i.slot === slotKey);
+}
 
 const FOOD = [
   { id:'food-kibble', name:'Plain kibble', price:40,  hunger:25, xp:0,   desc:'Does the job.' },
@@ -109,7 +138,15 @@ function stageProgress(pet){
   if(!nxt) return 1;
   return Math.min(1, ((pet.xp || 0) - cur.at) / (nxt.at - cur.at));
 }
-function canWear(pet){ return stageOf(pet).dressable === true; }
+/* canWear(pet)            → can this pet wear GARMENTS at all?
+   canWear(pet, slotKey)   → can this pet use that particular slot?
+
+   Backgrounds are always allowed; everything else follows stage.dressable.
+   The one-argument form is unchanged, so old callers keep working. */
+function canWear(pet, slotKey){
+  if(slotKey === 'background') return true;
+  return stageOf(pet).dressable === true;
+}
 
 function mood(pet){
   const h = pet.hunger == null ? 100 : pet.hunger;
@@ -285,6 +322,19 @@ function rollPetOptions(count){
   return opts;
 }
 
+/* Where a newly-earned pet lands.
+
+   First pet ever → active, so the log isn't staring at an empty slot.
+   Otherwise it joins the party if a slot is free, and drops into the stable
+   if not. It is never discarded for want of room — that was the old bug. */
+function placePet(state, pet){
+  if(!activePet(state)){ pet.tier = 'active'; }
+  else if(partyPets(state).length < partySlots(state)){ pet.tier = 'party'; }
+  else { pet.tier = 'stable'; }
+  state.pets.push(pet);
+  return pet.tier;
+}
+
 function makePet(species, look, name){
   look = look || {};
   return {
@@ -352,17 +402,26 @@ function escapeAttr(s){
 function petSvg(pet, opts){
   opts = opts || {};
   const stage = stageOf(pet);
-  const outfit = (canWear(pet) && pet.outfit) ? pet.outfit : {};
+  const own = pet.outfit || {};
+  /* Garments follow the stage; the background does not, so a Baby with an
+     otherwise empty wardrobe still gets its scene. */
+  const outfit = canWear(pet) ? own : {};
+  const background = own.background || null;
   const alt = `${pet.name || 'pet'}, a ${SPECIES[pet.species].name.toLowerCase()} at ${stage.name.toLowerCase()} stage`;
 
   let html = `<div class="pq-pet" role="img" aria-label="${escapeAttr(alt)}" `
            + `style="position:relative;width:100%;padding-bottom:${(1/FRAME_RATIO)*100}%;`
            + `${opts.size ? `max-width:${opts.size}px;` : ''}">`;
 
-  if(opts.showBackground !== false && outfit.background){
-    html += `<img src="${itemImageUrl(outfit.background)}" alt="" `
-          + `style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:8px;" `
-          + `onerror="this.style.display='none'">`;
+  if(opts.showBackground !== false && background){
+    const bg = catalogItem(background);
+    if(bg && bg.color){
+      html += `<div style="position:absolute;inset:0;background:${bg.color};border-radius:8px;"></div>`;
+    } else {
+      html += `<img src="${itemImageUrl(background)}" alt="" `
+            + `style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:8px;" `
+            + `onerror="this.style.display='none'">`;
+    }
   }
 
   /* Garments behind the body */
@@ -840,7 +899,8 @@ return {
   settleHunger, liveHunger, feed, awardPetXP,
   ensureFragments, addFragment, randomPrefix, titleText,
   activeMonster, damageMonster,
-  rollPetOptions, makePet, petSvg
+  rollPetOptions, makePet, placePet, petSvg,
+  catalogItem, itemsForSlot
 };
 
 })();
