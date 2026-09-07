@@ -223,7 +223,11 @@ function renderChips(){
     b.className = 'stagechip' + (s === stage ? ' on' : '');
     const done = itemId && recorded[itemId] && recorded[itemId][s];
     b.innerHTML = s.charAt(0).toUpperCase() + s.slice(1) + (done ? ' <span class="done-dot">✓</span>' : '');
-    b.onclick = () => { stage = s; loadBody(); loadRecorded(); renderChips(); };
+    b.onclick = () => { stage = s; document.querySelectorAll('a[href^="/dannelore/quest-log"]').forEach(a => {
+  a.href = PQ.personLink(a.getAttribute('href'));
+});
+
+loadBody(); loadRecorded(); renderChips(); };
     el.appendChild(b);
   });
 }
@@ -239,7 +243,11 @@ function loadBody(){
   bodyImg.onload = () => { warn.style.display = 'none'; };
 }
 
-document.getElementById('speciesSel').onchange = e => { species = e.target.value; loadBody(); };
+document.getElementById('speciesSel').onchange = e => { species = e.target.value; document.querySelectorAll('a[href^="/dannelore/quest-log"]').forEach(a => {
+  a.href = PQ.personLink(a.getAttribute('href'));
+});
+
+loadBody(); };
 
 document.getElementById('fileIn').onchange = e => {
   const f = e.target.files[0];
@@ -360,6 +368,10 @@ document.getElementById('clearBtn').onclick = () => {
   Object.keys(recorded).forEach(k => delete recorded[k]);
   renderChips(); renderOut();
 };
+
+document.querySelectorAll('a[href^="/dannelore/quest-log"]').forEach(a => {
+  a.href = PQ.personLink(a.getAttribute('href'));
+});
 
 loadBody();
 renderChips();

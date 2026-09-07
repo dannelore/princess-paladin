@@ -127,7 +127,7 @@
       </span>
     </a>
     <div class="pp-ribbon-titles">
-      <span class="pp-ribbon-eyebrow">Quest Log</span>
+      <span class="pp-ribbon-eyebrow"><span id="whoLabel">Quest Log</span></span>
       <span class="pp-ribbon-title">Monsters</span>
     </div>
     <nav class="pp-nav" aria-label="Main navigation">
@@ -247,9 +247,12 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const store = PQ.makeStore(firebase);
+const monsterStore = PQ.makeMonsterStore(firebase);
+const M = () => monsterStore.state;
+const WHO = store.who;
 
 const S = () => store.state;
-const save = () => { store.save(); render(); };
+const save = () => { store.save(); monsterStore.save(); render(); };
 function esc(s){ const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
 
 let editingId = null;
@@ -304,7 +307,7 @@ document.getElementById('mSave').onclick = () => {
   if(!data.name) { document.getElementById('mName').focus(); return; }
 
   if(editingId){
-    const m = S().monsters.find(x => x.id === editingId);
+    const m = M().monsters.find(x => x.id === editingId);
     const spent = m.maxHp - m.hp;
     Object.assign(m, { name: data.name, maxHp: data.maxHp, reward: data.reward });
     m.hp = Math.max(0, Math.min(data.maxHp, data.maxHp - spent));
@@ -319,8 +322,8 @@ document.getElementById('mSave').onclick = () => {
       created: PQ.TODAY_KEY,
       killed: null
     };
-    S().monsters.push(m);
-    if(!PQ.activeMonster(S())) S().activeMonster = m.id;
+    M().monsters.push(m);
+    if(!PQ.activeMonster(M())) M().activeMonster = m.id;
   }
   resetForm();
   save();
@@ -338,9 +341,21 @@ function rewardText(m){
   return bits.length ? 'Drops ' + bits.join(', ') : 'Drops nothing — this one is for the satisfaction';
 }
 
+function damageText(m){
+  const d = (M().damage || {})[m.id] || {};
+  const parts = Object.keys(PQ.PEOPLE).map(w => {
+    const dealt = d[w] || 0;
+    const pct = m.maxHp ? Math.round(dealt / m.maxHp * 100) : 0;
+    const got = PQ.hasCollected(M(), m.id, w) ? ' · collected' : '';
+    return `${PQ.PEOPLE[w].name} ${pct}%${got}`;
+  });
+  return parts.join(' &nbsp;·&nbsp; ');
+}
+
 /* Claiming happens here so the board never has to know about drop tables. */
 function collect(m){
-  const r = m.reward || {};
+  const isFirst = PQ.collectorCount(M(), m.id) === 0;
+  const r = PQ.splitReward(m.reward || {}, isFirst);
   const lines = [];
   if(r.gold){
     S().gold += r.gold;
@@ -361,16 +376,16 @@ function collect(m){
   const prefix = PQ.randomPrefix(S());
   if(prefix) PQ.addFragment(S(), 'prefix', prefix);
 
-  m.collected = true;
+  PQ.markCollected(M(), m.id, WHO);
   m.killed = m.killed || PQ.TODAY_KEY;
-  if(S().activeMonster === m.id){
-    const next = (S().monsters || []).find(x => !x.dead);
-    S().activeMonster = next ? next.id : null;
+  if(M().activeMonster === m.id){
+    const next = (M().monsters || []).find(x => !x.dead);
+    M().activeMonster = next ? next.id : null;
   }
 
   document.getElementById('dropTitle').textContent = `${m.name} falls`;
   document.getElementById('dropBody').textContent =
-    (lines.length ? lines.join(', ') + '.' : 'Nothing dropped, but it is done.') +
+    'Your half: ' + (lines.length ? lines.join(', ') + '.' : 'nothing, but it is done.') +
     (prefix ? ` New title fragment: "${prefix}".` : '');
   document.getElementById('dropModal').classList.add('open');
   save();
@@ -379,7 +394,7 @@ document.getElementById('dropClose').onclick = () => document.getElementById('dr
 
 /* ---------- render ---------- */
 function monsterCard(m){
-  const isActive = S().activeMonster === m.id && !m.dead;
+  const isActive = M().activeMonster === m.id && !m.dead;
   const pct = m.maxHp ? (m.hp / m.maxHp * 100) : 0;
   const div = document.createElement('div');
   div.className = 'monster' + (isActive ? ' is-active' : '') + (m.dead ? ' is-dead' : '');
@@ -394,14 +409,15 @@ function monsterCard(m){
       <div class="hp-num">${m.hp} / ${m.maxHp} HP · ${Math.round(pct)}%</div>
     `}
     <div class="m-reward">${rewardText(m)}</div>
+    <div class="m-reward" style="font-size:11.5px;">${damageText(m)}</div>
     <div class="m-actions"></div>
   `;
   const actions = div.querySelector('.m-actions');
 
-  if(m.dead && !m.collected){
+  if(m.dead && !PQ.hasCollected(M(), m.id, WHO)){
     const b = document.createElement('button');
     b.className = 'btn sm';
-    b.textContent = 'Collect drops';
+    b.textContent = 'Collect your half';
     b.onclick = () => collect(m);
     actions.appendChild(b);
   }
@@ -409,7 +425,7 @@ function monsterCard(m){
     const b = document.createElement('button');
     b.className = 'btn sm';
     b.textContent = 'Make active';
-    b.onclick = () => { S().activeMonster = m.id; save(); };
+    b.onclick = () => { M().activeMonster = m.id; save(); };
     actions.appendChild(b);
   }
   if(!m.dead){
@@ -424,10 +440,10 @@ function monsterCard(m){
   d.textContent = 'Delete';
   d.onclick = () => {
     if(!confirm(`Delete ${m.name}?`)) return;
-    S().monsters = S().monsters.filter(x => x.id !== m.id);
-    if(S().activeMonster === m.id){
-      const next = (S().monsters || []).find(x => !x.dead);
-      S().activeMonster = next ? next.id : null;
+    M().monsters = M().monsters.filter(x => x.id !== m.id);
+    if(M().activeMonster === m.id){
+      const next = (M().monsters || []).find(x => !x.dead);
+      M().activeMonster = next ? next.id : null;
     }
     save();
   };
@@ -437,6 +453,8 @@ function monsterCard(m){
 }
 
 function render(){
+  const wl = document.getElementById('whoLabel');
+  if(wl) wl.textContent = store.person.name + "'s Quest Log";
   document.getElementById('goldNum').textContent = S().gold;
   document.getElementById('copperNum').textContent = S().copper;
   document.getElementById('meowNum').textContent = (S().meowBucks || 0).toLocaleString();
@@ -445,23 +463,28 @@ function render(){
   const dead = document.getElementById('deadList');
   live.innerHTML = ''; dead.innerHTML = '';
 
-  const monsters = S().monsters || [];
+  const monsters = M().monsters || [];
   const alive = monsters.filter(m => !m.dead);
   const fallen = monsters.filter(m => m.dead);
 
   if(!alive.length) live.innerHTML = '<div class="card"><p class="empty-note">Nothing to fight. Build one above and every task you finish will chip away at it.</p></div>';
-  alive.sort((a,b) => (S().activeMonster === b.id ? 1 : 0) - (S().activeMonster === a.id ? 1 : 0));
+  alive.sort((a,b) => (M().activeMonster === b.id ? 1 : 0) - (M().activeMonster === a.id ? 1 : 0));
   alive.forEach(m => live.appendChild(monsterCard(m)));
 
   if(!fallen.length) dead.innerHTML = '<div class="card"><p class="empty-note">None yet.</p></div>';
   fallen.forEach(m => dead.appendChild(monsterCard(m)));
 }
 
-document.addEventListener('visibilitychange', () => {
-  if(document.visibilityState === 'visible') store.load().then(render);
+document.querySelectorAll('a[href^="/dannelore/quest-log"]').forEach(a => {
+  a.href = PQ.personLink(a.getAttribute('href'));
 });
 
-store.load().then(() => { render(); });
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible')
+    Promise.all([store.load(), monsterStore.load()]).then(render);
+});
+
+Promise.all([store.load(), monsterStore.load()]).then(render);
 </script>
 </body>
 </html>

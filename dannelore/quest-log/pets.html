@@ -242,7 +242,7 @@
       </span>
     </a>
     <div class="pp-ribbon-titles">
-      <span class="pp-ribbon-eyebrow">Quest Log</span>
+      <span class="pp-ribbon-eyebrow"><span id="whoLabel">Quest Log</span></span>
       <span class="pp-ribbon-title">Pets</span>
     </div>
     <nav class="pp-nav" aria-label="Main navigation">
@@ -816,6 +816,8 @@ document.getElementById('claimConfirm').onclick = () => {
 
 /* ---------- render ---------- */
 function render(){
+  const wl = document.getElementById('whoLabel');
+  if(wl) wl.textContent = store.person.name + "'s Quest Log";
   document.getElementById('goldNum').textContent = S().gold;
   document.getElementById('copperNum').textContent = S().copper;
   document.getElementById('meowNum').textContent = (S().meowBucks || 0).toLocaleString();
@@ -835,8 +837,16 @@ function render(){
 /* Pull fresh state when returning to the tab — the three pages share one doc. */
 document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'visible'){
-    store.load().then(() => { PQ.settleHunger(S(), PQ.makeCtx(S())); render(); });
+    document.querySelectorAll('a[href^="/dannelore/quest-log"]').forEach(a => {
+  a.href = PQ.personLink(a.getAttribute('href'));
+});
+
+store.load().then(() => { PQ.settleHunger(S(), PQ.makeCtx(S())); render(); });
   }
+});
+
+document.querySelectorAll('a[href^="/dannelore/quest-log"]').forEach(a => {
+  a.href = PQ.personLink(a.getAttribute('href'));
 });
 
 store.load().then(() => {

@@ -559,7 +559,7 @@
       </span>
     </a>
     <div class="pp-ribbon-titles">
-      <span class="pp-ribbon-eyebrow">Quest Log</span>
+      <span class="pp-ribbon-eyebrow"><span id="whoLabel">Quest Log</span></span>
       <span class="pp-ribbon-title">Quest Board</span>
     </div>
     <nav class="pp-nav" aria-label="Main navigation">
@@ -882,6 +882,9 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const store = PQ.makeStore(firebase);
+const monsterStore = PQ.makeMonsterStore(firebase);
+const M = () => monsterStore.state;
+const WHO = store.who;
 const S = () => store.state;
 
 const COLUMNS = PQ.COLUMNS;
@@ -984,10 +987,11 @@ function reward(task, column, copper, xpAmount){
         ? 'Move them to the stable and they will buff everyone still working.'
         : 'New things unlock in the closet.'));
 
-  const killed = PQ.damageMonster(S(), copper);
+  const killed = PQ.damageMonster(M(), copper, WHO);
+  monsterStore.save();
   if(killed){
     queueCelebration('kill-' + killed.id, '⚔️', `${killed.name} falls`,
-      'Collect the drops on the monsters page.');
+      'Collect your share on the monsters page.');
   }
 }
 function unreward(column, copper){
@@ -1587,7 +1591,7 @@ COLUMNS.forEach(col => {
   };
 });
 document.getElementById('wipeAll').onclick = () => {
-  if(!confirm('Erase every task, pet, monster, reward and coin? There is no undo.')) return;
+  if(!confirm('Erase ' + store.person.name + "'s tasks, pets, rewards and coins? Shared monsters are left alone. There is no undo.")) return;
   store.reset();
   S().weekStart = PQ.dateKey(PQ.mondayOf(TODAY));
   S().hungerDate = PQ.TODAY_KEY;
@@ -1634,6 +1638,8 @@ document.getElementById('jumpToday').onclick = () => { viewDate = TODAY; renderA
 
 /* ============ HEADER ============ */
 function renderHeader(){
+  const wl = document.getElementById('whoLabel');
+  if(wl) wl.textContent = store.person.name + "'s Quest Log";
   document.getElementById('levelNum').textContent = S().level;
   document.getElementById('xpBar').style.width = Math.min(100, S().xp / S().xpToNext * 100) + '%';
   document.getElementById('xpNum').textContent = `${S().xp} / ${S().xpToNext}`;
@@ -1676,7 +1682,7 @@ function renderHeader(){
     strip.appendChild(a);
   });
 
-  const m = PQ.activeMonster(S());
+  const m = PQ.activeMonster(M());
   const mrow = document.getElementById('monsterRow');
   if(m){
     mrow.style.display = 'flex';
@@ -1713,11 +1719,18 @@ function saveAndRender(){ store.save(); renderAll(); }
 /* ============ BOOT ============ */
 document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'visible'){
-    store.load().then(() => { PQ.settleHunger(S(), PQ.makeCtx(S())); renderAll(); });
+    Promise.all([store.load(), monsterStore.load()]).then(() => {
+      PQ.settleHunger(S(), PQ.makeCtx(S()));
+      renderAll();
+    });
   }
 });
 
-store.load().then(() => {
+document.querySelectorAll('a[href^="/dannelore/quest-log"]').forEach(a => {
+  a.href = PQ.personLink(a.getAttribute('href'));
+});
+
+Promise.all([store.load(), monsterStore.load()]).then(() => {
   PQ.recalibrate(S());
   PQ.settleHunger(S(), PQ.makeCtx(S()));
   PQ.ensureFragments(S());
