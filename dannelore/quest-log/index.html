@@ -48,26 +48,28 @@
     box-shadow:0 4px 16px rgba(180,90,120,0.12);
   }
 
+  /* The avatar and the party share one 2:3 portrait frame — the same ratio
+     the pet art is drawn at (PQ.FRAME_RATIO), so nothing is cropped. Only the
+     width is set; the height follows from aspect-ratio. */
   .pet-slot{
-    width:70px; height:70px; flex-shrink:0;
-    border-radius:50%; background:var(--cream);
+    width:62px; aspect-ratio:2 / 3; flex-shrink:0;
+    border-radius:10px; background:var(--cream);
     border:3px solid var(--white);
     box-shadow:0 0 0 3px var(--accent), 0 4px 10px rgba(180,90,120,0.25);
     display:flex; align-items:center; justify-content:center;
     overflow:hidden; text-decoration:none;
   }
-  .pet-slot .pet-art{ width:64px; margin-top:6px; }
+  .pet-slot .pet-art{ width:100%; margin:0; }
   .pet-slot .pet-art svg{ display:block; }
   .pet-slot.empty{ font-size:26px; color:var(--ink-soft); }
 
-  .party-strip{ display:flex; gap:4px; flex-shrink:0; }
+  .party-strip{ display:flex; gap:5px; flex-shrink:0; align-items:center; }
   .party-strip a{
-    width:34px; height:34px; border-radius:50%;
+    width:32px; aspect-ratio:2 / 3; border-radius:6px;
     background:var(--white); border:1.5px solid rgba(232,124,166,0.4);
-    overflow:hidden; display:flex; align-items:flex-end; justify-content:center;
-    text-decoration:none;
+    overflow:hidden; display:block; text-decoration:none;
   }
-  .party-strip a svg{ width:30px; margin-bottom:-2px; }
+  .party-strip a .pq-pet{ width:100%; }
   .party-strip a.hungry{ border-color:var(--blade); }
 
   .identity{ display:flex; flex-direction:column; min-width:150px; }
@@ -101,6 +103,17 @@
   .bar-fill.hunger.low{ background:var(--blade); }
   .bar-fill.hp{ background:linear-gradient(90deg,var(--blade),#7C1F2A); }
   .bar-num{ font-size:10.5px; color:var(--ink-soft); width:64px; font-variant-numeric:tabular-nums; }
+
+  /* "XP" and "Fed" fit in 26px; a monster's name does not. This one gets its
+     own width and truncates rather than pushing the bar out of line. */
+  .monster-link{
+    width:auto; max-width:120px; flex-shrink:0;
+    font-family:var(--font-serif); font-size:12px; font-weight:600;
+    font-style:italic; color:var(--blade); text-decoration:none;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .monster-link:hover{ color:var(--burgundy); text-decoration:underline; }
+  html.pp-paladin .monster-link{ color:var(--burgundy); }
 
   .panel-btns{ display:flex; gap:8px; flex-shrink:0; }
   .panel-btn{
@@ -194,7 +207,7 @@
 
   /* Dailies not scheduled for the day being viewed, shown in "see all" */
   .task-card.off-schedule{ opacity:.72; border-left-style:dashed; }
-  .task-card.off-schedule .check{ cursor:default; border-color:rgba(74,59,65,0.25); }
+  .task-card.off-schedule:hover{ opacity:1; }
   .off-chip{
     font-size:10px; padding:2px 7px; border-radius:8px;
     background:rgba(74,59,65,0.08); color:var(--ink-soft);
@@ -307,16 +320,19 @@
   }
 
   .task-list{ display:flex; flex-direction:column; gap:6px; }
+  /* The stripe reads --card-accent. Each column sets a default; a tagged card
+     overrides it inline with the tag's own colour, so the stripe and the tag
+     chip always match. Untagged cards keep the column colour. */
   .task-card{
     background:var(--white); border-radius:var(--radius-md);
     padding:7px 10px 7px 4px;
     box-shadow:0 2px 8px rgba(180,90,120,0.08);
-    border-left:4px solid var(--dusty-rose);
+    border-left:4px solid var(--card-accent, var(--dusty-rose));
     transition:opacity .2s, transform .2s;
   }
-  .col-dailies .task-card{ border-left-color:var(--sage); }
-  .col-todos .task-card{ border-left-color:var(--accent); }
-  .col-projects .task-card{ border-left-color:var(--quest-copper); }
+  .col-dailies  .task-card{ --card-accent:var(--sage); }
+  .col-todos    .task-card{ --card-accent:var(--accent); }
+  .col-projects .task-card{ --card-accent:var(--quest-copper); }
   .task-card.done{ opacity:.55; }
 
   .task-main{ display:flex; align-items:center; gap:8px; }
@@ -661,7 +677,7 @@
   }
 
   /* cards keep the cream panel, so the column stripes switch to metals */
-  html.pp-paladin .col-todos .task-card{ border-left-color:#9C7440; }
+  html.pp-paladin .col-todos .task-card{ --card-accent:#9C7440; }
   html.pp-paladin .col-todos .check{ border-color:#9C7440; }
   html.pp-paladin .col-todos .check.checked{ background:#9C7440; }
 
@@ -736,6 +752,30 @@
   html.pp-paladin .shop-item .desc,
   html.pp-paladin .card .hint,
   html.pp-paladin .modal-card p{ color:var(--ink-soft); }
+
+  /* ---- section nav ----
+     This used to sit below the ribbon, which meant it scrolled away the
+     moment you started working and you had to go back up to reach Pets or
+     Monsters. It now rides inside the sticky ribbon as a full-width row, so
+     every quest-log page is one tap away no matter how far down you are. */
+  .pp-ribbon-sections{
+    flex:1 1 100%;
+    display:flex; align-items:center; flex-wrap:wrap; gap:6px;
+    margin:0; padding-top:10px;
+    border-top:1px solid var(--line);
+    list-style:none;
+  }
+  .pp-ribbon-sections .spacer{ flex:1 1 auto; }
+  .pp-ribbon-sections .exit{
+    font-family:var(--font-serif); font-style:italic; font-size:.9rem;
+    color:var(--ink-soft); text-decoration:none; padding:5px 4px;
+  }
+  .pp-ribbon-sections .exit:hover{ color:var(--accent-deep); }
+  html.pp-paladin .pp-ribbon-sections{ border-top-color:rgba(156,116,64,0.3); }
+  @media (max-width:760px){
+    .pp-ribbon-sections{ justify-content:center; }
+    .pp-ribbon-sections .spacer{ display:none; }
+  }
 </style>
 </head>
 <body class="pp-dannelore">
@@ -797,7 +837,7 @@
               <span class="bar-num" id="hungerNum">100%</span>
             </div>
             <div class="bar-row" id="monsterRow" style="display:none;">
-              <span class="bar-label">HP</span>
+              <a class="bar-label monster-link" id="monsterName" href="/dannelore/quest-log/monsters.html" title="Monsters"></a>
               <div class="bar-track"><div class="bar-fill hp" id="monsterBar" style="width:100%"></div></div>
               <span class="bar-num" id="monsterNum"></span>
             </div>
@@ -812,18 +852,17 @@
             <button class="panel-btn" id="openSettings">⚙ Settings</button>
           </div>
     </div>
+    <nav class="pp-subnav pp-ribbon-sections" aria-label="Quest log sections">
+      <a href="/dannelore/quest-log/" aria-current="page">Quest Board</a>
+      <a href="/dannelore/quest-log/pets.html">Pets</a>
+      <a href="/dannelore/quest-log/monsters.html">Monsters</a>
+      <a href="/dannelore/quest-log/fit.html">Fitting Room</a>
+      <span class="spacer"></span>
+      <a class="exit" href="/dannelore/">&larr; Dannelore</a>
+    </nav>
   </div>
 </header>
 
-<div class="pp-wrap-wide">
-  <nav class="pp-subnav" aria-label="Section navigation">
-    <a href="/dannelore/quest-log/" aria-current="page">Quest Board</a>
-    <a href="/dannelore/quest-log/pets.html">Pets</a>
-    <a href="/dannelore/quest-log/monsters.html">Monsters</a>
-    <a href="/dannelore/quest-log/fit.html">Fitting Room</a>
-    <a href="/dannelore/self-care/">Self Care</a>
-  </nav>
-</div>
 
 <!-- ===== DATE STRIP ===== -->
 <div class="date-strip">
@@ -1072,6 +1111,12 @@
         <div>$ <input type="number" id="targetProjects" min="0" step="1"></div>
       </div>
       <p class="rate-readout" id="rateReadout"></p>
+    </div>
+
+    <div class="panel-section">
+      <h3 class="panel-section-title">Reset progress</h3>
+      <p class="rate-readout">Back to Level 1 and 0 XP. Tasks, tags, pets, wardrobe, rewards and coins all stay exactly as they are — only the level and XP go. Party members move to the stable, since party slots unlock by level.</p>
+      <button class="danger-btn" id="resetProgress">Reset to Level 1</button>
     </div>
 
     <div class="panel-section">
@@ -1465,9 +1510,35 @@ function metaHtml(task, column, streak, offSchedule){
     html += `<span class="due-chip ${overdue ? 'overdue' : ''}">${overdue ? 'overdue · ' : 'due '}${label}</span>`;
   }
   if(streak > 0) html += `<span class="streak-chip">🔥 ${streak}d</span>`;
+  /* Off-schedule dailies still pay — they just don't count toward the day's
+     completion ratio or the streak, so the chip stays to explain the label. */
   if(offSchedule) html += `<span class="off-chip">not this day</span>`;
-  else html += `<span class="payout-chip">${money(value(task, column))}</span>`;
+  html += `<span class="payout-chip">${money(value(task, column))}</span>`;
   return html;
+}
+
+/* Copies a task and drops the copy in right below the original.
+
+   Everything describing the WORK is carried over — title, difficulty,
+   priority, tag, due date, repeat schedule, subtask list. Everything
+   describing PROGRESS is deliberately left behind: the copy starts unticked,
+   with no subtask state, and no completion history (history is keyed by task
+   id, and the copy gets a fresh one). Projects also get a fresh `created`
+   date so the copy doesn't inherit weeks of accumulated age multiplier. */
+function duplicateTask(task, column){
+  const copy = JSON.parse(JSON.stringify(task));
+  copy.id = uid();
+  copy.title = task.title + ' copy';
+  copy.subs = (task.subs || []).map(s => ({ id: uid(), title: s.title }));
+  delete copy.done;
+  delete copy.doneDate;
+  delete copy.subDone;
+  if(column === 'projects') copy.created = PQ.TODAY_KEY;
+
+  const list = S()[column];
+  const at = list.findIndex(t => t.id === task.id);
+  list.splice(at < 0 ? list.length : at + 1, 0, copy);
+  saveAndRender();
 }
 
 function buildCard(task, column, opts){
@@ -1479,6 +1550,12 @@ function buildCard(task, column, opts){
   const doneSubs = subs.filter(s => subState[s.id]).length;
 
   card.dataset.id = task.id;
+
+  /* A tagged card takes its stripe from the tag. Untagged falls through to
+     the column default set in CSS. */
+  const cardTag = tagById(task.tag);
+  if(cardTag) card.style.setProperty('--card-accent', cardTag.color);
+
   card.innerHTML = `
     <div class="task-main">
       ${opts.draggable ? '<div class="drag-grip" title="Drag to reorder" aria-hidden="true">⠿⠿</div>' : '<div style="width:16px;flex-shrink:0;"></div>'}
@@ -1489,13 +1566,14 @@ function buildCard(task, column, opts){
       </div>
       <div class="task-actions">
         <button class="task-edit" title="Edit">✎</button>
+        <button class="task-copy" title="Duplicate">⧉</button>
         <button class="task-delete" title="Delete">✕</button>
       </div>
     </div>
   `;
 
-  const isOpen = expanded.has(task.id) && !opts.offSchedule;
-  if((subs.length || isOpen) && !opts.offSchedule){
+  const isOpen = expanded.has(task.id);
+  if(subs.length || isOpen){
     const wrap = document.createElement('div');
     wrap.className = 'sub-wrap';
     const bar = subs.length ? `<div class="sub-progress"><i style="width:${doneSubs/subs.length*100}%"></i></div>` : '';
@@ -1522,7 +1600,6 @@ function buildCard(task, column, opts){
 
   const toggle = document.createElement('button');
   toggle.className = 'expand-btn';
-  if(opts.offSchedule) toggle.style.display = 'none';
   toggle.textContent = subs.length
     ? (isOpen ? 'hide subtasks' : `${doneSubs}/${subs.length} subtasks`)
     : (isOpen ? 'hide subtasks' : '+ subtasks');
@@ -1535,6 +1612,7 @@ function buildCard(task, column, opts){
   card.querySelector('.check').onclick = () => opts.onToggle();
   card.querySelector('.task-title').onclick = () => enterEdit(column, task);
   card.querySelector('.task-edit').onclick = () => enterEdit(column, task);
+  card.querySelector('.task-copy').onclick = () => duplicateTask(task, column);
   card.querySelector('.task-delete').onclick = () => {
     S()[column] = S()[column].filter(t => t.id !== task.id);
     saveAndRender();
@@ -1626,11 +1704,15 @@ function renderDailies(){
     onToggle: () => toggleDaily(task), onToggleSub: id => toggleDailySub(task, id)
   })));
 
-  /* Shown only in "see all" — editable and deletable, but not tickable, since
-     they aren't scheduled for the day you're looking at. */
+  /* Shown only in "see all". These aren't scheduled for the day you're
+     looking at, but you can still tick them — sometimes you do the thing on
+     an off day and it should count. They pay out normally; they just don't
+     feed the streak or the day's completion ratio, both of which only ever
+     look at scheduled tasks. The dashed border is the visual tell. */
   offSchedule.forEach(task => list.appendChild(buildCard(task, 'dailies', {
-    done:false, offSchedule:true, streak:0, subState:{},
-    onToggle: () => {}, onToggleSub: () => {}
+    done: isDailyDone(task, viewDate), offSchedule:true, streak:0,
+    subState: rec(task.id).subs || {},
+    onToggle: () => toggleDaily(task), onToggleSub: id => toggleDailySub(task, id)
   })));
 
   done.forEach(task => doneList.appendChild(buildCard(task, 'dailies', {
@@ -1908,6 +1990,35 @@ COLUMNS.forEach(col => {
     saveAndRender();
   };
 });
+/* Level and XP only. Everything that represents WORK — tasks, their history,
+   tags, rewards, coins, pets and the wardrobe — is left untouched.
+
+   One knock-on has to be handled: party slots unlock by account level, so
+   dropping to 1 leaves zero slots. Party members are moved to the stable
+   rather than left sitting in slots that no longer exist. The active pet
+   keeps its place, since that slot isn't level-gated. */
+document.getElementById('resetProgress').onclick = () => {
+  const party = PQ.partyPets(S()).length;
+  if(!confirm(
+    'Reset ' + store.person.name + ' to Level 1 and 0 XP?\n\n' +
+    'Tasks, tags, pets, wardrobe, rewards and coins are all kept.' +
+    (party ? `\n${party} party member${party === 1 ? '' : 's'} will move to the stable.` : '')
+  )) return;
+
+  S().level = 1;
+  S().xp = 0;
+  S().xpToNext = 100;
+  PQ.partyPets(S()).forEach(p => { p.tier = 'stable'; });
+
+  /* Level-up celebrations are keyed by level, so clear them or the same
+     milestones will never fire again on the way back up. */
+  Object.keys(S().celebrated || {}).forEach(k => {
+    if(k.indexOf('levelup-') === 0) delete S().celebrated[k];
+  });
+
+  saveAndRender();
+};
+
 document.getElementById('wipeAll').onclick = () => {
   if(!confirm('Erase ' + store.person.name + "'s tasks, pets, rewards and coins? Shared monsters are left alone. There is no undo.")) return;
   store.reset();
@@ -2004,6 +2115,9 @@ function renderHeader(){
   const mrow = document.getElementById('monsterRow');
   if(m){
     mrow.style.display = 'flex';
+    const nameEl = document.getElementById('monsterName');
+    nameEl.textContent = m.name;
+    nameEl.title = `${m.name} — ${m.hp} of ${m.maxHp} HP left`;
     document.getElementById('monsterBar').style.width = (m.hp / m.maxHp * 100) + '%';
     document.getElementById('monsterNum').textContent = `${m.hp}/${m.maxHp}`;
   } else {

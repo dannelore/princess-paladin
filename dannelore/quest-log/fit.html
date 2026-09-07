@@ -233,6 +233,30 @@
   html.pp-paladin .shop-item .desc,
   html.pp-paladin .card .hint,
   html.pp-paladin .modal-card p{ color:var(--ink-soft); }
+
+  /* ---- section nav ----
+     This used to sit below the ribbon, which meant it scrolled away the
+     moment you started working and you had to go back up to reach Pets or
+     Monsters. It now rides inside the sticky ribbon as a full-width row, so
+     every quest-log page is one tap away no matter how far down you are. */
+  .pp-ribbon-sections{
+    flex:1 1 100%;
+    display:flex; align-items:center; flex-wrap:wrap; gap:6px;
+    margin:0; padding-top:10px;
+    border-top:1px solid var(--line);
+    list-style:none;
+  }
+  .pp-ribbon-sections .spacer{ flex:1 1 auto; }
+  .pp-ribbon-sections .exit{
+    font-family:var(--font-serif); font-style:italic; font-size:.9rem;
+    color:var(--ink-soft); text-decoration:none; padding:5px 4px;
+  }
+  .pp-ribbon-sections .exit:hover{ color:var(--accent-deep); }
+  html.pp-paladin .pp-ribbon-sections{ border-top-color:rgba(156,116,64,0.3); }
+  @media (max-width:760px){
+    .pp-ribbon-sections{ justify-content:center; }
+    .pp-ribbon-sections .spacer{ display:none; }
+  }
 </style>
 </head>
 <body class="pp-dannelore">
@@ -272,17 +296,18 @@
       <a href="/side-quests/">Side Quests</a>
       <a href="/templates/">Templates</a>
     </nav>
+    <nav class="pp-subnav pp-ribbon-sections" aria-label="Quest log sections">
+      <a href="/dannelore/quest-log/">Quest Board</a>
+      <a href="/dannelore/quest-log/pets.html">Pets</a>
+      <a href="/dannelore/quest-log/monsters.html">Monsters</a>
+      <a href="/dannelore/quest-log/fit.html" aria-current="page">Fitting Room</a>
+      <span class="spacer"></span>
+      <a class="exit" href="/dannelore/">&larr; Dannelore</a>
+    </nav>
   </div>
 </header>
 
 <div class="wrap">
-  <nav class="pp-subnav" aria-label="Section navigation">
-    <a href="/dannelore/quest-log/">Quest Board</a>
-    <a href="/dannelore/quest-log/pets.html">Pets</a>
-    <a href="/dannelore/quest-log/monsters.html">Monsters</a>
-    <a href="/dannelore/quest-log/fit.html" aria-current="page">Fitting Room</a>
-    <a href="/dannelore/self-care/">Self Care</a>
-  </nav>
   <h1>Fitting room</h1>
   <p class="lede">Drag a garment onto the body until it sits right, then copy the numbers at the bottom and send them to me. Nothing here is saved and nothing touches your quest log — it only prints coordinates.</p>
 
@@ -381,11 +406,7 @@ function renderChips(){
     b.className = 'stagechip' + (s === stage ? ' on' : '');
     const done = itemId && recorded[itemId] && recorded[itemId][s];
     b.innerHTML = s.charAt(0).toUpperCase() + s.slice(1) + (done ? ' <span class="done-dot">✓</span>' : '');
-    b.onclick = () => { stage = s; document.querySelectorAll('a[href^="/dannelore/quest-log"]').forEach(a => {
-  a.href = PQ.personLink(a.getAttribute('href'));
-});
-
-loadBody(); loadRecorded(); renderChips(); };
+    b.onclick = () => { stage = s; loadBody(); loadRecorded(); renderChips(); };
     el.appendChild(b);
   });
 }
@@ -401,11 +422,7 @@ function loadBody(){
   bodyImg.onload = () => { warn.style.display = 'none'; };
 }
 
-document.getElementById('speciesSel').onchange = e => { species = e.target.value; document.querySelectorAll('a[href^="/dannelore/quest-log"]').forEach(a => {
-  a.href = PQ.personLink(a.getAttribute('href'));
-});
-
-loadBody(); };
+document.getElementById('speciesSel').onchange = e => { species = e.target.value; loadBody(); };
 
 document.getElementById('fileIn').onchange = e => {
   const f = e.target.files[0];
