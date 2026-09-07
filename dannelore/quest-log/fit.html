@@ -166,6 +166,43 @@
   html.pp-paladin .item.worn,
   html.pp-paladin .slot-tab.on{ border-color:#9C7440; }
   html.pp-paladin .slot-tab.on{ background:#9C7440; }
+
+  .pp-ribbon .pp-nav a[aria-current="page"],
+  .pp-subnav a[aria-current="page"]{
+    color:#fff; background:var(--accent-deep); border-color:var(--accent-deep);
+  }
+
+  /* ---- legibility on the red ----
+     Anything sitting straight on the burgundy needs cream, not ink. The
+     sub-nav, the date strip and the unselected filter pills were all dark
+     text on a dark ground. */
+  html.pp-paladin .pp-subnav a{ color:#E5C79A; }
+  html.pp-paladin .pp-subnav a:hover{ color:#FFFDF8; background:rgba(247,241,228,0.14); }
+  html.pp-paladin .pp-subnav a[aria-current="page"]{
+    color:#3A0F16; background:#C9A227; border-color:#C9A227; font-weight:600;
+  }
+
+  html.pp-paladin .date-nav{ background:rgba(255,253,248,0.95); }
+  html.pp-paladin .date-nav #dateLabel{ color:var(--ink); }
+  html.pp-paladin .today-pill{ background:#7C5B30; color:#FFFDF8; }
+
+  html.pp-paladin .filter-pill{ color:#5A4A3A; background:rgba(255,253,248,0.92); border-color:rgba(156,116,64,0.5); }
+  html.pp-paladin .filter-pill.on{ color:#3A0F16; background:#C9A227; border-color:#C9A227; }
+
+  html.pp-paladin .view-toggle{ color:#E5C79A; }
+  html.pp-paladin .view-toggle:hover,
+  html.pp-paladin .view-toggle.on{ color:#FFFDF8; }
+
+  html.pp-paladin .done-toggle{
+    color:#E5C79A; background:rgba(255,253,248,0.10); border-color:rgba(247,241,228,0.35);
+  }
+  html.pp-paladin .done-toggle:hover{ background:rgba(255,253,248,0.18); color:#FFFDF8; }
+
+  html.pp-paladin .add-toggle{
+    color:#F4E2C0; background:rgba(255,253,248,0.10); border-color:rgba(201,162,39,0.7);
+  }
+  html.pp-paladin .add-toggle:hover,
+  html.pp-paladin .add-toggle[aria-expanded="true"]{ background:#FFFDF8; color:#7C5B30; }
 </style>
 </head>
 <body class="pp-dannelore">

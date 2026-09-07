@@ -71,8 +71,19 @@
   .party-strip a.hungry{ border-color:var(--blade); }
 
   .identity{ display:flex; flex-direction:column; min-width:150px; }
-  .identity .name{ font-family:var(--font-display); font-size:22px; line-height:1.1; font-weight:600; }
+  .identity .name{
+    font-family:var(--font-display); font-size:22px; line-height:1.1;
+    font-weight:600; color:var(--ink);
+  }
   .identity .level-tag{ font-size:12.5px; color:var(--ink-soft); letter-spacing:.02em; }
+  .bar-label{ color:var(--ink-soft); }
+  .bar-num{ color:var(--ink-soft); }
+
+  /* the current page's pill was cream on cream */
+  .pp-ribbon .pp-nav a[aria-current="page"],
+  .pp-subnav a[aria-current="page"]{
+    color:#fff; background:var(--accent-deep); border-color:var(--accent-deep);
+  }
 
   .bars{ flex:1; display:flex; flex-direction:column; gap:6px; max-width:380px; }
   .bar-row{ display:flex; align-items:center; gap:8px; }
@@ -194,6 +205,17 @@
   .col-projects h2{ color:var(--quest-copper); }
 
   /* ===== ADD ROW ===== */
+  .add-toggle{
+    width:100%; margin-bottom:12px;
+    font-family:var(--font-body); font-size:13px; font-weight:500;
+    color:var(--accent-dark); background:rgba(255,255,255,0.6);
+    border:1px dashed var(--accent); border-radius:var(--radius-md);
+    padding:10px 14px; cursor:pointer; text-align:left;
+    transition:background .15s ease;
+  }
+  .add-toggle:hover{ background:var(--white); }
+  .add-toggle[aria-expanded="true"]{ border-style:solid; background:var(--white); }
+
   .add-row{
     background:var(--white); border-radius:var(--radius-md);
     padding:12px 14px; margin-bottom:12px;
@@ -227,9 +249,7 @@
     color:var(--ink-soft); font-weight:500;
   }
 
-  .stars-input{ display:flex; gap:3px; cursor:pointer; }
-  .stars-input span{ font-size:16px; color:rgba(74,59,65,0.2); transition:color .1s; }
-  .stars-input span.active{ color:var(--quest-gold); }
+
 
   .preset-row{ display:flex; gap:6px; flex-wrap:wrap; }
   .preset-row button{
@@ -304,7 +324,13 @@
     display:flex; align-items:center; gap:8px;
     margin-top:4px; flex-wrap:wrap;
   }
-  .stars-display{ font-size:11px; color:var(--quest-gold); letter-spacing:1px; }
+  .diff-chip{
+    font-size:10px; font-weight:500; padding:2px 8px; border-radius:8px;
+    letter-spacing:.02em; white-space:nowrap;
+    background:rgba(74,59,65,0.07); color:var(--ink-soft);
+  }
+  .diff-chip[data-diff="4"]{ background:rgba(184,115,51,0.16); color:#8A5620; }
+  .diff-chip[data-diff="5"]{ background:rgba(110,36,48,0.14); color:var(--burgundy); }
   .streak-chip{
     font-size:10.5px; background:var(--pink-bg-alt); color:var(--accent-dark);
     padding:2px 7px; border-radius:8px; font-weight:500;
@@ -621,6 +647,38 @@
   html.pp-paladin .item.worn,
   html.pp-paladin .slot-tab.on{ border-color:#9C7440; }
   html.pp-paladin .slot-tab.on{ background:#9C7440; }
+
+  /* ---- legibility on the red ----
+     Anything sitting straight on the burgundy needs cream, not ink. The
+     sub-nav, the date strip and the unselected filter pills were all dark
+     text on a dark ground. */
+  html.pp-paladin .pp-subnav a{ color:#E5C79A; }
+  html.pp-paladin .pp-subnav a:hover{ color:#FFFDF8; background:rgba(247,241,228,0.14); }
+  html.pp-paladin .pp-subnav a[aria-current="page"]{
+    color:#3A0F16; background:#C9A227; border-color:#C9A227; font-weight:600;
+  }
+
+  html.pp-paladin .date-nav{ background:rgba(255,253,248,0.95); }
+  html.pp-paladin .date-nav #dateLabel{ color:var(--ink); }
+  html.pp-paladin .today-pill{ background:#7C5B30; color:#FFFDF8; }
+
+  html.pp-paladin .filter-pill{ color:#5A4A3A; background:rgba(255,253,248,0.92); border-color:rgba(156,116,64,0.5); }
+  html.pp-paladin .filter-pill.on{ color:#3A0F16; background:#C9A227; border-color:#C9A227; }
+
+  html.pp-paladin .view-toggle{ color:#E5C79A; }
+  html.pp-paladin .view-toggle:hover,
+  html.pp-paladin .view-toggle.on{ color:#FFFDF8; }
+
+  html.pp-paladin .done-toggle{
+    color:#E5C79A; background:rgba(255,253,248,0.10); border-color:rgba(247,241,228,0.35);
+  }
+  html.pp-paladin .done-toggle:hover{ background:rgba(255,253,248,0.18); color:#FFFDF8; }
+
+  html.pp-paladin .add-toggle{
+    color:#F4E2C0; background:rgba(255,253,248,0.10); border-color:rgba(201,162,39,0.7);
+  }
+  html.pp-paladin .add-toggle:hover,
+  html.pp-paladin .add-toggle[aria-expanded="true"]{ background:#FFFDF8; color:#7C5B30; }
 </style>
 </head>
 <body class="pp-dannelore">
@@ -693,7 +751,7 @@
             <div class="coin meow"><span class="dot"></span><span id="meowNum">0</span></div>
           </div>
           <div class="panel-btns">
-            <button class="panel-btn" id="openShop">🎁 Rewards</button>
+            <button class="panel-btn" id="openShop"><span class="col-emo" data-alt="🏆">🎁</span> Rewards</button>
             <button class="panel-btn" id="openSettings">⚙ Settings</button>
           </div>
     </div>
@@ -733,13 +791,14 @@
 
   <div class="col-dailies">
     <div class="col-head">
-      <h2>Dailies 🌿</h2>
+      <h2>Dailies <span class="col-emo" data-alt="⚔️">🌿</span></h2>
       <span class="head-right">
         <span class="sub" id="dailiesCount">0 today</span>
         <button class="view-toggle" id="dailiesViewToggle">see all</button>
       </span>
     </div>
-    <div class="add-row">
+    <button class="add-toggle" id="dailiesAddToggle" aria-expanded="false" aria-controls="dailiesAddRow">+ Add a daily</button>
+    <div class="add-row" id="dailiesAddRow" hidden>
       <textarea id="dailiesInput" placeholder="One daily per line.&#10;Indent with two spaces or a dash to make it a subtask."></textarea>
       <div class="repeat-block">
         <select class="mini-select" id="dailiesRepeat" style="flex:none;width:100%;">
@@ -785,8 +844,14 @@
         </div>
       </div>
       <div class="add-row-controls">
-        <div class="stars-input" id="dailiesStars" data-value="3" title="Difficulty"></div>
-        <select class="mini-select" id="dailiesPriority">
+        <select class="mini-select" id="dailiesDifficulty" title="Difficulty">
+          <option value="1">Trivial</option>
+          <option value="2">Easy</option>
+          <option value="3" selected>Medium</option>
+          <option value="4">Hard</option>
+          <option value="5">Gruelling</option>
+        </select>
+        <select class="mini-select" id="dailiesPriority" title="Priority">
           <option value="low">Low</option>
           <option value="medium" selected>Medium</option>
           <option value="high">High</option>
@@ -805,12 +870,19 @@
   </div>
 
   <div class="col-todos">
-    <div class="col-head"><h2>To Dos 🌸</h2><span class="sub" id="todosCount">0 open</span></div>
-    <div class="add-row">
+    <div class="col-head"><h2>To Dos <span class="col-emo" data-alt="🛡️">🌸</span></h2><span class="sub" id="todosCount">0 open</span></div>
+    <button class="add-toggle" id="todosAddToggle" aria-expanded="false" aria-controls="todosAddRow">+ Add a to-do</button>
+    <div class="add-row" id="todosAddRow" hidden>
       <textarea id="todosInput" placeholder="One to-do per line.&#10;Indent with two spaces or a dash to make it a subtask."></textarea>
       <div class="add-row-controls">
-        <div class="stars-input" id="todosStars" data-value="3" title="Difficulty"></div>
-        <select class="mini-select" id="todosPriority">
+        <select class="mini-select" id="todosDifficulty" title="Difficulty">
+          <option value="1">Trivial</option>
+          <option value="2">Easy</option>
+          <option value="3" selected>Medium</option>
+          <option value="4">Hard</option>
+          <option value="5">Gruelling</option>
+        </select>
+        <select class="mini-select" id="todosPriority" title="Priority">
           <option value="low">Low</option>
           <option value="medium" selected>Medium</option>
           <option value="high">High</option>
@@ -833,12 +905,19 @@
   </div>
 
   <div class="col-projects">
-    <div class="col-head"><h2>Projects 🗺️</h2><span class="sub" id="projectsCount">0 open</span></div>
-    <div class="add-row">
+    <div class="col-head"><h2>Projects <span class="col-emo" data-alt="🏰">🗺️</span></h2><span class="sub" id="projectsCount">0 open</span></div>
+    <button class="add-toggle" id="projectsAddToggle" aria-expanded="false" aria-controls="projectsAddRow">+ Add a project</button>
+    <div class="add-row" id="projectsAddRow" hidden>
       <textarea id="projectsInput" placeholder="One project per line.&#10;Indent with two spaces or a dash to make it a subtask."></textarea>
       <div class="add-row-controls">
-        <div class="stars-input" id="projectsStars" data-value="4" title="Difficulty"></div>
-        <select class="mini-select" id="projectsPriority">
+        <select class="mini-select" id="projectsDifficulty" title="Difficulty">
+          <option value="1">Trivial</option>
+          <option value="2">Easy</option>
+          <option value="3">Medium</option>
+          <option value="4" selected>Hard</option>
+          <option value="5">Gruelling</option>
+        </select>
+        <select class="mini-select" id="projectsPriority" title="Priority">
           <option value="low">Low</option>
           <option value="medium" selected>Medium</option>
           <option value="high">High</option>
@@ -990,7 +1069,10 @@ let viewDate = TODAY;
 /* ============ HELPERS ============ */
 function uid(){ return 'x' + Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
 function escapeHtml(str){ const d = document.createElement('div'); d.textContent = str == null ? '' : str; return d.innerHTML; }
-function starsDisplay(n){ return '★'.repeat(n) + '☆'.repeat(5-n); }
+function difficultyChip(n){
+  const d = Math.min(5, Math.max(1, n || 3));
+  return `<span class="diff-chip" data-diff="${d}">${DIFFICULTY_LABEL[d]}</span>`;
+}
 function money(c){ return c >= 100 ? `${Math.floor(c/100)}g ${c%100}c` : `${c}c`; }
 function tagById(id){ return S().tags.find(t => t.id === id) || null; }
 function capital(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -1115,22 +1197,7 @@ function renderFilters(){
 }
 
 /* ============ FORMS ============ */
-function setupStars(id){
-  const el = document.getElementById(id);
-  function draw(){
-    const val = parseInt(el.dataset.value) || 3;
-    el.innerHTML = '';
-    for(let i=1;i<=5;i++){
-      const s = document.createElement('span');
-      s.textContent = '★';
-      if(i <= val) s.classList.add('active');
-      s.onclick = () => { el.dataset.value = i; draw(); };
-      el.appendChild(s);
-    }
-  }
-  draw();
-}
-COLUMNS.forEach(c => setupStars(c + 'Stars'));
+const DIFFICULTY_LABEL = { 1:'Trivial', 2:'Easy', 3:'Medium', 4:'Hard', 5:'Gruelling' };
 
 function makeWeekdayPicker(containerId){
   const el = document.getElementById(containerId);
@@ -1231,9 +1298,29 @@ function parseLines(text){
 
 let editing = { dailies:null, todos:null, projects:null };
 
+/* The add forms are tall, so they stay shut until asked for. Opening one
+   for an edit is handled by enterEdit. */
+function setAddOpen(col, open){
+  const row = document.getElementById(col + 'AddRow');
+  const btn = document.getElementById(col + 'AddToggle');
+  row.hidden = !open;
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  btn.textContent = open ? 'Close' : btn.dataset.label;
+}
+COLUMNS.forEach(col => {
+  const btn = document.getElementById(col + 'AddToggle');
+  btn.dataset.label = btn.textContent;
+  btn.onclick = () => {
+    const open = document.getElementById(col + 'AddRow').hidden;
+    setAddOpen(col, open);
+    if(open) document.getElementById(col + 'Input').focus();
+    else if(editing[col]) exitEdit(col);
+  };
+});
+
 COLUMNS.forEach(col => {
   const input     = document.getElementById(col + 'Input');
-  const starsEl   = document.getElementById(col + 'Stars');
+  const diffEl    = document.getElementById(col + 'Difficulty');
   const priority  = document.getElementById(col + 'Priority');
   const tagSel    = document.getElementById(col + 'Tag');
   const dueEl     = document.getElementById(col + 'Due');
@@ -1242,7 +1329,7 @@ COLUMNS.forEach(col => {
 
   addBtn.onclick = () => {
     const base = {
-      difficulty: parseInt(starsEl.dataset.value) || 3,
+      difficulty: parseInt(diffEl.value) || 3,
       priority: priority.value,
       tag: tagSel.value || null,
       due: dueEl ? (dueEl.value || null) : null
@@ -1268,26 +1355,26 @@ COLUMNS.forEach(col => {
       });
     }
     resetForm(col);
+    setAddOpen(col, false);
     saveAndRender();
   };
-  cancelBtn.onclick = () => { exitEdit(col); resetForm(col); };
+  cancelBtn.onclick = () => { exitEdit(col); resetForm(col); setAddOpen(col, false); };
 });
 
 function resetForm(col){
   document.getElementById(col + 'Input').value = '';
   document.getElementById(col + 'Priority').value = 'medium';
-  document.getElementById(col + 'Stars').dataset.value = (col === 'projects' ? 4 : 3);
-  setupStars(col + 'Stars');
+  document.getElementById(col + 'Difficulty').value = (col === 'projects' ? 4 : 3);
   const due = document.getElementById(col + 'Due');
   if(due) due.value = '';
   if(col === 'dailies'){ repeatSelect.value = 'weekdays'; syncRepeatPanels(); dailyDays.reset(); }
 }
 function enterEdit(col, task){
   editing[col] = task.id;
+  setAddOpen(col, true);
   document.getElementById(col + 'Input').value = task.title;
   document.getElementById(col + 'Priority').value = task.priority || 'medium';
-  document.getElementById(col + 'Stars').dataset.value = task.difficulty || 3;
-  setupStars(col + 'Stars');
+  document.getElementById(col + 'Difficulty').value = task.difficulty || 3;
   document.getElementById(col + 'Tag').value = task.tag || '';
   const due = document.getElementById(col + 'Due');
   if(due) due.value = task.due || '';
@@ -1311,7 +1398,7 @@ const expanded = new Set();
 
 function metaHtml(task, column, streak, offSchedule){
   const tag = tagById(task.tag);
-  let html = `<span class="stars-display">${starsDisplay(task.difficulty || 3)}</span>`;
+  let html = difficultyChip(task.difficulty);
   html += `<span class="priority-chip ${task.priority || 'medium'}">${PRIORITY_LABEL[task.priority || 'medium']}</span>`;
   if(tag) html += `<span class="tag-chip" style="background:${tag.color}">${escapeHtml(tag.name)}</span>`;
   if(column === 'dailies' && task.repeat) html += `<span class="repeat-chip">${PQ.repeatSummary(task)}</span>`;
@@ -1820,6 +1907,13 @@ document.addEventListener('visibilitychange', () => {
 document.querySelectorAll('a[href^="/dannelore/quest-log"]').forEach(a => {
   a.href = PQ.personLink(a.getAttribute('href'));
 });
+
+/* Paladin gets his own iconography rather than the flowers. */
+if(document.documentElement.classList.contains('pp-paladin')){
+  document.querySelectorAll('.col-emo[data-alt]').forEach(el => {
+    el.textContent = el.dataset.alt;
+  });
+}
 
 Promise.all([store.load(), monsterStore.load()]).then(() => {
   PQ.recalibrate(S());
