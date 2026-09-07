@@ -2083,7 +2083,7 @@ function renderHeader(){
 
   if(active){
     slot.classList.remove('empty');
-    art.innerHTML = PQ.petSvg(active, { showBackground:false });
+    art.innerHTML = PQ.petSvg(active, {});
     document.getElementById('petNameLabel').textContent = active.name || 'Unnamed';
     const h = PQ.liveHunger(S(), active, ctx);
     const row = document.getElementById('hungerRow');
@@ -2107,7 +2107,7 @@ function renderHeader(){
     a.href = '/dannelore/quest-log/pets.html';
     a.title = `${p.name} · ${h}% fed`;
     if(h < 30) a.classList.add('hungry');
-    a.innerHTML = PQ.petSvg(p, { showBackground:false });
+    a.innerHTML = PQ.petSvg(p, {});
     strip.appendChild(a);
   });
 
