@@ -288,10 +288,28 @@
   }
 
   /* ===== TASK CARDS ===== */
-  .task-list{ display:flex; flex-direction:column; gap:9px; }
+  .drag-grip{
+    width:16px; align-self:stretch; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    cursor:grab; touch-action:none; color:rgba(74,59,65,0.22);
+    font-size:11px; line-height:1; letter-spacing:-1px;
+    border-radius:6px;
+  }
+  .drag-grip:hover{ color:var(--accent); background:rgba(74,59,65,0.04); }
+  .task-card.dragging{
+    opacity:.9; cursor:grabbing;
+    box-shadow:0 8px 22px rgba(46,36,31,0.22);
+    position:relative; z-index:30;
+  }
+  .drop-slot{
+    border:1px dashed var(--accent); border-radius:var(--radius-md);
+    background:rgba(232,124,166,0.06);
+  }
+
+  .task-list{ display:flex; flex-direction:column; gap:6px; }
   .task-card{
     background:var(--white); border-radius:var(--radius-md);
-    padding:12px 14px;
+    padding:7px 10px 7px 4px;
     box-shadow:0 2px 8px rgba(180,90,120,0.08);
     border-left:4px solid var(--dusty-rose);
     transition:opacity .2s, transform .2s;
@@ -301,10 +319,10 @@
   .col-projects .task-card{ border-left-color:var(--quest-copper); }
   .task-card.done{ opacity:.55; }
 
-  .task-main{ display:flex; align-items:flex-start; gap:10px; }
+  .task-main{ display:flex; align-items:center; gap:8px; }
   .check{
-    width:22px; height:22px; border-radius:50%;
-    border:2px solid var(--sage); flex-shrink:0; margin-top:2px;
+    width:18px; height:18px; border-radius:50%;
+    border:2px solid var(--sage); flex-shrink:0;
     cursor:pointer; display:flex; align-items:center; justify-content:center;
     font-size:12px; color:transparent; background:var(--white);
     transition:all .15s;
@@ -317,15 +335,16 @@
 
   .task-body{ flex:1; min-width:0; }
   .task-title{
-    font-family:var(--font-serif); font-size:16.5px; font-weight:500;
-    line-height:1.25; cursor:pointer;
+    font-family:var(--font-serif); font-size:15px; font-weight:500;
+    line-height:1.2; cursor:pointer;
   }
   .task-title:hover{ text-decoration:underline dotted; }
   .task-card.done .task-title{ text-decoration:line-through; text-decoration-color:var(--ink-soft); }
 
   .task-meta{
-    display:flex; align-items:center; gap:8px;
-    margin-top:4px; flex-wrap:wrap;
+    display:flex; align-items:center; gap:6px;
+    margin-top:2px; flex-wrap:wrap;
+    font-size:10px;
   }
   .diff-chip{
     font-size:10px; font-weight:500; padding:2px 8px; border-radius:8px;
@@ -362,15 +381,18 @@
     font-variant-numeric:tabular-nums;
   }
 
-  .task-actions{ display:flex; flex-direction:column; gap:4px; flex-shrink:0; }
+  .task-actions{ display:flex; gap:1px; flex-shrink:0; align-self:flex-start; opacity:0; transition:opacity .15s ease; }
+  .task-card:hover .task-actions,
+  .task-card:focus-within .task-actions{ opacity:1; }
+  @media (hover:none){ .task-actions{ opacity:1; } }
   .task-actions button{
     background:none; border:none; color:var(--ink-soft);
-    cursor:pointer; font-size:13px; padding:2px 6px;
+    cursor:pointer; font-size:12px; padding:1px 4px; line-height:1;
   }
   .task-actions button:hover{ color:var(--accent-dark); }
 
   /* ===== SUBTASKS ===== */
-  .sub-wrap{ margin:8px 0 0 32px; }
+  .sub-wrap{ margin:6px 0 0 30px; }
   .sub-progress{
     height:5px; border-radius:4px; background:rgba(74,59,65,0.1);
     overflow:hidden; margin-bottom:8px;
@@ -381,7 +403,7 @@
   }
   .sub-row{
     display:flex; align-items:center; gap:8px;
-    padding:4px 0; border-bottom:1px solid rgba(74,59,65,0.07);
+    padding:2px 0; border-bottom:1px solid rgba(74,59,65,0.07);
   }
   .sub-row:last-of-type{ border-bottom:none; }
   .sub-check{
@@ -391,7 +413,7 @@
     font-size:10px; color:transparent; background:var(--white);
   }
   .sub-check.checked{ background:var(--sage); color:var(--white); }
-  .sub-text{ flex:1; font-size:13.5px; min-width:0; }
+  .sub-text{ flex:1; font-size:12.5px; min-width:0; }
   .sub-row.done .sub-text{ text-decoration:line-through; color:var(--ink-soft); }
   .sub-value{ font-size:11px; color:var(--quest-copper); font-variant-numeric:tabular-nums; }
   .sub-del{
@@ -416,7 +438,7 @@
 
   .expand-btn{
     background:none; border:none; cursor:pointer;
-    font-size:11px; color:var(--ink-soft); padding:2px 0 0 32px;
+    font-size:10px; color:var(--ink-soft); padding:1px 0 0 30px;
     font-family:var(--font-body);
   }
   .expand-btn:hover{ color:var(--accent-dark); }
@@ -1426,8 +1448,10 @@ function buildCard(task, column, opts){
   const subState = opts.subState || {};
   const doneSubs = subs.filter(s => subState[s.id]).length;
 
+  card.dataset.id = task.id;
   card.innerHTML = `
     <div class="task-main">
+      ${opts.draggable ? '<div class="drag-grip" title="Drag to reorder" aria-hidden="true">⠿⠿</div>' : '<div style="width:16px;flex-shrink:0;"></div>'}
       <div class="check ${isDone ? 'checked' : ''}">${isDone ? '✓' : ''}</div>
       <div class="task-body">
         <div class="task-title">${escapeHtml(task.title)}</div>
@@ -1568,7 +1592,7 @@ function renderDailies(){
   }
 
   open.forEach(task => list.appendChild(buildCard(task, 'dailies', {
-    done:false, streak: PQ.getStreak(S(), task, viewDate), subState: rec(task.id).subs || {},
+    done:false, draggable:true, streak: PQ.getStreak(S(), task, viewDate), subState: rec(task.id).subs || {},
     onToggle: () => toggleDaily(task), onToggleSub: id => toggleDailySub(task, id)
   })));
 
@@ -1619,14 +1643,6 @@ function toggleSimple(task, column){
   }
   saveAndRender();
 }
-function sortTasks(a, b){
-  const p = PRIORITY_RANK[a.priority || 'medium'] - PRIORITY_RANK[b.priority || 'medium'];
-  if(p !== 0) return p;
-  if(a.due && b.due) return a.due < b.due ? -1 : 1;
-  if(a.due) return -1;
-  if(b.due) return 1;
-  return 0;
-}
 function renderSimple(column){
   const list = document.getElementById(column + 'List');
   const doneList = document.getElementById(column + 'Done');
@@ -1634,14 +1650,16 @@ function renderSimple(column){
   list.innerHTML = ''; doneList.innerHTML = '';
 
   const all = S()[column].filter(matchesFilter);
-  const open = all.filter(t => !t.done).sort(sortTasks);
+  /* Array order is the order you dragged things into. Priority is still shown
+     on the card, it just no longer reshuffles the list behind your back. */
+  const open = all.filter(t => !t.done);
   const done = all.filter(t => t.done && t.doneDate === PQ.dateKey(viewDate));
 
   if(!open.length){
     list.innerHTML = `<div class="empty-note">${column === 'projects' ? 'No projects on the go' : 'Nothing waiting'}</div>`;
   }
   open.forEach(task => list.appendChild(buildCard(task, column, {
-    done:false, subState: task.subDone || {},
+    done:false, draggable:true, subState: task.subDone || {},
     onToggle: () => toggleSimple(task, column), onToggleSub: id => toggleSimpleSub(task, column, id)
   })));
   done.forEach(task => doneList.appendChild(buildCard(task, column, {
@@ -1660,6 +1678,93 @@ COLUMNS.forEach(col => {
     renderAll();
   };
 });
+
+
+/* ============ DRAG TO REORDER ============
+   Pointer events rather than HTML5 drag-and-drop, so it works on a phone.
+   The visible list can be a subset (dailies show only what's scheduled), so
+   on drop we write the new order back into the slots those tasks occupied
+   and leave everything else where it was. */
+(function(){
+  let drag = null;
+
+  function listColumn(list){
+    return COLUMNS.find(c => document.getElementById(c + 'List') === list);
+  }
+
+  function cardsIn(list){
+    return [...list.querySelectorAll('.task-card')].filter(c => c !== (drag && drag.card));
+  }
+
+  document.addEventListener('pointerdown', e => {
+    const grip = e.target.closest('.drag-grip');
+    if(!grip) return;
+    const card = grip.closest('.task-card');
+    const list = card && card.parentElement;
+    if(!list || !listColumn(list)) return;
+
+    e.preventDefault();
+    const rect = card.getBoundingClientRect();
+    const slot = document.createElement('div');
+    slot.className = 'drop-slot';
+    slot.style.height = rect.height + 'px';
+
+    drag = { card, list, slot, offsetY: e.clientY - rect.top, startY: rect.top, moved:false };
+    grip.setPointerCapture(e.pointerId);
+    drag.grip = grip;
+  });
+
+  document.addEventListener('pointermove', e => {
+    if(!drag) return;
+    if(!drag.moved){
+      drag.moved = true;
+      drag.card.classList.add('dragging');
+      drag.card.style.width = drag.card.offsetWidth + 'px';
+      drag.list.insertBefore(drag.slot, drag.card);
+      drag.card.style.position = 'fixed';
+      drag.card.style.left = drag.card.getBoundingClientRect().left + 'px';
+      drag.card.style.pointerEvents = 'none';
+    }
+    drag.card.style.top = (e.clientY - drag.offsetY) + 'px';
+
+    const y = e.clientY;
+    const others = cardsIn(drag.list);
+    let before = null;
+    for(const c of others){
+      const r = c.getBoundingClientRect();
+      if(y < r.top + r.height / 2){ before = c; break; }
+    }
+    drag.list.insertBefore(drag.slot, before);
+  });
+
+  function finish(){
+    if(!drag) return;
+    const { card, list, slot } = drag;
+    if(drag.moved){
+      list.insertBefore(card, slot);
+      slot.remove();
+      card.classList.remove('dragging');
+      card.style.position = card.style.top = card.style.left = card.style.width = card.style.pointerEvents = '';
+
+      const col = listColumn(list);
+      const order = [...list.querySelectorAll('.task-card')].map(c => c.dataset.id).filter(Boolean);
+      applyOrder(col, order);
+    }
+    drag = null;
+  }
+  document.addEventListener('pointerup', finish);
+  document.addEventListener('pointercancel', finish);
+
+  /* Put the dragged ids back into the slots they collectively occupied. */
+  function applyOrder(col, order){
+    const arr = S()[col];
+    const slots = [];
+    arr.forEach((t, i) => { if(order.includes(t.id)) slots.push(i); });
+    const byId = Object.fromEntries(arr.map(t => [t.id, t]));
+    order.forEach((id, n) => { if(slots[n] !== undefined) arr[slots[n]] = byId[id]; });
+    saveAndRender();
+  }
+})();
 
 /* ============ REWARDS PANEL ============ */
 let editingShopId = null;
