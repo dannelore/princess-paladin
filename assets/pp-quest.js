@@ -43,17 +43,17 @@ const LAYERS = ['background','bottoms','shoes','top','hat','held'];
 const SPECIES = {
   cat: {
     name:'Cat',
-    furs:['black'],
+    furs:['black','gray'],
     buff: { key:'payout', label:'Coin sense', text:'+12% on every payout' }
   },
   penguin: {
     name:'Penguin',
-    furs:['classic'],
+    furs:['black'],
     buff: { key:'hunger', label:'Cold blooded', text:'party hunger drains 20% slower' }
   },
   panda: {
     name:'Panda',
-    furs:['classic'],
+    furs:['black'],
     buff: { key:'xp', label:'Slow wisdom', text:'+20% XP from everything' }
   }
 };
@@ -423,7 +423,7 @@ const PEOPLE = {
   brendon: {
     name:'Brendon', doc:'brendon-quest-log', emoji:'\uD83E\uDDDB\u200D\u2642\uFE0F',
     /* No name — he picks one. The pets page prompts until he does. */
-    starter:{ id:'p-first', species:'cat', fur:'black',
+    starter:{ id:'p-first', species:'penguin', fur:'black',
               eyeColor:'green', eyeShape:'slit', name:'' }
   }
 };
