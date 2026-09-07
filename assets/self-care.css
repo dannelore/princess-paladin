@@ -9,14 +9,14 @@
    ========================================================================== */
 
 .flow-page{
-  padding: 32px 16px 64px;
-  display: flex;
-  justify-content: center;
+  padding: 0;
 }
 
 .flow-wrap{
   width: 100%;
   max-width: 480px;
+  margin: 0 auto;
+  padding: 0 16px 64px;
 }
 
 .flow-title{
