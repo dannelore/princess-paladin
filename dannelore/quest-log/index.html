@@ -706,6 +706,36 @@
   }
   html.pp-paladin .add-toggle:hover,
   html.pp-paladin .add-toggle[aria-expanded="true"]{ background:#FFFDF8; color:#7C5B30; }
+
+  /* ---- surfaces keep dark ink ----
+     body gets cream text so labels on the burgundy are legible, but that
+     inherits into every card too — cream on a cream panel is invisible.
+     Anything with its own light background resets to ink. */
+  html.pp-paladin .task-card,
+  html.pp-paladin .task-title,
+  html.pp-paladin .add-row,
+  html.pp-paladin .card,
+  html.pp-paladin .pp-panel,
+  html.pp-paladin .panel,
+  html.pp-paladin .side-panel,
+  html.pp-paladin .modal-card,
+  html.pp-paladin .shop-item,
+  html.pp-paladin .roster-card,
+  html.pp-paladin .item,
+  html.pp-paladin .monster,
+  html.pp-paladin .choice,
+  html.pp-paladin .tag-editor-row,
+  html.pp-paladin .coin,
+  html.pp-paladin .sub-text,
+  html.pp-paladin .date-nav,
+  html.pp-paladin .pp-ribbon,
+  html.pp-paladin .pp-ribbon-title{ color:var(--ink); }
+
+  html.pp-paladin .task-meta,
+  html.pp-paladin .sub-value,
+  html.pp-paladin .shop-item .desc,
+  html.pp-paladin .card .hint,
+  html.pp-paladin .modal-card p{ color:var(--ink-soft); }
 </style>
 </head>
 <body class="pp-dannelore">

@@ -227,6 +227,36 @@
   }
   html.pp-paladin .add-toggle:hover,
   html.pp-paladin .add-toggle[aria-expanded="true"]{ background:#FFFDF8; color:#7C5B30; }
+
+  /* ---- surfaces keep dark ink ----
+     body gets cream text so labels on the burgundy are legible, but that
+     inherits into every card too — cream on a cream panel is invisible.
+     Anything with its own light background resets to ink. */
+  html.pp-paladin .task-card,
+  html.pp-paladin .task-title,
+  html.pp-paladin .add-row,
+  html.pp-paladin .card,
+  html.pp-paladin .pp-panel,
+  html.pp-paladin .panel,
+  html.pp-paladin .side-panel,
+  html.pp-paladin .modal-card,
+  html.pp-paladin .shop-item,
+  html.pp-paladin .roster-card,
+  html.pp-paladin .item,
+  html.pp-paladin .monster,
+  html.pp-paladin .choice,
+  html.pp-paladin .tag-editor-row,
+  html.pp-paladin .coin,
+  html.pp-paladin .sub-text,
+  html.pp-paladin .date-nav,
+  html.pp-paladin .pp-ribbon,
+  html.pp-paladin .pp-ribbon-title{ color:var(--ink); }
+
+  html.pp-paladin .task-meta,
+  html.pp-paladin .sub-value,
+  html.pp-paladin .shop-item .desc,
+  html.pp-paladin .card .hint,
+  html.pp-paladin .modal-card p{ color:var(--ink-soft); }
 </style>
 </head>
 <body class="pp-dannelore">
@@ -332,6 +362,19 @@
       <input type="checkbox" id="mItem">
       <label for="mItem">Drops a wardrobe item</label>
     </div>
+
+    <h3 style="font-family:var(--font-serif);font-size:15px;font-weight:600;margin:18px 0 8px;">Title fragments</h3>
+    <div class="grid2">
+      <div>
+        <label class="f" for="mPrefix">Prefix word</label>
+        <input type="text" id="mPrefix" placeholder="Slayer" maxlength="24">
+      </div>
+      <div>
+        <label class="f" for="mSubject">Subject words</label>
+        <input type="text" id="mSubject" placeholder="the Laundry Beast" maxlength="32">
+      </div>
+    </div>
+    <p class="hint" style="margin:8px 0 0;">Both go into the shared pool, so any pet can wear them. Leave the subject blank and the monster's own name is used. Leave the prefix blank and one is rolled at random.</p>
     <p class="hint" style="margin:10px 0 0;">Gold drops come out of the weekly budget, so a fat payout quietly lowers per-task rates that week. Meow Bucks and XP don't.</p>
 
     <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
@@ -398,7 +441,9 @@ function readForm(){
       meow: Math.max(0, parseInt(document.getElementById('mMeow').value) || 0),
       xp:   Math.max(0, parseInt(document.getElementById('mXp').value) || 0),
       pet:  document.getElementById('mPet').checked,
-      item: document.getElementById('mItem').checked
+      item: document.getElementById('mItem').checked,
+      prefix:  document.getElementById('mPrefix').value.trim(),
+      subject: document.getElementById('mSubject').value.trim()
     }
   };
 }
@@ -410,6 +455,8 @@ function resetForm(){
   document.getElementById('mXp').value = 200;
   document.getElementById('mPet').checked = false;
   document.getElementById('mItem').checked = false;
+  document.getElementById('mPrefix').value = '';
+  document.getElementById('mSubject').value = '';
   editingId = null;
   document.getElementById('mSave').textContent = 'Add monster';
   document.getElementById('mCancel').style.display = 'none';
@@ -423,6 +470,8 @@ function loadForm(m){
   document.getElementById('mXp').value = m.reward.xp || 0;
   document.getElementById('mPet').checked = !!m.reward.pet;
   document.getElementById('mItem').checked = !!m.reward.item;
+  document.getElementById('mPrefix').value = m.reward.prefix || '';
+  document.getElementById('mSubject').value = m.reward.subject || '';
   document.getElementById('mSave').textContent = 'Save changes';
   document.getElementById('mCancel').style.display = 'inline-block';
   document.getElementById('mName').scrollIntoView({ behavior:'smooth', block:'center' });
@@ -466,7 +515,10 @@ function rewardText(m){
   if(r.xp)   bits.push(`<b>${r.xp}</b> XP`);
   if(r.pet)  bits.push('a <b>new companion</b>');
   if(r.item) bits.push('a <b>wardrobe item</b>');
-  return bits.length ? 'Drops ' + bits.join(', ') : 'Drops nothing — this one is for the satisfaction';
+  let out = bits.length ? 'Drops ' + bits.join(', ') : 'Drops nothing — this one is for the satisfaction';
+  const frag = [r.prefix, r.subject].filter(Boolean);
+  if(frag.length) out += ` &nbsp;·&nbsp; title: <b>${frag.map(esc).join('</b> … <b>')}</b>`;
+  return out;
 }
 
 function damageText(m){
@@ -500,8 +552,12 @@ function collect(m){
     lines.push(pick.name.toLowerCase());
   }
 
-  PQ.addFragment(S(), 'subject', m.name.replace(/^the\s+/i, '').trim());
-  const prefix = PQ.randomPrefix(S());
+  /* Fragments aren't halved — a word can't be split, and both of you should
+     be able to build the same title. */
+  const r0 = m.reward || {};
+  const subject = (r0.subject || m.name).replace(/^the\s+/i, '').trim();
+  PQ.addFragment(S(), 'subject', subject);
+  const prefix = r0.prefix || PQ.randomPrefix(S());
   if(prefix) PQ.addFragment(S(), 'prefix', prefix);
 
   PQ.markCollected(M(), m.id, WHO);
@@ -514,7 +570,7 @@ function collect(m){
   document.getElementById('dropTitle').textContent = `${m.name} falls`;
   document.getElementById('dropBody').textContent =
     'Your half: ' + (lines.length ? lines.join(', ') + '.' : 'nothing, but it is done.') +
-    (prefix ? ` New title fragment: "${prefix}".` : '');
+    (prefix ? ` New title words: "${prefix}" and "${subject}".` : ` New title word: "${subject}".`);
   document.getElementById('dropModal').classList.add('open');
   save();
 }
