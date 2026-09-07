@@ -82,6 +82,11 @@ const SPECIES_KEYS = Object.keys(SPECIES);
    Teen, 20 well into Adult. Nothing is ever taken away once it's bought. */
 const CATALOG = [
   { id:'hat-beanie',   slot:'hat',        name:'Cat-ear beanie', price:600, unlock:1, fit:{} },
+  { id:'hat-pumpkin',  slot:'hat',        name:'Pumpkin hat',    price:650, unlock:4, fit:{
+      child: { x:49.9, y:52.5, w:81.5 },
+      teen:  { x:50.3, y:53.1, w:95.5 },
+      adult: { x:50.1, y:51.3, w:100  }
+    } },
   { id:'top-hoodie',   slot:'top',        name:'Paw hoodie',     price:800, unlock:1, fit:{} },
   { id:'bot-shorts',   slot:'bottoms',    name:'Cargo shorts',   price:550, unlock:1, fit:{} },
   { id:'shoe-hitops',  slot:'shoes',      name:'Paw hi-tops',    price:650, unlock:2, fit:{} },
