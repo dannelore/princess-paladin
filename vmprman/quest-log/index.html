@@ -1,1 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quest Log · Paladin</title>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="/dannelore/quest-log/?who=brendon">
+<meta name="robots" content="noindex">
+<script>
+  /* Brendon's log is the same set of files with a different document behind
+     it. This exists only so he has a clean path to bookmark — everything
+     after the redirect is the real page.
 
+     Anything after the "?" on this page is carried through, so
+     /vmprman/quest-log/?date=2026-09-01 still works. */
+  (function(){
+    var extra = location.search ? location.search.slice(1) + '&' : '';
+    location.replace('/dannelore/quest-log/?' + extra + 'who=brendon');
+  })();
+</script>
+<style>
+  body{
+    margin:0; min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Jost',sans-serif; color:#6B5E54;
+    background:linear-gradient(135deg,#F6D9E6 0%,#F2C9DC 100%);
+  }
+  p{ font-family:'Cormorant Garamond',serif; font-style:italic; font-size:18px; }
+  a{ color:#C85D87; }
+</style>
+</head>
+<body>
+  <p>Opening the Paladin's quest log&hellip;
+     <a href="/dannelore/quest-log/?who=brendon">Continue</a> if nothing happens.</p>
+</body>
+</html>
