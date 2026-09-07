@@ -414,6 +414,37 @@ const TODAY_KEY = dateKey(TODAY);
 const BACKFILL_DAYS = 13;
 const MIN_DATE = addDays(TODAY, -BACKFILL_DAYS);
 
+const PEOPLE = {
+  danni: {
+    name:'Danni', doc:'danni-quest-log', emoji:'\uD83E\uDDDD\u200D\u2640\uFE0F',
+    starter:{ id:'p-woodrow', species:'cat', fur:'black',
+              eyeColor:'yellow', eyeShape:'slit', name:'Lord Woodrow' }
+  },
+  brendon: {
+    name:'Brendon', doc:'brendon-quest-log', emoji:'\uD83E\uDDDB\u200D\u2642\uFE0F',
+    /* No name — he picks one. The pets page prompts until he does. */
+    starter:{ id:'p-first', species:'cat', fur:'black',
+              eyeColor:'green', eyeShape:'slit', name:'' }
+  }
+};
+
+function currentPerson(){
+  let who = 'danni';
+  try{
+    const q = new URLSearchParams(location.search).get('who');
+    if(q && PEOPLE[q.toLowerCase()]) who = q.toLowerCase();
+  }catch(e){}
+  return who;
+}
+
+/* Keeps ?who= on internal links so you don't fall back into the other log. */
+function personLink(href){
+  const who = currentPerson();
+  if(who === 'danni') return href;
+  return href + (href.includes('?') ? '&' : '?') + 'who=' + who;
+}
+
+
 /* ==========================================================================
    STATE
    ========================================================================== */
@@ -427,15 +458,17 @@ const STREAK_PER_DAY = 0.02;
 const STREAK_CAP_DAYS = 20;
 const MEOW_PER_GOLD = 500;
 
-/* Everyone starts with one companion, so something is growing from day one. */
-function starterPet(){
+/* Everyone starts with one companion, so something is growing from day one.
+   Whose log it is decides who that companion is. */
+function starterPet(who){
+  const spec = (PEOPLE[who || currentPerson()] || PEOPLE.danni).starter;
   return {
-    id: 'p-woodrow',
-    species: 'cat',
-    name: 'Lord Woodrow',
-    fur: 'black',
-    eyeColor: 'yellow',
-    eyeShape: 'slit',
+    id: spec.id,
+    species: spec.species,
+    name: spec.name,
+    fur: spec.fur,
+    eyeColor: spec.eyeColor,
+    eyeShape: spec.eyeShape,
     tier: 'active',
     xp: 0, hunger: 100,
     outfit: {},
@@ -497,27 +530,6 @@ function migrate(s){
    One set of files serves both logs. ?who=brendon switches which document
    is loaded; everything except monsters is per person.
    ========================================================================== */
-const PEOPLE = {
-  danni:   { name:'Danni',   doc:'danni-quest-log',   emoji:'\uD83E\uDDDD\u200D\u2640\uFE0F' },
-  brendon: { name:'Brendon', doc:'brendon-quest-log', emoji:'\uD83E\uDDDB\u200D\u2642\uFE0F' }
-};
-
-function currentPerson(){
-  let who = 'danni';
-  try{
-    const q = new URLSearchParams(location.search).get('who');
-    if(q && PEOPLE[q.toLowerCase()]) who = q.toLowerCase();
-  }catch(e){}
-  return who;
-}
-
-/* Keeps ?who= on internal links so you don't fall back into the other log. */
-function personLink(href){
-  const who = currentPerson();
-  if(who === 'danni') return href;
-  return href + (href.includes('?') ? '&' : '?') + 'who=' + who;
-}
-
 const MONSTER_DOC = 'shared-monsters';
 const STORE_KEY = 'questlog-v6';
 
