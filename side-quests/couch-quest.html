@@ -5,142 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Couch Quest — Princess &amp; Paladin</title>
 
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/pp-tracker.css">
 <link rel="stylesheet" href="/assets/pp-progress.css">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
-  .pp-sidequest{
-    background-image: linear-gradient(135deg,#EFEAF4 0%,#DFD5EC 100%);
-    background-attachment: fixed;
-  }
-
-  /* the one colour that isn't in pp.css — family green-teal */
-  :root{ --family: #5A8A7A; }
 
   /* ---------- toolbar ---------- */
   .cq-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:14px; }
-  .cq-bar .cq-spacer{ flex:1 1 auto; }
-
-  .cq-filter{
-    font-family:var(--font-body); font-size:.74rem; font-weight:500;
-    letter-spacing:.1em; text-transform:uppercase; color:var(--gold);
-    background:var(--panel); border:1px solid var(--line-gold);
-    border-radius:999px; padding:7px 15px; cursor:pointer;
-    transition:color .15s ease, background .15s ease, border-color .15s ease;
-  }
-  .cq-filter:hover{ color:#fff; background:var(--pink); border-color:var(--pink); }
-  .cq-filter[aria-pressed="true"]{ color:#fff; background:var(--sage); border-color:var(--sage); }
-
-  .cq-selects{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px; }
-  .cq-pick{ display:flex; align-items:center; gap:6px; }
-  .cq-pick label{
-    font-family:var(--font-body); font-size:.66rem; font-weight:600;
-    letter-spacing:.12em; text-transform:uppercase; color:var(--gold);
-  }
-  .cq-pick select{
-    font-family:var(--font-body); font-size:.84rem; color:var(--ink);
-    background:var(--panel); border:1px solid var(--line-gold);
-    border-radius:999px; padding:6px 12px; cursor:pointer;
-  }
-  .cq-pick select:focus{ outline:2px solid var(--pink); outline-offset:1px; }
-  .cq-reset{
-    font-family:var(--font-serif); font-style:italic; font-size:.88rem;
-    color:var(--ink-soft); background:none; border:0; cursor:pointer; padding:4px 2px;
-  }
-  .cq-reset:hover{ color:var(--burgundy); }
-
-  .cq-count{ font-family:var(--font-serif); font-style:italic; font-size:.95rem; color:var(--ink-soft); }
-  .cq-sync{ font-family:var(--font-body); font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); }
-  .cq-sync[data-state="saving"]{ color:var(--gold); }
-  .cq-sync[data-state="error"]{ color:var(--blade); }
 
   /* ---------- form + detail ---------- */
   .cq-form, .cq-detail{ display:none; margin-bottom:22px; }
-  .cq-form.open, .cq-detail.open{ display:block; }
-
-  .cq-fields{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .cq-field{ display:flex; flex-direction:column; gap:5px; min-width:0; }
-  .cq-field.wide{ grid-column:1 / -1; }
-  .cq-field.hidden{ display:none; }
-
-  .cq-field label{
-    font-family:var(--font-body); font-size:.72rem; font-weight:600;
-    letter-spacing:.12em; text-transform:uppercase; color:var(--gold);
-  }
-  .cq-field input, .cq-field select{
-    font-family:var(--font-body); font-size:.95rem; color:var(--ink);
-    background:#fff; border:1px solid var(--line);
-    border-radius:var(--radius-sm); padding:9px 12px; width:100%;
-  }
-  .cq-field input:focus, .cq-field select:focus{ outline:2px solid var(--pink); outline-offset:1px; }
-
-  .cq-hint{ font-family:var(--font-serif); font-style:italic; font-size:.85rem; color:var(--ink-soft); }
-  .cq-inline{ display:flex; gap:8px; align-items:flex-start; }
-  .cq-inline input{ flex:1 1 auto; }
-
-  .cq-results{ display:none; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); gap:10px; margin-top:12px; }
-  .cq-results.open{ display:grid; }
-  .cq-result{
-    text-align:left; padding:0; overflow:hidden; cursor:pointer;
-    background:var(--panel); border:1px solid var(--line);
-    border-radius:var(--radius-sm); transition:border-color .15s ease, transform .15s ease;
-  }
-  .cq-result:hover{ border-color:var(--pink); transform:translateY(-2px); }
-  .cq-result img{ width:100%; aspect-ratio:2/3; object-fit:cover; display:block; background:var(--parchment); }
-  .cq-rname{ font-family:var(--font-serif); font-weight:600; font-size:.86rem; line-height:1.2; padding:7px 8px 2px; color:var(--ink); }
-  .cq-rmeta{ font-family:var(--font-body); font-size:.7rem; color:var(--ink-soft); padding:0 8px 8px; }
-
-  .cq-tagpick{ display:flex; flex-wrap:wrap; gap:6px; }
-  .cq-tagpick button{
-    font-family:var(--font-body); font-size:.74rem; color:var(--ink-soft);
-    background:var(--parchment); border:1px solid var(--parchment-border);
-    border-radius:999px; padding:4px 11px; cursor:pointer;
-  }
-  .cq-tagpick button[aria-pressed="true"]{ color:#fff; background:var(--sage); border-color:var(--sage); }
-
-  .cq-actions{ display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
 
   /* ---------- detail ---------- */
   .cq-detail-head{ display:flex; gap:16px; align-items:flex-start; margin-bottom:20px; }
-  .cq-detail-head img{ width:84px; aspect-ratio:2/3; object-fit:cover; border-radius:var(--radius-sm); flex-shrink:0; background:var(--parchment); }
-  .cq-detail-head h2{ margin:0 0 4px; font-size:1.5rem; }
-  .cq-detail-meta{ font-family:var(--font-serif); font-style:italic; color:var(--ink-soft); margin:0 0 10px; }
-
-  .cq-block{ padding:14px 0; border-top:1px solid var(--line); }
-  .cq-block:first-child{ border-top:0; }
-  .cq-block-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:9px; }
-  .cq-block-name{ font-family:var(--font-body); font-size:.72rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); }
-  .cq-block-count{ font-family:var(--font-serif); font-style:italic; font-size:.9rem; color:var(--ink-soft); }
-
-  .cq-step{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-top:10px; }
-  .cq-step button{
-    font-family:var(--font-body); font-size:.78rem; font-weight:500;
-    min-width:34px; height:30px; padding:0 10px; line-height:1;
-    color:var(--gold); background:var(--panel); border:1px solid var(--line-gold);
-    border-radius:999px; cursor:pointer;
-  }
-  .cq-step button:hover{ color:#fff; background:var(--pink); border-color:var(--pink); }
-  .cq-step input{
-    font-family:var(--font-body); font-size:.9rem; width:70px; text-align:center;
-    color:var(--ink); background:#fff; border:1px solid var(--line);
-    border-radius:var(--radius-sm); padding:6px 8px;
-  }
-  .cq-check-label{
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-family: var(--font-body);
-    font-size: .9rem;
-    color: var(--ink);
-    cursor: pointer;
-    user-select: none;
-  }
-  .cq-check-label input[type="checkbox"]{
-    width: 16px; height: 16px;
-    accent-color: var(--pink);
-    cursor: pointer;
-  }
 
   /* rewatch badge on card */
   .cq-rewatch{
@@ -158,17 +38,6 @@
 
   /* streaming service badges on card — colour comes from an inline style */
   .cq-streams{ display:flex; flex-wrap:wrap; gap:3px; }
-  .cq-stream{
-    font-family: var(--font-body);
-    font-size: .62rem;
-    font-weight: 600;
-    letter-spacing: .02em;
-    color: #fff;
-    border: 1px solid transparent;
-    border-radius: 999px;
-    padding: 2px 6px;
-    white-space: nowrap;
-  }
   /* pale swatches need dark text */
   .cq-stream[data-light="true"]{ color: var(--ink); }
 
@@ -178,22 +47,9 @@
     border-style: dotted;
     opacity: .75;
   }
-  .cq-stream[data-sub="false"]::after{ content: " ✦"; font-size: .6rem; }
 
   /* the subscriptions panel */
   .cq-subs{ display:none; margin-bottom:22px; }
-  .cq-subs.open{ display:block; }
-  .cq-subs .cq-tagpick button{
-    color: #fff;
-    border-color: transparent;
-    opacity: .38;
-    filter: grayscale(.6);
-  }
-  .cq-subs .cq-tagpick button[aria-pressed="true"]{
-    opacity: 1;
-    filter: none;
-  }
-  .cq-subs .cq-tagpick button[data-light="true"]{ color: var(--ink); }
 
   /* start / end dates */
   .cq-dates{
@@ -203,35 +59,6 @@
     gap: 8px;
     margin-top: 10px;
   }
-  .cq-dates label{
-    font-family: var(--font-body);
-    font-size: .66rem;
-    font-weight: 600;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--gold);
-  }
-  .cq-dates input[type="date"]{
-    font-family: var(--font-body);
-    font-size: .84rem;
-    color: var(--ink);
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    padding: 5px 9px;
-  }
-  .cq-dates input[type="date"]:focus{ outline: 2px solid var(--pink); outline-offset: 1px; }
-  .cq-dates .cq-dateclear{
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-size: .84rem;
-    color: var(--ink-soft);
-    background: none;
-    border: 0;
-    cursor: pointer;
-    padding: 4px 2px;
-  }
-  .cq-dates .cq-dateclear:hover{ color: var(--burgundy); }
 
   /* the small date line on a card */
   .cq-dateline{
@@ -241,46 +68,8 @@
     color: var(--gold-deep);
   }
 
-  .cq-ep-count{
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-size: .9rem;
-    color: var(--ink);
-    background: transparent;
-    border: 0;
-    border-bottom: 1px dashed var(--line-strong);
-    border-radius: 0;
-    width: 2.6em;
-    text-align: center;
-    padding: 0 2px;
-  }
-  .cq-ep-count:focus{ outline: none; border-bottom-color: var(--pink); }
-
-  .cq-step .cq-steplabel{ font-family:var(--font-serif); font-style:italic; font-size:.86rem; color:var(--ink-soft); }
-
   /* ---------- grid ---------- */
   .cq-grid{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px; }
-  @media (max-width:900px){ .cq-grid{ grid-template-columns:repeat(4,minmax(0,1fr)); } }
-  @media (max-width:700px){ .cq-grid{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
-
-  .cq-card{
-    position:relative; display:flex; flex-direction:column; padding:0; overflow:hidden;
-    border-radius:var(--radius-sm); background:var(--panel); border:1px solid var(--line);
-    box-shadow:var(--lift); transition:transform .18s ease, box-shadow .18s ease;
-  }
-  .cq-card:hover{ transform:translateY(-3px); box-shadow:var(--lift-lg); }
-  .cq-card.is-done{ opacity:.62; }
-
-  .cq-posterwrap{ position:relative; cursor:pointer; }
-  .cq-poster{ aspect-ratio:2/3; width:100%; object-fit:cover; display:block; background:var(--parchment); }
-  .cq-poster-none{
-    aspect-ratio:2/3; display:flex; align-items:center; justify-content:center;
-    padding:14px; text-align:center;
-    background:radial-gradient(ellipse at 30% 25%,rgba(156,116,64,.14),transparent 60%),var(--parchment);
-    font-family:var(--font-serif); font-style:italic; font-size:.95rem;
-    color:var(--gold-deep); line-height:1.3;
-  }
-  .cq-ring{ position:absolute; bottom:7px; right:7px; background:rgba(255,253,248,.92); border-radius:50%; padding:3px; }
 
   /* who badge — top left of the poster */
   .cq-who{
@@ -291,88 +80,55 @@
     border:1px solid transparent;
   }
   /* cream needs a hairline or it vanishes on a pale poster */
-  .cq-who[data-who="together"]{ color:var(--ink);  background:#F7F1E4; border-color:var(--gold); }
-  .cq-who[data-who="danni"]{    color:#fff;        background:var(--pink); }
-  .cq-who[data-who="brendon"]{  color:#fff;        background:var(--blade); }
-  .cq-who[data-who="family"]{   color:#fff;        background:var(--family); }
-
-  .cq-body{ padding:11px 12px 13px; display:flex; flex-direction:column; gap:7px; }
-  .cq-name{ font-family:var(--font-serif); font-weight:600; font-size:1rem; line-height:1.2; margin:0; color:var(--ink); word-break:break-word; }
-  .cq-where{ font-family:var(--font-serif); font-style:italic; font-size:.85rem; color:var(--ink-soft); }
-
-  .cq-meta{ display:flex; flex-wrap:wrap; gap:5px; align-items:center; }
-
-  .cq-status{
-    font-family:var(--font-body); font-size:.68rem; font-weight:600;
-    letter-spacing:.1em; text-transform:uppercase; color:#fff; border:none;
-    border-radius:999px; padding:4px 11px; cursor:pointer;
-  }
-  .cq-status[data-status="want"]{ background:var(--gold); }
-  .cq-status[data-status="watching"]{ background:var(--pink); }
-  .cq-status[data-status="watched"]{ background:var(--sage-deep); }
-
-  .cq-pri{
-    font-family:var(--font-body); font-size:.66rem; font-weight:600;
-    letter-spacing:.08em; text-transform:uppercase;
-    border-radius:999px; padding:3px 9px; border:1px solid transparent;
-  }
-  .cq-pri[data-tier="high"]{ color:#fff; background:var(--burgundy); }
-  .cq-pri[data-tier="mid"]{ color:var(--gold-deep); background:var(--parchment); border-color:var(--parchment-border); }
-  .cq-pri[data-tier="low"]{ color:var(--ink-soft); background:rgba(46,36,31,.07); }
-
-  .cq-tags{ display:flex; flex-wrap:wrap; gap:4px; }
-  .cq-tags span{
-    font-family:var(--font-body); font-size:.68rem; color:var(--ink-soft);
-    background:rgba(46,36,31,.07); border-radius:999px; padding:2px 8px;
-  }
-
-  .cq-tools{ position:absolute; top:7px; right:7px; display:flex; gap:5px; opacity:0; transition:opacity .15s ease; }
-  .cq-card:hover .cq-tools, .cq-card:focus-within .cq-tools{ opacity:1; }
-  .cq-tools button{
-    width:26px; height:26px; display:flex; align-items:center; justify-content:center;
-    font-size:.8rem; color:var(--ink); background:rgba(255,253,248,.94);
-    border:1px solid var(--line); border-radius:999px; cursor:pointer; line-height:1;
-  }
-  .cq-tools button:hover{ color:#fff; background:var(--burgundy); border-color:var(--burgundy); }
-  @media (hover:none){ .cq-tools{ opacity:1; } }
-
-  @media (max-width:560px){
-    .cq-fields{ grid-template-columns:1fr; }
-    .cq-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
-    .cq-selects{ gap:8px; }
-  }
-</style>
+  .cq-who[data-who="together"]{ color:var(--ink);  background:#F7F1E4; border-color:var(--gold); }</style>
 </head>
 
 <body class="pp-sidequest">
-<div class="pp-wrap">
 
-  <nav class="pp-nav" style="margin-top:28px;">
-    <a href="/">Home</a>
-    <a href="/castle-keep/">Castle Keeping</a>
-    <a href="/dannelore/quest-log/">Quest Log</a>
-    <a href="/side-quest/">Side Quests</a>
-    <a href="/templates/">Templates</a>
-  </nav>
-
-  <header class="pp-hero" style="padding:8px 0 28px;">
-    <div class="pp-emblem pp-emblem-sm">
-      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#C85D87" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M8 44 H56" stroke="#C85D87" stroke-width="3" stroke-linecap="round"/>
-        <circle cx="32" cy="10" r="3.5" fill="#9C7440"/><circle cx="4" cy="19" r="2.5" fill="#9C7440"/>
-        <circle cx="60" cy="19" r="2.5" fill="#9C7440"/><circle cx="32" cy="36" r="3" fill="#9C7440"/>
-      </svg>
-      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M32 4 L38 14 V38 H26 V14 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="2" stroke-linejoin="round"/>
-        <rect x="14" y="38" width="36" height="6" rx="3" fill="#9C7440"/>
-        <rect x="29" y="44" width="6" height="12" fill="#9C7440"/>
-        <circle cx="32" cy="58" r="4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.5"/>
-      </svg>
+<header class="pp-ribbon">
+  <div class="pp-ribbon-inner">
+    <a class="pp-ribbon-mark" href="/" aria-label="Princess &amp; Paladin home">
+      <span class="pp-emblem pp-emblem-sm" style="margin:0;">
+        <!-- Tiara -->
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M8 44 H56" stroke="#9C7440" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="32" cy="10" r="3.5" fill="#9C7440"/>
+          <circle cx="4" cy="18" r="3" fill="#9C7440"/>
+          <circle cx="60" cy="18" r="3" fill="#9C7440"/>
+        </svg>
+        <!-- Sword -->
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g transform="translate(16,0)">
+            <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
+            <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+            <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
+            <circle cx="16" cy="60" r="3.4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+          </g>
+        </svg>
+      </span>
+    </a>
+    <div class="pp-ribbon-titles">
+      <span class="pp-ribbon-eyebrow">Side Quests</span>
+      <span class="pp-ribbon-title">Couch Quest</span>
     </div>
-    <h1 class="pp-title" style="font-size:clamp(2.2rem,6vw,3.6rem);">Couch Quest</h1>
-    <p class="pp-tagline">Everything we said we'd get around to watching</p>
-  </header>
+    <nav class="pp-nav" aria-label="Main navigation">
+      <a href="/">Home</a>
+      <a href="/dannelore/">Princess</a>
+      <a href="/vmprman/">Paladin</a>
+      <a href="/castle/">Castle Keep</a>
+      <a href="/side-quests/" aria-current="page">Side Quests</a>
+      <a href="/templates/">Templates</a>
+    </nav>
+  </div>
+</header>
+
+<div class="pp-wrap">
+  <nav class="pp-subnav" aria-label="Section navigation">
+    <a href="/side-quests/">Side Quests</a>
+    <a href="/side-quests/couch-quest.html" aria-current="page">Couch Quest</a>
+    <a href="/side-quests/spooky-quest.html">Spooky Quest</a>
+  </nav>
 
   <div class="cq-bar">
     <button class="cq-filter" data-filter="all" aria-pressed="true">All</button>
@@ -591,7 +347,7 @@
 
   <footer class="pp-footer">
     <p class="pp-footer-flourish">♕ ───────── ⚔ ───────── ♕</p>
-    <p><a class="pp-back" href="/side-quest/">Back to Side Quests</a></p>
+    <p><a class="pp-back" href="/side-quests/">Back to Side Quests</a></p>
   </footer>
 
 </div>
