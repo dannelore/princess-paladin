@@ -132,8 +132,8 @@
   </nav>
 
   <div class="cq-bar">
-    <button class="cq-filter" data-filter="all" aria-pressed="true">All</button>
-    <button class="cq-filter" data-filter="unfinished" aria-pressed="false">Unfinished</button>
+    <button class="cq-filter" data-filter="unfinished" aria-pressed="true">Current</button>
+    <button class="cq-filter" data-filter="all" aria-pressed="false">Everything</button>
     <button class="cq-filter" data-filter="want" aria-pressed="false">TBW</button>
     <button class="cq-filter" data-filter="watching" aria-pressed="false">Watching</button>
     <button class="cq-filter" data-filter="watched" aria-pressed="false">Watched</button>
@@ -412,7 +412,7 @@ const hasTmdb = () => TMDB_KEY && TMDB_KEY.indexOf("PASTE") !== 0;
 
 let state  = { items: [], subs: null };   // subs: array of subscribed service names
 let editId = null, openId = null, pickedStreams = [];
-let filter = "all", fltKind = "all", fltWho = "all", fltPri = "all", fltStream = "all";
+let filter = "unfinished", fltKind = "all", fltWho = "all", fltPri = "all", fltStream = "all";
 let sortBy = "priority-desc";
 let pendingLookup = null;
 let saving = false, docRef = null, saveTimer = null;
@@ -837,7 +837,12 @@ function byTitle(a, b){
 function visibleItems(){
   let rows = state.items.filter(i => {
     if(filter === "rewatch"    && !i.rewatch) return false;
-    if(filter === "unfinished" && i.status === "watched") return false;
+    /* Watched titles are archived rather than listed: they drop out of the
+       default view so the page stays a list of what's still to watch. The
+       Watched tab and Everything both still show the complete set, so nothing
+       is actually hidden — a rewatch you've flagged even stays in Current,
+       because you do still mean to put it on. */
+    if(filter === "unfinished" && i.status === "watched" && !i.rewatch) return false;
     const statusFilters = ["want","watching","watched"];
     if(statusFilters.includes(filter) && i.status !== filter) return false;
     if(fltKind !== "all" && (i.type || "series") !== fltKind) return false;
@@ -936,7 +941,13 @@ function render(){
   const shown = visibleItems();
   grid.innerHTML = "";
   $("empty").style.display = shown.length ? "none" : "block";
-  $("empty").textContent = state.items.length ? "Nothing matches those filters." : "Nothing here yet. Add the first one.";
+  /* An empty Current list usually means you've watched the lot, not that the
+     filters are wrong — so say the useful thing and point at the archive. */
+  $("empty").textContent = !state.items.length
+    ? "Nothing here yet. Add the first one."
+    : (filter === "unfinished"
+        ? "Nothing left to watch. The Watched tab has everything you've finished."
+        : "Nothing matches those filters.");
 
   shown.forEach(item => {
     const t = totals(item);
@@ -1433,10 +1444,11 @@ $("fltStream").onchange = e => { fltStream = e.target.value; render(); };
 $("sortBy").onchange  = e => { sortBy  = e.target.value; render(); };
 
 $("resetBtn").onclick = () => {
-  filter = fltKind = fltWho = fltPri = fltStream = "all";
+  fltKind = fltWho = fltPri = fltStream = "all";
+  filter = "unfinished";
   $("fltKind").value = $("fltWho").value = $("fltPri").value = $("fltStream").value = "all";
   document.querySelectorAll(".cq-filter").forEach(b =>
-    b.setAttribute("aria-pressed", b.dataset.filter === "all" ? "true" : "false"));
+    b.setAttribute("aria-pressed", b.dataset.filter === "unfinished" ? "true" : "false"));
   render();
 };
 
@@ -1456,5 +1468,6 @@ renderSubsPicker();
 render();
 startFirebase();
 </script>
+<script src="/assets/pp-nav.js" defer></script>
 </body>
 </html>

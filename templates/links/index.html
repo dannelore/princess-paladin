@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Link Directory &middot; Princess &amp; Paladin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+
+<style>
+  /* ======================================================================
+     LINK DIRECTORY
+
+     Nothing on this page is typed out by hand. Every folder, group and row
+     below is drawn from PPNav.DIRECTORY in /assets/pp-nav.js — the same list
+     the ribbon dropdowns are built from.
+
+     TO ADD A PAGE: add it to DIRECTORY in pp-nav.js. It shows up here and in
+     the nav at the same time, and there is nothing to keep in sync. This file
+     only ever needs touching if you want the directory to LOOK different.
+     ====================================================================== */
+
+  body{ font-weight: 300; }
+
+  .lead{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.02rem;
+    color: var(--ink-soft);
+    text-align: center;
+    max-width: 620px;
+    margin: 0 auto 22px;
+    line-height: 1.5;
+  }
+
+  .toolbar{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 24px;
+  }
+  .toolbar .spacer{ flex: 1 1 auto; }
+
+  .search{
+    flex: 1 1 220px;
+    max-width: 320px;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: var(--ink);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 8px 16px;
+  }
+  .search:focus{ outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .tally{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+  }
+
+  /* --- one folder --- */
+  .section{ margin-bottom: 18px; }
+  .section.is-hidden{ display: none; }
+
+  .sec-head{
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    cursor: pointer;
+    list-style: none;
+  }
+  .sec-head::-webkit-details-marker{ display: none; }
+  .sec-head h2{ font-size: 1.45rem; margin: 0; color: var(--burgundy); }
+  .sec-head .path{
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--sage-deep);
+    flex: 1 1 auto;
+  }
+  .sec-head .count{
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+  }
+  .chev{
+    flex: 0 0 auto;
+    width: 14px; height: 14px;
+    color: var(--gold);
+    transition: transform 0.2s ease;
+  }
+  .section[open] .chev{ transform: rotate(90deg); }
+
+  .sec-body{ padding-top: 12px; }
+
+  /* --- a tier inside a folder, e.g. Quest Log under Princess --- */
+  .group{ margin-top: 16px; }
+  .group:first-child{ margin-top: 0; }
+  .group-name{
+    font-family: var(--font-body);
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 4px;
+  }
+  /* A folder with one tier doesn't need the tier's name repeated back. */
+  .section.single-group .group-name{ display: none; }
+
+  /* --- a row --- */
+  .link-row{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 0;
+    border-top: 1px dashed var(--line-gold);
+  }
+  .group .link-row:first-of-type{ border-top: none; }
+  .link-row.is-hidden{ display: none; }
+
+  .link-main{ flex: 1 1 auto; min-width: 0; }
+  .link-main a{
+    color: var(--burgundy);
+    text-decoration: none;
+    font-size: 1rem;
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+  .link-main a:hover{ color: var(--pink); border-bottom-color: var(--pink); }
+  .link-note{
+    display: block;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    line-height: 1.35;
+  }
+
+  .url{
+    font-size: 0.76rem;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 34%;
+  }
+
+  .copy{
+    flex: 0 0 auto;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    padding: 4px 12px;
+  }
+  .copy.done{ background: var(--sage); border-color: var(--sage); color: #fff; }
+
+  .no-match{
+    text-align: center;
+    padding: 28px;
+    font-family: var(--font-serif);
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+  .no-match.is-hidden{ display: none; }
+
+  @media (max-width: 620px){
+    .url{ display: none; }
+    .sec-head{ flex-wrap: wrap; }
+  }
+</style>
+</head>
+
+<body class="pp-templates" data-nav-eyebrow="Templates" data-nav-title="Link Directory">
+
+<div class="pp-wrap">
+
+  <div class="pp-page-title">
+    <h2>Link Directory</h2>
+  </div>
+
+  <p class="lead">
+    Every page on the site, in the order it sits in the folders. This list and
+    the dropdowns in the ribbon above are the same list — add a page to
+    <code>DIRECTORY</code> in <code>/assets/pp-nav.js</code> and it appears in both.
+  </p>
+
+  <div class="toolbar">
+    <input class="search" id="search" type="search" placeholder="Filter by name or path…" autocomplete="off" aria-label="Filter links">
+    <span class="tally" id="tally"></span>
+    <span class="spacer"></span>
+    <button class="pp-btn pp-btn-quiet" id="expandAll">Expand all</button>
+    <button class="pp-btn pp-btn-quiet" id="copyAll">Copy every link</button>
+  </div>
+
+  <div id="directory"></div>
+  <p class="no-match is-hidden" id="noMatch">Nothing matches that.</p>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+
+</div>
+
+<script src="/assets/pp-nav.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var ORIGIN = "princessandpaladin.com";
+  var $ = function(id){ return document.getElementById(id); };
+
+  function esc(s){
+    var d = document.createElement("div");
+    d.textContent = s == null ? "" : s;
+    return d.innerHTML;
+  }
+
+  var CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+             'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+             '<polyline points="9 18 15 12 9 6"/></svg>';
+
+  /* ---------------- build ---------------- */
+  function build(){
+    var box = $("directory");
+    box.innerHTML = "";
+
+    PPNav.DIRECTORY.forEach(function(folder){
+      var groups = folder.groups || [];
+      var pages  = PPNav.pagesOf(folder);
+
+      var sec = document.createElement("details");
+      sec.className = "pp-panel pp-panel-md section" +
+                      (groups.length < 2 ? " single-group" : "");
+      sec.open = true;
+
+      var head = '<summary class="sec-head">' +
+                   '<h2>' + esc(folder.label) + '</h2>' +
+                   '<span class="path">' + esc(folder.href) + '</span>' +
+                   '<span class="count">' + pages.length + '</span>' +
+                   CHEV +
+                 '</summary>';
+
+      var body = '<div class="sec-body">';
+      groups.forEach(function(g){
+        body += '<div class="group">';
+        body += '<span class="group-name">' + esc(g.name) + '</span>';
+        (g.pages || []).forEach(function(p){
+          var full = ORIGIN + p.href;
+          body += '<div class="link-row" data-hay="' +
+                    esc((p.label + " " + p.href + " " + (p.note || "")).toLowerCase()) + '">' +
+                    '<span class="link-main">' +
+                      '<a href="' + esc(p.href) + '">' + esc(p.label) + '</a>' +
+                      (p.note ? '<span class="link-note">' + esc(p.note) + '</span>' : '') +
+                    '</span>' +
+                    '<span class="url">' + esc(full) + '</span>' +
+                    '<button class="pp-btn pp-btn-quiet copy" data-copy="' + esc(p.href) + '">Copy</button>' +
+                  '</div>';
+        });
+        body += '</div>';
+      });
+      body += '</div>';
+
+      sec.innerHTML = head + body;
+      box.appendChild(sec);
+    });
+
+    applyFilter();
+  }
+
+  /* ---------------- filter ---------------- */
+  function applyFilter(){
+    var q = $("search").value.trim().toLowerCase();
+    var shown = 0, total = 0;
+
+    document.querySelectorAll(".section").forEach(function(sec){
+      var visibleHere = 0;
+      sec.querySelectorAll(".link-row").forEach(function(row){
+        total++;
+        var hit = !q || row.dataset.hay.indexOf(q) > -1;
+        row.classList.toggle("is-hidden", !hit);
+        if(hit){ visibleHere++; shown++; }
+      });
+
+      /* Hide a whole tier when the filter emptied it, so you don't scroll
+         past a run of headings with nothing underneath. */
+      sec.querySelectorAll(".group").forEach(function(g){
+        var any = g.querySelector(".link-row:not(.is-hidden)");
+        g.style.display = any ? "" : "none";
+      });
+
+      sec.classList.toggle("is-hidden", visibleHere === 0);
+      sec.querySelector(".count").textContent = visibleHere;
+      if(q && visibleHere) sec.open = true;
+    });
+
+    $("noMatch").classList.toggle("is-hidden", shown > 0);
+    $("tally").textContent = q ? shown + " of " + total : total + " pages";
+  }
+
+  /* ---------------- copying ---------------- */
+  function flash(btn, word){
+    var was = btn.textContent;
+    btn.textContent = word;
+    btn.classList.add("done");
+    setTimeout(function(){ btn.textContent = was; btn.classList.remove("done"); }, 1200);
+  }
+
+  /* navigator.clipboard needs a secure context and isn't there on every
+     browser, so fall back to a throwaway textarea. */
+  function toClipboard(text, btn){
+    var done = function(){ flash(btn, "Copied"); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ legacy(text, btn, done); });
+    } else {
+      legacy(text, btn, done);
+    }
+  }
+  function legacy(text, btn, done){
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand("copy"); done(); }
+    catch(e){ flash(btn, "Failed"); }
+    document.body.removeChild(ta);
+  }
+
+  document.addEventListener("click", function(e){
+    var btn = e.target.closest("[data-copy]");
+    if(!btn) return;
+    toClipboard("https://" + ORIGIN + btn.dataset.copy, btn);
+  });
+
+  $("copyAll").addEventListener("click", function(){
+    var lines = [];
+    PPNav.DIRECTORY.forEach(function(folder){
+      lines.push(folder.label);
+      PPNav.pagesOf(folder).forEach(function(p){
+        lines.push("  " + p.label + " — https://" + ORIGIN + p.href);
+      });
+      lines.push("");
+    });
+    toClipboard(lines.join("\n").trim(), this);
+  });
+
+  var allOpen = true;
+  $("expandAll").addEventListener("click", function(){
+    allOpen = !allOpen;
+    document.querySelectorAll(".section").forEach(function(s){ s.open = allOpen; });
+    this.textContent = allOpen ? "Collapse all" : "Expand all";
+  });
+
+  $("search").addEventListener("input", applyFilter);
+
+  build();
+})();
+</script>
+</body>
+</html>

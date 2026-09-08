@@ -386,6 +386,15 @@
       <label for="mItem">Drops a wardrobe item</label>
     </div>
 
+    <!-- Which garment, specifically. The list is filled from PQ.CATALOG at
+         load, so adding an item to the catalog puts it here too. -->
+    <div id="mItemPick" style="margin-top:10px;display:none;">
+      <label class="f" for="mItemId">Which item</label>
+      <select id="mItemId"></select>
+    </div>
+
+    <p class="hint" style="margin:8px 0 0;">Companions and garments aren't split &mdash; you each get one, so neither of you is racing the other to the drop.</p>
+
     <h3 style="font-family:var(--font-serif);font-size:15px;font-weight:600;margin:18px 0 8px;">Title fragments</h3>
     <div class="grid2">
       <div>
@@ -451,6 +460,34 @@ function esc(s){ const d = document.createElement('div'); d.textContent = s == n
 
 let editingId = null;
 
+/* ---------- wardrobe drop picker ----------
+   Grouped by slot so a long catalog stays readable. "Something random" keeps
+   the old behaviour: the collector rolls whatever they don't own yet. */
+(function buildItemPicker(){
+  const sel = document.getElementById('mItemId');
+  sel.innerHTML = '<option value="">Something random they don\'t own</option>';
+  PQ.SLOTS.forEach(slot => {
+    const items = PQ.CATALOG.filter(i => i.slot === slot.key);
+    if(!items.length) return;
+    const g = document.createElement('optgroup');
+    g.label = slot.name;
+    items.forEach(i => {
+      const o = document.createElement('option');
+      o.value = i.id;
+      o.textContent = i.name;
+      g.appendChild(o);
+    });
+    sel.appendChild(g);
+  });
+})();
+
+function syncItemPick(){
+  document.getElementById('mItemPick').style.display =
+    document.getElementById('mItem').checked ? '' : 'none';
+}
+document.getElementById('mItem').addEventListener('change', syncItemPick);
+syncItemPick();
+
 document.querySelectorAll('.hp-preset button').forEach(b => {
   b.onclick = () => { document.getElementById('mHp').value = b.dataset.hp; };
 });
@@ -465,6 +502,7 @@ function readForm(){
       xp:   Math.max(0, parseInt(document.getElementById('mXp').value) || 0),
       pet:  document.getElementById('mPet').checked,
       item: document.getElementById('mItem').checked,
+      itemId: document.getElementById('mItemId').value || '',
       prefix:  document.getElementById('mPrefix').value.trim(),
       subject: document.getElementById('mSubject').value.trim()
     }
@@ -478,6 +516,8 @@ function resetForm(){
   document.getElementById('mXp').value = 200;
   document.getElementById('mPet').checked = false;
   document.getElementById('mItem').checked = false;
+  document.getElementById('mItemId').value = '';
+  syncItemPick();
   document.getElementById('mPrefix').value = '';
   document.getElementById('mSubject').value = '';
   editingId = null;
@@ -493,6 +533,8 @@ function loadForm(m){
   document.getElementById('mXp').value = m.reward.xp || 0;
   document.getElementById('mPet').checked = !!m.reward.pet;
   document.getElementById('mItem').checked = !!m.reward.item;
+  document.getElementById('mItemId').value = m.reward.itemId || '';
+  syncItemPick();
   document.getElementById('mPrefix').value = m.reward.prefix || '';
   document.getElementById('mSubject').value = m.reward.subject || '';
   document.getElementById('mSave').textContent = 'Save changes';
@@ -537,7 +579,10 @@ function rewardText(m){
   if(r.meow) bits.push(`<b>${r.meow}</b> Meow Bucks`);
   if(r.xp)   bits.push(`<b>${r.xp}</b> XP`);
   if(r.pet)  bits.push('a <b>new companion</b>');
-  if(r.item) bits.push('a <b>wardrobe item</b>');
+  if(r.item){
+    const named = r.itemId ? PQ.catalogItem(r.itemId) : null;
+    bits.push(named ? `a <b>${esc(named.name)}</b>` : 'a <b>wardrobe item</b>');
+  }
   let out = bits.length ? 'Drops ' + bits.join(', ') : 'Drops nothing — this one is for the satisfaction';
   const frag = [r.prefix, r.subject].filter(Boolean);
   if(frag.length) out += ` &nbsp;·&nbsp; title: <b>${frag.map(esc).join('</b> … <b>')}</b>`;
@@ -567,12 +612,15 @@ function collect(m){
   }
   if(r.meow){ S().meowBucks = (S().meowBucks || 0) + r.meow; lines.push(`${r.meow} Meow Bucks`); }
   if(r.xp){ PQ.addAccountXP(S(), r.xp); PQ.awardPetXP(S(), r.xp); lines.push(`${r.xp} XP`); }
+  /* Gold, Meow Bucks and XP are halved. The companion and the garment are
+     not — you each get your own, so collecting late costs you nothing. */
   if(r.pet){ S().petTokens = (S().petTokens || 0) + 1; lines.push('a companion waiting on the pets page'); }
   if(r.item){
-    const pool = PQ.CATALOG.filter(i => !(S().wardrobe[i.id] > 0));
-    const pick = (pool.length ? pool : PQ.CATALOG)[Math.floor(Math.random() * (pool.length ? pool.length : PQ.CATALOG.length))];
-    S().wardrobe[pick.id] = (S().wardrobe[pick.id] || 0) + 1;
-    lines.push(pick.name.toLowerCase());
+    const pick = PQ.pickRewardItem(S(), r.itemId);
+    if(pick){
+      S().wardrobe[pick.id] = (S().wardrobe[pick.id] || 0) + 1;
+      lines.push(pick.name.toLowerCase());
+    }
   }
 
   /* Fragments aren't halved — a word can't be split, and both of you should
@@ -592,7 +640,7 @@ function collect(m){
 
   document.getElementById('dropTitle').textContent = `${m.name} falls`;
   document.getElementById('dropBody').textContent =
-    'Your half: ' + (lines.length ? lines.join(', ') + '.' : 'nothing, but it is done.') +
+    'Your share: ' + (lines.length ? lines.join(', ') + '.' : 'nothing, but it is done.') +
     (prefix ? ` New title words: "${prefix}" and "${subject}".` : ` New title word: "${subject}".`);
   document.getElementById('dropModal').classList.add('open');
   save();
@@ -624,7 +672,7 @@ function monsterCard(m){
   if(m.dead && !PQ.hasCollected(M(), m.id, WHO)){
     const b = document.createElement('button');
     b.className = 'btn sm';
-    b.textContent = 'Collect your half';
+    b.textContent = 'Collect your share';
     b.onclick = () => collect(m);
     actions.appendChild(b);
   }
@@ -693,5 +741,6 @@ document.addEventListener('visibilitychange', () => {
 
 Promise.all([store.load(), monsterStore.load()]).then(render);
 </script>
+<script src="/assets/pp-nav.js" defer></script>
 </body>
 </html>

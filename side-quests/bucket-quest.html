@@ -170,6 +170,99 @@
   }
 
   /* steps */
+  /* ---- subtasks inside the add/edit form ----
+     The detail view has always had steps, but only once an item existed. You
+     couldn't sit down, think "Paris, and while we're there the Moulin Rouge",
+     and get both down in one go. This is that list, before the first save. */
+  .bq-steppick{ display:flex; flex-direction:column; gap:4px; }
+  .bq-steppick-row{
+    display:flex; align-items:center; gap:8px;
+    padding:6px 8px; border-radius:var(--radius-sm);
+    background:var(--panel-tint); border:1px solid var(--line);
+  }
+  .bq-steppick-row span{
+    flex:1 1 auto; min-width:0;
+    font-family:var(--font-serif); font-size:.98rem; color:var(--ink);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .bq-steppick-row.is-done span{ text-decoration:line-through; color:var(--ink-soft); }
+  .bq-steppick-row button{
+    flex:0 0 auto;
+    font-family:var(--font-body); font-size:.8rem; line-height:1;
+    color:var(--ink-soft); background:none; border:0; cursor:pointer; padding:3px 5px;
+  }
+  .bq-steppick-row button:hover{ color:var(--burgundy); }
+
+  /* ---- the archive ----
+     Finished things leave the grid so it stays a list of what's still ahead,
+     and land here instead: newest first, grouped by the year it happened. */
+  .bq-timeline{ display:none; }
+  .bq-timeline.open{ display:block; }
+
+  .bq-tl-year{
+    display:flex; align-items:baseline; gap:12px;
+    margin:26px 0 10px;
+  }
+  .bq-tl-year:first-child{ margin-top:4px; }
+  .bq-tl-year h3{
+    margin:0; font-family:var(--font-serif); font-size:1.5rem;
+    font-weight:600; color:var(--burgundy);
+  }
+  .bq-tl-year .rule{ flex:1 1 auto; height:1px; background:var(--line-gold); }
+  .bq-tl-year .n{
+    font-family:var(--font-body); font-size:.7rem; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--ink-soft);
+  }
+
+  /* The dot-and-line spine. The line is a border on the row, the dot an
+     ::before pinned over it, so nothing needs absolute heights. */
+  .bq-tl-row{
+    position:relative;
+    display:flex; align-items:flex-start; gap:14px;
+    padding:0 0 20px 26px;
+    border-left:2px solid var(--line-gold);
+    margin-left:9px;
+    cursor:pointer;
+  }
+  .bq-tl-row:last-child{ border-left-color:transparent; padding-bottom:4px; }
+  .bq-tl-row::before{
+    content:""; position:absolute; left:-8px; top:5px;
+    width:14px; height:14px; border-radius:50%;
+    background:var(--sage); border:3px solid var(--panel);
+    box-shadow:0 0 0 1px var(--sage);
+  }
+  .bq-tl-row:hover .bq-tl-title{ color:var(--pink-deep); }
+
+  .bq-tl-thumb{
+    width:64px; aspect-ratio:1/1; flex-shrink:0;
+    object-fit:cover; border-radius:var(--radius-sm);
+    background:var(--parchment); border:1px solid var(--line);
+  }
+  .bq-tl-body{ flex:1 1 auto; min-width:0; }
+  .bq-tl-when{
+    font-family:var(--font-body); font-size:.66rem; font-weight:600;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--gold);
+    margin-bottom:2px;
+  }
+  .bq-tl-title{
+    font-family:var(--font-serif); font-weight:600; font-size:1.12rem;
+    line-height:1.25; color:var(--ink); margin:0 0 3px;
+  }
+  .bq-tl-sub{
+    font-family:var(--font-serif); font-style:italic; font-size:.9rem;
+    color:var(--ink-soft); margin:0;
+  }
+  .bq-tl-tags{ display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
+
+  /* Undated finishes can't be placed on the spine, so they sit in their own
+     bucket at the bottom rather than being silently dropped. */
+  .bq-tl-year.undated h3{ color:var(--ink-soft); font-style:italic; font-size:1.2rem; }
+
+  @media (max-width:560px){
+    .bq-tl-thumb{ width:48px; }
+    .bq-tl-row{ padding-left:18px; gap:10px; }
+  }
+
   .bq-steps{ display:flex; flex-direction:column; gap:2px; }
   .bq-step{
     display:flex; align-items:flex-start; gap:10px;
@@ -374,11 +467,12 @@
   </div>
 
   <div class="bq-bar">
-    <button class="bq-filter" data-filter="all" aria-pressed="true">All</button>
-    <button class="bq-filter" data-filter="unfinished" aria-pressed="false">Unfinished</button>
+    <button class="bq-filter" data-filter="all" aria-pressed="true">Still ahead</button>
     <button class="bq-filter" data-filter="someday" aria-pressed="false">Someday</button>
     <button class="bq-filter" data-filter="planning" aria-pressed="false">Planning</button>
     <button class="bq-filter" data-filter="done" aria-pressed="false">Done</button>
+    <button class="bq-filter" data-filter="timeline" aria-pressed="false">Timeline</button>
+    <button class="bq-filter" data-filter="everything" aria-pressed="false">Everything</button>
     <span class="bq-spacer"></span>
     <button class="pp-btn" id="addBtn">Add something</button>
   </div>
@@ -515,6 +609,16 @@
       </div>
 
       <div class="bq-field wide">
+        <label for="newStepForm">Subtasks <span style="text-transform:none;letter-spacing:0;font-weight:400;">(optional)</span></label>
+        <div class="bq-inline">
+          <input id="newStepForm" type="text" placeholder="Visit the Moulin Rouge" autocomplete="off">
+          <button class="pp-btn pp-btn-quiet" id="addStepForm" style="white-space:nowrap;">Add</button>
+        </div>
+        <div class="bq-steppick" id="stepPick"></div>
+        <span class="bq-hint">Break it up if it helps &mdash; Paris, then the things you want to do while you're there. Leave it empty and the item is simply done or not.</span>
+      </div>
+
+      <div class="bq-field wide">
         <label for="fNotes">Notes</label>
         <textarea id="fNotes" placeholder="Where, roughly when, what it'd cost, who to ask…"></textarea>
       </div>
@@ -546,6 +650,10 @@
 
   <div class="bq-grid" id="grid"></div>
   <p class="pp-empty" id="empty" style="display:none;">Nothing here yet. Add the first one.</p>
+
+  <!-- ---------------- archive ----------------
+       Everything you've actually done, newest first. Filled by renderTimeline. -->
+  <section class="bq-timeline" id="timeline"></section>
 
   <footer class="pp-footer">
     <p class="pp-footer-flourish">♕ ───────── ⚔ ───────── ♕</p>
@@ -591,6 +699,10 @@ CATEGORIES.forEach(c => { CAT_BY_NAME[c.name] = c; });
 let state  = { items: [] };
 let editId = null, openId = null, pickedCats = [], pendingImage = null;
 let filter = "all", fltCat = "all", fltWho = "all", fltPri = "all";
+
+/* Subtasks being edited in the add/edit form, before they're committed. Kept
+   separate from item.steps so hitting Cancel doesn't leave half a list behind. */
+let pickedSteps = [];
 let sortBy = "priority-desc";
 let saving = false, docRef = null, saveTimer = null;
 
@@ -766,9 +878,15 @@ function byTitle(a, b){
   return a.title.localeCompare(b.title, undefined, { sensitivity:"base" });
 }
 
+/* Finished things are archived rather than deleted: they drop out of the grid
+   and reappear on the Timeline. "Done" and "Everything" still show them as
+   cards, so nothing is ever actually hidden from you — it just isn't in the
+   way of the list of what's still ahead. */
+function isArchived(item){ return item.status === "done"; }
+
 function visibleItems(){
   let rows = state.items.filter(i => {
-    if(filter === "unfinished" && i.status === "done") return false;
+    if(filter === "all" && isArchived(i)) return false;
     const statusFilters = ["someday","planning","done"];
     if(statusFilters.includes(filter) && i.status !== filter) return false;
     if(fltWho !== "all" && whoOf(i) !== fltWho) return false;
@@ -855,10 +973,22 @@ function renderBanner(){
 /* ---------------- render ---------------- */
 function render(){
   const grid  = $("grid");
+  const onTimeline = filter === "timeline";
+
+  /* The timeline replaces the grid rather than sitting under it — two lists
+     of the same things at once is just noise. */
+  grid.style.display = onTimeline ? "none" : "";
+  $("timeline").classList.toggle("open", onTimeline);
+  if(onTimeline){ renderTimeline(); return; }
+
   const shown = visibleItems();
   grid.innerHTML = "";
   $("empty").style.display = shown.length ? "none" : "block";
-  $("empty").textContent = state.items.length ? "Nothing matches those filters." : "Nothing here yet. Add the first one.";
+  $("empty").textContent = state.items.length
+    ? (filter === "all"
+        ? "Nothing left in this filter — check the Timeline for what you've done."
+        : "Nothing matches those filters.")
+    : "Nothing here yet. Add the first one.";
 
   shown.forEach(item => {
     const t = totals(item);
@@ -917,6 +1047,88 @@ function render(){
   $("count").textContent = (shown.length !== state.items.length)
     ? `Showing ${shown.length} of ${state.items.length} · ${base}`
     : base;
+}
+
+/* ---------------- the archive ----------------
+   Everything finished, newest first, grouped by the year it happened. Items
+   marked done without a date can't be placed on the spine, so they collect at
+   the bottom instead of quietly vanishing. */
+function archivedItems(){
+  return state.items.filter(isArchived).slice().sort((a, b) => {
+    const da = a.doneDate || "", db = b.doneDate || "";
+    if(!da && !db) return byTitle(a, b);
+    if(!da) return 1;
+    if(!db) return -1;
+    if(da === db) return byTitle(a, b);
+    return db > da ? 1 : -1;
+  });
+}
+
+function renderTimeline(){
+  const box = $("timeline");
+  const rows = archivedItems();
+  box.innerHTML = "";
+  $("empty").style.display = "none";
+
+  $("count").textContent = rows.length
+    ? `${rows.length} done, all time`
+    : "";
+
+  if(!rows.length){
+    box.innerHTML = `<p class="pp-empty">Nothing finished yet. The first one lands here the day you tick it off.</p>`;
+    return;
+  }
+
+  /* Group into years, keeping the sorted order. */
+  const groups = [];
+  rows.forEach(item => {
+    const year = item.doneDate ? item.doneDate.slice(0, 4) : null;
+    const last = groups[groups.length - 1];
+    if(last && last.year === year) last.items.push(item);
+    else groups.push({ year: year, items: [item] });
+  });
+
+  groups.forEach(g => {
+    const head = document.createElement("div");
+    head.className = "bq-tl-year" + (g.year ? "" : " undated");
+    head.innerHTML = `
+      <h3>${g.year || "Date not recorded"}</h3>
+      <span class="rule"></span>
+      <span class="n">${g.items.length}</span>`;
+    box.appendChild(head);
+
+    g.items.forEach(item => {
+      const t = totals(item);
+      const cats = (item.cats || []).map(c => {
+        const cat = CAT_BY_NAME[c];
+        const col = cat ? cat.color : "#6B5E54";
+        return `<span class="bq-cat" ${cat && cat.light ? 'data-light="true"' : ""}
+          style="background:${col};">${esc(c)}</span>`;
+      }).join("");
+
+      const sub = [];
+      if(t.kind === "steps") sub.push(`${t.total} subtask${t.total === 1 ? "" : "s"}`);
+      sub.push(WHO_LABEL[whoOf(item)]);
+
+      const row = document.createElement("div");
+      row.className = "bq-tl-row";
+      row.setAttribute("data-open", item.id);
+      row.setAttribute("role", "button");
+      row.setAttribute("tabindex", "0");
+      row.innerHTML = `
+        ${item.image
+          ? `<img class="bq-tl-thumb" src="${esc(item.image)}" alt="" loading="lazy"
+               onerror="this.style.visibility='hidden'">`
+          : ""}
+        <div class="bq-tl-body">
+          <div class="bq-tl-when">${esc(item.doneDate ? fmtDate(item.doneDate) : "no date")}</div>
+          <p class="bq-tl-title">${esc(item.title)}</p>
+          <p class="bq-tl-sub">${esc(sub.join(" · "))}</p>
+          ${cats ? `<div class="bq-tl-tags">${cats}</div>` : ""}
+        </div>`;
+      box.appendChild(row);
+    });
+  });
 }
 
 function openDetail(id){
@@ -1150,6 +1362,56 @@ function showImageResults(rows){
 }
 
 /* ---------------- form ---------------- */
+/* ---------------- subtask picker (add/edit form) ---------------- */
+function renderStepPicker(){
+  const box = $("stepPick");
+  box.innerHTML = "";
+  pickedSteps.forEach((st, i) => {
+    const row = document.createElement("div");
+    row.className = "bq-steppick-row" + (st.done ? " is-done" : "");
+    row.innerHTML = `
+      <span>${esc(st.text)}</span>
+      <button type="button" data-step-up="${i}" aria-label="Move up" ${i === 0 ? "disabled style=\"opacity:.3\"" : ""}>&uarr;</button>
+      <button type="button" data-step-drop="${i}" aria-label="Remove subtask">&times;</button>`;
+    box.appendChild(row);
+  });
+}
+
+function addPickedStep(){
+  const box = $("newStepForm");
+  const text = box.value.trim();
+  if(!text) return;
+  pickedSteps.push({ id: uid(), text: text, done: false });
+  box.value = "";
+  box.focus();
+  renderStepPicker();
+}
+
+$("addStepForm").onclick = e => { e.preventDefault(); addPickedStep(); };
+$("newStepForm").onkeydown = e => {
+  if(e.key !== "Enter") return;
+  e.preventDefault();     /* otherwise Enter submits the whole form */
+  addPickedStep();
+};
+
+$("stepPick").onclick = e => {
+  const drop = e.target.closest("[data-step-drop]");
+  if(drop){
+    pickedSteps.splice(+drop.dataset.stepDrop, 1);
+    renderStepPicker();
+    return;
+  }
+  const up = e.target.closest("[data-step-up]");
+  if(up){
+    const i = +up.dataset.stepUp;
+    if(i > 0){
+      const moved = pickedSteps.splice(i, 1)[0];
+      pickedSteps.splice(i - 1, 0, moved);
+      renderStepPicker();
+    }
+  }
+};
+
 function renderCatPicker(){
   const box = $("catPick");
   box.innerHTML = "";
@@ -1177,6 +1439,9 @@ function openForm(item){
   closeDetail();
   editId = item ? item.id : null;
   pickedCats = item ? (item.cats || []).slice() : [];
+  /* Copied, not referenced — Cancel has to leave the saved list untouched. */
+  pickedSteps = item ? (item.steps || []).map(st => Object.assign({}, st)) : [];
+  $("newStepForm").value = "";
   $("formTitle").textContent = item ? "Edit" : "Add something";
   $("fTitle").value  = item ? item.title : "";
   $("fImage").value  = item ? (item.image || "") : "";
@@ -1189,13 +1454,14 @@ function openForm(item){
   $("fPriD").value   = item ? String(item.priD || 0) : "0";
   $("fPriB").value   = item ? String(item.priB || 0) : "0";
   renderCatPicker();
+  renderStepPicker();
   $("deleteBtn").style.display = item ? "inline-block" : "none";
   $("form").classList.add("open");
   $("fTitle").focus();
 }
 function closeForm(){
   $("form").classList.remove("open");
-  editId = null; pickedCats = []; pendingImage = null;
+  editId = null; pickedCats = []; pickedSteps = []; pendingImage = null;
 }
 
 /* ---------------- events ---------------- */
@@ -1231,17 +1497,22 @@ $("saveBtn").onclick = () => {
     who: $("fWho").value,
     priD: parseInt($("fPriD").value, 10) || 0,
     priB: parseInt($("fPriB").value, 10) || 0,
-    cats: pickedCats.slice()
+    cats: pickedCats.slice(),
+    steps: pickedSteps.map(st => Object.assign({}, st))
   };
 
   if(editId){
     const i = state.items.findIndex(x => x.id === editId);
     if(i > -1){
       state.items[i] = Object.assign({}, state.items[i], payload);
+      /* Once there are subtasks the status is theirs to set, so an edit that
+         adds the first one shouldn't leave a stale "Done" sitting on top. */
+      syncStatus(state.items[i]);
       stampDone(state.items[i]);
     }
   }else{
     const item = Object.assign({ id: uid(), added: Date.now(), steps: [] }, payload);
+    syncStatus(item);
     stampDone(item);
     state.items.unshift(item);
   }
@@ -1331,6 +1602,15 @@ $("detailBody").onkeydown = e => {
   }
 };
 
+/* Timeline rows are divs, so Enter and Space have to be wired by hand. */
+document.addEventListener("keydown", e => {
+  if(e.key !== "Enter" && e.key !== " ") return;
+  const row = e.target.closest && e.target.closest(".bq-tl-row[data-open]");
+  if(!row) return;
+  e.preventDefault();
+  openDetail(row.dataset.open);
+});
+
 document.querySelectorAll(".bq-filter").forEach(btn => {
   btn.onclick = () => {
     filter = btn.dataset.filter;
@@ -1358,5 +1638,6 @@ renderBanner();
 render();
 startFirebase();
 </script>
+<script src="/assets/pp-nav.js" defer></script>
 </body>
 </html>
