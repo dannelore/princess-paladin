@@ -1310,3 +1310,195 @@ footer{
   .pp-panel, .panel{ box-shadow: none; }
   .pp-panel::before, .panel::before{ display: none; }
 }
+
+
+/* --------------------------------------------------------------------------
+   20. RIBBON NAV DROPDOWNS
+   Built by /assets/pp-nav.js. Each folder in the ribbon nav is a
+   .pp-navitem holding the folder link, a caret button, and a .pp-dropdown
+   listing that folder's pages.
+
+   The menu opens on hover for a mouse and on a caret tap for a phone, where
+   hover doesn't exist. The folder name itself is always just a link.
+   -------------------------------------------------------------------------- */
+
+.pp-navitem{
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* The caret tucks against the pill rather than sitting beside it, so a
+   folder still reads as one control. */
+.pp-navitem.has-menu > a{
+  padding-right: 26px;
+}
+
+.pp-navcaret{
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  color: inherit;
+}
+.pp-navcaret span{
+  width: 0; height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  color: var(--gold);
+  opacity: .75;
+  transition: transform .15s ease;
+}
+.pp-navitem.has-menu:hover .pp-navcaret span,
+.pp-navitem.has-menu > a[aria-current="page"] ~ .pp-navcaret span{ color: var(--on-accent); opacity: 1; }
+.pp-navitem.is-open .pp-navcaret span{ transform: rotate(180deg); }
+
+.pp-dropdown{
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 60;
+  min-width: 210px;
+  display: none;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line-gold);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--lift-lg);
+}
+.pp-navitem:hover > .pp-dropdown,
+.pp-navitem:focus-within > .pp-dropdown,
+.pp-navitem.is-open > .pp-dropdown{ display: flex; }
+
+/* A hover bridge. Without it the menu closes in the 6px gap on the way down. */
+.pp-navitem.has-menu::after{
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 8px;
+}
+
+/* Dropdown links are rows, not pills — the .pp-nav a rule above would
+   otherwise give each one a full outlined capsule. */
+.pp-nav .pp-dropdown a{
+  display: block;
+  text-align: left;
+  white-space: nowrap;
+  font-size: 0.74rem;
+  letter-spacing: 0.07em;
+  text-transform: none;
+  font-weight: 500;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  padding: 7px 10px;
+}
+.pp-nav .pp-dropdown a:hover,
+.pp-nav .pp-dropdown a:focus-visible{
+  color: var(--accent-deep);
+  background: var(--accent-soft);
+  border: 0;
+}
+.pp-nav .pp-dropdown a[aria-current="page"]{
+  color: var(--on-accent);
+  background: var(--accent-deep);
+  border: 0;
+  font-weight: 600;
+}
+
+.pp-dropdown-head{
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+  padding: 9px 10px 3px;
+}
+.pp-dropdown-head:first-child{ padding-top: 2px; }
+
+.pp-dropdown-rule{
+  height: 1px;
+  background: var(--line);
+  margin: 5px 4px;
+}
+
+/* On a narrow screen the menu would run off the right edge, so it hangs
+   from the right of its folder instead. */
+@media (max-width: 760px){
+  .pp-dropdown{ left: auto; right: 0; }
+  .pp-navitem:first-child .pp-dropdown{ left: 0; right: auto; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .pp-navcaret span{ transition: none; }
+}
+
+@media print{
+  .pp-dropdown, .pp-navcaret{ display: none !important; }
+}
+
+
+/* --------------------------------------------------------------------------
+   21. PALADIN RIBBON LEGIBILITY
+   Brendon's quest log sets html.pp-paladin, which turns the page behind the
+   ribbon burgundy. The ribbon itself stays cream.
+
+   The section sub-nav used to sit below the ribbon, on the red, so it was
+   given cream text. It moved up inside the ribbon and the colour didn't
+   follow — cream on cream. These selectors carry .pp-ribbon, so they outrank
+   the .pp-subnav rules still sitting in the quest-log pages' own <style>
+   blocks and the fix lands without editing four files.
+   -------------------------------------------------------------------------- */
+
+html.pp-paladin .pp-ribbon .pp-subnav a{
+  color: var(--ink-soft);
+  background: none;
+}
+html.pp-paladin .pp-ribbon .pp-subnav a:hover,
+html.pp-paladin .pp-ribbon .pp-subnav a:focus-visible{
+  color: #FFFDF8;
+  background: #9C7440;
+}
+html.pp-paladin .pp-ribbon .pp-subnav a[aria-current="page"]{
+  color: #FFFDF8;
+  background: #7C5B30;
+  border-color: #7C5B30;
+  font-weight: 600;
+}
+html.pp-paladin .pp-ribbon .pp-subnav .exit{ color: var(--ink-soft); }
+html.pp-paladin .pp-ribbon .pp-subnav .exit:hover{ color: #7C5B30; background: none; }
+
+/* Gold at #9C7440 under white text is a shade too light to read comfortably.
+   Inside the ribbon the pills use the deeper gold on both hover and current,
+   which clears contrast either way. */
+html.pp-paladin .pp-ribbon .pp-nav > .pp-navitem > a:hover,
+html.pp-paladin .pp-ribbon .pp-nav > .pp-navitem > a:focus-visible,
+html.pp-paladin .pp-ribbon .pp-nav > .pp-navitem > a[aria-current="page"]{
+  color: #FFFDF8;
+  background: #7C5B30;
+  border-color: #7C5B30;
+}
+html.pp-paladin .pp-ribbon .pp-dropdown a[aria-current="page"]{
+  color: #FFFDF8;
+  background: #7C5B30;
+}
+html.pp-paladin .pp-ribbon .pp-dropdown a:hover{
+  color: #FFFDF8;
+  background: #9C7440;
+}

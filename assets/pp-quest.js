@@ -715,17 +715,43 @@ function makeMonsterStore(firebase){
   };
 }
 
-/* Half each, rounded so the first to collect takes the odd penny.
-   Pets and wardrobe items can't be halved — they go to whoever collects first. */
+/* Currency is halved, rounded so the first to collect takes the odd penny.
+
+   Pets and wardrobe items are NOT halved and are no longer a race. They used
+   to go to whoever collected first, which meant the slower of you turned up to
+   an empty drop and the two logs drifted apart — one of you ends up with a
+   closet and the other with nothing to put on their pet. Both of you get the
+   companion and both of you get the garment.
+
+   `itemId` names a specific catalog entry. Left blank, the collector rolls a
+   random one they don't already own, which is the old behaviour. */
 function splitReward(reward, isFirst){
   const half = n => isFirst ? Math.ceil((n||0)/2) : Math.floor((n||0)/2);
   return {
     gold: half(reward.gold),
     meow: half(reward.meow),
     xp:   half(reward.xp),
-    pet:  !!reward.pet  && isFirst,
-    item: !!reward.item && isFirst
+    pet:  !!reward.pet,
+    item: !!reward.item,
+    itemId: reward.itemId || null
   };
+}
+
+/* Which garment a drop actually hands over.
+
+   A named item is granted even if it's already owned — a duplicate is honest,
+   and quietly swapping in something else would make the drop table a lie. With
+   no name, prefer something they haven't got, and fall back to the whole
+   catalog once they own everything. */
+function pickRewardItem(state, itemId){
+  if(itemId){
+    const named = catalogItem(itemId);
+    if(named) return named;
+  }
+  const owned = state.wardrobe || {};
+  const fresh = CATALOG.filter(i => !(owned[i.id] > 0));
+  const pool  = fresh.length ? fresh : CATALOG;
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 /* ==========================================================================
@@ -924,7 +950,7 @@ return {
   startOfDay, addDays, dateKey, fromKey, sameDay, daysBetween, mondayOf,
   defaultState, migrate, makeStore,
   PEOPLE, currentPerson, personLink, MONSTER_DOC,
-  defaultMonsterState, makeMonsterStore, splitReward,
+  defaultMonsterState, makeMonsterStore, splitReward, pickRewardItem,
   hasCollected, collectorCount, markCollected,
   isScheduled, repeatSummary, makeCtx, isVacation, vacationActive,
   ageMultiplier, getStreak, taskValue, subtaskValue, bonusValue,
