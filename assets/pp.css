@@ -599,6 +599,22 @@ h1,h2,h3,h4{
   background: transparent;
 }
 
+/* `background: transparent` above ties on specificity with the
+   a[aria-current="page"] rule in section 7 and, coming later, wins — which
+   left the current folder's pill with white text on no fill. Invisible.
+   These two put the fill back for hover and for the page you're on. */
+.pp-ribbon .pp-nav > .pp-navitem > a:hover,
+.pp-ribbon .pp-nav > .pp-navitem > a:focus-visible{
+  color: var(--on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.pp-ribbon .pp-nav > .pp-navitem > a[aria-current="page"]{
+  color: var(--on-accent);
+  background: var(--accent-deep);
+  border-color: var(--accent-deep);
+}
+
 /* Full-width row underneath, for live status readouts */
 .pp-ribbon-extra{
   flex: 1 1 100%;
@@ -1309,6 +1325,51 @@ footer{
   .pp-ribbon{ position: static; box-shadow: none; }
   .pp-panel, .panel{ box-shadow: none; }
   .pp-panel::before, .panel::before{ display: none; }
+}
+
+
+/* --------------------------------------------------------------------------
+   19b. MINI NAVBAR
+   The row under the main nav, listing the section you're standing in. Built
+   by pp-nav.js, so every page gets one on the same terms.
+
+   These rules used to live in the four quest-log pages' own <style> blocks,
+   which is why only those pages had the in-ribbon version. They're here now.
+   -------------------------------------------------------------------------- */
+
+.pp-ribbon-sections{
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.pp-ribbon-sections .spacer{ flex: 1 1 auto; }
+
+/* The way back up to the folder. Quieter than the section links — it's an
+   exit, not a peer. */
+.pp-ribbon-sections .exit{
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  text-decoration: none;
+  padding: 5px 4px;
+  background: none;
+  border: 0;
+}
+.pp-ribbon-sections .exit:hover{ color: var(--accent-deep); background: none; }
+
+html.pp-paladin .pp-ribbon-sections{ border-top-color: rgba(156,116,64,0.3); }
+
+@media (max-width: 760px){
+  .pp-ribbon-sections{ justify-content: center; }
+  .pp-ribbon-sections .spacer{ display: none; }
 }
 
 

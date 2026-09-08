@@ -130,6 +130,23 @@
   .link-row.is-hidden{ display: none; }
 
   .link-main{ flex: 1 1 auto; min-width: 0; }
+  .badge{
+    display: inline-block;
+    margin-left: 8px;
+    font-family: var(--font-body);
+    font-size: 0.56rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    background: var(--parchment);
+    border: 1px solid var(--parchment-border);
+    border-radius: 999px;
+    padding: 2px 7px;
+    vertical-align: 1px;
+  }
+  .link-row.is-index .link-main a{ font-weight: 600; }
+
   .link-main a{
     color: var(--burgundy);
     text-decoration: none;
@@ -237,12 +254,12 @@
     box.innerHTML = "";
 
     PPNav.DIRECTORY.forEach(function(folder){
-      var groups = folder.groups || [];
-      var pages  = PPNav.pagesOf(folder);
+      var sections = folder.sections || [];
+      var pages    = PPNav.pagesOf(folder);
 
       var sec = document.createElement("details");
       sec.className = "pp-panel pp-panel-md section" +
-                      (groups.length < 2 ? " single-group" : "");
+                      (sections.length < 2 ? " single-group" : "");
       sec.open = true;
 
       var head = '<summary class="sec-head">' +
@@ -253,15 +270,20 @@
                  '</summary>';
 
       var body = '<div class="sec-body">';
-      groups.forEach(function(g){
+      sections.forEach(function(g){
         body += '<div class="group">';
         body += '<span class="group-name">' + esc(g.name) + '</span>';
-        (g.pages || []).forEach(function(p){
+
+        /* The section's own index sits at the top of its tier, marked, so the
+           tiering matches what the ribbon does: dropdown picks the section,
+           mini navbar picks the page inside it. */
+        [PPNav.indexPage(g)].concat(g.pages || []).forEach(function(p, i){
           var full = ORIGIN + p.href;
-          body += '<div class="link-row" data-hay="' +
+          body += '<div class="link-row' + (i === 0 ? ' is-index' : '') + '" data-hay="' +
                     esc((p.label + " " + p.href + " " + (p.note || "")).toLowerCase()) + '">' +
                     '<span class="link-main">' +
-                      '<a href="' + esc(p.href) + '">' + esc(p.label) + '</a>' +
+                      '<a href="' + esc(p.href) + '">' + esc(p.label) +
+                      (i === 0 ? '<span class="badge">index</span>' : '') + '</a>' +
                       (p.note ? '<span class="link-note">' + esc(p.note) + '</span>' : '') +
                     '</span>' +
                     '<span class="url">' + esc(full) + '</span>' +

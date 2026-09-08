@@ -758,24 +758,7 @@
      moment you started working and you had to go back up to reach Pets or
      Monsters. It now rides inside the sticky ribbon as a full-width row, so
      every quest-log page is one tap away no matter how far down you are. */
-  .pp-ribbon-sections{
-    flex:1 1 100%;
-    display:flex; align-items:center; flex-wrap:wrap; gap:6px;
-    margin:0; padding-top:10px;
-    border-top:1px solid var(--line);
-    list-style:none;
-  }
-  .pp-ribbon-sections .spacer{ flex:1 1 auto; }
-  .pp-ribbon-sections .exit{
-    font-family:var(--font-serif); font-style:italic; font-size:.9rem;
-    color:var(--ink-soft); text-decoration:none; padding:5px 4px;
-  }
-  .pp-ribbon-sections .exit:hover{ color:var(--accent-deep); }
-  html.pp-paladin .pp-ribbon-sections{ border-top-color:rgba(156,116,64,0.3); }
-  @media (max-width:760px){
-    .pp-ribbon-sections{ justify-content:center; }
-    .pp-ribbon-sections .spacer{ display:none; }
-  }
+  /* .pp-ribbon-sections lives in pp.css now — see section 19b. */
 </style>
 </head>
 <body class="pp-dannelore">
@@ -852,14 +835,6 @@
             <button class="panel-btn" id="openSettings">⚙ Settings</button>
           </div>
     </div>
-    <nav class="pp-subnav pp-ribbon-sections" aria-label="Quest log sections">
-      <a href="/dannelore/quest-log/" aria-current="page">Quest Board</a>
-      <a href="/dannelore/quest-log/pets.html">Pets</a>
-      <a href="/dannelore/quest-log/monsters.html">Monsters</a>
-      <a href="/dannelore/quest-log/fit.html">Fitting Room</a>
-      <span class="spacer"></span>
-      <a class="exit" href="/dannelore/">&larr; Dannelore</a>
-    </nav>
   </div>
 </header>
 

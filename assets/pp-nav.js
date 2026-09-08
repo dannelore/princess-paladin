@@ -25,9 +25,25 @@
 
    Left off, it works them out from DIRECTORY and the page's own title.
 
+   TWO LEVELS, TWO NAVS
+   The site map is folders -> sections -> pages, and each level drives one
+   piece of chrome:
+
+     ribbon dropdown  lists a folder's SECTION INDEXES only. It's there to get
+                      you across the site, so it stays short — a folder with
+                      one section (Castle, Side Quests, Templates, Paladin)
+                      gets a plain link and no menu at all. Only Princess has
+                      enough sections to be worth a dropdown.
+
+     mini navbar      the row under the ribbon. Lists the section you're
+                      standing in: its index first, then its pages. This is
+                      how you move WITHIN a section, and it's the pattern the
+                      meal planner already used by hand.
+
    ADDING A PAGE
-   Add it to DIRECTORY below and it appears in the dropdown AND on
-   /templates/links/ — that page reads this same list. Nothing else to edit.
+   Add it to the right section's `pages` below. It appears in that section's
+   mini navbar and on /templates/links/. Nothing else to edit — and it does
+   NOT clutter the dropdown, which is the point of the split.
    ========================================================================== */
 
 window.PPNav = (function(){
@@ -41,108 +57,87 @@ window.PPNav = (function(){
      ------------------------------------------------------------------ */
   var DIRECTORY = [
     {
-      key: 'home',
-      label: 'Home',
-      href: '/',
-      nav: true,
-      groups: [
-        { name: 'Home', pages: [
-          { label: 'Main Index', href: '/', note: 'Hero, nav cards, comfort show roulette' }
-        ]}
+      key: 'home', label: 'Home', href: '/', nav: true,
+      sections: [
+        { name:'Home', href:'/', indexLabel:'Home',
+          note:'Hero, nav cards, comfort show roulette', pages:[] }
       ]
     },
 
     {
-      key: 'dannelore',
-      label: 'Princess',
-      href: '/dannelore/',
-      nav: true,
-      groups: [
-        { name: 'Dannelore', pages: [
-          { label: 'Dannelore Index', href: '/dannelore/', note: "Danni's landing page" }
+      key: 'dannelore', label: 'Princess', href: '/dannelore/', nav: true,
+      sections: [
+        { name:'Dannelore', href:'/dannelore/', indexLabel:'Dannelore',
+          note:"Danni's landing page", pages:[] },
+
+        { name:'Quest Log', href:'/dannelore/quest-log/', indexLabel:'Quest Board',
+          note:'Dailies, to-dos and projects', pages:[
+          { label:'Pets',         href:'/dannelore/quest-log/pets.html',     note:'Companions, closet and shop' },
+          { label:'Monsters',     href:'/dannelore/quest-log/monsters.html', note:'Shared HP bar and drop tables' },
+          { label:'Fitting Room', href:'/dannelore/quest-log/fit.html',      note:'Tune garment fit per stage' }
         ]},
-        { name: 'Quest Log', pages: [
-          { label: 'Quest Board',   href: '/dannelore/quest-log/',             note: 'Dailies, to-dos and projects' },
-          { label: 'Pets',          href: '/dannelore/quest-log/pets.html',    note: 'Companions, closet and shop' },
-          { label: 'Monsters',      href: '/dannelore/quest-log/monsters.html',note: 'Shared HP bar and drop tables' },
-          { label: 'Fitting Room',  href: '/dannelore/quest-log/fit.html',     note: 'Tune garment fit per stage' }
-        ]},
-        { name: 'Self-Care', pages: [
-          { label: 'Self-Care Index', href: '/dannelore/self-care/',                     note: 'The three routines' },
-          { label: 'Morning Office',  href: '/dannelore/self-care/morning-office.html',  note: 'Wake-up flowchart' },
-          { label: 'Evening Office',  href: '/dannelore/self-care/evening-office.html',  note: 'Wind-down flowchart' },
-          { label: 'Skincare',        href: '/dannelore/self-care/skincare.html',        note: 'Products and order' }
+
+        { name:'Self-Care', href:'/dannelore/self-care/', indexLabel:'Self-Care',
+          note:'The three routines', pages:[
+          { label:'Morning Office', href:'/dannelore/self-care/morning-office.html', note:'Wake-up flowchart' },
+          { label:'Evening Office', href:'/dannelore/self-care/evening-office.html', note:'Wind-down flowchart' },
+          { label:'Skincare',       href:'/dannelore/self-care/skincare.html',       note:'Products and order' }
         ]}
       ]
     },
 
     {
-      key: 'vmprman',
-      label: 'Paladin',
-      href: '/vmprman/',
-      nav: true,
-      groups: [
-        { name: 'Paladin', pages: [
-          { label: 'Paladin Index',      href: '/vmprman/',           note: "Brendon's landing page" },
-          { label: 'Paladin Quest Log',  href: '/vmprman/quest-log/', note: "Brendon's board — same files, ?who=brendon" }
+      key: 'vmprman', label: 'Paladin', href: '/vmprman/', nav: true,
+      sections: [
+        { name:'Paladin', href:'/vmprman/', indexLabel:'Paladin',
+          note:"Brendon's landing page", pages:[
+          { label:'Quest Log', href:'/vmprman/quest-log/', note:"Brendon's board — same files, ?who=brendon" }
         ]}
       ]
     },
 
     {
-      key: 'castle',
-      label: 'Castle Keep',
-      href: '/castle/',
-      nav: true,
-      groups: [
-        { name: 'Castle Keep', pages: [
-          { label: 'Castle Index',      href: '/castle/',                        note: 'Household tools' },
-          { label: 'Meal Planner',      href: '/castle/meal-planner.html',       note: 'Week plan and shopping list' },
-          { label: 'Recipe Book',       href: '/castle/recipe-book.html',        note: 'Everything we cook' },
-          { label: 'Recipe Constructor',href: '/castle/recipe-construction.html',note: 'Build a new recipe entry' }
+      key: 'castle', label: 'Castle Keep', href: '/castle/', nav: true,
+      sections: [
+        { name:'Castle Keep', href:'/castle/', indexLabel:'Castle Keep',
+          note:'Household tools', pages:[
+          { label:'Meal Planner',        href:'/castle/meal-planner.html',        note:'Week plan and shopping list' },
+          { label:'Recipe Book',         href:'/castle/recipe-book.html',         note:'Everything we cook' },
+          { label:'Recipe Construction', href:'/castle/recipe-construction.html', note:'Build a new recipe entry' }
         ]}
       ]
     },
 
     {
-      key: 'side-quests',
-      label: 'Side Quests',
-      href: '/side-quests/',
-      nav: true,
-      groups: [
-        { name: 'Side Quests', pages: [
-          { label: 'Side Quests Index', href: '/side-quests/',                  note: 'The tile grid' },
-          { label: 'Bucket Quest',      href: '/side-quests/bucket-quest.html', note: 'Couples bucket list and its timeline' },
-          { label: 'Couch Quest',       href: '/side-quests/couch-quest.html',  note: 'Watch list' },
-          { label: 'Spooky Quest',      href: '/side-quests/spooky-quest.html', note: '1 September – 31 October' }
+      key: 'side-quests', label: 'Side Quests', href: '/side-quests/', nav: true,
+      sections: [
+        { name:'Side Quests', href:'/side-quests/', indexLabel:'Side Quests',
+          note:'The tile grid', pages:[
+          { label:'Bucket Quest', href:'/side-quests/bucket-quest.html', note:'Couples bucket list and its timeline' },
+          { label:'Couch Quest',  href:'/side-quests/couch-quest.html',  note:'Watch list' },
+          { label:'Spooky Quest', href:'/side-quests/spooky-quest.html', note:'1 September – 31 October' }
         ]}
       ]
     },
 
     {
-      key: 'templates',
-      label: 'Templates',
-      href: '/templates/',
-      nav: true,
-      groups: [
-        { name: 'Templates', pages: [
-          { label: 'Component Reference', href: '/templates/',       note: 'Emblem markup and shared pieces' },
-          { label: 'Link Directory',      href: '/templates/links/', note: 'Every page on the site, with copy buttons' }
+      key: 'templates', label: 'Templates', href: '/templates/', nav: true,
+      sections: [
+        { name:'Templates', href:'/templates/', indexLabel:'Components',
+          note:'Emblem markup and shared pieces', pages:[
+          { label:'Link Directory', href:'/templates/links/', note:'Every page on the site, with copy buttons' }
         ]}
       ]
     },
 
     /* Out of the ribbon on purpose — see the note at the top of DIRECTORY. */
     {
-      key: 'bach',
-      label: 'The Bach',
-      href: '/bach/',
-      nav: false,
-      groups: [
-        { name: 'The Bach', pages: [
-          { label: 'Bach Index',   href: '/bach/',                note: 'Party plan' },
-          { label: 'Drag Show',    href: '/bach/dragshow.html',   note: '' },
-          { label: 'Smarty Pants', href: '/bach/smartypants.html',note: '' }
+      key: 'bach', label: 'The Bach', href: '/bach/', nav: false,
+      sections: [
+        { name:'The Bach', href:'/bach/', indexLabel:'The Bach',
+          note:'Party plan', pages:[
+          { label:'Drag Show',    href:'/bach/dragshow.html',    note:'' },
+          { label:'Smarty Pants', href:'/bach/smartypants.html', note:'' }
         ]}
       ]
     }
@@ -187,12 +182,35 @@ window.PPNav = (function(){
 
   function here(){ return normalize(location.pathname); }
 
+  /* Every destination in a folder, section indexes included, in menu order. */
   function pagesOf(folder){
     var out = [];
-    (folder.groups || []).forEach(function(g){
-      (g.pages || []).forEach(function(p){ out.push(p); });
+    (folder.sections || []).forEach(function(sec){
+      out.push(indexPage(sec));
+      (sec.pages || []).forEach(function(p){ out.push(p); });
     });
     return out;
+  }
+
+  /* A section's own index, shaped like a page so both navs and the links
+     page can treat it as one. */
+  function indexPage(sec){
+    return { label: sec.indexLabel || sec.name, href: sec.href, note: sec.note || '' };
+  }
+
+  /* The section you're standing in. Longest matching href wins, so
+     /dannelore/quest-log/pets.html resolves to Quest Log, not Dannelore. */
+  function currentSection(folder){
+    var path = here(), best = null;
+    (folder.sections || []).forEach(function(sec){
+      var base = normalize(sec.href);
+      var owns = path === base ||
+                 path.indexOf(base === '/' ? '/' : base + '/') === 0 ||
+                 (sec.pages || []).some(function(p){ return normalize(p.href) === path; });
+      if(!owns) return;
+      if(!best || normalize(sec.href).length > normalize(best.href).length) best = sec;
+    });
+    return best;
   }
 
   /* Which folder are we standing in? Longest matching prefix wins, so
@@ -238,11 +256,13 @@ window.PPNav = (function(){
     var html = '';
 
     DIRECTORY.filter(function(f){ return f.nav !== false; }).forEach(function(f){
-      var pages = pagesOf(f);
+      var sections = f.sections || [];
       var isCurrent = f.key === folder.key;
 
-      /* Home has one page and no menu worth opening. */
-      var hasMenu = pages.length > 1;
+      /* One section means the menu would hold a single item that repeats the
+         folder link. Those folders are a plain pill; their pages live in the
+         mini navbar instead. */
+      var hasMenu = sections.length > 1;
 
       html += '<div class="pp-navitem' + (hasMenu ? ' has-menu' : '') + '">';
       html += '<a href="' + esc(withWho(f.href)) + '"' +
@@ -250,27 +270,50 @@ window.PPNav = (function(){
 
       if(hasMenu){
         html += '<button class="pp-navcaret" type="button" aria-expanded="false" ' +
-                'aria-label="' + esc(f.label) + ' pages"><span></span></button>';
-        html += '<div class="pp-dropdown" role="group" aria-label="' + esc(f.label) + ' pages">';
+                'aria-label="' + esc(f.label) + ' sections"><span></span></button>';
+        html += '<div class="pp-dropdown" role="group" aria-label="' + esc(f.label) + ' sections">';
 
-        (f.groups || []).forEach(function(g, i){
-          /* One group means the heading would just repeat the folder name. */
-          if((f.groups || []).length > 1){
-            html += '<span class="pp-dropdown-head">' + esc(g.name) + '</span>';
-          } else if(i > 0){
-            html += '<span class="pp-dropdown-rule"></span>';
-          }
-          (g.pages || []).forEach(function(p){
-            var on = normalize(p.href) === path;
-            html += '<a href="' + esc(withWho(p.href)) + '"' +
-                    (on ? ' aria-current="page"' : '') + '>' + esc(p.label) + '</a>';
-          });
+        sections.forEach(function(sec){
+          /* Marked current for the whole section, not just its index page —
+             standing on Pets should light up Quest Log. */
+          var inHere = normalize(sec.href) === path ||
+                       (sec.pages || []).some(function(p){ return normalize(p.href) === path; });
+          html += '<a href="' + esc(withWho(sec.href)) + '"' +
+                  (inHere ? ' aria-current="page"' : '') + '>' + esc(sec.name) + '</a>';
         });
 
         html += '</div>';
       }
       html += '</div>';
     });
+
+    return html;
+  }
+
+  /* ---------------- the mini navbar ----------------
+     The section you're in: its index, then its pages, then an exit back up to
+     the folder when the section isn't the folder root. Returns '' when the
+     section has no pages, because a one-item nav is just noise. */
+  function subnavHTML(){
+    var folder = currentFolder();
+    var sec = currentSection(folder);
+    if(!sec || !(sec.pages || []).length) return '';
+
+    var path = here();
+    var rows = [indexPage(sec)].concat(sec.pages);
+    var html = '';
+
+    rows.forEach(function(p){
+      var on = normalize(p.href) === path;
+      html += '<a href="' + esc(withWho(p.href)) + '"' +
+              (on ? ' aria-current="page"' : '') + '>' + esc(p.label) + '</a>';
+    });
+
+    if(normalize(sec.href) !== normalize(folder.href)){
+      html += '<span class="spacer"></span>' +
+              '<a class="exit" href="' + esc(withWho(folder.href)) + '">&larr; ' +
+              esc(folder.label) + '</a>';
+    }
 
     return html;
   }
@@ -362,16 +405,44 @@ window.PPNav = (function(){
       });
     }
 
+    var inner = ribbon.querySelector('.pp-ribbon-inner');
+
     var nav = ribbon.querySelector('nav.pp-nav');
     if(!nav){
       nav = document.createElement('nav');
       nav.className = 'pp-nav';
       nav.setAttribute('aria-label','Main navigation');
-      ribbon.querySelector('.pp-ribbon-inner').appendChild(nav);
+      inner.appendChild(nav);
     }
 
     nav.innerHTML = navHTML();
     wireDropdowns(nav);
+
+    /* ---- mini navbar ----
+       Several pages carried a hand-written .pp-subnav in their body. Those
+       are now generated, so any copy sitting outside the ribbon is a leftover
+       and would render twice. Drop it. */
+    document.querySelectorAll('nav.pp-subnav').forEach(function(n){
+      if(!ribbon.contains(n)) n.parentNode.removeChild(n);
+    });
+
+    var rows = subnavHTML();
+    var sub = ribbon.querySelector('nav.pp-subnav');
+
+    if(!rows){
+      if(sub) sub.parentNode.removeChild(sub);
+      return;
+    }
+
+    if(!sub){
+      sub = document.createElement('nav');
+      sub.className = 'pp-subnav pp-ribbon-sections';
+      inner.appendChild(sub);
+    } else {
+      sub.classList.add('pp-ribbon-sections');
+    }
+    sub.setAttribute('aria-label', 'Section navigation');
+    sub.innerHTML = rows;
   }
 
   if(document.readyState === 'loading'){
@@ -385,6 +456,9 @@ window.PPNav = (function(){
     EMBLEM: EMBLEM,
     normalize: normalize,
     pagesOf: pagesOf,
+    indexPage: indexPage,
+    currentFolder: currentFolder,
+    currentSection: currentSection,
     mount: mount
   };
 })();
