@@ -336,6 +336,18 @@
         <label class="f" for="itemSel">Item</label>
         <select id="itemSel"></select>
 
+        <div id="newItemFields" style="display:none;">
+          <label class="f" for="newId">File name</label>
+          <input type="text" id="newId" placeholder="hat-pumpkin" autocomplete="off">
+          <p class="hint" style="margin:4px 0 0;">Becomes <code>/assets/wardrobe/&lt;name&gt;.png</code>. Lowercase, hyphens, slot prefix first — <code>hat-</code>, <code>top-</code>, <code>bot-</code>, <code>shoe-</code>, <code>held-</code>, <code>bg-</code>.</p>
+
+          <label class="f" for="newName">Display name</label>
+          <input type="text" id="newName" placeholder="Pumpkin hat" autocomplete="off">
+
+          <label class="f" for="newSlot">Slot</label>
+          <select id="newSlot"></select>
+        </div>
+
         <label class="f" for="fileIn">Garment image</label>
         <input type="file" id="fileIn" accept="image/png,image/webp">
         <p class="hint" style="margin:6px 0 0;">Pick the file off your computer — you don't have to upload it to the repo first.</p>
@@ -386,16 +398,68 @@ const bodyImg   = document.getElementById('bodyImg');
 let pos = { x:50, y:50, w:60, h:0, r:0 };
 
 /* ---------- setup ---------- */
+/* Items already in the catalog are listed for convenience, but the whole
+   point of this page is fitting garments that AREN'T in the catalog yet —
+   you fit first, then paste the numbers into CATALOG. So there's always a
+   "new item" option with a free-text id. */
+const NEW_ITEM = '__new__';
+const customNames = {};     /* id -> display name, for anything not in CATALOG */
+
+function currentName(id){
+  const c = PQ.CATALOG.find(i => i.id === id);
+  return c ? c.name : (customNames[id] || '?');
+}
+
 (function(){
   const sel = document.getElementById('itemSel');
-  PQ.CATALOG.forEach(i => {
+
+  const neu = document.createElement('option');
+  neu.value = NEW_ITEM;
+  neu.textContent = '+ New item…';
+  sel.appendChild(neu);
+
+  /* Plain-colour backgrounds have no art and nothing to position, so they
+     don't belong in a fitting list. */
+  PQ.CATALOG.filter(i => !i.color).forEach(i => {
     const o = document.createElement('option');
     o.value = i.id;
     o.textContent = `${i.name} (${i.slot})`;
     sel.appendChild(o);
   });
-  itemId = PQ.CATALOG[0] ? PQ.CATALOG[0].id : null;
-  sel.onchange = () => { itemId = sel.value; renderOut(); loadRecorded(); };
+
+  const slotSel = document.getElementById('newSlot');
+  PQ.SLOTS.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.key;
+    o.textContent = s.name;
+    slotSel.appendChild(o);
+  });
+
+  const fields = document.getElementById('newItemFields');
+  const idIn   = document.getElementById('newId');
+  const nameIn = document.getElementById('newName');
+
+  /* Keep the typed id tidy on the way in — this becomes a filename. */
+  function readNew(){
+    const clean = idIn.value.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
+    if(clean !== idIn.value) idIn.value = clean;
+    itemId = clean || null;
+    if(itemId) customNames[itemId] = nameIn.value.trim() || clean;
+    renderOut(); loadRecorded();
+  }
+  idIn.oninput = readNew;
+  nameIn.oninput = readNew;
+
+  function apply(){
+    const isNew = sel.value === NEW_ITEM;
+    fields.style.display = isNew ? '' : 'none';
+    if(isNew) readNew();
+    else { itemId = sel.value; renderOut(); loadRecorded(); }
+  }
+  sel.onchange = apply;
+
+  sel.value = NEW_ITEM;
+  apply();
 })();
 
 function renderChips(){
@@ -527,7 +591,16 @@ function renderOut(){
       if(f.behind) bits.push('behind:true');
       return `    ${s}:{ ${bits.join(', ')} }`;
     }).join(',\n');
-    return `${id}  (${item ? item.name : '?'})\n  fit:{\n${inner}\n  }`;
+
+    /* Already in the catalog → just the fit block to paste over the old one.
+       Not in the catalog → the whole line, ready to drop into CATALOG.
+       Price and unlock are placeholders; set them to whatever you want. */
+    if(item) return `${id}  (${item.name})\n  fit:{\n${inner}\n  }`;
+
+    const slot = document.getElementById('newSlot').value;
+    return `${id}  (${currentName(id)}) — NEW, add to CATALOG in pp-quest.js:\n`
+         + `{ id:'${id}', slot:'${slot}', name:'${currentName(id)}', price:600, unlock:1, fit:{\n`
+         + inner.replace(/^ {4}/gm, '    ') + `\n} },`;
   });
   document.getElementById('out').textContent = lines.join('\n\n');
 }
