@@ -81,15 +81,34 @@ const SPECIES_KEYS = Object.keys(SPECIES);
    the ladder below lands roughly: 1 straight away, 4 around Child, 11 around
    Teen, 20 well into Adult. Nothing is ever taken away once it's bought. */
 const CATALOG = [
-  { id:'hat-beanie',   slot:'hat',        name:'Cat-ear beanie', price:600, unlock:1, fit:{} },
+  { id:'hat-knight',   slot:'hat',        name:'Knight helmet',  price:600, unlock:1, fit:{
+      child: { x:51,   y:54.7, w:85.5 },
+      teen:  { x:50,   y:54,   w:95.5 },
+      adult: { x:50.4, y:50.1, w:100  }
+    } },
   { id:'hat-pumpkin',  slot:'hat',        name:'Pumpkin hat',    price:650, unlock:4, fit:{
       child: { x:49.9, y:52.5, w:81.5 },
       teen:  { x:50.3, y:53.1, w:95.5 },
       adult: { x:50.1, y:51.3, w:100  }
     } },
-  { id:'top-hoodie',   slot:'top',        name:'Paw hoodie',     price:800, unlock:1, fit:{} },
-  { id:'bot-shorts',   slot:'bottoms',    name:'Cargo shorts',   price:550, unlock:1, fit:{} },
-  { id:'shoe-hitops',  slot:'shoes',      name:'Paw hi-tops',    price:650, unlock:2, fit:{} },
+
+  /* Same silhouette, three colourways — so one set of fit numbers, pasted
+     three times. If you retune one, retune all three. */
+  { id:'top-hugspurp', slot:'top',        name:'Free Hugs shirt, purple', price:600, unlock:1, fit:{
+      child: { x:50,   y:50,   w:79.5 },
+      teen:  { x:49.4, y:50.4, w:81.5, h:100 },
+      adult: { x:50.6, y:50.3, w:100 }
+    } },
+  { id:'top-teegray',  slot:'top',        name:'Tee, grey',      price:600, unlock:1, fit:{
+      child: { x:50,   y:50,   w:79.5 },
+      teen:  { x:49.4, y:50.4, w:81.5, h:100 },
+      adult: { x:50.6, y:50.3, w:100 }
+    } },
+  { id:'top-teegren',  slot:'top',        name:'Tee, green',     price:600, unlock:1, fit:{
+      child: { x:50,   y:50,   w:79.5 },
+      teen:  { x:49.4, y:50.4, w:81.5, h:100 },
+      adult: { x:50.6, y:50.3, w:100 }
+    } },
 
   /* --- plain-colour backgrounds, drawn from the canonical palette --- */
   { id:'bg-cream',     slot:'background', name:'Cream',      price:100,  unlock:1,  color:'#F7F1E4' },
@@ -583,6 +602,18 @@ function migrate(s){
     if(!p.eyeColor) p.eyeColor = 'yellow';
     if(!p.eyeShape) p.eyeShape = 'round';
     delete p.colors;
+
+    /* An outfit slot pointing at an item that's since left the catalog would
+       read as "wearing something" while drawing nothing, so the slot could
+       never be refilled from the shop. Clear those.
+
+       Deliberately does NOT touch s.wardrobe — that's what they paid for.
+       A mistyped catalog entry should never delete someone's purchase. */
+    if(p.outfit){
+      Object.keys(p.outfit).forEach(slot => {
+        if(!CATALOG.some(i => i.id === p.outfit[slot])) delete p.outfit[slot];
+      });
+    }
   });
   delete s.work; delete s.hp; delete s.maxHp; delete s.closet; delete s.worn;
   delete s.monsters; delete s.activeMonster;   /* monsters are shared now */
