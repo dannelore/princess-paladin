@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monsters · Quest Log</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  /* Whose log this is decides the palette. Runs before <body> exists so the
+     page never flashes the wrong colour. */
+  (function(){
+    try{
+      var who = new URLSearchParams(location.search).get('who');
+      if(who && who.toLowerCase() === 'brendon')
+        document.documentElement.classList.add('pp-paladin');
+    }catch(e){}
+  })();
+</script>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+
+<style>
+  :root{
+    --pink-bg:#F6D9E6; --pink-bg-alt:#F2C9DC;
+    --accent:var(--pink); --accent-dark:var(--pink-deep);
+    --sage-dark:var(--sage-deep); --cream:var(--panel); --white:#FFFFFF;
+    --quest-gold:#C9A227; --quest-copper:#B87333; --meow:#7F77DD;
+  }
+
+  .wrap{ max-width:1000px; margin:0 auto; padding:0 24px; }
+  .card{
+    background:var(--white); border-radius:var(--radius-md);
+    padding:16px 18px; box-shadow:0 2px 8px rgba(180,90,120,0.08);
+  }
+  .hint{ font-size:12px; color:var(--ink-soft); font-style:italic; }
+  .empty-note{ font-size:12.5px; color:var(--ink-soft); font-style:italic; padding:14px 0; text-align:center; }
+
+  .btn{
+    font-family:var(--font-body); font-size:13px; font-weight:500;
+    background:var(--accent); color:var(--white); border:none;
+    padding:9px 18px; border-radius:16px; cursor:pointer;
+  }
+  .btn:hover{ background:var(--accent-dark); }
+  .btn.quiet{ background:var(--cream); color:var(--ink-soft); border:1px solid rgba(74,59,65,0.18); }
+  .btn.quiet:hover{ background:var(--pink-bg-alt); color:var(--accent-dark); }
+  .btn.sm{ font-size:12px; padding:6px 12px; border-radius:13px; }
+  .btn:disabled{ background:rgba(74,59,65,0.15); color:var(--ink-soft); cursor:not-allowed; }
+
+  label.f{ display:block; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); font-weight:500; margin-bottom:4px; }
+  input[type="text"], input[type="number"]{
+    width:100%; font-family:var(--font-body); font-size:14px;
+    border:1px solid rgba(74,59,65,0.18); border-radius:8px;
+    padding:8px 10px; background:var(--cream); color:var(--ink);
+  }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .grid3{ display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
+  @media (max-width:640px){ .grid2, .grid3{ grid-template-columns:1fr; } }
+
+  .hp-preset{ display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+  .hp-preset button{
+    font-family:var(--font-body); font-size:10.5px; color:var(--ink-soft);
+    background:var(--cream); border:1px solid rgba(74,59,65,0.15);
+    border-radius:10px; padding:4px 9px; cursor:pointer;
+  }
+  .hp-preset button:hover{ background:var(--pink-bg-alt); color:var(--accent-dark); }
+
+  .check-row{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:13.5px; }
+  .check-row input{ width:auto; }
+
+  /* monster cards */
+  .monster{
+    background:var(--white); border-radius:var(--radius-md);
+    padding:16px 18px; margin-bottom:12px;
+    box-shadow:0 2px 8px rgba(180,90,120,0.08);
+    border-left:4px solid var(--ink-soft);
+  }
+  .monster.is-active{ border-left-color:var(--blade); }
+  .monster.is-dead{ opacity:.6; border-left-color:var(--sage); }
+  .m-head{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .m-name{ font-family:var(--font-serif); font-size:19px; font-weight:600; flex:1; }
+  .m-flag{
+    font-size:10.5px; font-weight:500; color:var(--white);
+    background:var(--blade); padding:2px 9px; border-radius:9px;
+  }
+  .m-flag.dead{ background:var(--sage); }
+  .hp-track{
+    height:12px; border-radius:7px; background:rgba(74,59,65,0.12);
+    overflow:hidden; margin:10px 0 6px;
+  }
+  .hp-track i{
+    display:block; height:100%; border-radius:7px;
+    background:linear-gradient(90deg, var(--blade), #7C1F2A);
+    transition:width .4s ease;
+  }
+  .hp-num{ font-size:12px; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+  .m-reward{ font-size:12.5px; color:var(--ink-soft); margin-top:8px; }
+  .m-reward b{ color:var(--ink); font-weight:500; }
+  .m-actions{ display:flex; gap:6px; margin-top:12px; flex-wrap:wrap; }
+  .modal-card{
+    background:var(--cream); border-radius:var(--radius-lg);
+    padding:30px 26px; max-width:380px; text-align:center;
+    box-shadow:0 12px 40px rgba(74,59,65,0.3); border:3px solid var(--white);
+  }
+  .modal-card .big-emoji{ font-size:44px; }
+  .modal-card h3{ font-family:var(--font-display); font-size:25px; margin:10px 0 6px; color:var(--accent-dark); }
+  .modal-card p{ font-size:14px; color:var(--ink-soft); line-height:1.5; margin:0; }
+  .modal-card button{
+    margin-top:18px; background:var(--accent); color:var(--white); border:none;
+    padding:10px 24px; border-radius:18px; font-family:var(--font-body); font-size:14px; cursor:pointer;
+  }
+  /* ======================================================================
+     PALADIN THEME
+     Applied when the log is Brendon's (?who=brendon). Set on <html> by a
+     script in the head so it paints dark from the first frame — putting it
+     on <body> would flash pink first.
+
+     Panels stay cream, matching /vmprman/. Only the page background, the
+     type that sits on it, and the accent change.
+     ====================================================================== */
+  html.pp-paladin{
+    --pink-bg:     #7C1F2A;
+    --pink-bg-alt: #5A1720;
+    --accent:      #9C7440;
+    --accent-dark: #7C5B30;
+    --sage-dark:   #8FA37E;
+    --dusty-rose:  #9C7440;
+  }
+  /* The page background is painted by .pp-dannelore in pp.css with literal
+     hex, so overriding --pink-bg alone does nothing. Repaint it here, using
+     the same gradient as .pp-vmprman. */
+  html.pp-paladin body{
+    background-image:
+      radial-gradient(circle at 15% 8%, rgba(255,255,255,0.10), transparent 40%),
+      linear-gradient(135deg,#7C1F2A 0%,#5A1720 100%) !important;
+    --accent:      #9C7440;
+    --accent-deep: #7C5B30;
+    --accent-soft: rgba(156,116,64,0.20);
+    --panel:       #FFFDF8;
+    --panel-tint:  #FFF7EC;
+    color:#F7F1E4;
+  }
+
+  /* type that sits straight on the burgundy */
+  html.pp-paladin .col-head h2,
+  html.pp-paladin .section-title{ color:#F7F1E4; }
+  html.pp-paladin .col-head .sub,
+  html.pp-paladin .past-note,
+  html.pp-paladin footer,
+  html.pp-paladin .empty-note,
+  html.pp-paladin #slotHint{ color:#E5C79A; }
+
+  /* The ribbon stays cream, same as everywhere else on the site — only the
+     page behind it goes red. So anything inside the ribbon keeps its normal
+     ink colour and only the accents shift to gold. */
+  html.pp-paladin .pp-ribbon{ border-bottom-color:rgba(156,116,64,0.45); }
+  html.pp-paladin .bar-fill.xp{ background:linear-gradient(90deg,#C9A227,#9C7440); }
+
+  html.pp-paladin .pet-slot{
+    border-color:#FFFDF8;
+    box-shadow:0 0 0 3px #9C7440, 0 4px 10px rgba(92,23,32,0.28);
+  }
+  html.pp-paladin .party-strip a{ border-color:rgba(156,116,64,0.55); }
+
+  html.pp-paladin .panel-btn{ border-color:#9C7440; color:#7C5B30; }
+  html.pp-paladin .panel-btn:hover{ background:#9C7440; color:#FFFDF8; }
+
+  html.pp-paladin .filter-pill{ border-color:rgba(247,241,228,0.35); }
+  html.pp-paladin .filter-pill:not(.on){ background:rgba(255,253,248,0.92); }
+
+  html.pp-paladin .date-nav button{ background:rgba(156,116,64,0.22); color:#7C5B30; }
+  html.pp-paladin .date-nav button:hover:not(:disabled){ background:#9C7440; color:#FFFDF8; }
+  html.pp-paladin .date-strip .line{
+    background:linear-gradient(90deg,transparent,rgba(156,116,64,0.6),transparent);
+  }
+
+  /* cards keep the cream panel, so the column stripes switch to metals */
+  html.pp-paladin .col-todos .task-card{ border-left-color:#9C7440; }
+  html.pp-paladin .col-todos .check{ border-color:#9C7440; }
+  html.pp-paladin .col-todos .check.checked{ background:#9C7440; }
+
+  html.pp-paladin .btn,
+  html.pp-paladin .add-btn{ background:#9C7440; }
+  html.pp-paladin .btn:hover,
+  html.pp-paladin .add-btn:hover{ background:#7C5B30; }
+
+  html.pp-paladin .roster-card.selected,
+  html.pp-paladin .item.worn,
+  html.pp-paladin .slot-tab.on{ border-color:#9C7440; }
+  html.pp-paladin .slot-tab.on{ background:#9C7440; }
+
+  .pp-ribbon .pp-nav a[aria-current="page"],
+  .pp-subnav a[aria-current="page"]{
+    color:#fff; background:var(--accent-deep); border-color:var(--accent-deep);
+  }
+
+  /* ---- legibility on the red ----
+     Anything sitting straight on the burgundy needs cream, not ink. The
+     sub-nav, the date strip and the unselected filter pills were all dark
+     text on a dark ground. */
+  html.pp-paladin .pp-subnav a{ color:#E5C79A; }
+  html.pp-paladin .pp-subnav a:hover{ color:#FFFDF8; background:rgba(247,241,228,0.14); }
+  html.pp-paladin .pp-subnav a[aria-current="page"]{
+    color:#3A0F16; background:#C9A227; border-color:#C9A227; font-weight:600;
+  }
+
+  html.pp-paladin .date-nav{ background:rgba(255,253,248,0.95); }
+  html.pp-paladin .date-nav #dateLabel{ color:var(--ink); }
+  html.pp-paladin .today-pill{ background:#7C5B30; color:#FFFDF8; }
+
+  html.pp-paladin .filter-pill{ color:#5A4A3A; background:rgba(255,253,248,0.92); border-color:rgba(156,116,64,0.5); }
+  html.pp-paladin .filter-pill.on{ color:#3A0F16; background:#C9A227; border-color:#C9A227; }
+
+  html.pp-paladin .view-toggle{ color:#E5C79A; }
+  html.pp-paladin .view-toggle:hover,
+  html.pp-paladin .view-toggle.on{ color:#FFFDF8; }
+
+  html.pp-paladin .done-toggle{
+    color:#E5C79A; background:rgba(255,253,248,0.10); border-color:rgba(247,241,228,0.35);
+  }
+  html.pp-paladin .done-toggle:hover{ background:rgba(255,253,248,0.18); color:#FFFDF8; }
+
+  html.pp-paladin .add-toggle{
+    color:#F4E2C0; background:rgba(255,253,248,0.10); border-color:rgba(201,162,39,0.7);
+  }
+  html.pp-paladin .add-toggle:hover,
+  html.pp-paladin .add-toggle[aria-expanded="true"]{ background:#FFFDF8; color:#7C5B30; }
+
+  /* ---- surfaces keep dark ink ----
+     body gets cream text so labels on the burgundy are legible, but that
+     inherits into every card too — cream on a cream panel is invisible.
+     Anything with its own light background resets to ink. */
+  html.pp-paladin .task-card,
+  html.pp-paladin .task-title,
+  html.pp-paladin .add-row,
+  html.pp-paladin .card,
+  html.pp-paladin .pp-panel,
+  html.pp-paladin .panel,
+  html.pp-paladin .side-panel,
+  html.pp-paladin .modal-card,
+  html.pp-paladin .shop-item,
+  html.pp-paladin .roster-card,
+  html.pp-paladin .item,
+  html.pp-paladin .monster,
+  html.pp-paladin .choice,
+  html.pp-paladin .tag-editor-row,
+  html.pp-paladin .coin,
+  html.pp-paladin .sub-text,
+  html.pp-paladin .date-nav,
+  html.pp-paladin .pp-ribbon,
+  html.pp-paladin .pp-ribbon-title{ color:var(--ink); }
+
+  html.pp-paladin .task-meta,
+  html.pp-paladin .sub-value,
+  html.pp-paladin .shop-item .desc,
+  html.pp-paladin .card .hint,
+  html.pp-paladin .modal-card p{ color:var(--ink-soft); }
+
+  /* ---- section nav ----
+     This used to sit below the ribbon, which meant it scrolled away the
+     moment you started working and you had to go back up to reach Pets or
+     Monsters. It now rides inside the sticky ribbon as a full-width row, so
+     every quest-log page is one tap away no matter how far down you are. */
+  .pp-ribbon-sections{
+    flex:1 1 100%;
+    display:flex; align-items:center; flex-wrap:wrap; gap:6px;
+    margin:0; padding-top:10px;
+    border-top:1px solid var(--line);
+    list-style:none;
+  }
+  .pp-ribbon-sections .spacer{ flex:1 1 auto; }
+  .pp-ribbon-sections .exit{
+    font-family:var(--font-serif); font-style:italic; font-size:.9rem;
+    color:var(--ink-soft); text-decoration:none; padding:5px 4px;
+  }
+  .pp-ribbon-sections .exit:hover{ color:var(--accent-deep); }
+  html.pp-paladin .pp-ribbon-sections{ border-top-color:rgba(156,116,64,0.3); }
+  @media (max-width:760px){
+    .pp-ribbon-sections{ justify-content:center; }
+    .pp-ribbon-sections .spacer{ display:none; }
+  }
+</style>
+</head>
+<body class="pp-dannelore">
+
+<header class="pp-ribbon">
+  <div class="pp-ribbon-inner">
+    <a class="pp-ribbon-mark" href="/" aria-label="Princess &amp; Paladin home">
+      <span class="pp-emblem pp-emblem-sm" style="margin:0;">
+        <!-- Tiara -->
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M8 44 H56" stroke="#9C7440" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="32" cy="10" r="3.5" fill="#9C7440"/>
+          <circle cx="4" cy="18" r="3" fill="#9C7440"/>
+          <circle cx="60" cy="18" r="3" fill="#9C7440"/>
+        </svg>
+        <!-- Sword -->
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g transform="translate(16,0)">
+            <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
+            <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+            <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
+            <circle cx="16" cy="60" r="3.4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+          </g>
+        </svg>
+      </span>
+    </a>
+    <div class="pp-ribbon-titles">
+      <span class="pp-ribbon-eyebrow"><span id="whoLabel">Quest Log</span></span>
+      <span class="pp-ribbon-title">Monsters</span>
+    </div>
+    <nav class="pp-nav" aria-label="Main navigation">
+      <a href="/">Home</a>
+      <a href="/dannelore/" aria-current="page">Princess</a>
+      <a href="/vmprman/">Paladin</a>
+      <a href="/castle/">Castle Keep</a>
+      <a href="/side-quests/">Side Quests</a>
+      <a href="/templates/">Templates</a>
+    </nav>
+    <div class="pp-ribbon-extra">
+      <div class="currency">
+            <div class="coin gold"><span class="dot"></span><span id="goldNum">0</span></div>
+            <div class="coin copper"><span class="dot"></span><span id="copperNum">0</span></div>
+            <div class="coin meow"><span class="dot"></span><span id="meowNum">0</span></div>
+          </div>
+    </div>
+    <nav class="pp-subnav pp-ribbon-sections" aria-label="Quest log sections">
+      <a href="/dannelore/quest-log/">Quest Board</a>
+      <a href="/dannelore/quest-log/pets.html">Pets</a>
+      <a href="/dannelore/quest-log/monsters.html" aria-current="page">Monsters</a>
+      <a href="/dannelore/quest-log/fit.html">Fitting Room</a>
+      <span class="spacer"></span>
+      <a class="exit" href="/dannelore/">&larr; Dannelore</a>
+    </nav>
+  </div>
+</header>
+
+
+<div class="wrap">
+
+  <h2 class="section-title">Build one</h2>
+  <div class="card">
+    <div class="grid2">
+      <div>
+        <label class="f" for="mName">Name</label>
+        <input type="text" id="mName" placeholder="The Laundry Beast" maxlength="40">
+      </div>
+      <div>
+        <label class="f" for="mHp">Hit points</label>
+        <input type="number" id="mHp" min="10" value="800">
+        <div class="hp-preset">
+          <button type="button" data-hp="300">a few days</button>
+          <button type="button" data-hp="800">about a week</button>
+          <button type="button" data-hp="2000">a fortnight</button>
+          <button type="button" data-hp="5000">a long haul</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="hint" style="margin:10px 0 0;">Damage is whatever a task pays. 100 HP is one gold of work.</p>
+
+    <h3 style="font-family:var(--font-serif);font-size:15px;font-weight:600;margin:18px 0 8px;">Drops</h3>
+    <div class="grid3">
+      <div>
+        <label class="f" for="mGold">Gold</label>
+        <input type="number" id="mGold" min="0" value="0">
+      </div>
+      <div>
+        <label class="f" for="mMeow">Meow Bucks</label>
+        <input type="number" id="mMeow" min="0" value="500">
+      </div>
+      <div>
+        <label class="f" for="mXp">XP</label>
+        <input type="number" id="mXp" min="0" value="200">
+      </div>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="mPet">
+      <label for="mPet">Drops a new companion</label>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="mItem">
+      <label for="mItem">Drops a wardrobe item</label>
+    </div>
+
+    <h3 style="font-family:var(--font-serif);font-size:15px;font-weight:600;margin:18px 0 8px;">Title fragments</h3>
+    <div class="grid2">
+      <div>
+        <label class="f" for="mPrefix">Prefix word</label>
+        <input type="text" id="mPrefix" placeholder="Slayer" maxlength="24">
+      </div>
+      <div>
+        <label class="f" for="mSubject">Subject words</label>
+        <input type="text" id="mSubject" placeholder="the Laundry Beast" maxlength="32">
+      </div>
+    </div>
+    <p class="hint" style="margin:8px 0 0;">Both go into the shared pool, so any pet can wear them. Leave the subject blank and the monster's own name is used. Leave the prefix blank and one is rolled at random.</p>
+    <p class="hint" style="margin:10px 0 0;">Gold drops come out of the weekly budget, so a fat payout quietly lowers per-task rates that week. Meow Bucks and XP don't.</p>
+
+    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
+      <button class="btn quiet" id="mCancel" style="display:none;">Cancel edit</button>
+      <button class="btn" id="mSave">Add monster</button>
+    </div>
+  </div>
+
+  <h2 class="section-title">In the field</h2>
+  <div id="liveList"></div>
+
+  <h2 class="section-title">Defeated</h2>
+  <div id="deadList"></div>
+
+</div>
+
+<footer>where creativity and chaos meet organization and overthinking 🌷</footer>
+
+<div class="modal-overlay" id="dropModal">
+  <div class="modal-card">
+    <div class="big-emoji">⚔️</div>
+    <h3 id="dropTitle"></h3>
+    <p id="dropBody"></p>
+    <button id="dropClose">Collect</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-quest.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAdNZBoh1pH80-ZFBbOlcrlsLdMi3D62Wg",
+  authDomain: "princess-paladin.firebaseapp.com",
+  projectId: "princess-paladin",
+  storageBucket: "princess-paladin.firebasestorage.app",
+  messagingSenderId: "282931655557",
+  appId: "1:282931655557:web:cae6ccd23f32cb9be54aec",
+  measurementId: "G-E5K2NMCR3Y"
+};
+firebase.initializeApp(firebaseConfig);
+const store = PQ.makeStore(firebase);
+const monsterStore = PQ.makeMonsterStore(firebase);
+const M = () => monsterStore.state;
+const WHO = store.who;
+
+const S = () => store.state;
+const save = () => { store.save(); monsterStore.save(); render(); };
+function esc(s){ const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+
+let editingId = null;
+
+document.querySelectorAll('.hp-preset button').forEach(b => {
+  b.onclick = () => { document.getElementById('mHp').value = b.dataset.hp; };
+});
+
+function readForm(){
+  return {
+    name: document.getElementById('mName').value.trim(),
+    maxHp: Math.max(10, parseInt(document.getElementById('mHp').value) || 10),
+    reward: {
+      gold: Math.max(0, parseInt(document.getElementById('mGold').value) || 0),
+      meow: Math.max(0, parseInt(document.getElementById('mMeow').value) || 0),
+      xp:   Math.max(0, parseInt(document.getElementById('mXp').value) || 0),
+      pet:  document.getElementById('mPet').checked,
+      item: document.getElementById('mItem').checked,
+      prefix:  document.getElementById('mPrefix').value.trim(),
+      subject: document.getElementById('mSubject').value.trim()
+    }
+  };
+}
+function resetForm(){
+  document.getElementById('mName').value = '';
+  document.getElementById('mHp').value = 800;
+  document.getElementById('mGold').value = 0;
+  document.getElementById('mMeow').value = 500;
+  document.getElementById('mXp').value = 200;
+  document.getElementById('mPet').checked = false;
+  document.getElementById('mItem').checked = false;
+  document.getElementById('mPrefix').value = '';
+  document.getElementById('mSubject').value = '';
+  editingId = null;
+  document.getElementById('mSave').textContent = 'Add monster';
+  document.getElementById('mCancel').style.display = 'none';
+}
+function loadForm(m){
+  editingId = m.id;
+  document.getElementById('mName').value = m.name;
+  document.getElementById('mHp').value = m.maxHp;
+  document.getElementById('mGold').value = m.reward.gold || 0;
+  document.getElementById('mMeow').value = m.reward.meow || 0;
+  document.getElementById('mXp').value = m.reward.xp || 0;
+  document.getElementById('mPet').checked = !!m.reward.pet;
+  document.getElementById('mItem').checked = !!m.reward.item;
+  document.getElementById('mPrefix').value = m.reward.prefix || '';
+  document.getElementById('mSubject').value = m.reward.subject || '';
+  document.getElementById('mSave').textContent = 'Save changes';
+  document.getElementById('mCancel').style.display = 'inline-block';
+  document.getElementById('mName').scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+document.getElementById('mCancel').onclick = () => { resetForm(); render(); };
+
+document.getElementById('mSave').onclick = () => {
+  const data = readForm();
+  if(!data.name) { document.getElementById('mName').focus(); return; }
+
+  if(editingId){
+    const m = M().monsters.find(x => x.id === editingId);
+    const spent = m.maxHp - m.hp;
+    Object.assign(m, { name: data.name, maxHp: data.maxHp, reward: data.reward });
+    m.hp = Math.max(0, Math.min(data.maxHp, data.maxHp - spent));
+  } else {
+    const m = {
+      id: 'm' + Math.random().toString(36).slice(2,10),
+      name: data.name,
+      maxHp: data.maxHp,
+      hp: data.maxHp,
+      reward: data.reward,
+      dead: false,
+      created: PQ.TODAY_KEY,
+      killed: null
+    };
+    M().monsters.push(m);
+    if(!PQ.activeMonster(M())) M().activeMonster = m.id;
+  }
+  resetForm();
+  save();
+};
+
+/* ---------- rewards ---------- */
+function rewardText(m){
+  const r = m.reward || {};
+  const bits = [];
+  if(r.gold) bits.push(`<b>${r.gold}g</b>`);
+  if(r.meow) bits.push(`<b>${r.meow}</b> Meow Bucks`);
+  if(r.xp)   bits.push(`<b>${r.xp}</b> XP`);
+  if(r.pet)  bits.push('a <b>new companion</b>');
+  if(r.item) bits.push('a <b>wardrobe item</b>');
+  let out = bits.length ? 'Drops ' + bits.join(', ') : 'Drops nothing — this one is for the satisfaction';
+  const frag = [r.prefix, r.subject].filter(Boolean);
+  if(frag.length) out += ` &nbsp;·&nbsp; title: <b>${frag.map(esc).join('</b> … <b>')}</b>`;
+  return out;
+}
+
+function damageText(m){
+  const d = (M().damage || {})[m.id] || {};
+  const parts = Object.keys(PQ.PEOPLE).map(w => {
+    const dealt = d[w] || 0;
+    const pct = m.maxHp ? Math.round(dealt / m.maxHp * 100) : 0;
+    const got = PQ.hasCollected(M(), m.id, w) ? ' · collected' : '';
+    return `${PQ.PEOPLE[w].name} ${pct}%${got}`;
+  });
+  return parts.join(' &nbsp;·&nbsp; ');
+}
+
+/* Claiming happens here so the board never has to know about drop tables. */
+function collect(m){
+  const isFirst = PQ.collectorCount(M(), m.id) === 0;
+  const r = PQ.splitReward(m.reward || {}, isFirst);
+  const lines = [];
+  if(r.gold){
+    S().gold += r.gold;
+    PQ.ledgerWeek(S()).monsters += r.gold * 100;
+    lines.push(`${r.gold} gold`);
+  }
+  if(r.meow){ S().meowBucks = (S().meowBucks || 0) + r.meow; lines.push(`${r.meow} Meow Bucks`); }
+  if(r.xp){ PQ.addAccountXP(S(), r.xp); PQ.awardPetXP(S(), r.xp); lines.push(`${r.xp} XP`); }
+  if(r.pet){ S().petTokens = (S().petTokens || 0) + 1; lines.push('a companion waiting on the pets page'); }
+  if(r.item){
+    const pool = PQ.CATALOG.filter(i => !(S().wardrobe[i.id] > 0));
+    const pick = (pool.length ? pool : PQ.CATALOG)[Math.floor(Math.random() * (pool.length ? pool.length : PQ.CATALOG.length))];
+    S().wardrobe[pick.id] = (S().wardrobe[pick.id] || 0) + 1;
+    lines.push(pick.name.toLowerCase());
+  }
+
+  /* Fragments aren't halved — a word can't be split, and both of you should
+     be able to build the same title. */
+  const r0 = m.reward || {};
+  const subject = (r0.subject || m.name).replace(/^the\s+/i, '').trim();
+  PQ.addFragment(S(), 'subject', subject);
+  const prefix = r0.prefix || PQ.randomPrefix(S());
+  if(prefix) PQ.addFragment(S(), 'prefix', prefix);
+
+  PQ.markCollected(M(), m.id, WHO);
+  m.killed = m.killed || PQ.TODAY_KEY;
+  if(M().activeMonster === m.id){
+    const next = (M().monsters || []).find(x => !x.dead);
+    M().activeMonster = next ? next.id : null;
+  }
+
+  document.getElementById('dropTitle').textContent = `${m.name} falls`;
+  document.getElementById('dropBody').textContent =
+    'Your half: ' + (lines.length ? lines.join(', ') + '.' : 'nothing, but it is done.') +
+    (prefix ? ` New title words: "${prefix}" and "${subject}".` : ` New title word: "${subject}".`);
+  document.getElementById('dropModal').classList.add('open');
+  save();
+}
+document.getElementById('dropClose').onclick = () => document.getElementById('dropModal').classList.remove('open');
+
+/* ---------- render ---------- */
+function monsterCard(m){
+  const isActive = M().activeMonster === m.id && !m.dead;
+  const pct = m.maxHp ? (m.hp / m.maxHp * 100) : 0;
+  const div = document.createElement('div');
+  div.className = 'monster' + (isActive ? ' is-active' : '') + (m.dead ? ' is-dead' : '');
+  div.innerHTML = `
+    <div class="m-head">
+      <div class="m-name">${esc(m.name)}</div>
+      ${isActive ? '<span class="m-flag">taking damage</span>' : ''}
+      ${m.dead ? '<span class="m-flag dead">defeated</span>' : ''}
+    </div>
+    ${m.dead ? '' : `
+      <div class="hp-track"><i style="width:${pct}%"></i></div>
+      <div class="hp-num">${m.hp} / ${m.maxHp} HP · ${Math.round(pct)}%</div>
+    `}
+    <div class="m-reward">${rewardText(m)}</div>
+    <div class="m-reward" style="font-size:11.5px;">${damageText(m)}</div>
+    <div class="m-actions"></div>
+  `;
+  const actions = div.querySelector('.m-actions');
+
+  if(m.dead && !PQ.hasCollected(M(), m.id, WHO)){
+    const b = document.createElement('button');
+    b.className = 'btn sm';
+    b.textContent = 'Collect your half';
+    b.onclick = () => collect(m);
+    actions.appendChild(b);
+  }
+  if(!m.dead && !isActive){
+    const b = document.createElement('button');
+    b.className = 'btn sm';
+    b.textContent = 'Make active';
+    b.onclick = () => { M().activeMonster = m.id; save(); };
+    actions.appendChild(b);
+  }
+  if(!m.dead){
+    const e = document.createElement('button');
+    e.className = 'btn quiet sm';
+    e.textContent = 'Edit';
+    e.onclick = () => loadForm(m);
+    actions.appendChild(e);
+  }
+  const d = document.createElement('button');
+  d.className = 'btn quiet sm';
+  d.textContent = 'Delete';
+  d.onclick = () => {
+    if(!confirm(`Delete ${m.name}?`)) return;
+    M().monsters = M().monsters.filter(x => x.id !== m.id);
+    if(M().activeMonster === m.id){
+      const next = (M().monsters || []).find(x => !x.dead);
+      M().activeMonster = next ? next.id : null;
+    }
+    save();
+  };
+  actions.appendChild(d);
+
+  return div;
+}
+
+function render(){
+  const wl = document.getElementById('whoLabel');
+  if(wl) wl.textContent = store.person.name + "'s Quest Log";
+  document.getElementById('goldNum').textContent = S().gold;
+  document.getElementById('copperNum').textContent = S().copper;
+  document.getElementById('meowNum').textContent = (S().meowBucks || 0).toLocaleString();
+
+  const live = document.getElementById('liveList');
+  const dead = document.getElementById('deadList');
+  live.innerHTML = ''; dead.innerHTML = '';
+
+  const monsters = M().monsters || [];
+  const alive = monsters.filter(m => !m.dead);
+  const fallen = monsters.filter(m => m.dead);
+
+  if(!alive.length) live.innerHTML = '<div class="card"><p class="empty-note">Nothing to fight. Build one above and every task you finish will chip away at it.</p></div>';
+  alive.sort((a,b) => (M().activeMonster === b.id ? 1 : 0) - (M().activeMonster === a.id ? 1 : 0));
+  alive.forEach(m => live.appendChild(monsterCard(m)));
+
+  if(!fallen.length) dead.innerHTML = '<div class="card"><p class="empty-note">None yet.</p></div>';
+  fallen.forEach(m => dead.appendChild(monsterCard(m)));
+}
+
+document.querySelectorAll('a[href^="/dannelore/quest-log"]').forEach(a => {
+  a.href = PQ.personLink(a.getAttribute('href'));
+});
+
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible')
+    Promise.all([store.load(), monsterStore.load()]).then(render);
+});
+
+Promise.all([store.load(), monsterStore.load()]).then(render);
+</script>
+</body>
+</html>
