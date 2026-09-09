@@ -22,6 +22,38 @@
   /* ---------- detail ---------- */
   .cq-detail-head{ display:flex; gap:16px; align-items:flex-start; margin-bottom:20px; }
 
+  /* an extra date line per rewatch, quieter than the original */
+  .cq-rewatchline{
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+
+  /* one row per logged viewing, in the detail panel */
+  .cq-rewatch-row{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px dashed var(--line);
+    font-family: var(--font-serif);
+    font-size: .95rem;
+    color: var(--ink);
+  }
+  .cq-rewatch-row:last-of-type{ border-bottom: 0; }
+  .cq-rewatch-row span{ flex: 1 1 auto; min-width: 0; }
+  .cq-rewatch-row button{
+    flex: 0 0 auto;
+    font-family: var(--font-body);
+    font-size: .9rem;
+    line-height: 1;
+    color: var(--ink-soft);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    padding: 3px 6px;
+  }
+  .cq-rewatch-row button:hover{ color: var(--burgundy); }
+
   /* rewatch badge on card */
   .cq-rewatch{
     font-family: var(--font-body);
@@ -462,6 +494,18 @@ function dateLine(item){
   return "";
 }
 
+/* ---------------- rewatch dates ----------------
+   Newest first, so the most recent viewing is the one you see first. */
+function rewatchDates(item){
+  return (item.rewatches || []).filter(Boolean).slice().sort().reverse();
+}
+
+function rewatchLines(item){
+  return rewatchDates(item)
+    .map(d => `<div class="cq-dateline cq-rewatchline">Rewatched ${esc(fmtDate(d))}</div>`)
+    .join("");
+}
+
 /* ---------------- who ---------------- */
 const WHO_LABEL = { together:"Together", danni:"D only", brendon:"B only", family:"Family" };
 const WHO_KEYS  = ["together","danni","brendon","family"];
@@ -568,6 +612,9 @@ function migrate(){
     if(it.priB == null){ it.priB = 0; touched = true; }
     if(!Array.isArray(it.streams)){ it.streams = []; touched = true; }
     if(it.rewatch == null){ it.rewatch = false; touched = true; }
+    /* Every viewing after the first, as YYYY-MM-DD. The original finish date
+       stays on endDate / the seasons, so nothing here rewrites old records. */
+    if(!Array.isArray(it.rewatches)){ it.rewatches = []; touched = true; }
     /* "Max" was renamed to "HBO Max" */
     if(it.streams.includes("Max")){
       it.streams = it.streams.map(s => s === "Max" ? "HBO Max" : s);
@@ -834,9 +881,12 @@ function visibleItems(){
     /* Watched titles are archived rather than listed: they drop out of the
        default view so the page stays a list of what's still to watch. The
        Watched tab and Everything both still show the complete set, so nothing
-       is actually hidden — a rewatch you've flagged even stays in Current,
-       because you do still mean to put it on. */
-    if(filter === "unfinished" && i.status === "watched" && !i.rewatch) return false;
+       is actually hidden.
+
+       Rewatches go too. A thing you've seen and mean to see again isn't
+       unfinished — it's finished, more than once. Each viewing is logged as
+       its own date instead, and the Rewatches tab collects them. */
+    if(filter === "unfinished" && i.status === "watched") return false;
     const statusFilters = ["want","watching","watched"];
     if(statusFilters.includes(filter) && i.status !== filter) return false;
     if(fltKind !== "all" && (i.type || "series") !== fltKind) return false;
@@ -993,6 +1043,7 @@ function render(){
         <h3 class="cq-name">${esc(item.title)}</h3>
         ${where ? `<div class="cq-where">${esc(where)}</div>` : ""}
         ${dateLine(item) ? `<div class="cq-dateline">${esc(dateLine(item))}</div>` : ""}
+        ${rewatchLines(item)}
         <div class="cq-meta">
           <button class="cq-status" data-status="${item.status}" data-cycle="${item.id}">${LABEL[item.status]}</button>
           ${pri}${rewatch}
@@ -1117,6 +1168,30 @@ function openDetail(id){
   }
 
   $("detail").classList.add("open");
+  /* ---- rewatch log ----
+     Appended after whatever the film / season blocks produced, so it reads as
+     the tail of the record rather than competing with it. */
+  const log = document.createElement("div");
+  log.className = "cq-block";
+  const dates = rewatchDates(item);
+  log.innerHTML = `
+    <div class="cq-block-head">
+      <span class="cq-block-name">Rewatches</span>
+      <span class="cq-block-count">${dates.length || "none yet"}</span>
+    </div>
+    ${dates.map(d => `
+      <div class="cq-rewatch-row">
+        <span>Rewatched ${esc(fmtDate(d))}</span>
+        <button data-rewatch-drop="${esc(d)}" aria-label="Remove this rewatch">&times;</button>
+      </div>`).join("")}
+    <div class="cq-dates" style="margin-top:10px;">
+      <label for="rwDate">Watched again</label>
+      <input id="rwDate" type="date">
+      <button class="pp-btn pp-btn-quiet pp-btn-sm" id="rwAdd">Log it</button>
+    </div>
+    <p class="cq-hint" style="margin:6px 0 0;">Each viewing after the first. The original finish date above stays as it is.</p>`;
+  body.appendChild(log);
+
   PPProgress.draw($("detail"));
 }
 
@@ -1158,6 +1233,28 @@ function setDate(itemId, seasonNo, which, value){
   if(value) target[key] = value;
   else      delete target[key];
   save();
+}
+
+/* Logging a viewing also raises the rewatch flag, so the Rewatches tab picks
+   it up without you having to tick the box separately. */
+function addRewatch(itemId, date){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item || !date) return;
+  if(!Array.isArray(item.rewatches)) item.rewatches = [];
+  if(item.rewatches.indexOf(date) > -1) return;   /* same day twice is a slip */
+  item.rewatches.push(date);
+  item.rewatches.sort();
+  item.rewatch = true;
+  save();
+  openDetail(itemId);
+}
+
+function removeRewatch(itemId, date){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item || !Array.isArray(item.rewatches)) return;
+  item.rewatches = item.rewatches.filter(d => d !== date);
+  save();
+  openDetail(itemId);
 }
 
 function clearDates(itemId, seasonNo){
@@ -1391,6 +1488,18 @@ $("detailBody").onclick = e => {
   if(noneBtn){
     const no = parseInt(noneBtn.getAttribute("data-season-none"), 10);
     if(no) setSeasonEps(openId, no, []);
+    return;
+  }
+
+  if(e.target.id === "rwAdd"){
+    const box = $("rwDate");
+    if(box && box.value) addRewatch(openId, box.value);
+    return;
+  }
+
+  const dropRw = e.target.closest("[data-rewatch-drop]");
+  if(dropRw){
+    removeRewatch(openId, dropRw.getAttribute("data-rewatch-drop"));
     return;
   }
 
