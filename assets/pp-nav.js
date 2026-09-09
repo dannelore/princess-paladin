@@ -115,7 +115,8 @@ window.PPNav = (function(){
           note:'The tile grid', pages:[
           { label:'Bucket Quest', href:'/side-quests/bucket-quest.html', note:'Couples bucket list and its timeline' },
           { label:'Couch Quest',  href:'/side-quests/couch-quest.html',  note:'Watch list' },
-          { label:'Spooky Quest', href:'/side-quests/spooky-quest.html', note:'1 September – 31 October' }
+          { label:'Spooky Quest', href:'/side-quests/spooky-quest.html', note:'1 September – 31 October' },
+          { label:'Watch History', href:'/side-quests/watch-history.html', note:'Both watch lists, in the order you finished them' }
         ]}
       ]
     },

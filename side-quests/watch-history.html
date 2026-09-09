@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watch History &middot; Side Quests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/pp-tracker.css">
+
+<style>
+  /* ======================================================================
+     WATCH HISTORY
+
+     One chronological record of everything you've finished, drawn from BOTH
+     trackers at once — sidequest/couch-list and sidequest/spooky-list. It
+     reads those two documents and writes to neither; editing still happens on
+     the tracker the title lives on, and every row links back to it.
+
+     A series contributes one row PER SEASON, because a season is the thing
+     that actually has a finish date on it. A film contributes one row.
+     Anything with no date at all can't be placed on the spine, so it collects
+     under "Date not recorded" at the bottom rather than disappearing.
+     ====================================================================== */
+
+  .wh-intro{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.02rem;
+    color: var(--ink-soft);
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto 24px;
+    line-height: 1.5;
+  }
+
+  /* ---- summary strip ---- */
+  .wh-stats{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .wh-stat{ text-align: center; padding: 16px 12px; }
+  .wh-stat b{
+    display: block;
+    font-family: var(--font-serif);
+    font-size: 1.9rem;
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--dusk-deep);
+  }
+  .wh-stat span{
+    font-family: var(--font-body);
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .wh-stat.spooky b{ color: var(--pumpkin-deep); }
+
+  /* ---- the spine ---- */
+  .wh-year{
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin: 30px 0 6px;
+  }
+  .wh-year:first-child{ margin-top: 6px; }
+  .wh-year h2{
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--dusk-deep);
+  }
+  .wh-year .rule{ flex: 1 1 auto; height: 1px; background: var(--line-gold); }
+  .wh-year .n{
+    font-family: var(--font-body);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .wh-year.undated h2{ font-size: 1.3rem; font-style: italic; color: var(--ink-soft); }
+
+  .wh-month{
+    font-family: var(--font-body);
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 18px 0 8px 30px;
+  }
+
+  .wh-row{
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 0 0 18px 30px;
+    margin-left: 10px;
+    border-left: 2px solid var(--line-gold);
+    text-decoration: none;
+    color: inherit;
+  }
+  .wh-row:last-child{ border-left-color: transparent; padding-bottom: 6px; }
+  .wh-row:hover{ text-decoration: none; }
+  .wh-row:hover .wh-title{ color: var(--dusk); }
+
+  /* The dot. Pumpkin for a spooky-season watch, dusk for everything else —
+     that's the at-a-glance signal down the whole page. */
+  .wh-row::before{
+    content: "";
+    position: absolute;
+    left: -8px; top: 6px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--dusk);
+    border: 3px solid var(--panel);
+    box-shadow: 0 0 0 1px var(--dusk);
+  }
+  .wh-row.is-spooky::before{
+    background: var(--pumpkin);
+    box-shadow: 0 0 0 1px var(--pumpkin);
+  }
+
+  .wh-poster{
+    width: 54px;
+    aspect-ratio: 2/3;
+    flex-shrink: 0;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    background: var(--parchment);
+    border: 1px solid var(--line);
+  }
+  .wh-body{ flex: 1 1 auto; min-width: 0; }
+
+  .wh-when{
+    font-family: var(--font-body);
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 2px;
+  }
+  .wh-title{
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.12rem;
+    line-height: 1.25;
+    color: var(--ink);
+    margin: 0 0 3px;
+  }
+  .wh-sub{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .wh-badges{ display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; align-items: center; }
+
+  .wh-pumpkin{
+    font-family: var(--font-body);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--pumpkin);
+    border-radius: 999px;
+    padding: 3px 9px;
+    white-space: nowrap;
+  }
+  .wh-trad{
+    font-family: var(--font-body);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    background: var(--parchment);
+    border: 1px solid var(--parchment-border);
+    border-radius: 999px;
+    padding: 2px 8px;
+  }
+
+  .wh-state{
+    text-align: center;
+    padding: 40px 20px;
+    font-family: var(--font-serif);
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 560px){
+    .wh-poster{ width: 42px; }
+    .wh-row{ padding-left: 20px; gap: 10px; }
+    .wh-month{ margin-left: 20px; }
+  }
+</style>
+</head>
+
+<body class="pp-sidequest" data-nav-eyebrow="Side Quests" data-nav-title="Watch History">
+
+<div class="pp-wrap">
+
+  <div class="pp-page-title">
+    <h2>Watch History</h2>
+  </div>
+
+  <p class="wh-intro">
+    Everything the two of you have finished, in the order you finished it.
+    Couch Quest and Spooky Quest both feed this page &mdash; anything watched off
+    the spooky list carries a pumpkin.
+  </p>
+
+  <div class="wh-stats" id="stats"></div>
+
+  <div class="cq-selects">
+    <div class="cq-pick">
+      <label for="fSource">List</label>
+      <select id="fSource">
+        <option value="all">Both lists</option>
+        <option value="couch">Couch Quest</option>
+        <option value="spooky">Spooky Quest</option>
+      </select>
+    </div>
+    <div class="cq-pick">
+      <label for="fWho">Who</label>
+      <select id="fWho">
+        <option value="all">Anyone</option>
+        <option value="together">Together</option>
+        <option value="danni">D only</option>
+        <option value="brendon">B only</option>
+        <option value="family">Family</option>
+      </select>
+    </div>
+    <div class="cq-pick">
+      <label for="fYear">Year</label>
+      <select id="fYear"><option value="all">Any year</option></select>
+    </div>
+    <button class="cq-reset" id="reset">Clear filters</button>
+    <span class="cq-spacer"></span>
+    <span class="cq-count" id="count"></span>
+  </div>
+
+  <div id="timeline"><p class="wh-state" id="state">Reading both lists&hellip;</p></div>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script>
+"use strict";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAdNZBoh1pH80-ZFBbOlcrlsLdMi3D62Wg",
+  authDomain: "princess-paladin.firebaseapp.com",
+  projectId: "princess-paladin",
+  storageBucket: "princess-paladin.appspot.com",
+  messagingSenderId: "282931655557",
+  appId: "1:282931655557:web:cae6ccd23f32cb9be54aec"
+};
+
+/* The two trackers this page reads. Adding a third watch list later means
+   adding a line here and nothing else. */
+const SOURCES = [
+  { key:"couch",  label:"Couch Quest",  doc:"sidequest/couch-list",
+    page:"/side-quests/couch-quest.html",  cache:"pp_couch_list",  spooky:false },
+  { key:"spooky", label:"Spooky Quest", doc:"sidequest/spooky-list",
+    page:"/side-quests/spooky-quest.html", cache:"pp_spooky_list", spooky:true  }
+];
+
+const WHO_LABEL = { together:"Together", danni:"D only", brendon:"B only", family:"Family" };
+const MONTHS = ["January","February","March","April","May","June",
+                "July","August","September","October","November","December"];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+let entries = [];
+let fSource = "all", fWho = "all", fYear = "all";
+
+/* ---------------- dates ----------------
+   Dates are stored as plain YYYY-MM-DD strings. Parsing one with `new Date()`
+   treats it as UTC and can shift it a day backwards in our timezone, so it's
+   split by hand instead. */
+function parts(d){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || ""));
+  return m ? { y:+m[1], m:+m[2], d:+m[3] } : null;
+}
+function fmtDate(d){
+  const p = parts(d);
+  return p ? `${p.d} ${MONTHS[p.m-1].slice(0,3)} ${p.y}` : "";
+}
+
+/* ---------------- building the list ----------------
+   A film is one row. A series is one row per season, because the season is
+   what carries a finish date. Prefer the date you FINISHED on; fall back to
+   the start date and say so, rather than dropping the row. */
+function rowsFor(item, source){
+  const base = {
+    source: source.key,
+    sourceLabel: source.label,
+    page: source.page,
+    spooky: source.spooky,
+    title: item.title || "Untitled",
+    image: item.image || "",
+    who: item.who || "together",
+    tradition: !!item.tradition,
+    id: item.id
+  };
+
+  if(item.type === "movie" || !Array.isArray(item.seasons) || !item.seasons.length){
+    if(item.status !== "watched") return [];
+    return [Object.assign({}, base, {
+      unit: item.type === "movie" ? "Film" : "",
+      date: item.endDate || item.startDate || "",
+      started: !item.endDate && !!item.startDate
+    })];
+  }
+
+  const out = [];
+  item.seasons.forEach(s => {
+    /* A season counts as watched when every episode is ticked, or when the
+       whole title is marked watched and the season has a finish date on it. */
+    const total = s.episodes || 0;
+    const seen  = Array.isArray(s.watched) ? s.watched.length : (s.watchedCount || 0);
+    const done  = (total > 0 && seen >= total) || (item.status === "watched" && s.endDate);
+    if(!done) return;
+    out.push(Object.assign({}, base, {
+      unit: "Season " + (s.number != null ? s.number : "?"),
+      date: s.endDate || s.startDate || "",
+      started: !s.endDate && !!s.startDate
+    }));
+  });
+  return out;
+}
+
+function build(lists){
+  entries = [];
+  lists.forEach(({ source, items }) => {
+    (items || []).forEach(item => { entries = entries.concat(rowsFor(item, source)); });
+  });
+
+  /* Newest first. Undated rows sink to the bottom in title order. */
+  entries.sort((a, b) => {
+    if(!a.date && !b.date) return a.title.localeCompare(b.title);
+    if(!a.date) return 1;
+    if(!b.date) return -1;
+    if(a.date === b.date) return a.title.localeCompare(b.title);
+    return a.date < b.date ? 1 : -1;
+  });
+
+  fillYears();
+  render();
+}
+
+function fillYears(){
+  const years = new Set();
+  entries.forEach(e => { const p = parts(e.date); if(p) years.add(p.y); });
+  const sel = $("fYear");
+  const keep = sel.value;
+  sel.innerHTML = '<option value="all">Any year</option>';
+  Array.from(years).sort((a,b) => b-a).forEach(y => {
+    const o = document.createElement("option");
+    o.value = String(y); o.textContent = String(y);
+    sel.appendChild(o);
+  });
+  sel.value = years.has(parseInt(keep,10)) ? keep : "all";
+  fYear = sel.value;
+}
+
+function visible(){
+  return entries.filter(e => {
+    if(fSource !== "all" && e.source !== fSource) return false;
+    if(fWho !== "all" && e.who !== fWho) return false;
+    if(fYear !== "all"){
+      const p = parts(e.date);
+      if(!p || p.y !== parseInt(fYear,10)) return false;
+    }
+    return true;
+  });
+}
+
+/* ---------------- summary ---------------- */
+function renderStats(rows){
+  const thisYear = new Date().getFullYear();
+  const spooky = rows.filter(e => e.spooky).length;
+  const titles = new Set(rows.map(e => e.source + ":" + e.title)).size;
+  const inYear = rows.filter(e => { const p = parts(e.date); return p && p.y === thisYear; }).length;
+
+  $("stats").innerHTML = `
+    <div class="pp-panel pp-panel-tight wh-stat"><b>${rows.length}</b><span>Entries</span></div>
+    <div class="pp-panel pp-panel-tight wh-stat"><b>${titles}</b><span>Titles</span></div>
+    <div class="pp-panel pp-panel-tight wh-stat"><b>${inYear}</b><span>In ${thisYear}</span></div>
+    <div class="pp-panel pp-panel-tight wh-stat spooky"><b>${spooky}</b><span>Spooky season</span></div>`;
+}
+
+/* ---------------- the spine ---------------- */
+function render(){
+  const rows = visible();
+  const box = $("timeline");
+  renderStats(rows);
+
+  $("count").textContent = rows.length === entries.length
+    ? (entries.length ? `${entries.length} watched, all time` : "")
+    : `Showing ${rows.length} of ${entries.length}`;
+
+  if(!rows.length){
+    box.innerHTML = `<p class="wh-state">${
+      entries.length ? "Nothing matches those filters."
+                     : "Nothing finished yet. Tick something off on either tracker and it lands here."
+    }</p>`;
+    return;
+  }
+
+  /* Group by year, then by month within the year. Order is already right, so
+     this just walks the sorted list and starts a new heading on change. */
+  let html = "", curYear = "\u0000", curMonth = "\u0000";
+
+  rows.forEach(e => {
+    const p = parts(e.date);
+    const year = p ? String(p.y) : null;
+
+    if(year !== curYear){
+      curYear = year; curMonth = "\u0000";
+      const n = rows.filter(x => {
+        const q = parts(x.date);
+        return (q ? String(q.y) : null) === year;
+      }).length;
+      html += `<div class="wh-year${year ? "" : " undated"}">
+        <h2>${year || "Date not recorded"}</h2>
+        <span class="rule"></span><span class="n">${n}</span></div>`;
+    }
+
+    if(p && MONTHS[p.m-1] !== curMonth){
+      curMonth = MONTHS[p.m-1];
+      html += `<div class="wh-month">${curMonth}</div>`;
+    }
+
+    const sub = [e.unit, WHO_LABEL[e.who] || e.who, e.sourceLabel].filter(Boolean).join(" · ");
+    const when = p ? (e.started ? "Started " + fmtDate(e.date) : fmtDate(e.date)) : "no date";
+
+    html += `<a class="wh-row${e.spooky ? " is-spooky" : ""}" href="${esc(e.page)}"
+                title="Open on ${esc(e.sourceLabel)}">
+      ${e.image ? `<img class="wh-poster" src="${esc(e.image)}" alt="" loading="lazy"
+                        onerror="this.style.visibility='hidden'">` : ""}
+      <div class="wh-body">
+        <div class="wh-when">${esc(when)}</div>
+        <p class="wh-title">${esc(e.title)}</p>
+        <p class="wh-sub">${esc(sub)}</p>
+        <div class="wh-badges">
+          ${e.spooky ? `<span class="wh-pumpkin">&#127875; Spooky${p ? " " + p.y : ""}</span>` : ""}
+          ${e.tradition ? `<span class="wh-trad">Tradition</span>` : ""}
+        </div>
+      </div>
+    </a>`;
+  });
+
+  box.innerHTML = html;
+}
+
+/* ---------------- loading ----------------
+   Read-only. Each list falls back to whatever the tracker last cached in this
+   browser, so the page still shows something if Firestore is unreachable. */
+async function load(){
+  let db = null;
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+  }catch(err){
+    console.error("Firebase init failed:", err);
+  }
+
+  const lists = await Promise.all(SOURCES.map(async source => {
+    if(db){
+      try{
+        const snap = await db.doc(source.doc).get();
+        if(snap.exists){
+          const data = snap.data();
+          if(Array.isArray(data.items)) return { source, items: data.items };
+        }
+      }catch(err){
+        console.error("Could not read " + source.doc + ":", err);
+      }
+    }
+    try{
+      const raw = JSON.parse(localStorage.getItem(source.cache) || "null");
+      if(raw && Array.isArray(raw.items)) return { source, items: raw.items };
+    }catch(e){}
+    return { source, items: [] };
+  }));
+
+  build(lists);
+}
+
+/* ---------------- events ---------------- */
+$("fSource").onchange = e => { fSource = e.target.value; render(); };
+$("fWho").onchange    = e => { fWho    = e.target.value; render(); };
+$("fYear").onchange   = e => { fYear   = e.target.value; render(); };
+$("reset").onclick = () => {
+  fSource = fWho = fYear = "all";
+  $("fSource").value = $("fWho").value = $("fYear").value = "all";
+  render();
+};
+
+load();
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>
