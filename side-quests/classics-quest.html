@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classics Quest &middot; Side Quests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/pp-progress.css">
+
+<style>
+  /* ======================================================================
+     THE QUEST TO BECOMING INSUFFERABLY WELL-READ
+
+     An A-to-Z reading list, and Danni's alone. Unlike the watch trackers there
+     is no "who" here at all — no Brendon column, no together/solo split, no
+     ?who= switch. One person, one status and one finish date per book.
+
+     Firestore: sidequest/classics-list
+     The 27 titles are seeded from SEED below on first load and are never
+     re-seeded after that, so anything you add or edit later is safe.
+     ====================================================================== */
+
+  .clq-intro{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.02rem;
+    color: var(--ink-soft);
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto 22px;
+    line-height: 1.5;
+  }
+
+  /* ---- progress ---- */
+  .clq-progress{ margin-bottom: 20px; }
+  .clq-track{ padding: 18px 22px; }
+  .clq-track h3{
+    font-family: var(--font-body);
+    font-size: .66rem;
+    font-weight: 600;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--dusk-deep);
+    margin: 0 0 10px;
+  }
+
+  /* ---- controls ---- */
+  .clq-bar{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .clq-bar .spacer{ flex: 1 1 auto; }
+  .clq-count{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .95rem;
+    color: var(--ink-soft);
+  }
+  .clq-sync{
+    font-family: var(--font-body);
+    font-size: .7rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .clq-sync[data-state="saving"]{ color: var(--gold); }
+  .clq-sync[data-state="error"]{ color: var(--blade); }
+
+  /* ---- the shelf ---- */
+  .clq-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+  }
+
+  .clq-card{
+    position: relative;
+    display: flex;
+    gap: 12px;
+    padding: 14px 14px 14px 12px;
+    text-align: left;
+    cursor: pointer;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--lift);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+  .clq-card:hover,
+  .clq-card:focus-visible{
+    transform: translateY(-3px);
+    box-shadow: var(--lift-lg);
+    border-color: var(--dusk);
+  }
+  /* Finished. */
+  .clq-card.is-read{
+    border-color: var(--sage);
+    background: linear-gradient(180deg, rgba(143,163,126,.10), transparent 60%), var(--panel);
+  }
+
+  /* The letter is the spine of the book, so it gets the drop cap treatment. */
+  .clq-letter{
+    flex: 0 0 auto;
+    width: 34px;
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--dusk);
+    text-align: center;
+    padding-top: 2px;
+  }
+  .clq-card.is-read .clq-letter{ color: var(--sage-deep); }
+
+  .clq-body{ flex: 1 1 auto; min-width: 0; }
+  .clq-title{
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.2;
+    margin: 0 0 2px;
+    color: var(--ink);
+    word-break: break-word;
+  }
+  .clq-author{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .84rem;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  /* One status pill. Hollow until you've finished it. */
+  .clq-status{
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-body);
+    font-size: .58rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    border-radius: 999px;
+    padding: 3px 10px;
+    margin-top: 9px;
+    border: 1px solid var(--line-strong);
+    color: var(--ink-soft);
+    background: transparent;
+  }
+  .clq-status[data-state="reading"]{
+    border-style: dashed;
+    color: var(--gold-deep);
+    border-color: var(--gold);
+  }
+  .clq-status[data-state="read"]{
+    color: #fff;
+    background: var(--sage-deep);
+    border-color: var(--sage-deep);
+  }
+
+  .clq-when{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .78rem;
+    color: var(--ink-soft);
+    margin: 7px 0 0;
+  }
+
+  /* ---- detail ---- */
+  .clq-detail{
+    display: none;
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 120;
+    max-height: 88vh;
+    overflow-y: auto;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: 0 -8px 40px rgba(46,36,31,.28);
+  }
+  .clq-detail.open{ display: block; }
+  @media (min-width: 720px){
+    .clq-detail{
+      inset: 50% auto auto 50%;
+      transform: translate(-50%,-50%);
+      width: min(560px, 92vw);
+      border-radius: var(--radius-lg);
+    }
+  }
+  .clq-detail-head{ display: flex; gap: 14px; align-items: flex-start; margin-bottom: 4px; }
+  .clq-detail-head .clq-letter{ font-size: 2.6rem; width: 44px; }
+  .clq-detail-head h2{ margin: 0 0 2px; font-size: 1.4rem; }
+
+  .clq-block{ padding: 14px 0; border-top: 1px solid var(--line); }
+  .clq-block-name{
+    font-family: var(--font-body);
+    font-size: .68rem;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+
+  .clq-states{ display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .clq-states button{
+    font-family: var(--font-body);
+    font-size: .72rem;
+    font-weight: 500;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 13px;
+    cursor: pointer;
+  }
+  .clq-states button[aria-pressed="true"]{
+    color: #fff;
+    background: var(--dusk);
+    border-color: var(--dusk);
+  }
+  .clq-finished{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+  .clq-finished label{
+    font-family: var(--font-body);
+    font-size: .64rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .clq-finished input[type="date"]{
+    font-family: var(--font-body);
+    font-size: .84rem;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 5px 9px;
+  }
+
+  .clq-empty{
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 36px;
+    font-family: var(--font-serif);
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 420px){
+    .clq-grid{ grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+
+<body class="pp-sidequest" data-nav-eyebrow="Side Quests" data-nav-title="Classics Quest">
+
+<div class="pp-wrap">
+
+  <div class="pp-page-title">
+    <h2>The Quest to Becoming Insufferably Well-Read</h2>
+  </div>
+
+  <p class="clq-intro">
+    One classic for every letter of the alphabet. Read them in any order, at any
+    pace, and be unbearable about it afterwards.
+  </p>
+
+  <div class="clq-progress" id="progress"></div>
+
+  <div class="clq-bar">
+    <button class="pp-pill" data-filter="all" aria-pressed="true">All</button>
+    <button class="pp-pill" data-filter="unread" aria-pressed="false">Unread</button>
+    <button class="pp-pill" data-filter="reading" aria-pressed="false">Reading</button>
+    <button class="pp-pill" data-filter="read" aria-pressed="false">Read</button>
+    <span class="spacer"></span>
+    <span class="clq-count" id="count"></span>
+    <span class="clq-sync" id="sync"></span>
+  </div>
+
+  <div class="clq-grid" id="grid"></div>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+
+</div>
+
+<div class="pp-overlay" id="overlay"></div>
+<div class="pp-panel pp-panel-lg clq-detail" id="detail"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-progress.js" defer></script>
+<script>
+"use strict";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAdNZBoh1pH80-ZFBbOlcrlsLdMi3D62Wg",
+  authDomain: "princess-paladin.firebaseapp.com",
+  projectId: "princess-paladin",
+  storageBucket: "princess-paladin.appspot.com",
+  messagingSenderId: "282931655557",
+  appId: "1:282931655557:web:cae6ccd23f32cb9be54aec"
+};
+
+const DOC_PATH  = "sidequest/classics-list";
+const CACHE_KEY = "pp_classics_list";
+
+/* The starting shelf. Ids are stable so re-seeding can never duplicate a row,
+   and P has two books because two of them earned it. */
+const SEED = [
+  { id:"a",  letter:"A", title:"Animal Farm",                     author:"George Orwell" },
+  { id:"b",  letter:"B", title:"The Bell Jar",                    author:"Sylvia Plath" },
+  { id:"c",  letter:"C", title:"The Catcher in the Rye",          author:"J. D. Salinger" },
+  { id:"d",  letter:"D", title:"Dracula",                         author:"Bram Stoker" },
+  { id:"e",  letter:"E", title:"Emma",                            author:"Jane Austen" },
+  { id:"f",  letter:"F", title:"Frankenstein",                    author:"Mary Shelley" },
+  { id:"g",  letter:"G", title:"The Great Gatsby",                author:"F. Scott Fitzgerald" },
+  { id:"h",  letter:"H", title:"The Handmaid\u2019s Tale",        author:"Margaret Atwood" },
+  { id:"i",  letter:"I", title:"The Importance of Being Earnest", author:"Oscar Wilde" },
+  { id:"j",  letter:"J", title:"Jane Eyre",                       author:"Charlotte Bront\u00eb" },
+  { id:"k",  letter:"K", title:"The Kite Runner",                 author:"Khaled Hosseini" },
+  { id:"l",  letter:"L", title:"Lord of the Flies",               author:"William Golding" },
+  { id:"m",  letter:"M", title:"Murder on the Orient Express",    author:"Agatha Christie" },
+  { id:"n",  letter:"N", title:"Night",                           author:"Elie Wiesel" },
+  { id:"o",  letter:"O", title:"Oliver Twist",                    author:"Charles Dickens" },
+  { id:"p1", letter:"P", title:"Pride and Prejudice",             author:"Jane Austen" },
+  { id:"p2", letter:"P", title:"The Picture of Dorian Gray",      author:"Oscar Wilde" },
+  { id:"q",  letter:"Q", title:"Quicksand",                       author:"Nella Larsen" },
+  { id:"r",  letter:"R", title:"The Raven",                       author:"Edgar Allan Poe" },
+  { id:"s",  letter:"S", title:"The Shining",                     author:"Stephen King" },
+  { id:"t",  letter:"T", title:"A Tale of Two Cities",            author:"Charles Dickens" },
+  { id:"u",  letter:"U", title:"Uncle Tom\u2019s Cabin",          author:"Harriet Beecher Stowe" },
+  { id:"v",  letter:"V", title:"The Virgin Suicides",             author:"Jeffrey Eugenides" },
+  { id:"w",  letter:"W", title:"Wuthering Heights",               author:"Emily Bront\u00eb" },
+  { id:"x",  letter:"X", title:"1984",                            author:"George Orwell" },
+  { id:"y",  letter:"Y", title:"The Yellow Wallpaper",            author:"Charlotte Perkins Gilman" },
+  { id:"z",  letter:"Z", title:"Zastrozzi",                       author:"Percy Bysshe Shelley" }
+];
+
+const STATES = [
+  { key:"unread",  label:"Not started" },
+  { key:"reading", label:"Reading" },
+  { key:"read",    label:"Read" }
+];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+let state = { items: [] };
+let docRef = null, openId = null, filter = "all";
+
+/* ---------------- dates ----------------
+   Plain YYYY-MM-DD, split by hand so a UTC parse can't shift the day. */
+function fmtDate(d){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || ""));
+  if(!m) return "";
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${+m[3]} ${MONTHS[+m[2]-1]} ${m[1]}`;
+}
+
+/* ---------------- shape ----------------
+   status is "unread" | "reading" | "read"; date is the day you finished.
+
+   An earlier draft of this page kept a record per reader under `readers`.
+   Nothing should have been saved in that shape, but if anything was, fold
+   Danni's half up and drop the rest rather than losing a finish date. */
+function normalize(item){
+  if(item.readers && typeof item.readers === "object"){
+    const mine = item.readers.danni;
+    if(mine && typeof mine === "object"){
+      if(item.status == null) item.status = mine.status;
+      if(item.date == null)   item.date   = mine.date;
+    }
+    delete item.readers;
+  }
+  if(!STATES.some(st => st.key === item.status)) item.status = "unread";
+  if(typeof item.date !== "string") item.date = "";
+  if(typeof item.notes !== "string") item.notes = "";
+  return item;
+}
+
+/* Seeds anything missing by id, and leaves everything already there alone. */
+function seed(){
+  if(!Array.isArray(state.items)) state.items = [];
+  let added = 0;
+  SEED.forEach(book => {
+    if(state.items.some(i => i.id === book.id)) return;
+    state.items.push(normalize(Object.assign({}, book, { status:"unread", date:"", notes:"" })));
+    added++;
+  });
+  state.items.forEach(normalize);
+  state.items.sort((a,b) => a.letter === b.letter
+    ? a.title.localeCompare(b.title)
+    : a.letter.localeCompare(b.letter));
+  return added;
+}
+
+const stateLabel = key => (STATES.find(st => st.key === key) || STATES[0]).label;
+
+/* ---------------- storage ---------------- */
+function setSync(text, stateName){
+  $("sync").textContent = text;
+  if(stateName) $("sync").setAttribute("data-state", stateName);
+  else $("sync").removeAttribute("data-state");
+}
+
+function save(){
+  localStorage.setItem(CACHE_KEY, JSON.stringify(state));
+  render();
+  if(!docRef) return;
+  setSync("Saving\u2026", "saving");
+  docRef.set(state)
+    .then(() => setSync("Saved"))
+    .catch(err => { console.error("Sync failed:", err); setSync("Offline \u2014 saved here", "error"); });
+}
+
+async function load(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+    if(raw && Array.isArray(raw.items)) state = raw;
+  }catch(e){}
+
+  try{
+    firebase.initializeApp(firebaseConfig);
+    docRef = firebase.firestore().doc(DOC_PATH);
+    const snap = await docRef.get();
+    if(snap.exists){
+      const data = snap.data();
+      if(Array.isArray(data.items)) state = data;
+    }
+  }catch(err){
+    console.error("Firestore unavailable, working from the local copy:", err);
+    setSync("Offline", "error");
+  }
+
+  const added = seed();
+  render();
+  if(added) save();
+  else setSync(docRef ? "Synced" : "Offline");
+}
+
+/* ---------------- rendering ---------------- */
+function visible(){
+  return state.items.filter(i => {
+    if(filter === "all") return true;
+    return i.status === filter;         /* unread | reading | read */
+  });
+}
+
+function renderProgress(){
+  const total = state.items.length;
+  const done  = state.items.filter(i => i.status === "read").length;
+
+  $("progress").innerHTML = `
+    <div class="pp-panel pp-panel-tight clq-track">
+      <h3>Books read</h3>
+      <div class="pp-progress" data-color="sage"
+           data-current="${done}" data-total="${total}" data-format="both"></div>
+    </div>`;
+
+  if(window.PPProgress) PPProgress.draw($("progress"));
+}
+
+function render(){
+  renderProgress();
+
+  const rows = visible();
+  const total = state.items.length;
+  $("count").textContent = rows.length === total
+    ? `${total} books`
+    : `Showing ${rows.length} of ${total}`;
+
+  if(!rows.length){
+    $("grid").innerHTML = `<p class="clq-empty">Nothing in that shelf yet.</p>`;
+    return;
+  }
+
+  $("grid").innerHTML = rows.map(item => {
+    const when = item.status === "read" && item.date
+      ? `<p class="clq-when">Finished ${esc(fmtDate(item.date))}</p>`
+      : "";
+
+    return `<button class="clq-card${item.status === "read" ? " is-read" : ""}" data-open="${esc(item.id)}">
+      <span class="clq-letter" aria-hidden="true">${esc(item.letter)}</span>
+      <span class="clq-body">
+        <span class="clq-title">${esc(item.title)}</span>
+        <span class="clq-author">${esc(item.author)}</span>
+        <span class="clq-status" data-state="${item.status}">${esc(stateLabel(item.status))}</span>
+        ${when}
+      </span>
+    </button>`;
+  }).join("");
+}
+
+/* ---------------- detail ---------------- */
+function openDetail(id){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+  openId = id;
+
+  $("detail").innerHTML = `
+    <div class="clq-detail-head">
+      <span class="clq-letter" aria-hidden="true">${esc(item.letter)}</span>
+      <div style="flex:1 1 auto;min-width:0;">
+        <h2>${esc(item.title)}</h2>
+        <p class="clq-author">${esc(item.author)}</p>
+      </div>
+      <button class="pp-btn pp-btn-quiet pp-btn-sm" id="closeDetail">Close</button>
+    </div>
+
+    <div class="clq-block">
+      <div class="clq-block-name">Where you are</div>
+      <div class="clq-states">
+        ${STATES.map(st => `<button data-set="${st.key}"
+            aria-pressed="${item.status === st.key}">${esc(st.label)}</button>`).join("")}
+      </div>
+      <div class="clq-finished" ${item.status === "read" ? "" : 'style="display:none;"'}>
+        <label for="finishedOn">Finished</label>
+        <input id="finishedOn" type="date" value="${esc(item.date)}">
+      </div>
+    </div>
+
+    <div class="clq-block">
+      <div class="clq-block-name">Notes</div>
+      <div class="pp-field">
+        <textarea id="notes" placeholder="Anything worth being insufferable about.">${esc(item.notes)}</textarea>
+      </div>
+    </div>`;
+
+  $("detail").classList.add("open");
+  $("overlay").classList.add("open");
+}
+
+function closeDetail(){
+  if(openId){
+    const item = state.items.find(i => i.id === openId);
+    const box = $("notes");
+    if(item && box && box.value !== item.notes){ item.notes = box.value; save(); }
+  }
+  openId = null;
+  $("detail").classList.remove("open");
+  $("overlay").classList.remove("open");
+}
+
+/* Marking a book read stamps today's date if there isn't one, because the day
+   you tick it is almost always the day you finished it. Moving off "read"
+   keeps the date, so a mis-tap doesn't lose the record. */
+function setStatus(id, status){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+  item.status = status;
+  if(status === "read" && !item.date){
+    const t = new Date();
+    item.date = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
+  }
+  save();
+  openDetail(id);
+}
+
+/* ---------------- events ---------------- */
+document.addEventListener("click", e => {
+  const card = e.target.closest("[data-open]");
+  if(card){ openDetail(card.getAttribute("data-open")); return; }
+
+  if(e.target.id === "closeDetail" || e.target.id === "overlay"){ closeDetail(); return; }
+
+  const set = e.target.closest("[data-set]");
+  if(set && openId){
+    setStatus(openId, set.getAttribute("data-set"));
+    return;
+  }
+
+  const pill = e.target.closest(".clq-bar [data-filter]");
+  if(pill){
+    filter = pill.getAttribute("data-filter");
+    document.querySelectorAll(".clq-bar [data-filter]").forEach(b =>
+      b.setAttribute("aria-pressed", b === pill ? "true" : "false"));
+    render();
+  }
+});
+
+document.addEventListener("change", e => {
+  if(e.target.id !== "finishedOn" || !openId) return;
+  const item = state.items.find(i => i.id === openId);
+  if(!item) return;
+  item.date = e.target.value;
+  save();
+});
+
+document.addEventListener("keydown", e => { if(e.key === "Escape" && openId) closeDetail(); });
+
+load();
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>
