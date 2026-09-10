@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Writing Room — Princess &amp; Paladin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/pp-rp.css">
+</head>
+<body class="pp-dannelore" data-nav-eyebrow="Princess" data-nav-title="The Writing Room">
+
+<header class="pp-wrap pp-hero">
+  <div class="pp-emblem">
+    <!-- Tiara -->
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M8 44 H56" stroke="#9C7440" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="32" cy="10" r="3.5" fill="#9C7440"/>
+      <circle cx="4" cy="18" r="3" fill="#9C7440"/>
+      <circle cx="60" cy="18" r="3" fill="#9C7440"/>
+    </svg>
+    <!-- Sword -->
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <g transform="translate(16,0)">
+        <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
+        <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+        <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
+        <circle cx="16" cy="60" r="3.4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+      </g>
+    </svg>
+  </div>
+  <h1 class="pp-title">The Writing Room</h1>
+  <p class="pp-tagline">one world, every thread through it, and where you left each one</p>
+</header>
+
+<div class="rp-wrap">
+
+  <div class="rp-bar" id="stateBar">
+    <button class="pp-pill" data-filter="all" aria-pressed="true">All</button>
+    <button class="pp-pill" data-filter="writing" aria-pressed="false">Writing</button>
+    <button class="pp-pill" data-filter="resting" aria-pressed="false">Resting</button>
+    <button class="pp-pill" data-filter="finished" aria-pressed="false">Finished</button>
+    <span class="rp-sp"></span>
+    <span class="rp-sync" id="sync"></span>
+    <button class="pp-btn" id="newSceneBtn" type="button">New scene</button>
+  </div>
+  <div class="rp-bar" id="threadBar" hidden></div>
+
+  <form class="pp-panel rp-form" id="sceneForm" hidden autocomplete="off">
+    <h2 class="rp-title">New scene</h2>
+    <div id="sceneFields"></div>
+    <div class="rp-actions">
+      <button class="pp-btn" type="submit">Create scene</button>
+      <button class="rp-textlink" type="button" id="sceneCancel">Cancel</button>
+    </div>
+  </form>
+
+  <div class="rp-index">
+    <main id="scenes" aria-live="polite"></main>
+
+    <aside class="pp-col">
+      <section class="pp-panel">
+        <div class="rp-bar" style="margin:0 0 8px;">
+          <h2 class="rp-head" style="margin:0;">Threads</h2>
+          <span class="rp-sp"></span>
+          <button class="pp-btn pp-btn-quiet pp-btn-sm" id="addThreadBtn" type="button">Add thread</button>
+        </div>
+        <form id="threadForm" class="rp-hidden" hidden autocomplete="off" style="margin:10px 0 14px;">
+          <div class="pp-field" style="margin-bottom:10px;">
+            <label for="tf-name">Name</label>
+            <input id="tf-name" name="name" required maxlength="80">
+          </div>
+          <div class="pp-field" style="margin-bottom:10px;">
+            <span class="pp-field-label">Colour</span>
+            <div id="tf-colors"></div>
+          </div>
+          <div class="pp-field">
+            <label for="tf-summary">What it follows</label>
+            <textarea id="tf-summary" name="summary" rows="2" maxlength="300" style="min-height:60px;"></textarea>
+          </div>
+          <div class="rp-actions" style="margin-top:12px;">
+            <button class="pp-btn pp-btn-sm" type="submit" id="threadSave">Add thread</button>
+            <button class="rp-textlink" type="button" id="threadCancel">Cancel</button>
+            <span class="rp-sp"></span>
+            <button class="rp-textlink danger" type="button" id="threadDelete" hidden>Delete</button>
+          </div>
+        </form>
+        <div class="rp-thread-list" id="threads"></div>
+      </section>
+
+      <section class="pp-panel">
+        <h2 class="rp-head">So far</h2>
+        <div id="stats"></div>
+      </section>
+    </aside>
+  </div>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-rp.js"></script>
+<script>
+"use strict";
+
+const { $, esc } = RP;
+
+let stateFilter = "all";
+let threadFilter = "";          /* "" = every thread */
+let editingThread = null;       /* id, or null when adding */
+
+/* ---------------- scenes ---------------- */
+
+function card(sc){
+  const cast = (sc.cast || []).map(id => RP.person(id)).filter(Boolean);
+  const words = RP.sceneWords(sc);
+  const touched = RP.lastTouched(sc);
+  const when = RP.storyLabel(sc);
+
+  return `<a class="rp-scene-card" href="${esc(RP.sceneUrl(sc.id))}" style="--thread:${RP.threadColor(sc)}">
+    <div class="rp-scene-head">
+      <h3>${esc(sc.title || "Untitled scene")}</h3>
+      ${RP.statePill(sc.state)}
+    </div>
+    ${(sc.where || when) ? `<p class="rp-scene-where">${esc([sc.where, when].filter(Boolean).join(", "))}</p>` : ""}
+    ${sc.summary ? `<p class="rp-scene-sum">${esc(sc.summary)}</p>` : ""}
+    <div class="rp-scene-meta">
+      ${RP.threadChip(sc)}
+      <span class="rp-faces">${cast.map(p => RP.face(p, 26)).join("")}</span>
+      <span class="rp-sp"></span>
+      <span>${RP.plural(words, "word")}</span>
+      ${touched ? `<span>${sc.posts.length ? "Wrote" : "Started"} ${esc(RP.relative(touched))}</span>` : ""}
+    </div>
+  </a>`;
+}
+
+function renderScenes(){
+  const all = RP.state.scenes;
+  const box = $("scenes");
+
+  if(!all.length){
+    const hasCast = RP.state.cast.length > 0;
+    box.innerHTML = `<div class="pp-panel rp-empty">
+      <h2 class="rp-title">Nothing written yet</h2>
+      <p>${hasCast
+        ? "The cast is ready. Start a scene and put them somewhere."
+        : "Start with the people. A scene needs someone in it, and the cast is where they live."}</p>
+      <div class="rp-actions">
+        ${hasCast ? "" : `<a class="pp-btn" href="${RP.castUrl()}">Add characters</a>`}
+        <button class="pp-btn ${hasCast ? "" : "pp-btn-quiet"}" type="button" data-open-scene>New scene</button>
+      </div>
+    </div>`;
+    return;
+  }
+
+  const shown = all.filter(sc =>
+    (stateFilter === "all" || sc.state === stateFilter) &&
+    (!threadFilter || (threadFilter === "none" ? !RP.thread(sc.thread) : sc.thread === threadFilter)));
+
+  const byRecent = (a, b) => String(RP.lastTouched(b)).localeCompare(String(RP.lastTouched(a)));
+
+  if(!shown.length){
+    box.innerHTML = `<p class="rp-none" style="padding:20px 0;">No scenes match. Try another filter.</p>`;
+    return;
+  }
+
+  const groups = stateFilter === "all" ? RP.STATES : RP.STATES.filter(s => s.key === stateFilter);
+  box.innerHTML = groups.map(g => {
+    const list = shown.filter(sc => sc.state === g.key).sort(byRecent);
+    if(!list.length) return "";
+    return `<div class="rp-group-name">
+        <h2 class="rp-title" style="font-size:1.35rem;">${g.label}</h2>
+        <span class="rp-rule"></span>
+        <span>${list.length}</span>
+      </div>
+      <div class="rp-scene-grid">${list.map(card).join("")}</div>`;
+  }).join("");
+}
+
+function renderThreadBar(){
+  const threads = RP.threadsSorted();
+  const bar = $("threadBar");
+  const unthreaded = RP.state.scenes.some(sc => !RP.thread(sc.thread));
+  if(threads.length + (unthreaded ? 1 : 0) < 2){ bar.hidden = true; threadFilter = ""; return; }
+
+  bar.hidden = false;
+  bar.innerHTML =
+    `<button class="pp-pill" data-thread="" aria-pressed="${!threadFilter}">Every thread</button>` +
+    threads.map(t => `<button class="pp-pill rp-pill-thread" data-thread="${esc(t.id)}"
+        style="--thread:${RP.safeColor(t.color)}" aria-pressed="${threadFilter === t.id}">${esc(t.name)}</button>`).join("") +
+    (unthreaded ? `<button class="pp-pill" data-thread="none" aria-pressed="${threadFilter === "none"}">No thread</button>` : "");
+}
+
+/* ---------------- threads ---------------- */
+
+function renderThreads(){
+  const threads = RP.threadsSorted();
+  $("threads").innerHTML = threads.length
+    ? threads.map(t => {
+        const n = RP.state.scenes.filter(sc => sc.thread === t.id).length;
+        return `<div class="rp-thread-row">
+            <span class="rp-thread" style="--thread:${RP.safeColor(t.color)}">${esc(t.name)}</span>
+            <span class="n">${n}</span>
+            <button class="rp-iconbtn" type="button" data-edit-thread="${esc(t.id)}" aria-label="Edit ${esc(t.name)}">&#9998;</button>
+          </div>
+          ${t.summary ? `<p class="rp-thread-sum">${esc(t.summary)}</p>` : ""}`;
+      }).join("")
+    : `<p class="rp-none">Threads are the storylines running through the world. Each scene belongs to one.</p>`;
+}
+
+function openThreadForm(id){
+  const t = id ? RP.thread(id) : null;
+  editingThread = t ? t.id : null;
+  const f = $("threadForm");
+  f.hidden = false;
+  f.elements.name.value = t ? t.name : "";
+  f.elements.summary.value = t ? (t.summary || "") : "";
+  const used = RP.state.threads.map(x => x.color);
+  const color = t ? t.color : (RP.COLORS.find(c => used.indexOf(c.hex) < 0) || RP.COLORS[0]).hex;
+  $("tf-colors").innerHTML = RP.colorPicker("color", color);
+  $("threadSave").textContent = t ? "Save thread" : "Add thread";
+  $("threadDelete").hidden = !t;
+  f.elements.name.focus();
+}
+
+function closeThreadForm(){ $("threadForm").hidden = true; editingThread = null; }
+
+$("threadForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const f = e.target;
+  const name = f.elements.name.value.trim();
+  if(!name) return;
+  const picked = f.querySelector('input[name="color"]:checked');
+  const t = editingThread ? Object.assign({}, RP.thread(editingThread)) : { id: RP.uid(), created: RP.todayISO() };
+  t.name = name;
+  t.summary = f.elements.summary.value.trim();
+  t.color = picked ? picked.value : RP.COLORS[0].hex;
+  RP.save("thread", t);
+  closeThreadForm();
+  render();
+});
+
+$("threadDelete").addEventListener("click", () => {
+  const t = RP.thread(editingThread);
+  if(!t) return;
+  const n = RP.state.scenes.filter(sc => sc.thread === t.id).length;
+  if(n){
+    alert(`${t.name} still has ${RP.plural(n, "scene")}. Move ${n === 1 ? "it" : "them"} to another thread first.`);
+    return;
+  }
+  if(!confirm(`Delete the thread “${t.name}”?`)) return;
+  RP.remove("thread", t.id);
+  if(threadFilter === t.id) threadFilter = "";
+  closeThreadForm();
+  render();
+});
+
+$("threadCancel").addEventListener("click", closeThreadForm);
+$("addThreadBtn").addEventListener("click", () => openThreadForm(null));
+
+/* ---------------- stats ---------------- */
+
+function renderStats(){
+  const s = RP.state;
+  const words = s.scenes.reduce((n, sc) => n + RP.sceneWords(sc), 0);
+  const posts = s.scenes.reduce((n, sc) => n + sc.posts.length, 0);
+  $("stats").innerHTML = `
+    <p class="rp-stat"><b>${words.toLocaleString()}</b> words across ${RP.plural(posts, "post")}</p>
+    <p class="rp-stat">${RP.plural(s.scenes.length, "scene")}, ${RP.plural(s.cast.length, "character")}, ${RP.plural(s.wiki.length, "wiki entry", "wiki entries")}</p>`;
+}
+
+/* ---------------- new scene ---------------- */
+
+function openSceneForm(){
+  const f = $("sceneForm");
+  const draft = { when:{}, cast:[], thread: (threadFilter && threadFilter !== "none") ? threadFilter : null };
+  $("sceneFields").innerHTML = RP.sceneFormFields(draft);
+  f.hidden = false;
+  f.scrollIntoView({ behavior:"smooth", block:"start" });
+  f.elements.title.focus({ preventScroll:true });
+}
+
+RP.wireCastPicker($("sceneForm"));
+
+$("sceneForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const sc = RP.readSceneForm(e.target, {
+    id: RP.uid(), state:"writing", posts:[], left:"", created: RP.todayISO()
+  });
+  if(!sc.title) return;
+  RP.go(RP.sceneUrl(sc.id), RP.save("scene", sc));
+});
+
+$("sceneCancel").addEventListener("click", () => { $("sceneForm").hidden = true; });
+$("newSceneBtn").addEventListener("click", openSceneForm);
+
+/* ---------------- events ---------------- */
+
+document.addEventListener("click", e => {
+  const st = e.target.closest("[data-filter]");
+  if(st){
+    stateFilter = st.dataset.filter;
+    $("stateBar").querySelectorAll("[data-filter]").forEach(b =>
+      b.setAttribute("aria-pressed", b.dataset.filter === stateFilter ? "true" : "false"));
+    renderScenes();
+    return;
+  }
+
+  const th = e.target.closest("[data-thread]");
+  if(th){ threadFilter = th.dataset.thread; renderThreadBar(); renderScenes(); return; }
+
+  const et = e.target.closest("[data-edit-thread]");
+  if(et){ openThreadForm(et.dataset.editThread); return; }
+
+  if(e.target.closest("[data-open-scene]")) openSceneForm();
+});
+
+function render(){
+  renderThreadBar();
+  renderScenes();
+  renderThreads();
+  renderStats();
+}
+
+RP.watchSync($("sync"));
+RP.load().then(render);
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>

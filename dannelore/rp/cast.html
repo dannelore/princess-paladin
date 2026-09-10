@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cast — The Writing Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/pp-rp.css">
+</head>
+<body class="pp-dannelore" data-nav-eyebrow="The Writing Room" data-nav-title="Cast">
+
+<div class="rp-wrap">
+  <div id="view"></div>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-rp.js"></script>
+<script>
+"use strict";
+
+const { $, esc } = RP;
+
+/* What's on screen: the grid, one sheet, or the editor. */
+let mode = "grid";      /* grid | sheet | edit */
+let openId = null;      /* the character, or null for a new one */
+let dirty = false;      /* unsaved edits in the editor */
+
+const CROPS = [
+  { key:"",       label:"Upper third" },
+  { key:"top",    label:"Top" },
+  { key:"center", label:"Centre" },
+  { key:"bottom", label:"Bottom" }
+];
+
+/* ---------------- grid ---------------- */
+
+function renderGrid(){
+  const cast = RP.castSorted();
+  $("view").innerHTML = `
+    <p class="rp-lede">Everyone in the world. The card is exactly what rides beside their posts.</p>
+    <div class="rp-bar">
+      <span class="rp-sp"></span>
+      <span class="rp-sync" data-sync></span>
+      <button class="pp-btn" type="button" data-new>Add character</button>
+    </div>
+    ${cast.length
+      ? `<div class="rp-cast-grid">${cast.map(RP.mini).join("")}</div>`
+      : `<div class="pp-panel rp-empty">
+          <h2 class="rp-title">No one here yet</h2>
+          <p>Add the first character: a name, a face claim, and the few facts worth seeing while you write.</p>
+          <div class="rp-actions"><button class="pp-btn" type="button" data-new>Add character</button></div>
+        </div>`}`;
+  watch();
+}
+
+/* ---------------- sheet ---------------- */
+
+function renderSheet(c){
+  const posted = RP.state.scenes
+    .map(sc => ({ sc, n: sc.posts.filter(p => p.who === c.id).length }))
+    .filter(x => x.n)
+    .sort((a, b) => RP.compareStory(a.sc, b.sc));
+  const back = RP.backlinks("cast", c);
+  const words = RP.state.scenes.reduce((n, sc) =>
+    n + sc.posts.filter(p => p.who === c.id).reduce((m, p) => m + RP.wordCount(p.md), 0), 0);
+
+  const meta = [
+    c.playedBy ? "Played by " + esc(c.playedBy) : "",
+    (c.aka || []).length ? "Also " + c.aka.map(esc).join(", ") : "",
+    words ? RP.plural(words, "word") + " spoken" : ""
+  ].filter(Boolean).join(" &nbsp;/&nbsp; ");
+
+  $("view").innerHTML = `
+    <a class="rp-back" href="${RP.castUrl()}" data-nav="">&larr; All cast</a>
+    <div class="rp-sheet">
+      <div>
+        ${RP.mini(c)}
+        <div class="rp-actions" style="margin-top:12px;">
+          <button class="pp-btn pp-btn-quiet pp-btn-sm" type="button" data-edit="${esc(c.id)}">Edit character</button>
+        </div>
+      </div>
+
+      <article class="pp-panel pp-panel-lg">
+        <div class="rp-sheet-head">
+          <h1 class="rp-title">${esc(c.name)}</h1>
+          <span class="rp-sp" style="flex:1 1 auto;"></span>
+          <span class="rp-sync" data-sync></span>
+        </div>
+        ${c.role ? `<p class="rp-sheet-role">${esc(c.role)}</p>` : ""}
+        ${meta ? `<p class="rp-sheet-meta">${meta}</p>` : ""}
+
+        ${(c.sheet || []).filter(s => s.text).length
+          ? (c.sheet || []).filter(s => s.text).map(s => `
+              <section class="rp-sheet-sec">
+                ${s.label ? `<h3>${esc(s.label)}</h3>` : ""}
+                <div class="rp-prose">${RP.markdown(s.text)}</div>
+              </section>`).join("")
+          : `<p class="rp-none">No sheet yet. Edit the character to add what they carry, want, and won&rsquo;t say.</p>`}
+
+        <section class="rp-appears">
+          <h2 class="rp-head">Speaks in</h2>
+          ${posted.length
+            ? posted.map(x => `<a class="rp-backrow" href="${esc(RP.sceneUrl(x.sc.id))}">
+                <span class="t">${esc(x.sc.title || "Untitled scene")}</span>
+                <span class="q">${esc(RP.storyLabel(x.sc) || "No story date")}</span>
+                <span class="n">${RP.plural(x.n, "post")}</span>
+              </a>`).join("")
+            : `<p class="rp-none">Hasn&rsquo;t said a word yet.</p>`}
+        </section>
+
+        <section class="rp-appears">
+          <h2 class="rp-head">Mentioned in</h2>
+          ${back.scenes.length
+            ? back.scenes.map(m => `<a class="rp-backrow" href="${esc(RP.sceneUrl(m.scene.id, m.post.id))}">
+                <span class="t">${esc(m.scene.title || "Untitled scene")}</span>
+                <span class="q">${esc(m.quote)}</span>
+              </a>`).join("")
+            : `<p class="rp-none">No scene links to ${esc(c.name)} yet. Write <code>[[${esc(c.name)}]]</code> in a post and it will show here.</p>`}
+          ${back.pages.length ? `<h2 class="rp-head" style="margin-top:16px;">Linked from</h2>
+            <div class="rp-chiplinks">${back.pages.map(pageChip).join("")}</div>` : ""}
+        </section>
+      </article>
+    </div>`;
+  watch();
+}
+
+function pageChip(p){
+  const href = p.kind === "wiki" ? RP.wikiUrl(p.rec.id) : RP.castUrl(p.rec.id);
+  return `<a href="${esc(href)}">${esc(p.kind === "wiki" ? p.rec.title : p.rec.name)}</a>`;
+}
+
+/* ---------------- editor ---------------- */
+
+function factRow(f){
+  return `<div class="rp-row" data-row="fact">
+    <input data-k="label" maxlength="24" placeholder="Label" value="${esc(f.label || "")}" aria-label="Fact label">
+    <input data-k="value" maxlength="60" placeholder="Short value" value="${esc(f.value || "")}" aria-label="Fact value">
+    <span class="rp-row-tools">${rowTools()}</span>
+  </div>`;
+}
+
+function sheetRow(s){
+  return `<div class="rp-row" data-row="sheet">
+    <input data-k="label" maxlength="40" placeholder="Heading" value="${esc(s.label || "")}" aria-label="Section heading">
+    <textarea data-k="text" placeholder="Markdown and [[links]] work here" aria-label="Section text">${esc(s.text || "")}</textarea>
+    <span class="rp-row-tools">${rowTools()}</span>
+  </div>`;
+}
+
+function rowTools(){
+  return `<button class="rp-iconbtn" type="button" data-move="-1" aria-label="Move up">&uarr;</button>
+    <button class="rp-iconbtn" type="button" data-move="1" aria-label="Move down">&darr;</button>
+    <button class="rp-iconbtn" type="button" data-drop aria-label="Remove">&times;</button>`;
+}
+
+function renderEdit(c){
+  const isNew = !c;
+  c = c || {
+    id: RP.uid(), name:"", aka:[], role:"", playedBy:"", portrait:"", crop:"",
+    color: RP.COLORS[RP.state.cast.length % RP.COLORS.length].hex,
+    facts:[{ label:"Age", value:"" }],
+    sheet:[{ label:"Wants", text:"" }, { label:"Won't say", text:"" }]
+  };
+
+  $("view").innerHTML = `
+    <a class="rp-back" href="${esc(isNew ? RP.castUrl() : RP.castUrl(c.id))}" data-nav="${isNew ? "" : esc(c.id)}">&larr; ${isNew ? "All cast" : "Back to " + esc(c.name)}</a>
+    <form class="rp-sheet" id="castForm" autocomplete="off" data-id="${esc(c.id)}">
+      <div>
+        <div id="preview"></div>
+        <p class="pp-hint" style="margin-top:10px;">Updates as you type.</p>
+      </div>
+
+      <div class="pp-panel pp-panel-lg">
+        <h1 class="rp-title" style="margin-bottom:18px;">${isNew ? "New character" : "Edit " + esc(c.name)}</h1>
+
+        <div class="rp-fields">
+          <div class="pp-field"><label for="cf-name">Name</label>
+            <input id="cf-name" name="name" required maxlength="80" value="${esc(c.name)}"></div>
+          <div class="pp-field"><label for="cf-aka">Also known as</label>
+            <input id="cf-aka" name="aka" maxlength="200" placeholder="Comma separated" value="${esc((c.aka || []).join(", "))}"></div>
+
+          <div class="pp-field wide"><label for="cf-role">Role</label>
+            <input id="cf-role" name="role" maxlength="120" placeholder="One line, shown under their name" value="${esc(c.role || "")}"></div>
+
+          <div class="pp-field"><label for="cf-played">Played by</label>
+            <input id="cf-played" name="playedBy" maxlength="80" placeholder="Face claim" value="${esc(c.playedBy || "")}"></div>
+          <div class="pp-field"><label for="cf-crop">Portrait crop</label>
+            <select id="cf-crop" name="crop">
+              ${CROPS.map(o => `<option value="${o.key}"${o.key === (c.crop || "") ? " selected" : ""}>${o.label}</option>`).join("")}
+            </select></div>
+
+          <div class="pp-field wide"><label for="cf-portrait">Portrait image</label>
+            <input id="cf-portrait" name="portrait" type="text" inputmode="url" spellcheck="false" maxlength="600" placeholder="https://…  or  /assets/rp/name.jpg" value="${esc(c.portrait || "")}">
+            <span class="pp-hint">A portrait-shaped image works best. Leave it empty for a monogram in their colour.</span></div>
+
+          <div class="pp-field wide"><span class="pp-field-label">Colour</span>
+            ${RP.colorPicker("color", c.color)}</div>
+        </div>
+
+        <section class="rp-appears">
+          <h2 class="rp-head">Beside every post</h2>
+          <p class="pp-hint" style="margin:-4px 0 10px;">Up to ${RP.MINI_FACT_LIMIT} short facts. Pick the ones worth seeing mid-scene &mdash; they don&rsquo;t have to match anyone else&rsquo;s.</p>
+          <div class="rp-rows" id="facts">${(c.facts || []).map(factRow).join("")}</div>
+          <button class="rp-textlink" type="button" id="addFact" style="margin-top:6px;">+ Add a fact</button>
+        </section>
+
+        <section class="rp-appears">
+          <h2 class="rp-head">Character sheet</h2>
+          <div class="rp-rows" id="sheet">${(c.sheet || []).map(sheetRow).join("")}</div>
+          <button class="rp-textlink" type="button" id="addSheet" style="margin-top:6px;">+ Add a section</button>
+          <p class="pp-hint" style="margin:4px 0 0;">Empty rows are left out when you save.</p>
+          <div style="margin-top:6px;">${RP.MD_HINT}</div>
+        </section>
+
+        <div class="rp-actions">
+          <button class="pp-btn" type="submit">${isNew ? "Add character" : "Save character"}</button>
+          <button class="rp-textlink" type="button" data-nav="${isNew ? "" : esc(c.id)}">Cancel</button>
+          <span class="rp-sp"></span>
+          <span class="rp-sync" data-sync></span>
+          ${isNew ? "" : `<button class="rp-textlink danger" type="button" id="deleteCast">Delete character</button>`}
+        </div>
+      </div>
+    </form>`;
+
+  const f = $("castForm");
+  dirty = false;
+  f.addEventListener("input", () => { dirty = true; paintPreview(); });
+  f.addEventListener("change", paintPreview);
+  f.addEventListener("submit", submitCast);
+  $("addFact").addEventListener("click", () => {
+    if($("facts").children.length >= RP.MINI_FACT_LIMIT) return;
+    $("facts").insertAdjacentHTML("beforeend", factRow({}));
+    $("facts").lastElementChild.querySelector("input").focus();
+    paintRows();
+  });
+  $("addSheet").addEventListener("click", () => {
+    $("sheet").insertAdjacentHTML("beforeend", sheetRow({}));
+    $("sheet").lastElementChild.querySelector("input").focus();
+  });
+  if($("deleteCast")) $("deleteCast").addEventListener("click", () => deleteCast(c.id));
+
+  paintRows();
+  paintPreview();
+  watch();
+  f.elements.name.focus();
+}
+
+function paintRows(){
+  const full = $("facts").children.length >= RP.MINI_FACT_LIMIT;
+  $("addFact").hidden = full;
+}
+
+/* A row only counts once it has something in it. The starter rows ("Age",
+   "Wants") are suggestions — left empty, they don't get saved. */
+function readRows(box, keys){
+  const body = keys[keys.length - 1];
+  return Array.from(box.querySelectorAll(".rp-row")).map(row => {
+    const out = {};
+    keys.forEach(k => { out[k] = row.querySelector(`[data-k="${k}"]`).value.trim(); });
+    return out;
+  }).filter(r => r[body]);
+}
+
+function readForm(){
+  const f = $("castForm");
+  const picked = f.querySelector('input[name="color"]:checked');
+  return {
+    id: f.dataset.id,
+    name: f.elements.name.value.trim(),
+    aka: RP.splitList(f.elements.aka.value),
+    role: f.elements.role.value.trim(),
+    playedBy: f.elements.playedBy.value.trim(),
+    portrait: f.elements.portrait.value.trim(),
+    crop: f.elements.crop.value,
+    color: picked ? picked.value : RP.COLORS[0].hex,
+    facts: readRows($("facts"), ["label","value"]).slice(0, RP.MINI_FACT_LIMIT),
+    /* the preview reads this too, so it matches what gets saved */
+    sheet: readRows($("sheet"), ["label","text"])
+  };
+}
+
+function paintPreview(){
+  const c = readForm();
+  c.name = c.name || "Their name";
+  /* The preview isn't a link anywhere. */
+  $("preview").innerHTML = RP.mini(c).replace(/^<a /, "<div ").replace(/<\/a>$/, "</div>").replace(/ href="[^"]*"/, "");
+}
+
+/* Row tools: reorder and remove */
+document.addEventListener("click", e => {
+  const mv = e.target.closest("[data-move]");
+  const dr = e.target.closest("[data-drop]");
+  if(!mv && !dr) return;
+  const row = (mv || dr).closest(".rp-row");
+  dirty = true;
+  if(dr){ row.remove(); }
+  else if(mv.dataset.move === "-1" && row.previousElementSibling){ row.parentNode.insertBefore(row, row.previousElementSibling); }
+  else if(mv.dataset.move === "1" && row.nextElementSibling){ row.parentNode.insertBefore(row.nextElementSibling, row); }
+  paintRows();
+  paintPreview();
+});
+
+function clash(c){
+  const mine = [c.name].concat(c.aka).map(RP.norm);
+  return RP.state.cast.filter(o => o.id !== c.id).map(o => {
+    const theirs = [o.name].concat(o.aka || []).map(RP.norm);
+    const hit = mine.find(n => theirs.indexOf(n) > -1);
+    return hit ? { other:o, name:hit } : null;
+  }).find(Boolean);
+}
+
+function submitCast(e){
+  e.preventDefault();
+  const c = readForm();
+  if(!c.name) return;
+
+  const existing = RP.person(c.id);
+  const k = clash(c);
+  if(k){
+    alert(`${k.other.name} already answers to “${k.name}”. Two characters can't share a name or alias, or [[links]] couldn't tell them apart.`);
+    return;
+  }
+
+  const kept = existing && existing.name !== c.name ? RP.keepOldName("cast", c, existing.name) : false;
+  c.created = (existing && existing.created) || RP.todayISO();
+  RP.save("cast", c);
+  dirty = false;
+  if(kept) alert(`“${existing.name}” is still used in [[links]], so it's been kept as an alias. Those links still work.`);
+  show("sheet", c.id, true);
+}
+
+function deleteCast(id){
+  const c = RP.person(id);
+  if(!c) return;
+  const posts = RP.state.scenes.reduce((n, sc) => n + sc.posts.filter(p => p.who === id).length, 0);
+  if(posts){
+    alert(`${c.name} has ${RP.plural(posts, "post")}. Delete or reassign ${posts === 1 ? "it" : "them"} first — each post's edit box lets you change who's speaking.`);
+    return;
+  }
+  if(!confirm(`Delete ${c.name}? Links to them will go back to plain text.`)) return;
+  RP.remove("cast", id);
+  dirty = false;
+  show("grid", null, true);
+}
+
+/* ---------------- routing ----------------
+   ?c=id opens a sheet. Moving between the grid and sheets stays on the page,
+   so the whole collection isn't fetched again for every character. */
+
+function leaveEditor(){
+  if(mode !== "edit" || !dirty) return true;
+  if(!confirm("Leave without saving your changes to this character?")) return false;
+  dirty = false;
+  return true;
+}
+
+function show(m, id, push){
+  if(!leaveEditor()) return;
+  mode = m; openId = id;
+  if(push){
+    const url = id && m !== "grid" ? RP.castUrl(id) : RP.castUrl();
+    history.pushState({ mode:m, id }, "", url);
+  }
+  render();
+  window.scrollTo(0, 0);
+}
+
+function render(){
+  const c = openId ? RP.person(openId) : null;
+  if(mode === "edit") renderEdit(c);
+  else if(mode === "sheet" && c) renderSheet(c);
+  else { mode = "grid"; renderGrid(); }
+
+  const title = mode === "sheet" && c ? c.name : (mode === "edit" ? (c ? "Edit " + c.name : "New character") : "Cast");
+  const t = document.querySelector(".pp-ribbon-title");
+  if(t) t.textContent = title;
+  document.title = title + " — The Writing Room";
+}
+
+function watch(){
+  document.querySelectorAll("[data-sync]").forEach(el => { if(!el.dataset.watched){ el.dataset.watched = 1; RP.watchSync(el); } });
+}
+
+document.addEventListener("click", e => {
+  if(e.target.closest("[data-new]")){ show("edit", null, false); return; }
+  const ed = e.target.closest("[data-edit]");
+  if(ed){ show("edit", ed.dataset.edit, false); return; }
+
+  const nav = e.target.closest("[data-nav]");
+  if(nav){ e.preventDefault(); show(nav.dataset.nav ? "sheet" : "grid", nav.dataset.nav || null, true); return; }
+
+  /* Cards on the grid, and [[links]] to other characters inside a sheet. */
+  const a = e.target.closest("a[href]");
+  if(a && mode !== "edit" && !e.metaKey && !e.ctrlKey && !e.shiftKey){
+    const u = new URL(a.href, location.href);
+    if(u.pathname === RP.castUrl() && u.searchParams.get("c")){
+      e.preventDefault();
+      show("sheet", u.searchParams.get("c"), true);
+    }
+  }
+});
+
+window.addEventListener("beforeunload", e => {
+  if(mode === "edit" && dirty){ e.preventDefault(); e.returnValue = ""; }
+});
+
+window.addEventListener("popstate", () => {
+  if(mode === "edit" && dirty && !confirm("Leave without saving your changes to this character?")){
+    history.pushState({}, "", openId ? RP.castUrl(openId) : RP.castUrl());
+    return;
+  }
+  dirty = false;
+  const id = RP.param("c");
+  mode = id ? "sheet" : "grid"; openId = id;
+  render();
+});
+
+RP.load().then(() => {
+  const id = RP.param("c");
+  if(id && RP.person(id)){ mode = "sheet"; openId = id; }
+  render();
+});
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>

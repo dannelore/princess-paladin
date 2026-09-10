@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timeline — The Writing Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/pp-rp.css">
+</head>
+<body class="pp-dannelore" data-nav-eyebrow="The Writing Room" data-nav-title="Timeline">
+
+<div class="rp-wrap" style="max-width:calc(900px + (var(--pad-x) * 2));">
+
+  <p class="rp-lede">What happened, in the order it happened to them &mdash; every thread woven together. The story&rsquo;s date sits on top; the day you wrote it sits underneath.</p>
+
+  <div class="rp-bar" id="filters"></div>
+
+  <div id="timeline"></div>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-rp.js"></script>
+<script>
+"use strict";
+
+const { $, esc } = RP;
+
+/* Threads switched on. Empty means every thread. */
+let onThreads = [];
+let showEvents = true;
+
+function renderFilters(){
+  const threads = RP.threadsSorted();
+  const hasEvents = RP.state.wiki.some(w => RP.storyKey(w));
+  const hasLoose = RP.state.scenes.some(sc => !RP.thread(sc.thread));
+
+  $("filters").innerHTML =
+    (threads.length > 1 || (threads.length && hasLoose)
+      ? `<button class="pp-pill" type="button" data-thread="" aria-pressed="${!onThreads.length}">Every thread</button>` +
+        threads.map(t => `<button class="pp-pill rp-pill-thread" type="button" data-thread="${esc(t.id)}"
+          style="--thread:${RP.safeColor(t.color)}" aria-pressed="${onThreads.indexOf(t.id) > -1}">${esc(t.name)}</button>`).join("")
+      : "") +
+    (hasEvents ? `<button class="pp-pill" type="button" data-events aria-pressed="${showEvents}">Wiki events</button>` : "");
+}
+
+function inFilter(sc){
+  return !onThreads.length || onThreads.indexOf(sc.thread) > -1;
+}
+
+function sceneRow(sc){
+  const cast = (sc.cast || []).map(id => RP.person(id)).filter(Boolean);
+  return `<a class="rp-tl-row${sc.state === "resting" ? " is-resting" : ""}" id="s-${esc(sc.id)}"
+      href="${esc(RP.sceneUrl(sc.id))}" style="--thread:${RP.threadColor(sc)}">
+    <div class="rp-tl-when">${esc(RP.storyLabel(sc) || "Undated")}</div>
+    <div class="rp-tl-real">${esc(RP.writtenLabel(sc))}</div>
+    <div class="rp-tl-what">${esc(sc.title || "Untitled scene")} ${RP.statePill(sc.state)}</div>
+    ${sc.summary ? `<p class="rp-tl-note">${esc(sc.summary)}</p>` : ""}
+    <div class="rp-tl-foot">
+      ${RP.threadChip(sc)}
+      ${cast.length ? `<span class="rp-faces">${cast.map(p => RP.face(p, 24)).join("")}</span>` : ""}
+      ${sc.where ? `<span class="rp-count">${esc(sc.where)}</span>` : ""}
+    </div>
+  </a>`;
+}
+
+function eventRow(w){
+  return `<a class="rp-tl-row is-event" id="w-${esc(w.id)}" href="${esc(RP.wikiUrl(w.id))}"
+      style="--thread:${RP.KINDS[w.kind].color}">
+    <div class="rp-tl-when">${esc(RP.storyLabel(w))}</div>
+    <div class="rp-tl-real">from the wiki</div>
+    <div class="rp-tl-what">${esc(w.title)} <span class="rp-kind" style="background:${RP.KINDS[w.kind].color}">${esc(RP.KINDS[w.kind].label)}</span></div>
+    ${w.summary ? `<p class="rp-tl-note">${esc(RP.plainText(w.summary))}</p>` : ""}
+  </a>`;
+}
+
+function render(){
+  renderFilters();
+
+  const scenes = RP.state.scenes.filter(inFilter);
+  const dated = scenes.filter(sc => RP.storyKey(sc)).map(sc => ({ kind:"scene", rec:sc, key:RP.storyKey(sc) }));
+  const events = showEvents
+    ? RP.state.wiki.filter(w => RP.storyKey(w)).map(w => ({ kind:"event", rec:w, key:RP.storyKey(w) }))
+    : [];
+  const undated = scenes.filter(sc => !RP.storyKey(sc)).sort(RP.compareStory);
+
+  /* Same moment: an event sets the scene, so it goes first. */
+  const items = dated.concat(events).sort((a, b) =>
+    a.key < b.key ? -1 : a.key > b.key ? 1 : (a.kind === b.kind ? 0 : (a.kind === "event" ? -1 : 1)));
+
+  if(!RP.state.scenes.length && !events.length){
+    $("timeline").innerHTML = `<div class="pp-panel rp-empty">
+      <h2 class="rp-title">Nothing on the timeline yet</h2>
+      <p>Give a scene a story date and it takes its place here, woven in with every other thread.</p>
+      <div class="rp-actions"><a class="pp-btn" href="${RP.BASE}">Go to scenes</a></div>
+    </div>`;
+    return;
+  }
+
+  let html = "";
+  if(items.length){
+    let year = null, month = null;
+    html += `<div class="pp-panel rp-tl">`;
+    items.forEach(it => {
+      const d = RP.parseISO(it.rec.when.date);
+      if(d.y !== year){
+        year = d.y; month = null;
+        html += `<div class="rp-tl-year"><h2 class="rp-title">${year < 0 ? Math.abs(year) + " BCE" : year}</h2><span class="rp-rule"></span></div>`;
+      }
+      if(d.m !== month){
+        month = d.m;
+        html += `<div class="rp-tl-month">${RP.MONTHS[month - 1]}</div>`;
+      }
+      html += it.kind === "scene" ? sceneRow(it.rec) : eventRow(it.rec);
+    });
+    html += `</div>`;
+  } else {
+    html += `<div class="pp-panel"><p class="rp-none">No dated scenes${onThreads.length ? " in this thread" : ""} yet.</p></div>`;
+  }
+
+  if(undated.length){
+    html += `<div class="rp-tl-lane">
+      <div class="rp-group-name"><h2 class="rp-title" style="font-size:1.35rem;">Not placed yet</h2><span class="rp-rule"></span><span>${undated.length}</span></div>
+      <p class="rp-lede" style="margin-bottom:12px;">These scenes have no story date. Open one and add it under Edit details.</p>
+      <div class="pp-panel rp-tl">${undated.map(sceneRow).join("")}</div>
+    </div>`;
+  }
+
+  $("timeline").innerHTML = html;
+}
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-thread]");
+  if(t){
+    const id = t.dataset.thread;
+    if(!id) onThreads = [];
+    else {
+      const i = onThreads.indexOf(id);
+      if(i > -1) onThreads.splice(i, 1); else onThreads.push(id);
+    }
+    render();
+    return;
+  }
+  if(e.target.closest("[data-events]")){ showEvents = !showEvents; render(); }
+});
+
+RP.load().then(() => {
+  render();
+  const target = location.hash && document.getElementById(location.hash.slice(1));
+  if(target){ target.scrollIntoView({ block:"center" }); target.classList.add("rp-highlight"); }
+});
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scene — The Writing Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/pp-rp.css">
+</head>
+<body class="pp-dannelore" data-nav-eyebrow="The Writing Room" data-nav-title="Scene">
+
+<div class="rp-wrap">
+
+  <a class="rp-back" href="/dannelore/rp/">&larr; All scenes</a>
+
+  <div id="missing" hidden>
+    <div class="pp-panel rp-empty">
+      <h2 class="rp-title">That scene isn&rsquo;t here</h2>
+      <p>It may have been deleted, or the link is missing its scene.</p>
+      <div class="rp-actions"><a class="pp-btn" href="/dannelore/rp/">Back to all scenes</a></div>
+    </div>
+  </div>
+
+  <div id="room" hidden>
+
+    <div class="rp-scene-top">
+      <div class="rp-scene-titlerow">
+        <h1 class="rp-title" id="sTitle"></h1>
+        <span id="sState"></span>
+        <span class="rp-sp" style="flex:1 1 auto;"></span>
+        <span class="rp-sync" id="sync"></span>
+        <button class="pp-btn pp-btn-quiet pp-btn-sm" type="button" id="editBtn">Edit details</button>
+      </div>
+      <div class="rp-scene-sub" id="sSub"></div>
+    </div>
+
+    <form class="pp-panel rp-form" id="detailForm" hidden autocomplete="off">
+      <h2 class="rp-title">Scene details</h2>
+      <div id="detailFields"></div>
+      <div class="rp-actions">
+        <button class="pp-btn" type="submit">Save details</button>
+        <button class="rp-textlink" type="button" id="detailCancel">Cancel</button>
+        <span class="rp-sp"></span>
+        <button class="rp-textlink danger" type="button" id="deleteScene">Delete scene</button>
+      </div>
+    </form>
+
+    <div class="rp-desk">
+      <div>
+        <div class="pp-panel pp-panel-plain rp-posts" id="posts"></div>
+
+        <div class="rp-composer" id="composer">
+          <div class="rp-composer-top">
+            <span class="rp-speaking-as">Speaking as</span>
+            <div class="rp-speaker">
+              <button class="rp-speaker-btn" type="button" id="speakerBtn" aria-haspopup="menu" aria-expanded="false">
+                <span id="speakerFace"></span>
+                <span class="nm" id="speakerName"></span>
+                <span class="caret" aria-hidden="true"></span>
+              </button>
+              <div class="rp-menu" id="speakerMenu" role="menu" hidden></div>
+            </div>
+            <span class="rp-sp"></span>
+            <span class="rp-count" id="draftState"></span>
+            <span class="rp-count" id="wordCount">0 words</span>
+          </div>
+          <textarea id="draft" placeholder="Write the next bit." aria-label="Post text"></textarea>
+          <div class="rp-preview rp-prose" id="draftPreview" hidden></div>
+          <div class="rp-composer-foot">
+            <button class="pp-btn" type="button" id="postBtn">Add to scene</button>
+            <button class="pp-btn pp-btn-quiet pp-btn-sm" type="button" id="previewBtn" aria-pressed="false">Preview</button>
+            <span class="rp-sp"></span>
+            <span class="rp-count" id="shortcut">Ctrl + Enter adds it</span>
+          </div>
+          <div class="rp-composer-hint" id="mdHint"></div>
+        </div>
+      </div>
+
+      <aside class="rp-rail">
+        <section class="pp-panel">
+          <h2 class="rp-head">In this scene</h2>
+          <div id="people"></div>
+        </section>
+        <section class="pp-panel">
+          <h2 class="rp-head"><label for="leftNote">Where you left it</label></h2>
+          <textarea class="rp-leftnote" id="leftNote" placeholder="A note for next time."></textarea>
+        </section>
+        <section class="pp-panel" id="hopsPanel">
+          <h2 class="rp-head">On the timeline</h2>
+          <div id="hops"></div>
+        </section>
+        <section class="pp-panel" id="mentionsPanel" hidden>
+          <h2 class="rp-head">Mentioned here</h2>
+          <div class="rp-chiplinks" id="mentions"></div>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-rp.js"></script>
+<script>
+"use strict";
+
+const { $, esc } = RP;
+
+let sc = null;              /* the scene */
+let speaker = "narration";  /* cast id or "narration" */
+let editingPost = null;
+let focusEdit = false;      /* only when the edit box first opens */
+let draftTimer = null;
+let noteTimer = null;
+
+/* ---------------- header ---------------- */
+
+function setRibbonTitle(text){
+  document.body.setAttribute("data-nav-title", text);
+  const el = document.querySelector(".pp-ribbon-title");
+  if(el) el.textContent = text;
+  document.title = text + " — The Writing Room";
+}
+
+function renderTop(){
+  $("sTitle").textContent = sc.title || "Untitled scene";
+  $("sState").innerHTML = RP.statePill(sc.state);
+  setRibbonTitle(sc.title || "Untitled scene");
+
+  const when = RP.storyLabel(sc);
+  const words = RP.sceneWords(sc);
+  $("sSub").innerHTML = [
+    RP.threadChip(sc),
+    sc.where ? `<span>${esc(sc.where)}</span>` : "",
+    when ? `<span>${esc(when)}</span>` : `<span>No story date</span>`,
+    `<span class="rp-count">${RP.plural(words, "word")}</span>`
+  ].filter(Boolean).join("");
+}
+
+/* ---------------- posts ---------------- */
+
+function stampFor(p){
+  let s = p.written ? "written " + RP.shortDate(p.written) : "";
+  if(p.edited && p.edited !== p.written) s += " \u00b7 edited " + RP.shortDate(p.edited);
+  return s;
+}
+
+function postHTML(p){
+  const narr = p.who === "narration";
+  const who = RP.person(p.who);
+  const color = who ? RP.safeColor(who.color) : "var(--ink-soft)";
+
+  if(editingPost === p.id) return editHTML(p);
+
+  return `<article class="rp-post${narr ? " narration" : ""}" id="p-${esc(p.id)}" style="--who:${color}">
+    ${narr ? "" : RP.mini(who)}
+    <div class="rp-post-body">
+      <div class="rp-byline">
+        ${narr ? "" : `<span class="who">${esc(who ? who.name : "Unknown")}</span>`}
+        <span class="stamp">${esc(stampFor(p))}</span>
+        ${narr ? "" : `<span class="rp-sp"></span>`}
+        <span class="rp-post-tools">
+          <button class="rp-iconbtn" type="button" data-edit-post="${esc(p.id)}" aria-label="Edit this post">&#9998;</button>
+          <button class="rp-iconbtn" type="button" data-delete-post="${esc(p.id)}" aria-label="Delete this post">&times;</button>
+        </span>
+      </div>
+      <div class="rp-prose">${RP.markdown(p.md)}</div>
+    </div>
+  </article>`;
+}
+
+function speakerOptions(selected){
+  const people = RP.castSorted();
+  return people.map(c => `<option value="${esc(c.id)}"${c.id === selected ? " selected" : ""}>${esc(c.name)}</option>`).join("") +
+    `<option value="narration"${selected === "narration" ? " selected" : ""}>Narration</option>`;
+}
+
+function editHTML(p){
+  /* A re-render while editing (say, a new post added below) must not throw
+     away what's been typed into the edit box. */
+  const live = $("editText");
+  const same = live && live.dataset.for === p.id;
+  const text = same ? live.value : p.md;
+  const who  = same && $("editWho") ? $("editWho").value : p.who;
+  return `<article class="rp-post narration rp-post-edit" id="p-${esc(p.id)}">
+    <div class="rp-post-body">
+      <div class="rp-byline">
+        <select id="editWho" aria-label="Who is speaking">${speakerOptions(who)}</select>
+        <span class="rp-sp"></span>
+        <span class="stamp">${esc(stampFor(p))}</span>
+      </div>
+      <textarea id="editText" data-for="${esc(p.id)}" aria-label="Post text">${esc(text)}</textarea>
+      <div class="rp-actions" style="margin-top:10px;">
+        <button class="pp-btn pp-btn-sm" type="button" data-save-post="${esc(p.id)}">Save post</button>
+        <button class="rp-textlink" type="button" data-cancel-post>Cancel</button>
+        <span class="rp-sp"></span>
+        ${RP.MD_HINT}
+      </div>
+    </div>
+  </article>`;
+}
+
+function renderPosts(){
+  $("posts").innerHTML = sc.posts.length
+    ? sc.posts.map(postHTML).join("")
+    : `<p class="rp-none" style="padding:26px 0;">Nothing written here yet. The composer below is where it starts.</p>`;
+
+  const t = $("editText");
+  if(t && focusEdit){ t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
+  focusEdit = false;
+}
+
+/* ---------------- rail ---------------- */
+
+function renderRail(){
+  /* Everyone listed on the scene, plus anyone who has posted in it. */
+  const ids = sc.cast.slice();
+  sc.posts.forEach(p => { if(p.who !== "narration" && ids.indexOf(p.who) < 0) ids.push(p.who); });
+  const people = ids.map(id => RP.person(id)).filter(Boolean);
+
+  $("people").innerHTML = people.length
+    ? people.map(p => {
+        const n = sc.posts.filter(x => x.who === p.id).length;
+        return `<a class="rp-person" href="${esc(RP.castUrl(p.id))}">
+          ${RP.face(p, 34)}
+          <span><span class="rp-person-name">${esc(p.name)}</span>
+          ${p.role ? `<span class="rp-person-note">${esc(p.role)}</span>` : ""}</span>
+          <span class="n">${n || ""}</span>
+        </a>`;
+      }).join("")
+    : `<p class="rp-none">Nobody yet. Add them under Edit details, or just start speaking as someone.</p>`;
+
+  if(document.activeElement !== $("leftNote")) $("leftNote").value = sc.left || "";
+
+  const hop = (dir, s) => s ? `<a class="rp-hop" href="${esc(RP.sceneUrl(s.id))}">
+      <span class="dir">${dir}</span>
+      <span class="t">${esc(s.title || "Untitled scene")}</span>
+      <span>${RP.threadChip(s)}</span>
+    </a>` : "";
+  if(RP.storyKey(sc)){
+    const n = RP.neighbours(sc);
+    $("hops").innerHTML = (hop("Before this", n.before) + hop("After this", n.after)) ||
+      `<p class="rp-none">The only dated scene so far.</p>`;
+  } else {
+    $("hops").innerHTML = `<p class="rp-none">Give this scene a story date and it takes its place on the <a href="${RP.BASE}timeline.html">timeline</a>.</p>`;
+  }
+
+  /* Every wiki page and character the prose links to. */
+  const seen = {}, chips = [];
+  sc.posts.forEach(p => RP.linksIn(p.md).forEach(l => {
+    const hit = RP.resolve(l.target);
+    if(!hit) return;
+    const key = hit.kind + hit.rec.id;
+    if(seen[key]) return;
+    seen[key] = true;
+    chips.push(`<a href="${esc(RP.hrefFor(hit))}">${esc(hit.kind === "wiki" ? hit.rec.title : hit.rec.name)}</a>`);
+  }));
+  $("mentionsPanel").hidden = !chips.length;
+  $("mentions").innerHTML = chips.join("");
+}
+
+/* ---------------- speaker picker ---------------- */
+
+function paintSpeaker(){
+  const p = RP.person(speaker) || RP.NARRATION;
+  if(!RP.person(speaker)) speaker = "narration";
+  $("speakerFace").innerHTML = RP.face(p, 30);
+  $("speakerName").textContent = p.name;
+  $("composer").classList.toggle("is-narration", speaker === "narration");
+}
+
+function buildMenu(){
+  const inScene = RP.castSorted().filter(c => sc.cast.indexOf(c.id) > -1);
+  const others  = RP.castSorted().filter(c => sc.cast.indexOf(c.id) < 0);
+  const item = p => `<button type="button" role="menuitemradio" data-speak="${esc(p.id)}" aria-checked="${p.id === speaker}">
+      ${RP.face(p, 28)}<span class="nm">${esc(p.name)}</span></button>`;
+
+  $("speakerMenu").innerHTML =
+    (inScene.length ? `<div class="rp-menu-head">In this scene</div>` + inScene.map(item).join("") : "") +
+    (others.length ? `<div class="rp-menu-head">${inScene.length ? "Everyone else" : "Cast"}</div>` +
+      others.map(item).join("") : "") +
+    (RP.state.cast.length ? `<div class="rule"></div>` : "") +
+    item(RP.NARRATION).replace('</button>', '<span class="note">no profile, full width</span></button>');
+}
+
+function openMenu(open){
+  buildMenu();
+  $("speakerMenu").hidden = !open;
+  $("speakerBtn").setAttribute("aria-expanded", open ? "true" : "false");
+  if(open){
+    const cur = $("speakerMenu").querySelector('[aria-checked="true"]') || $("speakerMenu").querySelector("button");
+    if(cur) cur.focus();
+  }
+}
+
+$("speakerBtn").addEventListener("click", () => openMenu($("speakerMenu").hidden));
+
+$("speakerMenu").addEventListener("keydown", e => {
+  const items = Array.from($("speakerMenu").querySelectorAll("button"));
+  const i = items.indexOf(document.activeElement);
+  if(e.key === "ArrowDown"){ e.preventDefault(); items[(i + 1) % items.length].focus(); }
+  if(e.key === "ArrowUp"){   e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+  if(e.key === "Escape"){    openMenu(false); $("speakerBtn").focus(); }
+});
+
+/* ---------------- drafts ---------------- */
+
+function words(){ return RP.wordCount($("draft").value); }
+
+function paintCount(){
+  const n = words();
+  $("wordCount").textContent = RP.plural(n, "word");
+}
+
+function saveDraft(){
+  clearTimeout(draftTimer);
+  const md = $("draft").value;
+  if(!md.trim()){
+    if(RP.state.drafts[sc.id]) RP.remove("draft", sc.id);
+    $("draftState").textContent = "";
+    return;
+  }
+  RP.save("draft", { id: sc.id, who: speaker, md });
+  $("draftState").textContent = "Draft kept";
+}
+
+$("draft").addEventListener("input", () => {
+  paintCount();
+  $("draftState").textContent = "";
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(saveDraft, 900);
+});
+
+$("draft").addEventListener("keydown", e => {
+  if(e.key === "Enter" && (e.ctrlKey || e.metaKey)){ e.preventDefault(); addPost(); }
+});
+
+/* ---------------- posting ---------------- */
+
+function addPost(){
+  const md = $("draft").value.replace(/\s+$/, "");
+  if(!md.trim()){ $("draft").focus(); return; }
+
+  const post = { id: RP.uid(), who: speaker, md, written: RP.todayISO(), created: new Date().toISOString() };
+  sc.posts.push(post);
+  if(speaker !== "narration" && sc.cast.indexOf(speaker) < 0) sc.cast.push(speaker);
+  RP.save("scene", sc);
+
+  clearTimeout(draftTimer);
+  $("draft").value = "";
+  if(RP.state.drafts[sc.id]) RP.remove("draft", sc.id);
+  $("draftState").textContent = "";
+  paintCount();
+
+  if(!$("draftPreview").hidden) $("previewBtn").click();
+
+  render();
+  const el = $("p-" + post.id);
+  if(el){
+    el.scrollIntoView({ behavior:"smooth", block:"center" });
+    el.classList.add("rp-highlight");
+  }
+  $("draft").focus({ preventScroll:true });
+}
+
+$("postBtn").addEventListener("click", addPost);
+
+/* ---------------- post tools ---------------- */
+
+document.addEventListener("click", e => {
+  const sp = e.target.closest("[data-speak]");
+  if(sp){
+    speaker = sp.dataset.speak;
+    paintSpeaker();
+    openMenu(false);
+    if($("draft").value.trim()) saveDraft();
+    $("draft").focus();
+    return;
+  }
+  if(!e.target.closest(".rp-speaker") && !$("speakerMenu").hidden) openMenu(false);
+
+  const ed = e.target.closest("[data-edit-post]");
+  if(ed){ editingPost = ed.dataset.editPost; focusEdit = true; renderPosts(); return; }
+
+  if(e.target.closest("[data-cancel-post]")){
+    const id = editingPost;
+    editingPost = null;
+    renderPosts();
+    const el = $("p-" + id); if(el) el.scrollIntoView({ block:"nearest" });
+    return;
+  }
+
+  const sv = e.target.closest("[data-save-post]");
+  if(sv){
+    const p = sc.posts.find(x => x.id === sv.dataset.savePost);
+    const md = $("editText").value.replace(/\s+$/, "");
+    if(!p) return;
+    if(!md.trim()){ alert("A post can't be empty. Delete it instead if it's not needed."); return; }
+    if(md !== p.md || $("editWho").value !== p.who){
+      p.md = md;
+      p.who = $("editWho").value;
+      p.edited = RP.todayISO();
+      if(p.who !== "narration" && sc.cast.indexOf(p.who) < 0) sc.cast.push(p.who);
+      RP.save("scene", sc);
+    }
+    editingPost = null;
+    render();
+    const el = $("p-" + p.id); if(el){ el.scrollIntoView({ block:"nearest" }); el.classList.add("rp-highlight"); }
+    return;
+  }
+
+  const del = e.target.closest("[data-delete-post]");
+  if(del){
+    const i = sc.posts.findIndex(x => x.id === del.dataset.deletePost);
+    if(i < 0) return;
+    const p = sc.posts[i];
+    const who = RP.person(p.who);
+    if(!confirm(`Delete this ${RP.plural(RP.wordCount(p.md), "word")} post by ${who ? who.name : "Unknown"}? This can't be undone.`)) return;
+    sc.posts.splice(i, 1);
+    RP.save("scene", sc);
+    render();
+  }
+});
+
+/* ---------------- details ---------------- */
+
+$("editBtn").addEventListener("click", () => {
+  const f = $("detailForm");
+  if(!f.hidden){ f.hidden = true; return; }
+  $("detailFields").innerHTML = RP.sceneFormFields(sc);
+  f.hidden = false;
+  f.elements.title.focus();
+});
+
+RP.wireCastPicker($("detailForm"));
+
+$("detailForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const next = RP.readSceneForm(e.target, Object.assign({}, sc));
+  if(!next.title) return;
+  Object.assign(sc, next);
+  RP.save("scene", sc);
+  e.target.hidden = true;
+  render();
+});
+
+$("detailCancel").addEventListener("click", () => { $("detailForm").hidden = true; });
+
+$("deleteScene").addEventListener("click", () => {
+  const w = RP.sceneWords(sc);
+  const msg = sc.posts.length
+    ? `Delete “${sc.title}” and its ${RP.plural(sc.posts.length, "post")} (${RP.plural(w, "word")})? This can't be undone.`
+    : `Delete “${sc.title}”?`;
+  if(!confirm(msg)) return;
+  const done = RP.remove("scene", sc.id);
+  if(RP.state.drafts[sc.id]) RP.remove("draft", sc.id);
+  RP.go(RP.BASE, done);
+});
+
+/* ---------------- where you left it ---------------- */
+
+function saveNote(){
+  clearTimeout(noteTimer);
+  const v = $("leftNote").value.trim();
+  if(v === (sc.left || "")) return;
+  sc.left = v;
+  RP.save("scene", sc);
+}
+$("leftNote").addEventListener("input", () => { clearTimeout(noteTimer); noteTimer = setTimeout(saveNote, 1200); });
+$("leftNote").addEventListener("blur", saveNote);
+
+/* ---------------- boot ---------------- */
+
+RP.wirePreview($("previewBtn"), $("draft"), $("draftPreview"));
+if(/Mac|iPhone|iPad/.test(navigator.platform || "")) $("shortcut").textContent = "\u2318 + Enter adds it";
+$("mdHint").innerHTML = RP.MD_HINT;
+
+function render(){
+  renderTop();
+  renderPosts();
+  renderRail();
+  paintSpeaker();
+}
+
+RP.watchSync($("sync"));
+RP.load().then(() => {
+  sc = RP.scene(RP.param("id"));
+  if(!sc){
+    $("missing").hidden = false;
+    setRibbonTitle("Scene not found");
+    return;
+  }
+  $("room").hidden = false;
+
+  const draft = RP.state.drafts[sc.id];
+  if(draft && draft.md){
+    $("draft").value = draft.md;
+    speaker = draft.who || "narration";
+    $("draftState").textContent = "Draft kept";
+  } else {
+    speaker = sc.cast.find(id => RP.person(id)) || "narration";
+  }
+  paintCount();
+  render();
+
+  /* Arriving from a backlink: land on the post and mark it. */
+  const target = location.hash && document.getElementById(location.hash.slice(1));
+  if(target){
+    target.scrollIntoView({ block:"start" });
+    target.classList.add("rp-highlight");
+  }
+});
+
+/* pp-nav builds the ribbon after this script runs. Keep its title right, and
+   light up Scenes in the mini navbar — a scene isn't in the site map, so
+   nothing would be marked otherwise. */
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(() => {
+    if(sc) setRibbonTitle(sc.title || "Untitled scene");
+    const home = document.querySelector('.pp-ribbon-sections a[href="' + RP.BASE + '"]');
+    if(home) home.setAttribute("aria-current", "page");
+  }, 0);
+});
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>

@@ -82,6 +82,13 @@ window.PPNav = (function(){
           { label:'Morning Office', href:'/dannelore/self-care/morning-office.html', note:'Wake-up flowchart' },
           { label:'Evening Office', href:'/dannelore/self-care/evening-office.html', note:'Wind-down flowchart' },
           { label:'Skincare',       href:'/dannelore/self-care/skincare.html',       note:'Products and order' }
+        ]},
+
+        { name:'The Writing Room', href:'/dannelore/rp/', indexLabel:'Scenes',
+          note:'Solo roleplay — scenes, threads and posts', pages:[
+          { label:'Cast',     href:'/dannelore/rp/cast.html',     note:'Character sheets and face claims' },
+          { label:'Wiki',     href:'/dannelore/rp/wiki.html',     note:'Places, things and lore, with backlinks' },
+          { label:'Timeline', href:'/dannelore/rp/timeline.html', note:'Every thread, in story order' }
         ]}
       ]
     },

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wiki — The Writing Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/pp-rp.css">
+</head>
+<body class="pp-dannelore" data-nav-eyebrow="The Writing Room" data-nav-title="Wiki">
+
+<div class="rp-wrap">
+
+  <div class="rp-wiki">
+    <aside class="rp-wiki-side">
+      <input class="rp-search" id="search" type="search" placeholder="Search the wiki" autocomplete="off" aria-label="Search the wiki">
+      <button class="pp-btn pp-btn-sm" type="button" id="newBtn">New entry</button>
+      <nav class="pp-panel" id="list" aria-label="Wiki entries"></nav>
+      <section class="pp-panel" id="wantedPanel" hidden>
+        <h2 class="rp-head">Not written yet</h2>
+        <p class="pp-hint" style="margin:-4px 0 6px;">Linked in the writing, with no entry behind them.</p>
+        <div id="wanted"></div>
+      </section>
+    </aside>
+
+    <main id="main"></main>
+  </div>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-rp.js"></script>
+<script>
+"use strict";
+
+const { $, esc } = RP;
+
+let openId = null;
+let editing = false;      /* editor open */
+let seedTitle = "";       /* prefilled title for a new entry */
+let dirty = false;
+let filter = "";
+
+/* ---------------- sidebar ---------------- */
+
+function matches(w, q){
+  if(!q) return true;
+  return RP.norm(w.title).includes(q) ||
+    (w.aka || []).some(a => RP.norm(a).includes(q)) ||
+    RP.norm(w.summary).includes(q) ||
+    RP.norm(RP.plainText(w.md)).includes(q);
+}
+
+function renderList(){
+  const q = RP.norm(filter);
+  const hits = RP.wikiSorted().filter(w => matches(w, q));
+
+  if(!RP.state.wiki.length){
+    $("list").innerHTML = `<p class="rp-none">No entries yet.</p>`;
+  } else if(!hits.length){
+    $("list").innerHTML = `<p class="rp-none">Nothing matches &ldquo;${esc(filter)}&rdquo;.</p>`;
+  } else {
+    $("list").innerHTML = RP.KIND_KEYS.map(k => {
+      const group = hits.filter(w => w.kind === k);
+      if(!group.length) return "";
+      return `<div class="rp-wiki-group">
+        <div class="rp-head">${esc(RP.KINDS[k].label)}</div>
+        ${group.map(w => {
+          /* When the search matched an alias rather than the title, say which. */
+          const alias = q && !RP.norm(w.title).includes(q) ? (w.aka || []).find(a => RP.norm(a).includes(q)) : null;
+          return `<a class="rp-wiki-link" href="${esc(RP.wikiUrl(w.id))}"${w.id === openId && !editing ? ' aria-current="page"' : ""}>
+            ${esc(w.title)}${alias ? `<small>as ${esc(alias)}</small>` : ""}</a>`;
+        }).join("")}
+      </div>`;
+    }).join("");
+  }
+
+  const wanted = RP.unresolved();
+  $("wantedPanel").hidden = !wanted.length;
+  $("wanted").innerHTML = wanted.slice(0, 30).map(w => `
+    <div class="rp-wanted">
+      <span>${esc(w.name)}</span>
+      <small>${w.count}&times;</small>
+      <button type="button" data-create="${esc(w.name)}">Write</button>
+    </div>`).join("");
+}
+
+/* ---------------- entry ---------------- */
+
+function renderEntry(w){
+  const back = RP.backlinks("wiki", w);
+  const when = RP.storyLabel(w);
+
+  $("main").innerHTML = `
+    <article class="pp-panel pp-panel-lg">
+      <div class="rp-entry-head">
+        <h1 class="rp-title">${esc(w.title)}</h1>
+        <span class="rp-kind" style="background:${RP.KINDS[w.kind].color}">${esc(RP.KINDS[w.kind].label)}</span>
+        <span class="rp-sp" style="flex:1 1 auto;"></span>
+        <span class="rp-sync" data-sync></span>
+        <button class="pp-btn pp-btn-quiet pp-btn-sm" type="button" data-edit>Edit entry</button>
+      </div>
+      ${(w.aka || []).length ? `<p class="rp-entry-aka">Also written as ${w.aka.map(esc).join(", ")}</p>` : ""}
+      ${when ? `<p class="rp-entry-when">On the timeline: <a href="${RP.BASE}timeline.html#w-${esc(w.id)}">${esc(when)}</a></p>` : ""}
+      ${w.summary ? `<div class="rp-entry-sum">${RP.markdown(w.summary)}</div>` : ""}
+      <div class="rp-prose rp-entry-body">
+        ${RP.markdown(w.md) || `<p class="rp-none">Nothing here beyond the summary yet.</p>`}
+      </div>
+
+      <section class="rp-appears">
+        <h2 class="rp-head">Appears in</h2>
+        ${back.scenes.length
+          ? back.scenes.map(m => `<a class="rp-backrow" href="${esc(RP.sceneUrl(m.scene.id, m.post.id))}">
+              <span class="t">${esc(m.scene.title || "Untitled scene")}</span>
+              <span class="q">${esc(m.quote)}</span>
+              ${m.count > 1 ? `<span class="n">${m.count}&times;</span>` : ""}
+            </a>`).join("")
+          : `<p class="rp-none">Not linked in anything you&rsquo;ve written yet. Write <code>[[${esc(w.title)}]]</code> in a post and the scene shows up here.</p>`}
+        ${back.pages.length ? `<h2 class="rp-head" style="margin-top:16px;">Linked from</h2>
+          <div class="rp-chiplinks">${back.pages.map(p =>
+            `<a href="${esc(p.kind === "wiki" ? RP.wikiUrl(p.rec.id) : RP.castUrl(p.rec.id))}">${esc(p.kind === "wiki" ? p.rec.title : p.rec.name)}</a>`
+          ).join("")}</div>` : ""}
+      </section>
+    </article>`;
+  watch();
+}
+
+function renderEmpty(){
+  $("main").innerHTML = `<div class="pp-panel rp-empty">
+    <h2 class="rp-title">Everything you&rsquo;ve decided is true</h2>
+    <p>Places, groups, objects, events, ideas. Write <code>[[a name]]</code> in any post and it becomes a link;
+       each entry then lists every scene that mentions it.</p>
+    <div class="rp-actions"><button class="pp-btn" type="button" data-create="">Write the first entry</button></div>
+  </div>`;
+}
+
+/* ---------------- editor ---------------- */
+
+function renderEditor(w){
+  const isNew = !w;
+  w = w || { id: RP.uid(), title: seedTitle, kind:"place", aka:[], summary:"", md:"", when:{} };
+  const wh = w.when || {};
+  dirty = false;
+
+  $("main").innerHTML = `
+    <form class="pp-panel pp-panel-lg" id="entryForm" autocomplete="off" data-id="${esc(w.id)}">
+      <h1 class="rp-title" style="margin-bottom:18px;">${isNew ? "New entry" : "Edit " + esc(w.title)}</h1>
+      <div class="rp-fields">
+        <div class="pp-field"><label for="ef-title">Title</label>
+          <input id="ef-title" name="title" required maxlength="100" value="${esc(w.title)}"></div>
+        <div class="pp-field"><label for="ef-kind">Kind</label>
+          <select id="ef-kind" name="kind">
+            ${RP.KIND_KEYS.map(k => `<option value="${k}"${k === w.kind ? " selected" : ""}>${RP.KINDS[k].label}</option>`).join("")}
+          </select></div>
+
+        <div class="pp-field wide"><label for="ef-aka">Also written as</label>
+          <input id="ef-aka" name="aka" maxlength="300" placeholder="the inn, the Crossing" value="${esc((w.aka || []).join(", "))}">
+          <span class="pp-hint">Comma separated. Any of these inside <code>[[ ]]</code> lands here.</span></div>
+
+        <div class="pp-field wide"><label for="ef-summary">Summary</label>
+          <textarea id="ef-summary" name="summary" rows="2" maxlength="500" style="min-height:64px;">${esc(w.summary || "")}</textarea></div>
+
+        <div class="pp-field wide">
+          <div class="rp-bar" style="margin:0;">
+            <label class="pp-field-label" for="ef-md">Entry</label>
+            <span class="rp-sp"></span>
+            <button class="pp-btn pp-btn-quiet pp-btn-sm" type="button" id="previewBtn" aria-pressed="false">Preview</button>
+          </div>
+          <textarea class="rp-md" id="ef-md" name="md" style="min-height:260px;">${esc(w.md || "")}</textarea>
+          <div class="rp-preview rp-prose rp-entry-body" id="mdPreview" hidden></div>
+          <span>${RP.MD_HINT} <span class="rp-md-hint">&nbsp; <code>## Heading</code> for a section</span></span>
+        </div>
+
+        <div class="pp-field wide"><div class="rp-fields rp-fields-3">
+          <div class="pp-field"><label for="ef-date">Story date</label>
+            <input id="ef-date" name="date" type="date" value="${esc(wh.date || "")}"></div>
+          <div class="pp-field"><label for="ef-time">Time</label>
+            <input id="ef-time" name="time" type="time" value="${esc(wh.time || "")}"></div>
+          <div class="pp-field"><label for="ef-label">Shown as</label>
+            <input id="ef-label" name="label" maxlength="80" placeholder="Optional" value="${esc(wh.label || "")}"></div>
+        </div>
+        <span class="pp-hint">Optional. Give an entry a date and it appears on the timeline among the scenes &mdash; a war, a founding, the night the compass stopped.</span></div>
+      </div>
+
+      <div class="rp-actions">
+        <button class="pp-btn" type="submit">${isNew ? "Add entry" : "Save entry"}</button>
+        <button class="rp-textlink" type="button" data-cancel>Cancel</button>
+        <span class="rp-sp"></span>
+        ${isNew ? "" : `<button class="rp-textlink danger" type="button" id="deleteEntry">Delete entry</button>`}
+      </div>
+    </form>`;
+
+  const f = $("entryForm");
+  f.addEventListener("input", () => { dirty = true; });
+  f.addEventListener("submit", e => { e.preventDefault(); saveEntry(isNew); });
+  RP.wirePreview($("previewBtn"), $("ef-md"), $("mdPreview"));
+  if($("deleteEntry")) $("deleteEntry").addEventListener("click", () => deleteEntry(w.id));
+  (isNew && seedTitle ? f.elements.summary : f.elements.title).focus();
+}
+
+function clash(rec){
+  const mine = [rec.title].concat(rec.aka).map(RP.norm);
+  for(const o of RP.state.wiki){
+    if(o.id === rec.id) continue;
+    const theirs = [o.title].concat(o.aka || []).map(RP.norm);
+    const hit = mine.find(n => theirs.indexOf(n) > -1);
+    if(hit) return { other:o, name:hit };
+  }
+  return null;
+}
+
+function saveEntry(isNew){
+  const f = $("entryForm");
+  const existing = RP.entry(f.dataset.id);
+  const rec = {
+    id: f.dataset.id,
+    title: f.elements.title.value.trim(),
+    kind: f.elements.kind.value,
+    aka: RP.splitList(f.elements.aka.value),
+    summary: f.elements.summary.value.trim(),
+    md: f.elements.md.value.replace(/\s+$/, ""),
+    when: { date: f.elements.date.value, time: f.elements.time.value, label: f.elements.label.value.trim() },
+    created: (existing && existing.created) || RP.todayISO()
+  };
+  if(!rec.title) return;
+
+  const k = clash(rec);
+  if(k){
+    alert(`“${k.other.title}” already answers to “${k.name}”. Two entries can't share a name, or [[links]] couldn't tell them apart.`);
+    return;
+  }
+
+  /* A character with the same name loses its links to this entry — wiki wins.
+     Worth knowing before it happens. */
+  const castHit = RP.state.cast.find(c => [c.name].concat(c.aka || []).map(RP.norm)
+    .some(n => [rec.title].concat(rec.aka).map(RP.norm).indexOf(n) > -1));
+  if(castHit && !(existing && RP.norm(existing.title) === RP.norm(rec.title)) &&
+     !confirm(`${castHit.name} in the cast shares a name with this entry. [[Links]] using that name will open the wiki entry instead of their sheet. Save anyway?`)){
+    return;
+  }
+
+  const kept = existing && existing.title !== rec.title ? RP.keepOldName("wiki", rec, existing.title) : false;
+  RP.save("wiki", rec);
+  dirty = false;
+  if(kept) alert(`“${existing.title}” is still used in [[links]], so it's been kept as an alias. Those links still work.`);
+  openEntry(rec.id, true);
+}
+
+function deleteEntry(id){
+  const w = RP.entry(id);
+  if(!w) return;
+  const n = RP.backlinks("wiki", w).scenes.length;
+  const msg = n
+    ? `Delete “${w.title}”? It's linked from ${RP.plural(n, "scene")}; those links will go back to plain text.`
+    : `Delete “${w.title}”?`;
+  if(!confirm(msg)) return;
+  RP.remove("wiki", id);
+  dirty = false;
+  editing = false;
+  openId = null;
+  history.pushState({}, "", RP.wikiUrl());
+  render();
+}
+
+/* ---------------- routing ---------------- */
+
+function leaveEditor(){
+  if(!editing || !dirty) return true;
+  if(!confirm("Leave without saving this entry?")) return false;
+  dirty = false;
+  return true;
+}
+
+function openEntry(id, push){
+  if(!leaveEditor()) return;
+  editing = false;
+  openId = id;
+  if(push) history.pushState({ id }, "", RP.wikiUrl(id));
+  render();
+  window.scrollTo(0, 0);
+}
+
+function startEditing(id, title){
+  if(!leaveEditor()) return;
+  editing = true;
+  openId = id;
+  seedTitle = title || "";
+  render();
+  window.scrollTo(0, 0);
+}
+
+function render(){
+  renderList();
+  const w = openId ? RP.entry(openId) : null;
+  if(editing) renderEditor(w);
+  else if(w) renderEntry(w);
+  else renderEmpty();
+
+  const title = editing ? (w ? "Edit " + w.title : "New entry") : (w ? w.title : "Wiki");
+  const t = document.querySelector(".pp-ribbon-title");
+  if(t) t.textContent = title;
+  document.title = title + " — The Writing Room";
+}
+
+function watch(){
+  document.querySelectorAll("[data-sync]").forEach(el => { if(!el.dataset.watched){ el.dataset.watched = 1; RP.watchSync(el); } });
+}
+
+$("search").addEventListener("input", e => { filter = e.target.value; renderList(); });
+$("newBtn").addEventListener("click", () => startEditing(null, ""));
+
+document.addEventListener("click", e => {
+  const cr = e.target.closest("[data-create]");
+  if(cr){ startEditing(null, cr.dataset.create); return; }
+
+  if(e.target.closest("[data-edit]")){ startEditing(openId); return; }
+
+  if(e.target.closest("[data-cancel]")){
+    if(!leaveEditor()) return;
+    editing = false;
+    if(!RP.entry(openId)){
+      openId = RP.param("e");
+      if(!RP.entry(openId)) openId = (RP.wikiSorted()[0] || {}).id || null;
+    }
+    render();
+    return;
+  }
+
+  /* Links between entries stay on the page. */
+  const a = e.target.closest("a[href]");
+  if(a && !e.metaKey && !e.ctrlKey && !e.shiftKey){
+    const u = new URL(a.href, location.href);
+    if(u.pathname === RP.wikiUrl() && u.searchParams.get("e")){
+      e.preventDefault();
+      openEntry(u.searchParams.get("e"), true);
+    }
+  }
+});
+
+window.addEventListener("beforeunload", e => {
+  if(editing && dirty){ e.preventDefault(); e.returnValue = ""; }
+});
+
+window.addEventListener("popstate", () => {
+  if(editing && dirty && !confirm("Leave without saving this entry?")){
+    history.pushState({}, "", RP.wikiUrl(openId));
+    return;
+  }
+  dirty = false;
+  editing = false;
+  openId = RP.param("e");
+  render();
+});
+
+RP.load().then(() => {
+  const id = RP.param("e");
+  openId = RP.entry(id) ? id : ((RP.wikiSorted()[0] || {}).id || null);
+  render();
+});
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>
