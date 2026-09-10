@@ -93,18 +93,24 @@ const CATALOG = [
     } },
 
   /* Same silhouette, three colourways — so one set of fit numbers, pasted
-     three times. If you retune one, retune all three. */
-  { id:'top-hugspurp', slot:'top',        name:'Free Hugs shirt, purple', price:600, unlock:1, fit:{
+     three times. If you retune one, retune all three.
+
+     `art` is the FILENAME, without the extension. These three were drawn as
+     shirt-*.png before the slot was renamed to `top`, and the id is what gets
+     written into saved outfits and wardrobes — so the id has to stay put and
+     the art path points at the real file instead. Leave `art` off and the
+     filename is just the id, which is what every other item does. */
+  { id:'top-hugspurp', slot:'top', art:'shirt-hugspurp', name:'Free Hugs shirt, purple', price:600, unlock:1, fit:{
       child: { x:50,   y:50,   w:79.5 },
       teen:  { x:49.4, y:50.4, w:81.5, h:100 },
       adult: { x:50.6, y:50.3, w:100 }
     } },
-  { id:'top-teegray',  slot:'top',        name:'Tee, grey',      price:600, unlock:1, fit:{
+  { id:'top-teegray',  slot:'top', art:'shirt-teegray',  name:'Tee, grey',  price:600, unlock:1, fit:{
       child: { x:50,   y:50,   w:79.5 },
       teen:  { x:49.4, y:50.4, w:81.5, h:100 },
       adult: { x:50.6, y:50.3, w:100 }
     } },
-  { id:'top-teegren',  slot:'top',        name:'Tee, green',     price:600, unlock:1, fit:{
+  { id:'top-teegren',  slot:'top', art:'shirt-teegren',  name:'Tee, green', price:600, unlock:1, fit:{
       child: { x:50,   y:50,   w:79.5 },
       teen:  { x:49.4, y:50.4, w:81.5, h:100 },
       adult: { x:50.6, y:50.3, w:100 }
@@ -399,7 +405,15 @@ function petImageUrl(pet){
 function eyeImageUrl(pet){
   return `${EYE_ART}${pet.eyeColor || 'yellow'}-${stageOf(pet).key}-${pet.eyeShape || 'round'}.png`;
 }
-function itemImageUrl(id){ return `${ITEM_ART}${id}.png`; }
+/* Takes an item id or the item itself. An entry with `art` uses that as its
+   filename; everything else falls back to the id, so nothing that already
+   worked needs touching. Resolving it here means the four callers can't drift
+   apart, and renaming a file only ever changes the catalog. */
+function itemImageUrl(idOrItem){
+  const item = (typeof idOrItem === 'string') ? catalogItem(idOrItem) : idOrItem;
+  const file = (item && (item.art || item.id)) || idOrItem;
+  return `${ITEM_ART}${file}.png`;
+}
 
 /* A garment's placement for a given stage, as percentages of the frame.
    Produced by the fitting tool and pasted into CATALOG entries. */
