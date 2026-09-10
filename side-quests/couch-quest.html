@@ -734,6 +734,148 @@ function showResults(rows, onPick){
   box.classList.add("open");
 }
 
+/* ==========================================================================
+   WHERE IS IT STREAMING
+   TMDB's watch/providers endpoint, same key the film lookup already uses.
+
+   Only `flatrate` is read — things included with a subscription. Rent and buy
+   are deliberately ignored, because "on Netflix" and "£3.99 on Apple" are not
+   the same fact and the sash under a title is meant to answer "can we just put
+   this on tonight".
+
+   Providers are regional, so REGION picks the country. TMDB names don't match
+   ours ("Amazon Prime Video", "Disney Plus"), hence the alias table.
+   ========================================================================== */
+const REGION = "US";
+
+/* Matched loosely, in order — TMDB ships variants like "Netflix Standard with
+   Ads" and "Peacock Premium Plus" and they should all land on one chip. */
+const PROVIDER_ALIASES = [
+  { match:"netflix",       name:"Netflix" },
+  { match:"hbo max",       name:"HBO Max" },
+  { match:"max",           name:"HBO Max" },
+  { match:"hulu",          name:"Hulu" },
+  { match:"disney",        name:"Disney+" },
+  { match:"apple tv+",     name:"Apple TV+" },
+  { match:"apple tv plus", name:"Apple TV+" },
+  { match:"prime video",   name:"Prime Video" },
+  { match:"peacock",       name:"Peacock" },
+  { match:"paramount",     name:"Paramount+" },
+  { match:"dropout",       name:"DropOut" },
+  { match:"youtube",       name:"YouTube" }
+];
+
+function mapProvider(tmdbName){
+  const n = String(tmdbName || "").toLowerCase();
+  const hit = PROVIDER_ALIASES.find(a => n.indexOf(a.match) > -1);
+  return hit ? hit.name : null;
+}
+
+/* Returns { services:[names], unknown:[names] }. `unknown` is everything TMDB
+   listed that we have no chip for — surfaced in the hint rather than dropped,
+   so it's obvious when something is streaming somewhere unexpected. */
+function providersFor(kind, tmdbId){
+  return fetch(TMDB + "/" + kind + "/" + tmdbId + "/watch/providers?api_key=" +
+               encodeURIComponent(TMDB_KEY))
+    .then(r => r.json())
+    .then(data => {
+      const flat = (((data.results || {})[REGION] || {}).flatrate) || [];
+      const services = [], unknown = [];
+      flat.forEach(p => {
+        const mapped = mapProvider(p.provider_name);
+        if(mapped){ if(services.indexOf(mapped) === -1) services.push(mapped); }
+        else if(unknown.indexOf(p.provider_name) === -1) unknown.push(p.provider_name);
+      });
+      return { services, unknown };
+    });
+}
+
+/* TVmaze has no TMDB id, so a series has to be found on TMDB by name first.
+   The year narrows it, because remakes are everywhere. */
+function findTmdbSeries(title, year){
+  return fetch(TMDB + "/search/tv?api_key=" + encodeURIComponent(TMDB_KEY) +
+               "&query=" + encodeURIComponent(title) +
+               (year ? "&first_air_date_year=" + encodeURIComponent(year) : ""))
+    .then(r => r.json())
+    .then(data => {
+      const hit = (data.results || [])[0];
+      return hit ? hit.id : null;
+    });
+}
+
+function providerSummary(found){
+  if(found.services.length){
+    let msg = "On " + found.services.join(", ") + ".";
+    if(found.unknown.length) msg += " Also on " + found.unknown.join(", ") + " — no chip for those.";
+    return msg;
+  }
+  if(found.unknown.length){
+    return "Only on " + found.unknown.join(", ") + ", which we don't have a chip for. Marked unavailable.";
+  }
+  return "Not included with any subscription right now — marked unavailable.";
+}
+
+/* Writes the result onto the chip picker in the add/edit form. Nothing is
+   removed that you ticked by hand except Unavailable, which is recalculated. */
+function applyProvidersToForm(found){
+  found.services.forEach(name => {
+    if(pickedStreams.indexOf(name) === -1) pickedStreams.push(name);
+  });
+  pickedStreams = pickedStreams.filter(s => s !== "Unavailable");
+  if(!pickedStreams.length) pickedStreams = ["Unavailable"];
+  renderStreamPicker();
+}
+
+/* Re-checks a title already on the list. Services move constantly, so this is
+   the button you press when something has quietly left Netflix. */
+function refreshServices(id){
+  const item = state.items.find(x => x.id === id);
+  if(!item) return;
+  if(!hasTmdb()){ alert(HINT_NOKEY); return; }
+
+  const note = document.getElementById("svcState");
+  if(note) note.textContent = "Checking\u2026";
+
+  const idPromise = item.tmdbId
+    ? Promise.resolve(item.tmdbId)
+    : (item.type === "movie"
+        ? Promise.resolve(null)          /* films need a real lookup to get an id */
+        : findTmdbSeries(item.title, item.year));
+
+  idPromise
+    .then(tmdbId => {
+      if(!tmdbId) throw new Error("no id");
+      item.tmdbId = tmdbId;
+      return providersFor(item.type === "movie" ? "movie" : "tv", tmdbId);
+    })
+    .then(found => {
+      /* A re-check REPLACES the list rather than adding to it. The whole point
+         is catching a title that has left a service, and merging would keep
+         the stale chip forever. Anything you'd ticked by hand and TMDB doesn't
+         list gets named in the message so the loss is never silent. */
+      const before = (item.streams || []).filter(s => s !== "Unavailable");
+      const lost   = before.filter(s => found.services.indexOf(s) === -1);
+
+      item.streams = found.services.length ? found.services.slice() : ["Unavailable"];
+      save();
+      openDetail(id);
+
+      const n2 = document.getElementById("svcState");
+      if(n2){
+        let msg = providerSummary(found);
+        if(lost.length) msg += " Dropped " + lost.join(", ") + " — re-tick by hand if that's wrong.";
+        n2.textContent = msg;
+      }
+    })
+    .catch(err => {
+      console.error("Provider lookup failed:", err);
+      const n2 = document.getElementById("svcState");
+      if(n2) n2.textContent = (err.message === "no id")
+        ? "Couldn't match this to a TMDB entry. Tick the services by hand."
+        : "Couldn't reach TMDB just now.";
+    });
+}
+
 function lookupSeries(q){
   $("lookupHint").textContent = "Searching…";
   fetch(TVMAZE + "/search/shows?q=" + encodeURIComponent(q))
@@ -765,13 +907,42 @@ function pickSeries(r){
     .then(seasons => {
       pendingLookup = { type:"series", tvmazeId: r.raw.id, seasons: seasons };
       const eps = seasons.reduce((n,s) => n + s.episodes, 0);
-      $("lookupHint").textContent =
+      const seasonMsg =
         seasons.length + (seasons.length === 1 ? " season, " : " seasons, ") + eps + " episodes found.";
+      $("lookupHint").textContent = seasonMsg;
+      lookupSeriesProviders(r, seasonMsg);
     })
     .catch(e => {
       console.error(e);
       pendingLookup = { type:"series", tvmazeId: r.raw.id, seasons: [] };
       $("lookupHint").textContent = "Got the show, but the seasons didn't load. Try Refresh seasons after saving.";
+    });
+}
+
+/* Series come from TVmaze, which knows nothing about streaming rights, so the
+   show is matched to TMDB by name and year and the providers read from there.
+   A miss is quiet — you still get the show, just without the chips. */
+function lookupSeriesProviders(r, prefix){
+  if(!hasTmdb()) return;
+  const year = r.raw.premiered ? r.raw.premiered.slice(0,4) : "";
+  $("lookupHint").textContent = prefix + " Checking services\u2026";
+
+  findTmdbSeries(r.name, year)
+    .then(tmdbId => {
+      if(!tmdbId) throw new Error("no id");
+      pendingLookup.tmdbId = tmdbId;
+      return providersFor("tv", tmdbId);
+    })
+    .then(found => {
+      applyProvidersToForm(found);
+      $("lookupHint").textContent = prefix + " " + providerSummary(found);
+    })
+    .catch(e => {
+      console.error(e);
+      $("lookupHint").textContent = prefix +
+        (e.message === "no id"
+          ? " Couldn't match it on TMDB — tick the services by hand."
+          : " Couldn't check services — tick them by hand.");
     });
 }
 
@@ -809,8 +980,20 @@ function pickMovie(r){
     .then(d => {
       const mins = d.runtime || 0;
       $("fRuntime").value = mins || "";
-      pendingLookup = { type:"movie", runtime: mins };
-      $("lookupHint").textContent = mins ? ("Runtime " + hm(mins) + ".") : "No runtime listed — type it in.";
+      pendingLookup = { type:"movie", runtime: mins, tmdbId: r.raw.id };
+      const runtimeMsg = mins ? ("Runtime " + hm(mins) + ".") : "No runtime listed — type it in.";
+      $("lookupHint").textContent = runtimeMsg + " Checking services\u2026";
+
+      /* Same id, one more call — so adding a film also answers "where is it". */
+      providersFor("movie", r.raw.id)
+        .then(found => {
+          applyProvidersToForm(found);
+          $("lookupHint").textContent = runtimeMsg + " " + providerSummary(found);
+        })
+        .catch(e => {
+          console.error(e);
+          $("lookupHint").textContent = runtimeMsg + " Couldn't check services — tick them by hand.";
+        });
     })
     .catch(e => { console.error(e); $("lookupHint").textContent = "Got the film, but no runtime came back. Type it in."; });
 }
@@ -1168,6 +1351,23 @@ function openDetail(id){
   }
 
   $("detail").classList.add("open");
+  /* ---- where to watch ----
+     Services move constantly, so the answer stored on a title goes stale. This
+     is the button for when something has quietly left Netflix. */
+  const svc = document.createElement("div");
+  svc.className = "cq-block";
+  const on = (item.streams || []).filter(s => s !== "Unavailable");
+  svc.innerHTML = `
+    <div class="cq-block-head">
+      <span class="cq-block-name">Where to watch</span>
+      <span class="cq-block-count">${on.length ? esc(on.join(", ")) : "nowhere we have"}</span>
+    </div>
+    <div class="cq-step">
+      <button id="svcCheck">Check again</button>
+      <span class="cq-steplabel" id="svcState">Asks TMDB what it's included with today.</span>
+    </div>`;
+  body.appendChild(svc);
+
   /* ---- rewatch log ----
      Appended after whatever the film / season blocks produced, so it reads as
      the tail of the record rather than competing with it. */
@@ -1371,6 +1571,8 @@ $("saveBtn").onclick = () => {
         merged.tvmazeId = pendingLookup.tvmazeId;
         merged.seasons  = mergeSeasons(state.items[i].seasons, pendingLookup.seasons);
       }
+      /* Kept so "Check again" later doesn't have to re-search TMDB by name. */
+      if(pendingLookup && pendingLookup.tmdbId) merged.tmdbId = pendingLookup.tmdbId;
       if(isMovie) merged.watchedMin = Math.min(merged.watchedMin || 0, merged.runtime);
       state.items[i] = merged;
     }
@@ -1380,6 +1582,7 @@ $("saveBtn").onclick = () => {
       item.tvmazeId = pendingLookup.tvmazeId;
       item.seasons  = pendingLookup.seasons;
     }
+    if(pendingLookup && pendingLookup.tmdbId) item.tmdbId = pendingLookup.tmdbId;
     if(item.status === "watched"){
       if(isMovie) item.watchedMin = item.runtime;
       else item.seasons.forEach(s => {
@@ -1490,6 +1693,8 @@ $("detailBody").onclick = e => {
     if(no) setSeasonEps(openId, no, []);
     return;
   }
+
+  if(e.target.id === "svcCheck"){ refreshServices(openId); return; }
 
   if(e.target.id === "rwAdd"){
     const box = $("rwDate");
