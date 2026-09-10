@@ -276,16 +276,30 @@
 
   /* --- unavailable ---
      Shown when none of the services a title is on are ones we have. The pill
-     sits centred at the top of the poster, between the who badge on the left
-     and the edit tools on the right. The line under the title picks up the
-     same grey so the two read as a pair. */
+     sits at the top RIGHT of the poster, opposite the who badge. The line
+     under the title picks up the same grey so the two read as a pair.
+
+     The edit tools live in that corner too, but they're hidden until you
+     hover the card — so the pill steps aside on hover and the two never
+     overlap. Where hover doesn't exist the tools are always shown, so there
+     the pill drops to a second row beneath them instead. */
   .cq-unavail{
-    position:absolute; top:7px; left:50%; transform:translateX(-50%);
+    position:absolute; top:7px; right:7px; left:auto; transform:none;
+    transition:opacity .15s ease;
     font-family:var(--font-body); font-size:.6rem; font-weight:700;
     letter-spacing:.1em; text-transform:uppercase;
     color:#fff; background:var(--unavail);
     border:1px solid transparent; border-radius:999px;
     padding:3px 10px; white-space:nowrap;
   }
+  .cq-card:hover .cq-unavail,
+  .cq-card:focus-within .cq-unavail{ opacity:0; }
+
+  @media (hover:none){
+    .cq-unavail{ top:40px; opacity:1; }
+    .cq-card:hover .cq-unavail,
+    .cq-card:focus-within .cq-unavail{ opacity:1; }
+  }
+
   .cq-card.is-unavail .cq-where,
   .cq-card.is-unavail .cq-dateline{ color:var(--unavail); }
