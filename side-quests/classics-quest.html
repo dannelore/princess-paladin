@@ -73,18 +73,22 @@
   .clq-sync[data-state="saving"]{ color: var(--gold); }
   .clq-sync[data-state="error"]{ color: var(--blade); }
 
-  /* ---- the shelf ---- */
+  /* ---- the shelf ----
+     Poster-forward, like the watch trackers, so a shelf of covers reads as a
+     shelf. Anything without a cover falls back to a drop-cap letter tile, so
+     the grid never has a hole in it. */
   .clq-grid{
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
   }
 
   .clq-card{
     position: relative;
     display: flex;
-    gap: 12px;
-    padding: 14px 14px 14px 12px;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
     text-align: left;
     cursor: pointer;
     background: var(--panel);
@@ -99,59 +103,88 @@
     box-shadow: var(--lift-lg);
     border-color: var(--dusk);
   }
-  /* Finished. */
-  .clq-card.is-read{
-    border-color: var(--sage);
-    background: linear-gradient(180deg, rgba(143,163,126,.10), transparent 60%), var(--panel);
-  }
+  .clq-card.is-read{ border-color: var(--sage); }
 
-  /* The letter is the spine of the book, so it gets the drop cap treatment. */
-  .clq-letter{
-    flex: 0 0 auto;
-    width: 34px;
+  .clq-coverwrap{ position: relative; }
+  .clq-cover{
+    display: block;
+    width: 100%;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    background: var(--parchment);
+  }
+  /* Covers dim once you've read the book, the way a finished card does on the
+     watch trackers — done things shouldn't shout as loudly as the queue. */
+  .clq-card.is-read .clq-cover{ opacity: .72; }
+
+  /* No cover: the letter carries the tile instead. */
+  .clq-nocover{
+    aspect-ratio: 2/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 30% 25%, rgba(107,74,120,.16), transparent 62%), var(--parchment);
     font-family: var(--font-display);
-    font-size: 2rem;
+    font-size: 3.4rem;
     font-weight: 600;
     line-height: 1;
     color: var(--dusk);
-    text-align: center;
-    padding-top: 2px;
   }
-  .clq-card.is-read .clq-letter{ color: var(--sage-deep); }
 
-  .clq-body{ flex: 1 1 auto; min-width: 0; }
+  /* The letter, always visible, top-left over the cover. */
+  .clq-letter{
+    position: absolute;
+    top: 6px; left: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px; height: 26px;
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--dusk-deep);
+    background: rgba(255,253,248,.94);
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(46,36,31,.22);
+  }
+  .clq-card.is-read .clq-letter{ color: #fff; background: var(--sage-deep); }
+
+  .clq-body{ padding: 10px 11px 12px; display: flex; flex-direction: column; gap: 2px; }
   .clq-title{
     font-family: var(--font-serif);
     font-weight: 600;
-    font-size: 1rem;
+    font-size: .95rem;
     line-height: 1.2;
-    margin: 0 0 2px;
+    margin: 0;
     color: var(--ink);
     word-break: break-word;
   }
   .clq-author{
     font-family: var(--font-serif);
     font-style: italic;
-    font-size: .84rem;
+    font-size: .82rem;
     color: var(--ink-soft);
     margin: 0;
   }
 
-  /* One status pill. Hollow until you've finished it. */
+  /* One status pill, sitting on the cover's foot. */
   .clq-status{
+    position: absolute;
+    bottom: 6px; left: 6px; right: 6px;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     font-family: var(--font-body);
-    font-size: .58rem;
+    font-size: .56rem;
     font-weight: 700;
     letter-spacing: .1em;
     text-transform: uppercase;
     border-radius: 999px;
-    padding: 3px 10px;
-    margin-top: 9px;
-    border: 1px solid var(--line-strong);
+    padding: 3px 8px;
     color: var(--ink-soft);
-    background: transparent;
+    background: rgba(255,253,248,.92);
+    border: 1px solid var(--line-strong);
   }
   .clq-status[data-state="reading"]{
     border-style: dashed;
@@ -192,9 +225,42 @@
       border-radius: var(--radius-lg);
     }
   }
-  .clq-detail-head{ display: flex; gap: 14px; align-items: flex-start; margin-bottom: 4px; }
-  .clq-detail-head .clq-letter{ font-size: 2.6rem; width: 44px; }
+  .clq-detail-head{ display: flex; gap: 16px; align-items: flex-start; margin-bottom: 4px; }
   .clq-detail-head h2{ margin: 0 0 2px; font-size: 1.4rem; }
+
+  /* A bigger copy of the cover, and the controls for changing it. */
+  .clq-detail-cover{
+    flex: 0 0 auto;
+    width: 92px;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    background: var(--parchment);
+    border: 1px solid var(--line);
+  }
+  .clq-detail-nocover{
+    flex: 0 0 auto;
+    width: 92px;
+    aspect-ratio: 2/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    background: var(--parchment);
+    border: 1px solid var(--line);
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    font-weight: 600;
+    color: var(--dusk);
+  }
+  .clq-coverrow{ display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .clq-coverrow input{ flex: 1 1 200px; min-width: 0; }
+  .clq-coverstate{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .85rem;
+    color: var(--ink-soft);
+  }
 
   .clq-block{ padding: 14px 0; border-top: 1px solid var(--line); }
   .clq-block-name{
@@ -388,6 +454,10 @@ function normalize(item){
   if(!STATES.some(st => st.key === item.status)) item.status = "unread";
   if(typeof item.date !== "string") item.date = "";
   if(typeof item.notes !== "string") item.notes = "";
+  if(typeof item.cover !== "string") item.cover = "";
+  /* Set once a lookup has been attempted, hit or miss, so a book Open Library
+     has no cover for isn't re-queried on every single page load. */
+  if(typeof item.coverTried !== "boolean") item.coverTried = false;
   return item;
 }
 
@@ -397,7 +467,8 @@ function seed(){
   let added = 0;
   SEED.forEach(book => {
     if(state.items.some(i => i.id === book.id)) return;
-    state.items.push(normalize(Object.assign({}, book, { status:"unread", date:"", notes:"" })));
+    state.items.push(normalize(Object.assign({}, book,
+      { status:"unread", date:"", notes:"", cover:"", coverTried:false })));
     added++;
   });
   state.items.forEach(normalize);
@@ -408,6 +479,57 @@ function seed(){
 }
 
 const stateLabel = key => (STATES.find(st => st.key === key) || STATES[0]).label;
+
+/* ---------------- covers ----------------
+   Open Library, which needs no key and no account. The search endpoint gives
+   back a cover id; the covers endpoint serves the image.
+
+   Editions vary wildly for books this old, so the first hit with a cover wins
+   and you can always paste your own URL in the detail panel instead. Whatever
+   is found gets stored on the book, so this runs once per title and never
+   again — the page is not calling out to anyone on a normal load. */
+const OL_SEARCH = "https://openlibrary.org/search.json";
+const OL_COVER  = "https://covers.openlibrary.org/b/id/";
+
+async function findCover(item){
+  const url = OL_SEARCH +
+    "?title="  + encodeURIComponent(item.title) +
+    "&author=" + encodeURIComponent(item.author) +
+    "&limit=5&fields=cover_i,title,author_name";
+  const res  = await fetch(url);
+  if(!res.ok) throw new Error("Open Library said " + res.status);
+  const data = await res.json();
+  const hit  = (data.docs || []).find(doc => doc.cover_i);
+  return hit ? OL_COVER + hit.cover_i + "-M.jpg" : "";
+}
+
+/* Walks the shelf one book at a time. Sequential and spaced out on purpose —
+   it's a free public API and there's no hurry. Cards fill in as they arrive. */
+async function fillCovers(){
+  const todo = state.items.filter(i => !i.cover && !i.coverTried);
+  if(!todo.length) return;
+
+  setSync("Finding covers\u2026", "saving");
+  let found = 0;
+
+  for(const item of todo){
+    try{
+      item.cover = await findCover(item);
+      if(item.cover) found++;
+    }catch(err){
+      console.error("Cover lookup failed for " + item.title + ":", err);
+      /* Leave coverTried false so a later visit can try again — a network
+         blip shouldn't permanently mark a book as coverless. */
+      continue;
+    }
+    item.coverTried = true;
+    render();
+    await new Promise(r => setTimeout(r, 120));
+  }
+
+  save();
+  setSync(found ? "Found " + found + " covers" : "No new covers");
+}
 
 /* ---------------- storage ---------------- */
 function setSync(text, stateName){
@@ -449,6 +571,8 @@ async function load(){
   render();
   if(added) save();
   else setSync(docRef ? "Synced" : "Offline");
+
+  fillCovers();
 }
 
 /* ---------------- rendering ---------------- */
@@ -492,12 +616,22 @@ function render(){
       ? `<p class="clq-when">Finished ${esc(fmtDate(item.date))}</p>`
       : "";
 
+    /* If the stored cover URL 404s later, swap the tile for the letter rather
+       than leaving a broken-image box on the shelf. */
+    const art = item.cover
+      ? `<img class="clq-cover" src="${esc(item.cover)}" alt="" loading="lazy"
+              onerror="this.outerHTML='<div class=\'clq-nocover\'>${esc(item.letter)}</div>'">`
+      : `<div class="clq-nocover">${esc(item.letter)}</div>`;
+
     return `<button class="clq-card${item.status === "read" ? " is-read" : ""}" data-open="${esc(item.id)}">
-      <span class="clq-letter" aria-hidden="true">${esc(item.letter)}</span>
+      <span class="clq-coverwrap">
+        ${art}
+        <span class="clq-letter" aria-hidden="true">${esc(item.letter)}</span>
+        <span class="clq-status" data-state="${item.status}">${esc(stateLabel(item.status))}</span>
+      </span>
       <span class="clq-body">
         <span class="clq-title">${esc(item.title)}</span>
         <span class="clq-author">${esc(item.author)}</span>
-        <span class="clq-status" data-state="${item.status}">${esc(stateLabel(item.status))}</span>
         ${when}
       </span>
     </button>`;
@@ -512,7 +646,10 @@ function openDetail(id){
 
   $("detail").innerHTML = `
     <div class="clq-detail-head">
-      <span class="clq-letter" aria-hidden="true">${esc(item.letter)}</span>
+      ${item.cover
+        ? `<img class="clq-detail-cover" src="${esc(item.cover)}" alt=""
+                onerror="this.outerHTML='<div class=\'clq-detail-nocover\'>${esc(item.letter)}</div>'">`
+        : `<div class="clq-detail-nocover">${esc(item.letter)}</div>`}
       <div style="flex:1 1 auto;min-width:0;">
         <h2>${esc(item.title)}</h2>
         <p class="clq-author">${esc(item.author)}</p>
@@ -530,6 +667,17 @@ function openDetail(id){
         <label for="finishedOn">Finished</label>
         <input id="finishedOn" type="date" value="${esc(item.date)}">
       </div>
+    </div>
+
+    <div class="clq-block">
+      <div class="clq-block-name">Cover</div>
+      <div class="clq-coverrow">
+        <input class="pp-input" id="coverUrl" type="url" placeholder="Paste an image URL"
+               value="${esc(item.cover)}">
+        <button class="pp-btn pp-btn-quiet pp-btn-sm" id="coverFind">Find one</button>
+        ${item.cover ? `<button class="pp-btn pp-btn-quiet pp-btn-sm" id="coverClear">Clear</button>` : ""}
+      </div>
+      <p class="clq-coverstate" id="coverState">Found automatically. Paste your own if you'd rather have a different edition.</p>
     </div>
 
     <div class="clq-block">
@@ -576,6 +724,9 @@ document.addEventListener("click", e => {
 
   if(e.target.id === "closeDetail" || e.target.id === "overlay"){ closeDetail(); return; }
 
+  if(e.target.id === "coverFind"){ lookupOne(openId); return; }
+  if(e.target.id === "coverClear"){ setCover(openId, ""); return; }
+
   const set = e.target.closest("[data-set]");
   if(set && openId){
     setStatus(openId, set.getAttribute("data-set"));
@@ -592,12 +743,42 @@ document.addEventListener("click", e => {
 });
 
 document.addEventListener("change", e => {
-  if(e.target.id !== "finishedOn" || !openId) return;
+  if(!openId) return;
+
+  if(e.target.id === "coverUrl"){ setCover(openId, e.target.value.trim()); return; }
+
+  if(e.target.id !== "finishedOn") return;
   const item = state.items.find(i => i.id === openId);
   if(!item) return;
   item.date = e.target.value;
   save();
 });
+
+/* A cover you set by hand counts as tried, so the automatic pass leaves it
+   alone from then on. */
+function setCover(id, url){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+  item.cover = url;
+  item.coverTried = true;
+  save();
+  openDetail(id);
+}
+
+async function lookupOne(id){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+  const note = $("coverState");
+  if(note) note.textContent = "Looking\u2026";
+  try{
+    const url = await findCover(item);
+    if(url){ setCover(id, url); }
+    else if(note){ note.textContent = "Open Library has no cover for this one. Paste a URL instead."; }
+  }catch(err){
+    console.error("Cover lookup failed:", err);
+    if(note) note.textContent = "Couldn't reach Open Library just now.";
+  }
+}
 
 document.addEventListener("keydown", e => { if(e.key === "Escape" && openId) closeDetail(); });
 
