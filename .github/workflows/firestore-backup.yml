@@ -1,0 +1,44 @@
+name: Daily Firestore Backup
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: "0 3 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Firebase
+        run: pip install firebase-admin
+
+      - name: Back up Firestore
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: python firestore_backup.py
+
+      - name: Save backup
+        run: |
+          git config user.name "Firestore Backup"
+          git config user.email "actions@github.com"
+          git add firestore_backups/
+
+          if git diff --cached --quiet; then
+            echo "No backup changes to save."
+          else
+            git commit -m "Daily Firestore backup"
+            git push
+          fi
