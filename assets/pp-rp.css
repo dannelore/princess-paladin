@@ -1241,6 +1241,7 @@ a.rp-wl:hover{
   background: var(--white); border: 1px solid var(--line-gold);
   border-radius: 999px; padding: 4px 12px; max-width: 100%;
 }
+.rp-bar .rp-asof{ margin: 0; }
 
 .rp-rel-top{ display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .rp-rel-top .rp-head{ margin: 0; }

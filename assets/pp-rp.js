@@ -53,6 +53,18 @@ window.RP = (function(){
     { key:"finished", label:"Finished" }
   ];
 
+  /* Sort/filter vocabulary for the cast grid. Neither field is required —
+     characters without one just sit outside the filtered set. */
+  var GENERATIONS = [
+    { key:"teen",  label:"Teen gen"  },
+    { key:"adult", label:"Adult gen" }
+  ];
+  var TIERS = [
+    { key:"pov",       label:"POV character" },
+    { key:"secondary", label:"Secondary" },
+    { key:"tertiary",  label:"Tertiary" }
+  ];
+
   /* Wiki entries are typed so the sidebar can group them. People aren't a
      kind — they live in the cast, and [[links]] reach them there. */
   var KINDS = {
@@ -185,34 +197,40 @@ window.RP = (function(){
      from/until are story dates and both optional. A relationship that
      changes is two records: friends until June, dating from June. */
   var REL_KINDS = {
-    parent:     { family:true,  aIs:"Parent",       bIs:"Child" },
-    step:       { family:true,  aIs:"Step-parent",  bIs:"Step-child", step:true },
-    sibling:    { family:true,  aIs:"Sibling",      bIs:"Sibling" },
-    spouse:     { family:true,  aIs:"Spouse",       bIs:"Spouse" },
-    partner:    { family:false, aIs:"Partner",      bIs:"Partner" },
-    bestfriend: { family:false, aIs:"Best friend",  bIs:"Best friend" },
-    friend:     { family:false, aIs:"Friend",       bIs:"Friend" },
-    rival:      { family:false, aIs:"Rival",        bIs:"Rival" },
-    enemy:      { family:false, aIs:"Enemy",        bIs:"Enemy" },
-    crush:      { family:false, aIs:"Has a crush on them", bIs:"Crush" }
+    parent:      { family:true,  aIs:"Parent",       bIs:"Child" },
+    step:        { family:true,  aIs:"Step-parent",  bIs:"Step-child", step:true },
+    sibling:     { family:true,  aIs:"Sibling",      bIs:"Sibling" },
+    halfsibling: { family:true,  aIs:"Half-sibling", bIs:"Half-sibling", half:true },
+    spouse:      { family:true,  aIs:"Spouse",       bIs:"Spouse" },
+    partner:     { family:false, aIs:"Partner",      bIs:"Partner" },
+    expartner:   { family:false, aIs:"Ex-partner",   bIs:"Ex-partner" },
+    affair:      { family:false, aIs:"Having an affair with", bIs:"Having an affair with" },
+    bestfriend:  { family:false, aIs:"Best friend",  bIs:"Best friend" },
+    friend:      { family:false, aIs:"Friend",       bIs:"Friend" },
+    rival:       { family:false, aIs:"Rival",        bIs:"Rival" },
+    enemy:       { family:false, aIs:"Enemy",        bIs:"Enemy" },
+    crush:       { family:false, aIs:"Has a crush on them", bIs:"Crush" }
   };
 
   /* How the editor asks it: "[this character] is ___ [other]". Each choice
      names a kind and whether this character is a or b. */
   var REL_PHRASES = [
-    { key:"parent",     kind:"parent",     me:"a", text:"parent of" },
-    { key:"child",      kind:"parent",     me:"b", text:"child of" },
-    { key:"step",       kind:"step",       me:"a", text:"step-parent of" },
-    { key:"stepchild",  kind:"step",       me:"b", text:"step-child of" },
-    { key:"sibling",    kind:"sibling",    me:"a", text:"sibling of" },
-    { key:"spouse",     kind:"spouse",     me:"a", text:"married to" },
-    { key:"partner",    kind:"partner",    me:"a", text:"dating" },
-    { key:"bestfriend", kind:"bestfriend", me:"a", text:"best friends with" },
-    { key:"friend",     kind:"friend",     me:"a", text:"friends with" },
-    { key:"rival",      kind:"rival",      me:"a", text:"rivals with" },
-    { key:"enemy",      kind:"enemy",      me:"a", text:"enemies with" },
-    { key:"crush",      kind:"crush",      me:"a", text:"has a crush on" },
-    { key:"crushed",    kind:"crush",      me:"b", text:"the crush of" }
+    { key:"parent",      kind:"parent",      me:"a", text:"parent of" },
+    { key:"child",       kind:"parent",      me:"b", text:"child of" },
+    { key:"step",        kind:"step",        me:"a", text:"step-parent of" },
+    { key:"stepchild",   kind:"step",        me:"b", text:"step-child of" },
+    { key:"sibling",     kind:"sibling",     me:"a", text:"sibling of" },
+    { key:"halfsibling", kind:"halfsibling", me:"a", text:"half-sibling of" },
+    { key:"spouse",      kind:"spouse",      me:"a", text:"married to" },
+    { key:"partner",     kind:"partner",     me:"a", text:"dating" },
+    { key:"expartner",   kind:"expartner",   me:"a", text:"an ex of" },
+    { key:"affair",      kind:"affair",      me:"a", text:"having an affair with" },
+    { key:"bestfriend",  kind:"bestfriend",  me:"a", text:"best friends with" },
+    { key:"friend",      kind:"friend",      me:"a", text:"friends with" },
+    { key:"rival",       kind:"rival",       me:"a", text:"rivals with" },
+    { key:"enemy",       kind:"enemy",       me:"a", text:"enemies with" },
+    { key:"crush",       kind:"crush",       me:"a", text:"has a crush on" },
+    { key:"crushed",     kind:"crush",       me:"b", text:"the crush of" }
   ];
 
   function phraseFor(rel, me){
@@ -276,10 +294,10 @@ window.RP = (function(){
       });
     });
 
-    var siblings = live.filter(function(r){ return r.kind === "sibling" && (r.a === id || r.b === id); })
-                       .map(function(r){ return { id: r.a === id ? r.b : r.a }; });
+    var siblings = live.filter(function(r){ return (r.kind === "sibling" || r.kind === "halfsibling") && (r.a === id || r.b === id); })
+                       .map(function(r){ return { id: r.a === id ? r.b : r.a, half: r.kind === "halfsibling" }; });
     parents.forEach(function(p){
-      childrenOf(p.id).forEach(function(c){ siblings.push({ id:c.id }); });
+      childrenOf(p.id).forEach(function(c){ siblings.push({ id:c.id, half:false }); });
     });
     siblings = uniq(siblings).filter(function(sb){ return !parents.some(function(p){ return p.id === sb.id; }); });
 
@@ -1277,6 +1295,7 @@ window.RP = (function(){
   return {
     sceneFormFields:sceneFormFields, readSceneForm:readSceneForm, wireCastPicker:wireCastPicker,
     STATES:STATES, KINDS:KINDS, KIND_KEYS:KIND_KEYS, COLORS:COLORS, NARRATION:NARRATION,
+    GENERATIONS:GENERATIONS, TIERS:TIERS,
     MINI_FACT_LIMIT:MINI_FACT_LIMIT, MD_HINT:MD_HINT, BASE:BASE,
     get state(){ return state; },
     load:load, save:save, remove:remove, watchSync:watchSync, go:go,
