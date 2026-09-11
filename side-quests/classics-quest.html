@@ -205,6 +205,22 @@
     margin: 7px 0 0;
   }
 
+  .clq-cardprogress{
+    display: block;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--line);
+    overflow: hidden;
+    margin: 7px 0 3px;
+  }
+  .clq-cardprogress-fill{ display: block; height: 100%; background: var(--sage); }
+  .clq-progresstext{
+    display: block;
+    font-family: var(--font-body);
+    font-size: .68rem;
+    color: var(--ink-soft);
+  }
+
   /* ---- detail ---- */
   .clq-detail{
     display: none;
@@ -256,6 +272,33 @@
   .clq-coverrow{ display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
   .clq-coverrow input{ flex: 1 1 200px; min-width: 0; }
   .clq-coverstate{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .85rem;
+    color: var(--ink-soft);
+  }
+
+  .clq-progressrow{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .clq-progressrow label{
+    font-family: var(--font-body);
+    font-size: .64rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    flex: 1 1 100%;
+  }
+  .clq-progressrow input{
+    width: 64px;
+    flex: 0 0 auto;
+  }
+  .clq-progressrow span{
     font-family: var(--font-serif);
     font-style: italic;
     font-size: .85rem;
@@ -420,6 +463,19 @@ const STATES = [
   { key:"read",    label:"Read" }
 ];
 
+/* Format decides how progress is tracked on a current read: e-book by
+   percent, physical by page number, audiobook by time listened. */
+const FORMATS = [
+  { key:"ebook",    label:"E-book" },
+  { key:"physical", label:"Physical" },
+  { key:"audio",    label:"Audiobook" }
+];
+const OWNERSHIP = [
+  { key:"owned",    label:"Owned" },
+  { key:"borrowed", label:"Borrowed" },
+  { key:"rented",   label:"Rented" }
+];
+
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s)
   .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -458,6 +514,17 @@ function normalize(item){
   /* Set once a lookup has been attempted, hit or miss, so a book Open Library
      has no cover for isn't re-queried on every single page load. */
   if(typeof item.coverTried !== "boolean") item.coverTried = false;
+
+  /* Format + ownership + per-format progress. Every book keeps all three
+     progress shapes so switching format later doesn't lose what was
+     tracked under the old one. */
+  if(!FORMATS.some(f => f.key === item.format)) item.format = "";
+  if(!OWNERSHIP.some(o => o.key === item.ownership)) item.ownership = "";
+  if(typeof item.pct !== "number" || !isFinite(item.pct)) item.pct = 0;
+  if(typeof item.page !== "number" || !isFinite(item.page)) item.page = 0;
+  if(typeof item.pages !== "number" || !isFinite(item.pages)) item.pages = 0;
+  if(typeof item.mins !== "number" || !isFinite(item.mins)) item.mins = 0;
+  if(typeof item.totalMins !== "number" || !isFinite(item.totalMins)) item.totalMins = 0;
   return item;
 }
 
@@ -479,6 +546,24 @@ function seed(){
 }
 
 const stateLabel = key => (STATES.find(st => st.key === key) || STATES[0]).label;
+
+/* 0–1 fraction complete, by format. Unset totals read as 0 rather than
+   dividing by zero. */
+function progressFrac(item){
+  if(item.format === "ebook")    return Math.max(0, Math.min(100, item.pct)) / 100;
+  if(item.format === "physical") return item.pages > 0 ? Math.max(0, Math.min(item.page, item.pages)) / item.pages : 0;
+  if(item.format === "audio")    return item.totalMins > 0 ? Math.max(0, Math.min(item.mins, item.totalMins)) / item.totalMins : 0;
+  return 0;
+}
+
+function hm(mins){ return `${Math.floor(mins / 60)}h ${mins % 60}m`; }
+
+function progressText(item){
+  if(item.format === "ebook")    return Math.round(Math.max(0, Math.min(100, item.pct))) + "%";
+  if(item.format === "physical") return `page ${item.page || 0} of ${item.pages || 0}`;
+  if(item.format === "audio")    return `${hm(item.mins || 0)} of ${hm(item.totalMins || 0)}`;
+  return "";
+}
 
 /* ---------------- covers ----------------
    Open Library, which needs no key and no account. The search endpoint gives
@@ -616,6 +701,11 @@ function render(){
       ? `<p class="clq-when">Finished ${esc(fmtDate(item.date))}</p>`
       : "";
 
+    const prog = item.status === "reading" && item.format
+      ? `<span class="clq-cardprogress" aria-hidden="true"><span class="clq-cardprogress-fill" style="width:${Math.round(progressFrac(item) * 100)}%"></span></span>
+         <span class="clq-progresstext">${esc(progressText(item))}</span>`
+      : "";
+
     /* If the stored cover URL 404s later, swap the tile for the letter rather
        than leaving a broken-image box on the shelf. */
     const art = item.cover
@@ -633,6 +723,7 @@ function render(){
         <span class="clq-title">${esc(item.title)}</span>
         <span class="clq-author">${esc(item.author)}</span>
         ${when}
+        ${prog}
       </span>
     </button>`;
   }).join("");
@@ -670,6 +761,49 @@ function openDetail(id){
     </div>
 
     <div class="clq-block">
+      <div class="clq-block-name">Format</div>
+      <div class="clq-states">
+        ${FORMATS.map(f => `<button data-set-format="${f.key}"
+            aria-pressed="${item.format === f.key}">${esc(f.label)}</button>`).join("")}
+      </div>
+    </div>
+
+    <div class="clq-block">
+      <div class="clq-block-name">Ownership</div>
+      <div class="clq-states">
+        ${OWNERSHIP.map(o => `<button data-set-owner="${o.key}"
+            aria-pressed="${item.ownership === o.key}">${esc(o.label)}</button>`).join("")}
+      </div>
+    </div>
+
+    ${item.status === "reading" && item.format ? `<div class="clq-block">
+      <div class="clq-block-name">Progress</div>
+      <div class="pp-progress" data-color="sage" id="progressBar"
+           data-current="${Math.round(progressFrac(item) * 1000)}" data-total="1000"
+           data-format="none" data-text="${esc(progressText(item))}"></div>
+      <div class="clq-progressrow">
+        ${item.format === "ebook" ? `
+          <label for="pgPct">Percent complete</label>
+          <input id="pgPct" class="pp-input" type="number" min="0" max="100" value="${item.pct}"> %
+        ` : ""}
+        ${item.format === "physical" ? `
+          <label for="pgPage">Page</label>
+          <input id="pgPage" class="pp-input" type="number" min="0" value="${item.page}">
+          <span>of</span>
+          <input id="pgPages" class="pp-input" type="number" min="0" value="${item.pages}">
+        ` : ""}
+        ${item.format === "audio" ? `
+          <label for="pgMinsH">Time listened</label>
+          <input id="pgMinsH" class="pp-input" type="number" min="0" value="${Math.floor(item.mins / 60)}">h
+          <input id="pgMinsM" class="pp-input" type="number" min="0" max="59" value="${item.mins % 60}">m
+          <span>of</span>
+          <input id="pgTotalH" class="pp-input" type="number" min="0" value="${Math.floor(item.totalMins / 60)}">h
+          <input id="pgTotalM" class="pp-input" type="number" min="0" max="59" value="${item.totalMins % 60}">m
+        ` : ""}
+      </div>
+    </div>` : ""}
+
+    <div class="clq-block">
       <div class="clq-block-name">Cover</div>
       <div class="clq-coverrow">
         <input class="pp-input" id="coverUrl" type="url" placeholder="Paste an image URL"
@@ -689,6 +823,7 @@ function openDetail(id){
 
   $("detail").classList.add("open");
   $("overlay").classList.add("open");
+  if(window.PPProgress) PPProgress.draw($("detail"));
 }
 
 function closeDetail(){
@@ -717,6 +852,46 @@ function setStatus(id, status){
   openDetail(id);
 }
 
+function setFormat(id, format){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+  item.format = item.format === format ? "" : format;
+  save();
+  openDetail(id);
+}
+
+function setOwnership(id, ownership){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+  item.ownership = item.ownership === ownership ? "" : ownership;
+  save();
+  openDetail(id);
+}
+
+/* Reads whichever progress inputs are on screen for the item's current
+   format, clamps them, and saves. Called on change of any progress field. */
+function updateProgress(id){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+  if(item.format === "ebook" && $("pgPct")){
+    item.pct = Math.max(0, Math.min(100, parseFloat($("pgPct").value) || 0));
+  } else if(item.format === "physical" && $("pgPage")){
+    item.page  = Math.max(0, parseInt($("pgPage").value, 10)  || 0);
+    item.pages = Math.max(0, parseInt($("pgPages").value, 10) || 0);
+  } else if(item.format === "audio" && $("pgMinsH")){
+    const h  = Math.max(0, parseInt($("pgMinsH").value, 10)  || 0);
+    const m  = Math.max(0, Math.min(59, parseInt($("pgMinsM").value, 10) || 0));
+    const th = Math.max(0, parseInt($("pgTotalH").value, 10) || 0);
+    const tm = Math.max(0, Math.min(59, parseInt($("pgTotalM").value, 10) || 0));
+    item.mins = h * 60 + m;
+    item.totalMins = th * 60 + tm;
+  } else {
+    return;
+  }
+  save();
+  openDetail(id);
+}
+
 /* ---------------- events ---------------- */
 document.addEventListener("click", e => {
   const card = e.target.closest("[data-open]");
@@ -733,6 +908,18 @@ document.addEventListener("click", e => {
     return;
   }
 
+  const setFmt = e.target.closest("[data-set-format]");
+  if(setFmt && openId){
+    setFormat(openId, setFmt.getAttribute("data-set-format"));
+    return;
+  }
+
+  const setOwn = e.target.closest("[data-set-owner]");
+  if(setOwn && openId){
+    setOwnership(openId, setOwn.getAttribute("data-set-owner"));
+    return;
+  }
+
   const pill = e.target.closest(".clq-bar [data-filter]");
   if(pill){
     filter = pill.getAttribute("data-filter");
@@ -746,6 +933,11 @@ document.addEventListener("change", e => {
   if(!openId) return;
 
   if(e.target.id === "coverUrl"){ setCover(openId, e.target.value.trim()); return; }
+
+  if(["pgPct","pgPage","pgPages","pgMinsH","pgMinsM","pgTotalH","pgTotalM"].indexOf(e.target.id) > -1){
+    updateProgress(openId);
+    return;
+  }
 
   if(e.target.id !== "finishedOn") return;
   const item = state.items.find(i => i.id === openId);
