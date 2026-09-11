@@ -61,16 +61,38 @@ function matches(w, q){
     RP.norm(RP.plainText(w.md)).includes(q);
 }
 
+/* Characters live on the Cast page; the wiki lists them and links across. */
+function castMatches(c, q){
+  if(!q) return true;
+  return RP.norm(c.name).includes(q) ||
+    (c.aka || []).some(a => RP.norm(a).includes(q)) ||
+    RP.norm(c.role).includes(q);
+}
+
+function castGroup(q){
+  const people = RP.castSorted().filter(c => castMatches(c, q));
+  if(!people.length) return "";
+  return `<div class="rp-wiki-group">
+    <div class="rp-head">Characters</div>
+    ${people.map(c => {
+      const alias = q && !RP.norm(c.name).includes(q) ? (c.aka || []).find(a => RP.norm(a).includes(q)) : null;
+      return `<a class="rp-wiki-link" href="${esc(RP.castUrl(c.id))}">
+        ${esc(c.name)}${alias ? `<small>as ${esc(alias)}</small>` : ""}</a>`;
+    }).join("")}
+  </div>`;
+}
+
 function renderList(){
   const q = RP.norm(filter);
   const hits = RP.wikiSorted().filter(w => matches(w, q));
+  const people = castGroup(q);
 
-  if(!RP.state.wiki.length){
+  if(!RP.state.wiki.length && !RP.state.cast.length){
     $("list").innerHTML = `<p class="rp-none">No entries yet.</p>`;
-  } else if(!hits.length){
+  } else if(!hits.length && !people){
     $("list").innerHTML = `<p class="rp-none">Nothing matches &ldquo;${esc(filter)}&rdquo;.</p>`;
   } else {
-    $("list").innerHTML = RP.KIND_KEYS.map(k => {
+    $("list").innerHTML = people + RP.KIND_KEYS.map(k => {
       const group = hits.filter(w => w.kind === k);
       if(!group.length) return "";
       return `<div class="rp-wiki-group">
