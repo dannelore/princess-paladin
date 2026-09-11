@@ -1,0 +1,5937 @@
+{
+  "created_at": "2026-09-11T17:40:16.753191+00:00",
+  "collections": {
+    "mealplanning": {
+      "danni-meal-plan": {
+        "exists": true,
+        "data": {
+          "recipes": [
+            {
+              "methods": [
+                "stovetop",
+                "crockpot"
+              ],
+              "cookTime": "8 hrs",
+              "method": "stovetop",
+              "tags": [
+                "beef",
+                "8 servings"
+              ],
+              "prepTime": "25 min",
+              "ingredients": [
+                {
+                  "qty": 2,
+                  "name": "olive oil",
+                  "unit": "tbsp"
+                },
+                {
+                  "name": "beef chuck roast",
+                  "qty": 2,
+                  "unit": "lb"
+                },
+                {
+                  "qty": 1,
+                  "name": "salt",
+                  "unit": "tsp"
+                },
+                {
+                  "qty": null,
+                  "name": "½ tsp black pepper",
+                  "unit": ""
+                },
+                {
+                  "qty": 4,
+                  "name": "potatoes",
+                  "unit": ""
+                },
+                {
+                  "qty": 3,
+                  "name": "celery ribs",
+                  "unit": ""
+                },
+                {
+                  "name": "mushrooms",
+                  "qty": 8,
+                  "unit": "oz"
+                },
+                {
+                  "qty": 1,
+                  "name": "onion",
+                  "unit": ""
+                },
+                {
+                  "name": "garlic",
+                  "qty": 3,
+                  "unit": "cloves"
+                },
+                {
+                  "qty": 1,
+                  "name": "red cooking wine",
+                  "unit": "cup"
+                },
+                {
+                  "name": "tomato paste",
+                  "qty": 3,
+                  "unit": "tbsp"
+                },
+                {
+                  "qty": 1,
+                  "name": "Worcestershire sauce",
+                  "unit": "tbsp"
+                },
+                {
+                  "qty": 4,
+                  "name": "beef broth",
+                  "unit": "cups"
+                },
+                {
+                  "name": "cornstarch",
+                  "qty": 2,
+                  "unit": "tbsp"
+                },
+                {
+                  "qty": 3,
+                  "name": "water",
+                  "unit": "tbsp"
+                },
+                {
+                  "qty": null,
+                  "name": "¼ cup parsley",
+                  "unit": ""
+                }
+              ],
+              "active": false,
+              "frequency": "biweekly",
+              "name": "Best Ever Slow Cooker Beef Stew",
+              "instructions": [
+                "Place cut up beef in a large bowl and season with salt and pepper.",
+                "Heat 1 tablespoon olive oil in a large skillet over medium-high heat.",
+                "Add beef and sear until browned, 2 to 3 minutes per side. Depending on the size of your skillet, you might have to do this in batches, adding more olive oil if necessary.",
+                "Transfer the browned beef to a 6-quart slow cooker; arrange prepared carrots, celery, and mushrooms over the meat inside the slow cooker and set aside.",
+                "Heat the rest of the olive oil and sauté the onions for 3 minutes, or until softened.",
+                "Stir in the minced garlic and continue to sauté for 30 seconds, or until fragrant; transfer to the slow cooker.",
+                "Put the skillet back on the stove over medium-high heat and deglaze the pan with red wine. Scrape the bottom of the pan with a wooden spoon to get all the browned bits; cook for 1 minute.",
+                "Whisk in the tomato paste and Worcestershire sauce; cook for 30 seconds while whisking.",
+                "Slowly whisk in 2 cups of beef broth; cook for 1 minute.",
+                "Pour the prepared liquid over the beef and vegetables.",
+                "Stir in the remaining broth into the slow cooker and add bay leaves and thyme over the veggies.",
+                "Close with a lid and cook on LOW for 7 to 8 hours, or on HIGH for 4 to 5 hours. Times may vary depending on how hot your slow cooker runs.",
+                "30 minutes before the beef stew is done cooking, make a slurry by whisking together 2 tablespoons of cornstarch with 3 tablespoons of water. Stir the slurry into the slow cooker, set to HIGH, and continue to cook for 30 minutes.",
+                "When done, taste for seasonings and adjust accordingly"
+              ],
+              "id": "r_mthuld4vtzuve",
+              "servings": 8
+            },
+            {
+              "methods": [
+                "stovetop"
+              ],
+              "cookTime": "20 min",
+              "method": "stovetop",
+              "tags": [
+                "beef",
+                "4 servings",
+                "kid friendly"
+              ],
+              "prepTime": "10 min",
+              "ingredients": [
+                {
+                  "name": "frozen hamburger patties",
+                  "qty": 8,
+                  "unit": ""
+                },
+                {
+                  "name": "slices bread",
+                  "qty": 8,
+                  "unit": ""
+                },
+                {
+                  "qty": 2,
+                  "name": "baked beans",
+                  "unit": "cans"
+                },
+                {
+                  "qty": null,
+                  "name": "Potato chips",
+                  "unit": ""
+                },
+                {
+                  "qty": null,
+                  "name": "Desired burger toppings and condiments",
+                  "unit": ""
+                }
+              ],
+              "frequency": "occasional",
+              "active": true,
+              "name": "Burgers (Family)",
+              "instructions": [
+                "Heat a large skillet over medium-high heat.",
+                "Cook burger patties in batches according to package directions, flipping halfway through.",
+                "Heat baked beans in a saucepan over medium heat until hot, stirring occasionally.",
+                "Toast hamburger buns in the skillet, if desired.",
+                "Place cooked patties on buns and add desired toppings and condiments.",
+                "Serve 2 burgers per person with baked beans and potato chips."
+              ],
+              "id": "r_mtnehsrwlazip",
+              "servings": 4
+            },
+            {
+              "methods": [
+                "stovetop"
+              ],
+              "cookTime": "15 min",
+              "method": "stovetop",
+              "tags": [
+                "beef",
+                "2 servings"
+              ],
+              "prepTime": "5 min",
+              "frequency": "occasional",
+              "active": true,
+              "ingredients": [
+                {
+                  "name": "frozen hamburger patties",
+                  "qty": 4,
+                  "unit": ""
+                },
+                {
+                  "name": "slices of bread",
+                  "qty": 8,
+                  "unit": ""
+                },
+                {
+                  "qty": 4,
+                  "name": "slices of sliced cheese",
+                  "unit": ""
+                },
+                {
+                  "name": "baked beans",
+                  "qty": 1,
+                  "unit": "can"
+                },
+                {
+                  "name": "Potato chips",
+                  "qty": null,
+                  "unit": ""
+                },
+                {
+                  "qty": null,
+                  "name": "Desired burger toppings and condiments",
+                  "unit": ""
+                }
+              ],
+              "name": "Burgers (for Two)",
+              "instructions": [
+                "Heat a large skillet over medium-high heat.",
+                "Cook burger patties according to package directions, flipping halfway through.",
+                "Heat baked beans in a small saucepan over medium heat until hot, stirring occasionally.",
+                "Toast hamburger buns in the skillet, if desired.",
+                "Place cooked patties on buns and add desired toppings and condiments.",
+                "Serve 2 burgers per person with baked beans and potato chips."
+              ],
+              "id": "r_mtneew0pjvdht",
+              "servings": 2
+            },
+            {
+              "methods": [
+                "oven"
+              ],
+              "cookTime": "15 min",
+              "method": "oven",
+              "tags": [
+                "4 servings",
+                "kid friendly",
+                "PIZZA"
+              ],
+              "prepTime": "15 min",
+              "frequency": "occasional",
+              "active": true,
+              "ingredients": [
+                {
+                  "name": "refrigerated pizza crust",
+                  "qty": 4,
+                  "unit": "cans"
+                },
+                {
+                  "qty": 1,
+                  "name": "jar pizza sauce",
+                  "unit": ""
+                },
+                {
+                  "name": "jar Alfredo sauce",
+                  "qty": 1,
+                  "unit": ""
+                },
+                {
+                  "name": "shredded cheese",
+                  "qty": 2,
+                  "unit": "cups"
+                },
+                {
+                  "qty": null,
+                  "name": "Desired pizza toppings",
+                  "unit": ""
+                },
+                {
+                  "qty": null,
+                  "name": "Cooking spray",
+                  "unit": ""
+                }
+              ],
+              "name": "BYO Pizza",
+              "instructions": [
+                "Preheat oven to 425°F.",
+                "Lightly spray a large baking sheet with cooking spray.",
+                "Unroll pizza dough onto baking sheet and press into desired shape.",
+                "Prebake crust for 8 minutes.",
+                "Spread pizza sauce, Alfredo sauce, or a combination of both over the crust.",
+                "Top with shredded cheese and desired toppings.",
+                "Bake for 6–10 minutes, until cheese is melted and crust is golden brown.",
+                "Let cool for 2–3 minutes before slicing."
+              ],
+              "id": "r_mtne683q2b0kk",
+              "servings": 4
+            },
+            {
+              "methods": [
+                "stovetop",
+                "air-fryer"
+              ],
+              "cookTime": "15 min",
+              "method": "stovetop",
+              "tags": [
+                "chicken",
+                "4 servings",
+                "kid friendly"
+              ],
+              "prepTime": "5 min",
+              "active": true,
+              "frequency": "occasional",
+              "ingredients": [
+                {
+                  "name": "bags frozen chicken fries",
+                  "qty": 2,
+                  "unit": ""
+                },
+                {
+                  "qty": 3,
+                  "name": "boxes Kraft Mac & Cheese",
+                  "unit": ""
+                },
+                {
+                  "name": "water",
+                  "qty": 18,
+                  "unit": "cups"
+                },
+                {
+                  "qty": null,
+                  "name": "¾ cup milk",
+                  "unit": ""
+                },
+                {
+                  "qty": null,
+                  "name": "¾ cup butter",
+                  "unit": ""
+                }
+              ],
+              "name": "Chicken Fries & Mac 'n' Cheese",
+              "instructions": [
+                "Preheat air fryer to 400°F.",
+                "Cook chicken fries in batches according to package directions, shaking basket halfway through.",
+                "Bring water to a boil in a large pot.",
+                "Add macaroni from all 3 boxes and cook according to package directions.",
+                "Drain macaroni and return it to the pot.",
+                "Add all 3 cheese packets and the milk and butter called for on the boxes.",
+                "Stir until creamy and well combined.",
+                "Serve chicken fries with mac 'n' cheese."
+              ],
+              "id": "r_mtne9imi6wknf",
+              "servings": 4
+            },
+            {
+              "methods": [
+                "oven",
+                "stovetop"
+              ],
+              "cookTime": "25 min",
+              "method": "oven",
+              "tags": [
+                "chicken",
+                "pasta",
+                "6 servings"
+              ],
+              "prepTime": "15 min",
+              "ingredients": [
+                {
+                  "name": "condensed cream of mushroom/chicken soup",
+                  "qty": 2,
+                  "unit": "cans"
+                },
+                {
+                  "qty": 1,
+                  "name": "milk",
+                  "unit": "cup"
+                },
+                {
+                  "name": "corn",
+                  "qty": 6,
+                  "unit": "oz"
+                },
+                {
+                  "name": "mushrooms",
+                  "qty": 8,
+                  "unit": "oz"
+                },
+                {
+                  "name": "chicken breast",
+                  "qty": 1,
+                  "unit": "lb"
+                },
+                {
+                  "qty": 12,
+                  "name": "egg noodles",
+                  "unit": "oz"
+                },
+                {
+                  "qty": null,
+                  "name": "½ cup grated cheese",
+                  "unit": ""
+                },
+                {
+                  "qty": null,
+                  "name": "¼ tsp black pepper",
+                  "unit": ""
+                }
+              ],
+              "active": true,
+              "frequency": "occasional",
+              "name": "Creamy Mushroom & Chicken Casserole",
+              "instructions": [
+                "Stir the soup, milk, corn, mushrooms, chicken, noodles, Parmesan cheese and black pepper in a 1 1/2-quart casserole.",
+                "Bake at 400°F. for 25 minutes or until the vegetables are tender.",
+                "Stir the mixture and top with breadcrumbs or cheese (optional)."
+              ],
+              "id": "r_mthumyfnud6g1",
+              "servings": 6
+            },
+            {
+              "methods": [
+                "stovetop"
+              ],
+              "cookTime": "15 min",
+              "method": "stovetop",
+              "tags": [
+                "turkey",
+                "6 servings"
+              ],
+              "prepTime": "10 min",
+              "frequency": "current-favorite",
+              "active": true,
+              "ingredients": [
+                {
+                  "name": "tablespoons olive oil",
+                  "qty": 2,
+                  "unit": ""
+                },
+                {
+                  "name": "ground turkey",
+                  "qty": 2,
+                  "unit": "lb"
+                },
+                {
+                  "qty": 1,
+                  "name": "diced onion",
+                  "unit": ""
+                },
+                {
+                  "name": "garlic, diced",
+                  "qty": 2,
+                  "unit": "cloves"
+                },
+                {
+                  "name": "ounces mushrooms, sliced",
+                  "qty": 16,
+                  "unit": ""
+                },
+                {
+                  "qty": 2,
+                  "name": "uncooked long-grain rice",
+                  "unit": "cups"
+                },
+                {
+                  "name": "beef stock",
+                  "qty": 5,
+                  "unit": "cups"
+                },
+                {
+                  "name": "packages onion soup mix",
+                  "qty": 2,
+                  "unit": ""
+                },
+                {
+                  "name": "shredded cheese",
+                  "qty": 1,
+                  "unit": "cup"
+                }
+              ],
+              "name": "Ground Turkey Skillet",
+              "instructions": [
+                "Add oil to a large skillet over medium heat. Add diced onion, diced mushrooms and garlic and cook for 2 minutes. Add in ground turkey and cook until cooked through. Drain any excess grease.",
+                "Stir in stock, rice, and onion soup mix. Heat until stock starts to boil. Reduce heat to simmering. Cover the skillet with lid and cook for 15 minutes. Stir halfway through.",
+                "Remove from heat and add shredded cheese. Serve hot."
+              ],
+              "id": "r_mtkogy7hzc4d9",
+              "servings": 6
+            },
+            {
+              "methods": [
+                "stovetop"
+              ],
+              "cookTime": "40 min",
+              "method": "stovetop",
+              "tags": [
+                "chicken",
+                "2 servings"
+              ],
+              "prepTime": "20 min",
+              "frequency": "date-night",
+              "active": true,
+              "ingredients": [
+                {
+                  "name": "chicken thighs",
+                  "qty": 4,
+                  "unit": ""
+                },
+                {
+                  "qty": 2,
+                  "name": "olive oil",
+                  "unit": "tbsp"
+                },
+                {
+                  "qty": 2,
+                  "name": "honey",
+                  "unit": "tbsp"
+                },
+                {
+                  "name": "Dijon mustard",
+                  "qty": 1,
+                  "unit": "tbsp"
+                },
+                {
+                  "qty": 1,
+                  "name": "soy sauce",
+                  "unit": "tbsp"
+                },
+                {
+                  "qty": 1,
+                  "name": "garlic powder",
+                  "unit": "tsp"
+                },
+                {
+                  "name": "potatoes",
+                  "qty": 2,
+                  "unit": "cups"
+                },
+                {
+                  "name": "asparagus",
+                  "qty": 1,
+                  "unit": "bunch"
+                },
+                {
+                  "qty": null,
+                  "name": "Salt",
+                  "unit": ""
+                },
+                {
+                  "qty": null,
+                  "name": "Black pepper",
+                  "unit": ""
+                }
+              ],
+              "name": "Honey-Glazed Chicken Thighs",
+              "instructions": [
+                "Preheat oven to 400°F.",
+                "Toss potatoes with 1 tablespoon oil, salt, and pepper; spread on baking sheet.",
+                "In a bowl, mix honey, mustard, soy sauce, garlic, and 1 tablespoon oil.",
+                "Rub mixture over chicken. Place chicken on same sheet as potatoes.",
+                "Roast 35–40 minutes, turning potatoes halfway, until chicken is golden"
+              ],
+              "id": "r_mtkojr610ejs1",
+              "servings": 2
+            },
+            {
+              "methods": [
+                "stovetop"
+              ],
+              "cookTime": "20 min",
+              "method": "stovetop",
+              "tags": [
+                "beef",
+                "2 servings"
+              ],
+              "prepTime": "10 min",
+              "ingredients": [
+                {
+                  "name": "ground beef",
+                  "qty": 1,
+                  "unit": "lb"
+                },
+                {
+                  "qty": null,
+                  "name": "Salt",
+                  "unit": ""
+                },
+                {
+                  "name": "Black pepper",
+                  "qty": null,
+                  "unit": ""
+                },
+                {
+                  "qty": 1,
+                  "name": "jar gravy",
+                  "unit": ""
+                },
+                {
+                  "qty": 4,
+                  "name": "eggs",
+                  "unit": ""
+                },
+                {
+                  "qty": 2,
+                  "name": "rice",
+                  "unit": "cups"
+                },
+                {
+                  "qty": 1,
+                  "name": "green beans",
+                  "unit": "can"
+                }
+              ],
+              "active": true,
+              "frequency": "occasional",
+              "name": "Loco Moco",
+              "instructions": [
+                "Form ground beef into 4 equal patties. Season to your liking.",
+                "Heat a large skillet over medium-high heat. Cook patties 4–5 minutes per side until browned and cooked through.",
+                "Warm gravy in a small saucepan or microwave according to jar directions.",
+                "In the same skillet, cook eggs to preference.",
+                "Serve beef patties topped with warm gravy and eggs."
+              ],
+              "id": "r_mtkom65dvhrrj",
+              "servings": 2
+            },
+            {
+              "methods": [
+                "oven",
+                "stovetop"
+              ],
+              "cookTime": "10 min",
+              "method": "oven",
+              "tags": [
+                "beef",
+                "2 servings"
+              ],
+              "prepTime": "15 min",
+              "active": true,
+              "frequency": "weekly",
+              "ingredients": [
+                {
+                  "name": "ground beef",
+                  "qty": 1,
+                  "unit": "lb"
+                },
+                {
+                  "name": "taco seasoning",
+                  "qty": 2,
+                  "unit": "tbsp"
+                },
+                {
+                  "name": "bags tortilla chips",
+                  "qty": 2,
+                  "unit": ""
+                },
+                {
+                  "qty": 1,
+                  "name": "bag shredded cheese",
+                  "unit": ""
+                },
+                {
+                  "name": "jar salsa",
+                  "qty": 1,
+                  "unit": ""
+                },
+                {
+                  "name": "container sour cream",
+                  "qty": 1,
+                  "unit": ""
+                }
+              ],
+              "name": "Nachos",
+              "instructions": [
+                "Put beef in skillet and add taco seasoning.",
+                "Put chips in round baking pans, layered with beef, cheese and salsa (optional)",
+                "Bake at a temperature for 10 min"
+              ],
+              "id": "r_mtneuvx2zncbi",
+              "servings": 2
+            },
+            {
+              "methods": [
+                "stovetop"
+              ],
+              "cookTime": "",
+              "method": "stovetop",
+              "tags": [
+                "pasta",
+                "4 servings"
+              ],
+              "prepTime": "",
+              "active": true,
+              "frequency": "occasional",
+              "ingredients": [
+                {
+                  "name": "pasta",
+                  "qty": 14,
+                  "unit": "oz"
+                },
+                {
+                  "qty": 3,
+                  "name": "olive oil",
+                  "unit": "tbsp"
+                },
+                {
+                  "qty": 3,
+                  "name": "garlic",
+                  "unit": "cloves"
+                },
+                {
+                  "qty": 14,
+                  "name": "mushrooms",
+                  "unit": "oz"
+                },
+                {
+                  "qty": 10,
+                  "name": "spinach",
+                  "unit": "oz"
+                },
+                {
+                  "name": "½ cup vegetable broth",
+                  "qty": null,
+                  "unit": ""
+                },
+                {
+                  "name": "Black pepper",
+                  "qty": null,
+                  "unit": ""
+                },
+                {
+                  "name": "Italian seasoning",
+                  "qty": 1,
+                  "unit": "tsp"
+                },
+                {
+                  "name": "½ cup grated cheese",
+                  "qty": null,
+                  "unit": ""
+                },
+                {
+                  "qty": 1,
+                  "name": "red pepper flakes",
+                  "unit": "tsp"
+                }
+              ],
+              "name": "Parmesan Spinach Mushroom Pasta",
+              "instructions": [
+                "To make the parmesan spinach mushroom pasta skillet, Cook the pasta in salted water until al dente, according to the package instructions.",
+                "2. Heat 2 tablespoons of olive oil in a large skillet. Add the mushrooms and sauté for about 3 minutes until lightly browned.",
+                "3. Add the chopped garlic and cook for about 30 seconds longer.",
+                "Then deglaze with a bit of vegetable broth. Reduce the heat and cook for about 1-2 minutes longer.",
+                "Remove mushrooms to a plate and set aside.",
+                "4. In the same skillet, add the spinach and cook for 2 minutes until wilted. Adjust seasoning with salt and pepper.",
+                "5. Once the pasta is ready, pour off the cooking water. Push spinach on the side in the skillet and add mushroom back, then put drained pasta in the pan and toss to combine.",
+                "Add parmesan, the last tablespoon of olive oil, and Italian seasoning, and give a quick stir.",
+                "Serve the parmesan spinach mushroom pasta with red chili pepper flakes and more parmesan, if you like. Enjoy!"
+              ],
+              "id": "r_mtkongwdkqer0",
+              "servings": 4
+            },
+            {
+              "methods": [
+                "stovetop",
+                "toaster-oven"
+              ],
+              "cookTime": "",
+              "method": "stovetop",
+              "tags": [
+                "pasta",
+                "4 servings",
+                "kid friendly"
+              ],
+              "prepTime": "",
+              "ingredients": [
+                {
+                  "name": "box pasta",
+                  "qty": 1,
+                  "unit": "lb"
+                },
+                {
+                  "name": "jar pasta sauce",
+                  "qty": 1,
+                  "unit": ""
+                },
+                {
+                  "qty": 8,
+                  "name": "slices frozen Texas toast garlic bread",
+                  "unit": ""
+                }
+              ],
+              "frequency": "occasional",
+              "active": true,
+              "name": "Pasta & Garlic Bread (Family)",
+              "instructions": [
+                "Preheat oven according to Texas toast package directions.",
+                "Bring a large pot of water to a boil.",
+                "Add pasta and cook according to package directions.",
+                "Pour pasta sauce into a small saucepan and heat over medium-low heat, stirring occasionally.",
+                "Arrange Texas toast on a baking sheet.",
+                "Bake Texas toast according to package directions until golden brown.",
+                "Drain cooked pasta.",
+                "Return pasta to the pot and toss with the warmed pasta sauce.",
+                "Serve pasta with 1–2 slices of garlic bread per person."
+              ],
+              "id": "r_mtnemcmi5lx7e",
+              "servings": 4
+            },
+            {
+              "methods": [
+                "oven",
+                "stovetop"
+              ],
+              "cookTime": "20 min",
+              "method": "oven",
+              "tags": [
+                "pasta",
+                "4 servings"
+              ],
+              "prepTime": "5 min",
+              "frequency": "occasional",
+              "ingredients": [
+                {
+                  "qty": 1,
+                  "name": "pasta",
+                  "unit": "lb"
+                },
+                {
+                  "name": "jar pasta sauce",
+                  "qty": 1,
+                  "unit": ""
+                },
+                {
+                  "qty": 4,
+                  "name": "slices frozen garlic bread",
+                  "unit": ""
+                }
+              ],
+              "active": true,
+              "name": "Pasta & Garlic Bread (for Two)",
+              "instructions": [
+                "Preheat oven according to Texas toast package directions.",
+                "Bring a large pot of water to a boil.",
+                "Add pasta and cook according to package directions.",
+                "Pour pasta sauce into a small saucepan and heat over medium-low heat, stirring occasionally.",
+                "Arrange Texas toast on a baking sheet.",
+                "Bake Texas toast according to package directions until golden brown.",
+                "Drain cooked pasta.",
+                "Return pasta to the pot and toss with the warmed pasta sauce.",
+                "Serve pasta with 1–2 slices of garlic bread per person."
+              ],
+              "id": "r_mtnekz88set7i",
+              "servings": 4
+            },
+            {
+              "methods": [
+                "crockpot"
+              ],
+              "cookTime": "8 hrs",
+              "method": "crockpot",
+              "tags": [
+                "pork",
+                "4 servings"
+              ],
+              "prepTime": "15 min",
+              "active": false,
+              "frequency": "occasional",
+              "ingredients": [
+                {
+                  "name": "pork shoulder",
+                  "qty": 3,
+                  "unit": "lb"
+                },
+                {
+                  "name": "Salt",
+                  "qty": null,
+                  "unit": ""
+                },
+                {
+                  "name": "Black pepper",
+                  "qty": null,
+                  "unit": ""
+                },
+                {
+                  "name": "Seasoning of choice",
+                  "qty": null,
+                  "unit": ""
+                },
+                {
+                  "name": "onion",
+                  "qty": 1,
+                  "unit": ""
+                },
+                {
+                  "qty": 3,
+                  "name": "garlic",
+                  "unit": "cloves"
+                },
+                {
+                  "name": "BBQ sauce",
+                  "qty": 1,
+                  "unit": "cup"
+                },
+                {
+                  "qty": null,
+                  "name": "½ cup chicken broth",
+                  "unit": ""
+                },
+                {
+                  "qty": 2,
+                  "name": "apple cider vinegar",
+                  "unit": "tbsp"
+                }
+              ],
+              "name": "Pulled Pork",
+              "instructions": [
+                "Add onion and garlic to the bottom of the slow cooker.",
+                "Place pork on top and season to your liking.",
+                "Mix BBQ sauce, broth, and apple cider vinegar; pour over the pork.",
+                "Cover and cook on LOW for 8–10 hours or HIGH for 5–6 hours, until pork shreds easily.",
+                "Remove pork and shred with two forks.",
+                "Return shredded pork to the slow cooker and stir into the sauce before serving."
+              ],
+              "id": "r_mtkor4e0otm01",
+              "servings": 4
+            },
+            {
+              "methods": [
+                "stovetop"
+              ],
+              "cookTime": "10 min",
+              "method": "stovetop",
+              "tags": [
+                "beef",
+                "turkey",
+                "pork",
+                "oven",
+                "stove top",
+                "air fryer"
+              ],
+              "prepTime": "5 min",
+              "frequency": "biweekly",
+              "active": true,
+              "ingredients": [
+                {
+                  "name": "kielbasa sausages",
+                  "qty": 2,
+                  "unit": ""
+                },
+                {
+                  "name": "bags zucchini fries",
+                  "qty": 2,
+                  "unit": ""
+                }
+              ],
+              "name": "Sausage Bites",
+              "instructions": [
+                "Slice sausages into bite-sized rounds.",
+                "Pan-sear until browned (about 5 minutes)."
+              ],
+              "id": "r_mtkopoyzy7ke7",
+              "servings": 4
+            },
+            {
+              "methods": [
+                "oven"
+              ],
+              "cookTime": "1 hr 10 min",
+              "method": "oven",
+              "tags": [
+                "chicken",
+                "2 servings",
+                "4 servings"
+              ],
+              "prepTime": "15 min",
+              "active": false,
+              "ingredients": [
+                {
+                  "name": "chicken breasts",
+                  "qty": 4,
+                  "unit": ""
+                },
+                {
+                  "name": "Garlic & Herb cream cheese",
+                  "qty": 4,
+                  "unit": "tbsp"
+                },
+                {
+                  "name": "spinach",
+                  "qty": 5,
+                  "unit": "oz"
+                },
+                {
+                  "name": "potatoes",
+                  "qty": 2,
+                  "unit": ""
+                }
+              ],
+              "frequency": "occasional",
+              "name": "Spinach Stuffed Chicken Breasts",
+              "instructions": [
+                "Preheat the oven to 425°F.",
+                "Slice open each chicken breast on its side with a knife and spread one cheese wedge per piece of chicken inside the slit. Then stuff spinach and red onion slices inside chicken on top of cheese.",
+                "Place chicken in a glass baking dish and season with salt and pepper. Cover dish with foil and bake at 425°F for 45–60 minutes, depending on the size of the chicken breasts.",
+                "Spoon the spinach mixture into each chicken breast evenly.",
+                "Place the chicken breasts in a 9 × 13-inch baking dish. Bake, uncovered, for 25–30 minutes or until chicken is cooked through."
+              ],
+              "id": "r_mtkouagrcnqnm",
+              "servings": 2
+            },
+            {
+              "methods": [
+                "oven",
+                "stovetop"
+              ],
+              "cookTime": "40 min",
+              "method": "oven",
+              "tags": [
+                "turkey",
+                "6 servings"
+              ],
+              "prepTime": "20 min",
+              "ingredients": [
+                {
+                  "name": "olive oil",
+                  "qty": 2,
+                  "unit": "tbsp"
+                },
+                {
+                  "qty": 1,
+                  "name": "onion",
+                  "unit": ""
+                },
+                {
+                  "name": "garlic",
+                  "qty": 2,
+                  "unit": "cloves"
+                },
+                {
+                  "qty": 4,
+                  "name": "bell peppers",
+                  "unit": ""
+                },
+                {
+                  "name": "ground turkey",
+                  "qty": 2,
+                  "unit": "lb"
+                },
+                {
+                  "name": "rice",
+                  "qty": 2,
+                  "unit": "cups"
+                },
+                {
+                  "qty": 2,
+                  "name": "salt",
+                  "unit": "tsp"
+                },
+                {
+                  "qty": 2,
+                  "name": "tomato sauce",
+                  "unit": "cans"
+                },
+                {
+                  "name": "¼ tsp garlic powder",
+                  "qty": null,
+                  "unit": ""
+                },
+                {
+                  "name": "cumin",
+                  "qty": 1,
+                  "unit": "tsp"
+                },
+                {
+                  "qty": 1,
+                  "name": "chili powder",
+                  "unit": "tsp"
+                },
+                {
+                  "name": "¼ tsp black pepper",
+                  "qty": null,
+                  "unit": ""
+                },
+                {
+                  "name": "shredded cheese",
+                  "qty": 1,
+                  "unit": "cup"
+                }
+              ],
+              "frequency": "biweekly",
+              "active": true,
+              "name": "Stuffed Pepper Casserole",
+              "instructions": [
+                "Preheat oven to 350°F. Spray a 1½-quart casserole dish with cooking spray. Set aside.",
+                "Pour olive oil into a saucepan over medium heat. Add in diced onion and cook until soft. Now add garlic and peppers. Cook until peppers are softened.",
+                "Crumble turkey into pepper mixture. Brown and then drain.",
+                "Add cooked rice and then salt, tomato sauce and spices. Stir in ¼ cup mozzarella cheese. Pour into prepared dish. Top with remaining ¼ cup cheese.",
+                "Cover and bake for 30 minutes, then uncover and bake for 10 more minutes, until bubbly. Serve up and enjoy!"
+              ],
+              "id": "r_mtkowuk3l120f",
+              "servings": 6
+            },
+            {
+              "methods": [
+                "oven",
+                "stovetop"
+              ],
+              "cookTime": "15 min",
+              "method": "oven",
+              "tags": [
+                "turkey",
+                "6 servings"
+              ],
+              "prepTime": "15 min",
+              "ingredients": [
+                {
+                  "qty": 2,
+                  "name": "ground turkey",
+                  "unit": "lb"
+                },
+                {
+                  "name": "diced onion",
+                  "qty": 1,
+                  "unit": ""
+                },
+                {
+                  "name": "canned corn",
+                  "qty": 2,
+                  "unit": "cans"
+                },
+                {
+                  "qty": 2,
+                  "name": "black beans",
+                  "unit": "cans"
+                },
+                {
+                  "qty": 2,
+                  "name": "taco seasoning",
+                  "unit": "tbsp"
+                },
+                {
+                  "qty": 4,
+                  "name": "taco sauce",
+                  "unit": "tbsp"
+                },
+                {
+                  "name": "½ cup sour cream",
+                  "qty": null,
+                  "unit": ""
+                },
+                {
+                  "qty": 1,
+                  "name": "shredded cheese",
+                  "unit": "cup"
+                }
+              ],
+              "frequency": "biweekly",
+              "active": true,
+              "name": "Taco Casserole",
+              "instructions": [
+                "Saute meat, beans, onions, taco seasoning, sauce, and corn on medium-high heat until meat is browned (or soy crumbles are thoroughly cooked).",
+                "Spoon half your meat mixture into your casserole dish in an even layer, top with a thin layer of sour cream, then sprinkle with some cheese.",
+                "Repeat. Cover with cheese.",
+                "Bake at 350°F for 15 minutes."
+              ],
+              "id": "r_mtkoxyxewi4kd",
+              "servings": 6
+            }
+          ],
+          "tagOptions": [
+            "beef",
+            "chicken",
+            "turkey",
+            "pork",
+            "pasta",
+            "2 servings",
+            "4 servings",
+            "6 servings",
+            "8 servings",
+            "kid friendly",
+            "oven",
+            "stove top",
+            "slow cooker",
+            "air fryer",
+            "toaster oven",
+            "PIZZA"
+          ],
+          "mealplan": {
+            "2026-08-30": {
+              "Tue": {
+                "dinner": "r_mtnekz88set7i",
+                "lunch": null
+              },
+              "Wed": {
+                "dinner": "r_mtneuvx2zncbi",
+                "lunch": null
+              },
+              "Mon": {
+                "lunch": null,
+                "dinner": "r_mtneew0pjvdht"
+              },
+              "Sat": {
+                "lunch": null,
+                "dinner": "r_mtne683q2b0kk"
+              },
+              "Fri": {
+                "dinner": "r_mtkojr610ejs1",
+                "lunch": null
+              },
+              "Thu": {
+                "dinner": "SKIP",
+                "lunch": null
+              },
+              "Sun": {
+                "dinner": "r_mtkogy7hzc4d9",
+                "lunch": null
+              }
+            },
+            "2026-09-06": {
+              "Wed": {
+                "dinner": "r_mtneuvx2zncbi",
+                "lunch": null
+              },
+              "Tue": {
+                "lunch": null,
+                "dinner": "r_mtkoxyxewi4kd"
+              },
+              "Mon": {
+                "dinner": "r_mtkogy7hzc4d9",
+                "lunch": null
+              },
+              "Sat": {
+                "dinner": "SKIP",
+                "lunch": null
+              },
+              "Fri": {
+                "dinner": "r_mtkom65dvhrrj",
+                "lunch": null
+              },
+              "Thu": {
+                "dinner": "r_mtkojr610ejs1",
+                "lunch": null
+              },
+              "Sun": {
+                "lunch": null,
+                "dinner": "SKIP"
+              }
+            },
+            "2026-09-27": {
+              "Tue": {
+                "lunch": null,
+                "dinner": null
+              },
+              "Wed": {
+                "lunch": null,
+                "dinner": null
+              },
+              "Mon": {
+                "dinner": null,
+                "lunch": null
+              },
+              "Sat": {
+                "lunch": null,
+                "dinner": null
+              },
+              "Fri": {
+                "lunch": null,
+                "dinner": null
+              },
+              "Thu": {
+                "dinner": null,
+                "lunch": null
+              },
+              "Sun": {
+                "lunch": null,
+                "dinner": null
+              }
+            },
+            "2026-09-13": {
+              "Tue": {
+                "lunch": null,
+                "dinner": "r_mtkowuk3l120f"
+              },
+              "Wed": {
+                "lunch": null,
+                "dinner": "SKIP"
+              },
+              "Mon": {
+                "lunch": null,
+                "dinner": "r_mtneuvx2zncbi"
+              },
+              "Sat": {
+                "lunch": null,
+                "dinner": "r_mtnemcmi5lx7e"
+              },
+              "Fri": {
+                "dinner": null,
+                "lunch": null
+              },
+              "Sun": {
+                "lunch": null,
+                "dinner": "r_mtkogy7hzc4d9"
+              },
+              "Thu": {
+                "lunch": null,
+                "dinner": "r_mtkojr610ejs1"
+              }
+            },
+            "2026-09-20": {
+              "Wed": {
+                "lunch": null,
+                "dinner": null
+              },
+              "Tue": {
+                "lunch": null,
+                "dinner": null
+              },
+              "Mon": {
+                "lunch": null,
+                "dinner": null
+              },
+              "Sat": {
+                "dinner": null,
+                "lunch": null
+              },
+              "Fri": {
+                "lunch": null,
+                "dinner": null
+              },
+              "Sun": {
+                "dinner": null,
+                "lunch": null
+              },
+              "Thu": {
+                "lunch": null,
+                "dinner": null
+              }
+            }
+          },
+          "pantryChecked": {
+            "2026-08-30": {
+              "frozen pizza (x2)": false
+            },
+            "2026-09-06": {
+              "black pepper": false,
+              "rainbow sherbet": true,
+              "honey mustard": true,
+              "bread": false,
+              "onion soup mix": true,
+              "coffee": false,
+              "cooking spray": true,
+              "variety chips": true,
+              "potatoes": true,
+              "taco sauce": true,
+              "eggs": false,
+              "butter": true,
+              "ice cream": true,
+              "creamer": true
+            }
+          },
+          "pantryItems": {
+            "Snacks": [
+              "ice cream",
+              "potato chips",
+              "rainbow sherbet",
+              "tortilla chips"
+            ],
+            "Basics": [
+              "butter",
+              "eggs",
+              "garlic",
+              "milk",
+              "olive oil",
+              "potatoes",
+              "rice",
+              "bread",
+              "cooking spray",
+              "coffee",
+              "creamer"
+            ],
+            "Spices": [
+              "black pepper",
+              "chili powder",
+              "cumin",
+              "garlic powder",
+              "honey",
+              "Italian seasoning",
+              "onion soup mix",
+              "red pepper flakes",
+              "salt",
+              "taco seasoning"
+            ],
+            "Kids": [
+              "cereal",
+              "frozen chicken fries",
+              "Kraft Mac & Cheese",
+              "Pop-tarts",
+              "ramen",
+              "variety chips",
+              "wraps"
+            ],
+            "Condiments": [
+              "BBQ sauce",
+              "bleu cheese dressing",
+              "Dijon mustard",
+              "honey mustard dressing",
+              "ketchup",
+              "mayo",
+              "relish",
+              "yellow mustard"
+            ],
+            "Fridge": [
+              "cream cheese",
+              "grated cheese",
+              "salsa",
+              "shredded cheese",
+              "sliced cheese",
+              "sour cream"
+            ],
+            "Pantry": [
+              "alfredo sauce",
+              "apple cider vinegar",
+              "cornstarch",
+              "egg noodles",
+              "pasta",
+              "pasta sauce",
+              "peanut butter",
+              "Nutella",
+              "red cooking wine",
+              "soy sauce",
+              "taco sauce",
+              "Worcestershire sauce",
+              "white rice",
+              "flour",
+              "sugar",
+              "baked beans",
+              "Parmesan cheese",
+              "frozen pizza (x2)",
+              "mustard",
+              "bleu cheese",
+              "honey mustard"
+            ]
+          },
+          "shoppingChecked": {
+            "2026-09-06": {
+              "shredded mozzarella cheese divided": false,
+              "potato": true,
+              "honey mustard": true,
+              "creamer": true,
+              "onion soup mix": true,
+              "cooking spray": true,
+              "chicken thigh": true,
+              "beef stock": true,
+              "canned corn": true,
+              "ounce mushrooms, sliced": true,
+              "asparagu": true,
+              "ground turkey": true,
+              "diced onion": true,
+              "butter": true,
+              "taco sauce": true,
+              "ground beef": true,
+              "variety chip": true,
+              "jar gravy": true,
+              "ice cream": true,
+              "black bean": true,
+              "green bean": true
+            }
+          },
+          "shoppingExtras": {}
+        },
+        "subcollections": {}
+      }
+    },
+    "questlog": {
+      "brendon-quest-log": {
+        "exists": true,
+        "data": {
+          "copper": 40,
+          "wardrobe": {},
+          "gold": 0,
+          "weekStart": "2026-09-07",
+          "tags": [
+            {
+              "color": "#6E2430",
+              "name": "Work",
+              "id": "t-work"
+            },
+            {
+              "color": "#8FA37E",
+              "name": "Home",
+              "id": "t-home"
+            },
+            {
+              "color": "#E87CA6",
+              "name": "Wedding",
+              "id": "t-wedding"
+            },
+            {
+              "color": "#554ebc",
+              "name": "Chore",
+              "id": "xx4n9pzghdqx9"
+            }
+          ],
+          "hungerDate": "2026-09-10",
+          "petTokens": 0,
+          "dailies": [
+            {
+              "tag": "t-home",
+              "repeat": {
+                "days": [
+                  1,
+                  2,
+                  4,
+                  6
+                ],
+                "type": "weekdays"
+              },
+              "priority": "high",
+              "done": false,
+              "title": "Check Meal Planner",
+              "subs": [],
+              "doneDate": null,
+              "due": null,
+              "difficulty": 3,
+              "id": "x3op31hfq6hob",
+              "created": "2026-09-07"
+            },
+            {
+              "id": "x4pjqrdgzpdt9",
+              "repeat": {
+                "type": "weekdays",
+                "days": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              },
+              "priority": "high",
+              "subs": [],
+              "done": false,
+              "title": "Cook Dinner",
+              "doneDate": null,
+              "due": null,
+              "difficulty": 2,
+              "tag": "xx4n9pzghdqx9",
+              "created": "2026-09-08"
+            },
+            {
+              "tag": "xx4n9pzghdqx9",
+              "repeat": {
+                "days": [
+                  0,
+                  1,
+                  3,
+                  4,
+                  6
+                ],
+                "type": "weekdays"
+              },
+              "priority": "medium",
+              "subs": [],
+              "done": false,
+              "title": "Vacuum",
+              "doneDate": null,
+              "due": null,
+              "difficulty": 3,
+              "id": "xs5z0lt18ti75",
+              "created": "2026-09-08"
+            },
+            {
+              "tag": "t-home",
+              "repeat": {
+                "days": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "type": "weekdays"
+              },
+              "priority": "high",
+              "subs": [],
+              "done": false,
+              "title": "Feed Cats",
+              "doneDate": null,
+              "due": null,
+              "difficulty": 2,
+              "id": "xj3fulwqs8c1y",
+              "created": "2026-09-09"
+            },
+            {
+              "id": "x902h409tge20",
+              "repeat": {
+                "days": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "type": "weekdays"
+              },
+              "priority": "medium",
+              "title": "Empty sink",
+              "done": false,
+              "subs": [],
+              "doneDate": null,
+              "due": null,
+              "difficulty": 3,
+              "tag": "t-home",
+              "created": "2026-09-09"
+            },
+            {
+              "tag": "t-home",
+              "repeat": {
+                "days": [
+                  0,
+                  1,
+                  3,
+                  4,
+                  6
+                ],
+                "type": "weekdays"
+              },
+              "priority": "medium",
+              "title": "Empty Cat Box",
+              "subs": [],
+              "done": false,
+              "doneDate": null,
+              "due": null,
+              "difficulty": 3,
+              "id": "xlagqhbkkqmzb",
+              "created": "2026-09-09"
+            },
+            {
+              "id": "xfdo8yqlgt160",
+              "repeat": {
+                "days": [
+                  0,
+                  1,
+                  3,
+                  4,
+                  6
+                ],
+                "type": "weekdays"
+              },
+              "priority": "medium",
+              "subs": [],
+              "done": false,
+              "title": "Empty Trash",
+              "doneDate": null,
+              "due": null,
+              "difficulty": 3,
+              "tag": "t-home",
+              "created": "2026-09-09"
+            },
+            {
+              "tag": "t-home",
+              "repeat": {
+                "days": [
+                  0,
+                  1,
+                  3,
+                  4,
+                  6
+                ],
+                "type": "weekdays"
+              },
+              "priority": "medium",
+              "done": false,
+              "subs": [],
+              "title": "Empty Recycling",
+              "doneDate": null,
+              "due": null,
+              "difficulty": 3,
+              "id": "xuvdj36act160",
+              "created": "2026-09-09"
+            }
+          ],
+          "celebrated": {
+            "kill-mnqq63d2l": true
+          },
+          "projects": [
+            {
+              "id": "x6ap8o76r667l",
+              "priority": "medium",
+              "subs": [],
+              "title": "Fill holes with spackle",
+              "done": false,
+              "doneDate": null,
+              "due": "2026-12-31",
+              "difficulty": 4,
+              "tag": "t-home",
+              "created": "2026-09-08"
+            }
+          ],
+          "completions": {},
+          "starterGiven": true,
+          "ledger": {
+            "2026-09-07": {
+              "todos": 40,
+              "dailies": 0,
+              "monsters": 0,
+              "projects": 0
+            },
+            "2026-08-31": {
+              "todos": 0,
+              "dailies": 0,
+              "monsters": 0,
+              "projects": 0
+            }
+          },
+          "todos": [
+            {
+              "id": "xhtt6fk3utk36",
+              "priority": "high",
+              "done": false,
+              "subs": [],
+              "title": "Create Character for One Shot",
+              "doneDate": null,
+              "due": "2026-09-12",
+              "difficulty": 3,
+              "tag": null,
+              "created": "2026-09-09"
+            },
+            {
+              "id": "xnq48et5utk36",
+              "priority": "high",
+              "title": "Create Sofia's Barbarian for One Shot",
+              "done": false,
+              "subs": [],
+              "doneDate": null,
+              "due": "2026-09-12",
+              "difficulty": 3,
+              "tag": null,
+              "created": "2026-09-09"
+            }
+          ],
+          "xp": 41,
+          "vacations": [],
+          "meowBucks": 250,
+          "pets": [
+            {
+              "fur": "gray",
+              "outfit": {},
+              "hunger": 100,
+              "eyeColor": "green",
+              "title": {
+                "connector": null,
+                "subject": "The Pile",
+                "prefix": "Sleepy"
+              },
+              "eyeShape": "slit",
+              "xp": 141,
+              "name": "Grayson Oliver",
+              "tier": "active",
+              "id": "p-woodrow",
+              "species": "cat"
+            }
+          ],
+          "rates": {
+            "todos": 20,
+            "dailies": 6,
+            "projects": 60
+          },
+          "shop": [],
+          "xpToNext": 125,
+          "fragments": {
+            "subject": [
+              "Monday",
+              "Dust",
+              "The Pile",
+              "Small Hours",
+              "Sunshine"
+            ],
+            "prefix": [
+              "Small",
+              "Sleepy",
+              "Gentle",
+              "Stubborn",
+              "I Need"
+            ]
+          },
+          "version": 5,
+          "level": 2,
+          "targets": {
+            "todos": 700,
+            "dailies": 1200,
+            "projects": 600
+          }
+        },
+        "subcollections": {}
+      },
+      "danni-quest-log": {
+        "exists": true,
+        "data": {
+          "copper": 17,
+          "wardrobe": {
+            "bg-cream": 2,
+            "bg-rose": 1,
+            "hat-pumpkin": 1
+          },
+          "gold": 10,
+          "weekStart": "2026-09-07",
+          "tags": [
+            {
+              "color": "#6E2430",
+              "name": "Work",
+              "id": "t-work"
+            },
+            {
+              "color": "#8FA37E",
+              "name": "Home",
+              "id": "t-home"
+            },
+            {
+              "color": "#E87CA6",
+              "name": "Wedding",
+              "id": "t-wedding"
+            },
+            {
+              "color": "#9C7440",
+              "name": "Etsy",
+              "id": "t-etsy"
+            },
+            {
+              "color": "#c1b785",
+              "name": "Chore",
+              "id": "xc8pskf2vdwdi"
+            },
+            {
+              "color": "#295060",
+              "name": "Health",
+              "id": "xrki6qicz2zrd"
+            }
+          ],
+          "hungerDate": "2026-09-11",
+          "xp": 69,
+          "dailies": [
+            {
+              "id": "x11zju3h117x9",
+              "repeat": {
+                "days": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "type": "weekdays"
+              },
+              "priority": "urgent",
+              "title": "Take AM meds",
+              "subs": [],
+              "done": false,
+              "doneDate": null,
+              "due": null,
+              "difficulty": 2,
+              "tag": null,
+              "created": "2026-09-07"
+            },
+            {
+              "tag": "t-work",
+              "repeat": {
+                "days": [
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "type": "weekdays"
+              },
+              "priority": "high",
+              "done": false,
+              "title": "Get to work on time",
+              "subs": [],
+              "doneDate": null,
+              "due": null,
+              "difficulty": 4,
+              "id": "xfrxd711qtiw9",
+              "created": "2026-09-07"
+            },
+            {
+              "tag": "xc8pskf2vdwdi",
+              "repeat": {
+                "days": [
+                  1,
+                  5
+                ],
+                "type": "weekdays"
+              },
+              "priority": "high",
+              "subs": [],
+              "done": false,
+              "title": "Balance Budget",
+              "doneDate": null,
+              "due": null,
+              "difficulty": 4,
+              "id": "x0oyxw2x86b6m",
+              "created": "2026-09-07"
+            },
+            {
+              "tag": null,
+              "repeat": {
+                "days": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "type": "weekdays"
+              },
+              "priority": "medium",
+              "done": false,
+              "subs": [
+                {
+                  "title": "Bonus: skincare twice",
+                  "id": "xbbl45slp17x9"
+                }
+              ],
+              "title": "Skincare — once",
+              "doneDate": null,
+              "due": null,
+              "difficulty": 3,
+              "id": "xbs9asjlp17x9",
+              "created": "2026-09-07"
+            },
+            {
+              "id": "xmw0k49b817x9",
+              "repeat": {
+                "type": "weekdays",
+                "days": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              },
+              "priority": "medium",
+              "title": "Make bed",
+              "subs": [],
+              "done": false,
+              "doneDate": null,
+              "due": null,
+              "difficulty": 3,
+              "tag": null,
+              "created": "2026-09-07"
+            },
+            {
+              "id": "x430r4osrzbj8",
+              "repeat": {
+                "type": "weekdays",
+                "days": [
+                  2
+                ]
+              },
+              "priority": "medium",
+              "done": false,
+              "title": "Trash Tuesday",
+              "subs": [
+                {
+                  "title": "Pull green trash bags",
+                  "id": "xnki7fz17zbj8"
+                },
+                {
+                  "title": "Reline green trash bags",
+                  "id": "xxo85n8afzbj8"
+                }
+              ],
+              "doneDate": null,
+              "due": null,
+              "difficulty": 2,
+              "tag": "xc8pskf2vdwdi",
+              "created": "2026-09-07"
+            },
+            {
+              "id": "x6tythed2uwq9",
+              "repeat": {
+                "type": "weekdays",
+                "days": [
+                  1,
+                  2,
+                  3,
+                  4
+                ]
+              },
+              "priority": "high",
+              "title": "After work routine",
+              "subs": [],
+              "done": false,
+              "doneDate": null,
+              "due": null,
+              "difficulty": 3,
+              "tag": "t-work",
+              "created": "2026-09-07"
+            },
+            {
+              "id": "xtl66gz4317x9",
+              "repeat": {
+                "type": "weekdays",
+                "days": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              },
+              "priority": "urgent",
+              "title": "Take PM meds",
+              "subs": [],
+              "done": false,
+              "doneDate": null,
+              "due": null,
+              "difficulty": 2,
+              "tag": null,
+              "created": "2026-09-07"
+            },
+            {
+              "tag": "xc8pskf2vdwdi",
+              "repeat": {
+                "days": [
+                  3
+                ],
+                "type": "weekdays"
+              },
+              "priority": "high",
+              "done": false,
+              "subs": [],
+              "title": "Water plants",
+              "doneDate": null,
+              "due": null,
+              "difficulty": 3,
+              "id": "xx2k64znv5jqr",
+              "created": "2026-09-07"
+            },
+            {
+              "tag": null,
+              "repeat": {
+                "days": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "type": "weekdays"
+              },
+              "priority": "medium",
+              "subs": [],
+              "title": "Brush teeth — PM",
+              "done": false,
+              "doneDate": null,
+              "due": null,
+              "difficulty": 3,
+              "id": "x50w3wm6717x9",
+              "created": "2026-09-07"
+            },
+            {
+              "id": "xt52i8z6q9pf9",
+              "repeat": {
+                "type": "weekdays",
+                "days": [
+                  5
+                ]
+              },
+              "priority": "medium",
+              "title": "Sort laundry",
+              "subs": [],
+              "done": false,
+              "doneDate": null,
+              "due": null,
+              "difficulty": 3,
+              "tag": "xc8pskf2vdwdi",
+              "created": "2026-09-07"
+            },
+            {
+              "id": "xz5divnx79pf9",
+              "repeat": {
+                "type": "weekdays",
+                "days": [
+                  5
+                ]
+              },
+              "priority": "medium",
+              "done": false,
+              "title": "Meal plan",
+              "subs": [],
+              "doneDate": null,
+              "due": null,
+              "difficulty": 3,
+              "tag": "xc8pskf2vdwdi",
+              "created": "2026-09-07"
+            },
+            {
+              "tag": "xc8pskf2vdwdi",
+              "repeat": {
+                "days": [
+                  5
+                ],
+                "type": "weekdays"
+              },
+              "priority": "medium",
+              "done": false,
+              "title": "Order Groceries",
+              "subs": [],
+              "doneDate": null,
+              "due": null,
+              "difficulty": 3,
+              "id": "x98it8q919pf9",
+              "created": "2026-09-07"
+            },
+            {
+              "tag": "t-work",
+              "repeat": {
+                "type": "weekdays",
+                "days": [
+                  1
+                ]
+              },
+              "priority": "high",
+              "subs": [],
+              "title": "Print schedule",
+              "done": false,
+              "doneDate": null,
+              "due": null,
+              "difficulty": 2,
+              "id": "xniud0i9saylj",
+              "created": "2026-09-07"
+            }
+          ],
+          "pets": [
+            {
+              "fur": "black",
+              "outfit": {
+                "background": "bg-cream",
+                "hat": "hat-pumpkin"
+              },
+              "hunger": 100,
+              "eyeColor": "yellow",
+              "title": {
+                "connector": null,
+                "subject": "Sunshine",
+                "prefix": "I Need"
+              },
+              "eyeShape": "round",
+              "xp": 1194,
+              "name": "Lord Woodrow",
+              "tier": "active",
+              "species": "cat",
+              "id": "p-woodrow"
+            },
+            {
+              "fur": "black",
+              "outfit": {
+                "background": "bg-rose"
+              },
+              "hunger": 100,
+              "eyeColor": "pink",
+              "title": {
+                "connector": null,
+                "subject": "Sunshine",
+                "prefix": "I Need"
+              },
+              "eyeShape": "round",
+              "xp": 265,
+              "name": "Pandora",
+              "tier": "party",
+              "species": "panda",
+              "id": "pwq92xo97"
+            }
+          ],
+          "projects": [],
+          "completions": {
+            "2026-09-09": {
+              "x6tythed2uwq9": {
+                "subs": {},
+                "done": true
+              },
+              "xbs9asjlp17x9": {
+                "done": true,
+                "subs": {}
+              },
+              "xx2k64znv5jqr": {
+                "done": true,
+                "subs": {}
+              },
+              "xfrxd711qtiw9": {
+                "done": true,
+                "subs": {}
+              },
+              "xmw0k49b817x9": {
+                "subs": {},
+                "done": true
+              },
+              "xtl66gz4317x9": {
+                "done": true,
+                "subs": {}
+              },
+              "x11zju3h117x9": {
+                "done": true,
+                "subs": {}
+              }
+            },
+            "2026-09-07": {
+              "xbs9asjlp17x9": {
+                "subs": {},
+                "done": true
+              },
+              "xmw0k49b817x9": {
+                "done": true,
+                "subs": {}
+              },
+              "x50w3wm6717x9": {
+                "done": true,
+                "subs": {}
+              },
+              "x11zju3h117x9": {
+                "done": true,
+                "subs": {}
+              },
+              "xniud0i9saylj": {
+                "done": true,
+                "subs": {}
+              },
+              "xtl66gz4317x9": {
+                "done": true,
+                "subs": {}
+              },
+              "xfrxd711qtiw9": {
+                "subs": {},
+                "done": true
+              },
+              "x6tythed2uwq9": {
+                "subs": {},
+                "done": true
+              }
+            },
+            "2026-09-08": {
+              "xbs9asjlp17x9": {
+                "done": true,
+                "subs": {}
+              },
+              "xmw0k49b817x9": {
+                "done": true,
+                "subs": {}
+              },
+              "x430r4osrzbj8": {
+                "subs": {},
+                "done": true
+              },
+              "x11zju3h117x9": {
+                "done": true,
+                "subs": {}
+              },
+              "xx2k64znv5jqr": {
+                "done": true,
+                "subs": {}
+              },
+              "xfrxd711qtiw9": {
+                "done": true,
+                "subs": {}
+              },
+              "xtl66gz4317x9": {
+                "subs": {},
+                "done": true
+              },
+              "x6tythed2uwq9": {
+                "subs": {},
+                "done": true
+              }
+            },
+            "2026-09-10": {
+              "x6tythed2uwq9": {
+                "done": true,
+                "subs": {}
+              },
+              "xbs9asjlp17x9": {
+                "done": true,
+                "subs": {}
+              },
+              "xmw0k49b817x9": {
+                "subs": {},
+                "done": true
+              },
+              "xfrxd711qtiw9": {
+                "done": true,
+                "subs": {}
+              },
+              "x11zju3h117x9": {
+                "subs": {},
+                "done": true
+              }
+            }
+          },
+          "starterGiven": true,
+          "todos": [
+            {
+              "tag": "xc8pskf2vdwdi",
+              "subDone": {
+                "xhsjqzwslquwn": true,
+                "xuwevqs6lqr7h": true,
+                "xykk9fmefqnzb": true
+              },
+              "priority": "medium",
+              "subs": [
+                {
+                  "id": "xykk9fmefqnzb",
+                  "title": "white"
+                },
+                {
+                  "title": "cl1",
+                  "id": "xuwevqs6lqr7h"
+                },
+                {
+                  "title": "cl2",
+                  "id": "xhsjqzwslquwn"
+                }
+              ],
+              "done": true,
+              "title": "Organize bathroom bins",
+              "doneDate": "2026-09-07",
+              "due": null,
+              "difficulty": 2,
+              "id": "xn7h2c2gc4z8l",
+              "created": "2026-09-07"
+            },
+            {
+              "tag": null,
+              "priority": "medium",
+              "subs": [],
+              "title": "Fold Load 1",
+              "done": true,
+              "doneDate": "2026-09-07",
+              "due": "2026-09-07",
+              "difficulty": 2,
+              "id": "xhrh0fuqaxf34",
+              "created": "2026-09-07"
+            },
+            {
+              "id": "xrroh84mw4z8l",
+              "priority": "medium",
+              "subs": [],
+              "done": true,
+              "title": "Organize the white living-room bin/side table",
+              "doneDate": "2026-09-07",
+              "due": null,
+              "difficulty": 3,
+              "tag": null,
+              "created": "2026-09-07"
+            },
+            {
+              "tag": null,
+              "priority": "medium",
+              "done": true,
+              "title": "Organize mini desk in the living room",
+              "subs": [],
+              "doneDate": "2026-09-07",
+              "due": null,
+              "difficulty": 3,
+              "id": "xmfsdm2tc4z8l",
+              "created": "2026-09-07"
+            },
+            {
+              "id": "xrrt8nsq94z8l",
+              "priority": "medium",
+              "subs": [
+                {
+                  "id": "x70fwgdh54z8l",
+                  "title": "Morning alarm"
+                },
+                {
+                  "title": "Evening warning / bedtime reminder",
+                  "id": "x32b04s1v4z8l"
+                },
+                {
+                  "id": "x5qiq7web4z8l",
+                  "title": "Any other helpful routines"
+                }
+              ],
+              "title": "Set up/check Alexa routines",
+              "done": true,
+              "doneDate": "2026-09-07",
+              "due": null,
+              "difficulty": 3,
+              "tag": null,
+              "created": "2026-09-07"
+            },
+            {
+              "tag": "xc8pskf2vdwdi",
+              "priority": "urgent",
+              "title": "Sort Laundry",
+              "done": true,
+              "subs": [],
+              "doneDate": "2026-09-07",
+              "due": null,
+              "difficulty": 3,
+              "id": "xnmvihnu7f850",
+              "created": "2026-09-07"
+            },
+            {
+              "tag": "t-work",
+              "priority": "urgent",
+              "subs": [],
+              "title": "ProCard Update",
+              "done": true,
+              "doneDate": "2026-09-08",
+              "due": null,
+              "difficulty": 5,
+              "id": "xu7v49308o2ld",
+              "created": "2026-09-08"
+            },
+            {
+              "id": "xx7ff2eagfw3p",
+              "priority": "high",
+              "subs": [],
+              "done": true,
+              "title": "Create Dailies List",
+              "doneDate": "2026-09-07",
+              "due": null,
+              "difficulty": 5,
+              "tag": "xc8pskf2vdwdi",
+              "created": "2026-09-07"
+            },
+            {
+              "id": "xmx6aypga4x7u",
+              "priority": "medium",
+              "done": true,
+              "title": "Fold Load #2",
+              "subs": [],
+              "doneDate": "2026-09-07",
+              "due": null,
+              "difficulty": 2,
+              "tag": "xc8pskf2vdwdi",
+              "created": "2026-09-07"
+            },
+            {
+              "id": "x2vswbn55zutl",
+              "priority": "high",
+              "title": "Fold laundry load #3",
+              "subs": [],
+              "done": true,
+              "doneDate": "2026-09-07",
+              "due": null,
+              "difficulty": 3,
+              "tag": "xc8pskf2vdwdi",
+              "created": "2026-09-07"
+            },
+            {
+              "tag": "t-work",
+              "priority": "high",
+              "subs": [],
+              "title": "Follow up on office clean up",
+              "done": true,
+              "doneDate": "2026-09-08",
+              "due": "2026-09-08",
+              "difficulty": 1,
+              "id": "xszaazdcahdfc",
+              "created": "2026-09-08"
+            },
+            {
+              "tag": "t-work",
+              "priority": "high",
+              "subs": [],
+              "title": "Follow up on phone removal email copy",
+              "done": true,
+              "doneDate": "2026-09-08",
+              "due": "2026-09-08",
+              "difficulty": 1,
+              "id": "xotogrmahlnhl",
+              "created": "2026-09-08"
+            },
+            {
+              "tag": "t-work",
+              "priority": "high",
+              "subs": [
+                {
+                  "title": "Joy's Card",
+                  "id": "x84t4u8ed0rfw"
+                },
+                {
+                  "id": "xosl19s9m0rfw",
+                  "title": "D's Concur"
+                }
+              ],
+              "done": true,
+              "title": "Danny's Travel",
+              "doneDate": "2026-09-09",
+              "due": null,
+              "difficulty": 4,
+              "id": "x1w0iwq5w0rfw",
+              "created": "2026-09-09"
+            },
+            {
+              "id": "x65en4wfkhdfc",
+              "priority": "high",
+              "subs": [],
+              "title": "Check Jorge's office",
+              "done": true,
+              "doneDate": "2026-09-08",
+              "due": "2026-09-08",
+              "difficulty": 1,
+              "tag": "t-work",
+              "created": "2026-09-08"
+            },
+            {
+              "tag": "t-work",
+              "priority": "high",
+              "subs": [],
+              "done": true,
+              "title": "Order Keyboard (Mac) Cinzia",
+              "doneDate": "2026-09-08",
+              "due": "2026-09-08",
+              "difficulty": 1,
+              "id": "xjaigi7wghdfc",
+              "created": "2026-09-08"
+            },
+            {
+              "id": "xg00woh10pfd3",
+              "priority": "low",
+              "title": "Fill copier with paper",
+              "subs": [],
+              "done": true,
+              "doneDate": "2026-09-08",
+              "due": null,
+              "difficulty": 3,
+              "tag": "t-work",
+              "created": "2026-09-08"
+            },
+            {
+              "id": "xs83cr2faprfy",
+              "priority": "urgent",
+              "done": true,
+              "title": "Text Tyler Back",
+              "subs": [],
+              "doneDate": "2026-09-08",
+              "due": null,
+              "difficulty": 1,
+              "tag": "t-work",
+              "created": "2026-09-08"
+            },
+            {
+              "id": "xe9aqjzd5a5ew",
+              "priority": "high",
+              "done": false,
+              "subs": [],
+              "title": "Finish door plates",
+              "doneDate": null,
+              "due": null,
+              "difficulty": 3,
+              "tag": "t-work",
+              "created": "2026-09-08"
+            },
+            {
+              "tag": "t-work",
+              "priority": "medium",
+              "done": true,
+              "title": "Get StarTech adapter for Cinzia (ticket opened)",
+              "subs": [],
+              "doneDate": "2026-09-10",
+              "due": null,
+              "difficulty": 1,
+              "id": "xw0wwt5k6p2yg",
+              "created": "2026-09-08"
+            },
+            {
+              "tag": "t-work",
+              "priority": "medium",
+              "done": false,
+              "subs": [],
+              "title": "FY27 Budget Planning",
+              "doneDate": null,
+              "due": "2026-09-30",
+              "difficulty": 4,
+              "id": "x9ick79ont5qz",
+              "created": "2026-09-08"
+            },
+            {
+              "id": "xljw6fe17rkr8",
+              "subDone": {
+                "xlxkln75lrkr8": true,
+                "xvlllmpqcrkr8": true,
+                "xevrkoey1rkr8": true,
+                "xliclyjcqrkr8": true
+              },
+              "priority": "high",
+              "done": true,
+              "title": "Joy Favors",
+              "subs": [
+                {
+                  "title": "Print 1",
+                  "id": "xliclyjcqrkr8"
+                },
+                {
+                  "id": "xlxkln75lrkr8",
+                  "title": "Print 2"
+                },
+                {
+                  "id": "xevrkoey1rkr8",
+                  "title": "Print 3"
+                },
+                {
+                  "id": "xvlllmpqcrkr8",
+                  "title": "Notebooks"
+                },
+                {
+                  "title": "T-Shirts",
+                  "id": "xra79uyswrkr8"
+                }
+              ],
+              "doneDate": "2026-09-09",
+              "due": null,
+              "difficulty": 2,
+              "tag": "t-work",
+              "created": "2026-09-08"
+            },
+            {
+              "tag": "t-work",
+              "priority": "medium",
+              "done": true,
+              "title": "Email Peggy",
+              "subs": [],
+              "doneDate": "2026-09-09",
+              "due": null,
+              "difficulty": 1,
+              "id": "x24hh7f7206bt",
+              "created": "2026-09-09"
+            },
+            {
+              "id": "xkvd3ahwo4z8l",
+              "priority": "medium",
+              "title": "Smarty Pants presentation",
+              "subs": [
+                {
+                  "id": "xje4qzyte4z8l",
+                  "title": "Hamilton"
+                },
+                {
+                  "id": "xldywbv1f4z8l",
+                  "title": "2004"
+                }
+              ],
+              "done": false,
+              "doneDate": null,
+              "due": "2026-10-10",
+              "difficulty": 5,
+              "tag": "t-wedding",
+              "created": "2026-09-07"
+            },
+            {
+              "id": "x0fic0ugxobqh",
+              "priority": "high",
+              "title": "Fill Cat Fountain",
+              "done": false,
+              "subs": [],
+              "doneDate": null,
+              "due": "2026-09-11",
+              "difficulty": 3,
+              "tag": "xc8pskf2vdwdi",
+              "created": "2026-09-09"
+            },
+            {
+              "tag": "t-work",
+              "priority": "medium",
+              "title": "Follow up about adapter",
+              "done": true,
+              "subs": [],
+              "doneDate": "2026-09-10",
+              "due": null,
+              "difficulty": 1,
+              "id": "x0axwibclh2ke",
+              "created": "2026-09-10"
+            },
+            {
+              "tag": "t-work",
+              "priority": "medium",
+              "title": "Follow up about blinds",
+              "subs": [],
+              "done": true,
+              "doneDate": "2026-09-10",
+              "due": null,
+              "difficulty": 1,
+              "id": "xqairu2lwh2ke",
+              "created": "2026-09-10"
+            }
+          ],
+          "petTokens": 0,
+          "celebrated": {
+            "levelup-5": true,
+            "levelup-2": true,
+            "levelup-7": true,
+            "levelup-6": true,
+            "levelup-3": true,
+            "stage-p-woodrow-child": true
+          },
+          "vacations": [],
+          "meowBucks": 300,
+          "ledger": {
+            "2026-09-07": {
+              "todos": 820,
+              "dailies": 397,
+              "monsters": 0,
+              "projects": 0
+            },
+            "2026-08-31": {
+              "todos": 0,
+              "dailies": 0,
+              "monsters": 0,
+              "projects": 0
+            }
+          },
+          "rates": {
+            "todos": 20,
+            "dailies": 6,
+            "projects": 60
+          },
+          "shop": [],
+          "xpToNext": 381,
+          "fragments": {
+            "subject": [
+              "Monday",
+              "Dust",
+              "The Pile",
+              "Small Hours",
+              "Sunshine"
+            ],
+            "prefix": [
+              "Small",
+              "Sleepy",
+              "Gentle",
+              "Stubborn",
+              "I Need"
+            ]
+          },
+          "version": 5,
+          "level": 7,
+          "targets": {
+            "todos": 700,
+            "dailies": 1200,
+            "projects": 600
+          }
+        },
+        "subcollections": {}
+      },
+      "shared-monsters": {
+        "exists": true,
+        "data": {
+          "activeMonster": "moox5prnb",
+          "monsters": [
+            {
+              "id": "mnqq63d2l",
+              "killed": "2026-09-07",
+              "hp": 0,
+              "maxHp": 500,
+              "name": "Summer Finale",
+              "reward": {
+                "pet": true,
+                "meow": 500,
+                "xp": 250,
+                "item": false,
+                "subject": "Sunshine",
+                "gold": 0,
+                "prefix": "I Need"
+              },
+              "dead": true,
+              "created": "2026-09-07"
+            },
+            {
+              "name": "First Week Back",
+              "id": "moox5prnb",
+              "hp": 749,
+              "maxHp": 1500,
+              "killed": null,
+              "reward": {
+                "pet": false,
+                "meow": 1500,
+                "xp": 600,
+                "item": false,
+                "subject": "Back",
+                "gold": 0,
+                "prefix": "Welcome"
+              },
+              "dead": false,
+              "created": "2026-09-07"
+            }
+          ],
+          "version": 1,
+          "collected": {
+            "mnqq63d2l": {
+              "brendon": true,
+              "danni": true
+            }
+          },
+          "damage": {
+            "mnqq63d2l": {
+              "brendon": 40,
+              "danni": 484
+            },
+            "moox5prnb": {
+              "danni": 751
+            }
+          }
+        },
+        "subcollections": {}
+      }
+    },
+    "sidequest": {
+      "bucket-list": {
+        "exists": true,
+        "data": {
+          "items": [
+            {
+              "imageCredit": "CC BY-SA 3.0",
+              "status": "planning",
+              "priD": 0,
+              "title": "Visit Moulin Rouge",
+              "cats": [
+                "Travel"
+              ],
+              "who": "together",
+              "priB": 0,
+              "imageSource": "https://commons.wikimedia.org/wiki/File:Moulin_rouge.jpg",
+              "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/97/Moulin_rouge.jpg/960px-Moulin_rouge.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+              "notes": "",
+              "added": 1788803922718,
+              "steps": [],
+              "id": "mtrjo4das8u0v"
+            }
+          ],
+          "updated": 1788803923229
+        },
+        "subcollections": {}
+      },
+      "classics-list": {
+        "exists": true,
+        "data": {
+          "items": [
+            {
+              "letter": "A",
+              "coverTried": true,
+              "status": "unread",
+              "title": "Animal Farm",
+              "cover": "https://covers.openlibrary.org/b/id/11261770-M.jpg",
+              "date": "",
+              "author": "George Orwell",
+              "notes": "",
+              "id": "a"
+            },
+            {
+              "status": "unread",
+              "letter": "B",
+              "coverTried": true,
+              "title": "The Bell Jar",
+              "date": "",
+              "cover": "https://covers.openlibrary.org/b/id/8477115-M.jpg",
+              "author": "Sylvia Plath",
+              "notes": "",
+              "id": "b"
+            },
+            {
+              "letter": "C",
+              "status": "unread",
+              "coverTried": true,
+              "title": "The Catcher in the Rye",
+              "date": "",
+              "cover": "https://covers.openlibrary.org/b/id/9273490-M.jpg",
+              "author": "J. D. Salinger",
+              "notes": "",
+              "id": "c"
+            },
+            {
+              "letter": "D",
+              "status": "unread",
+              "coverTried": true,
+              "title": "Dracula",
+              "date": "",
+              "cover": "https://covers.openlibrary.org/b/id/12216503-M.jpg",
+              "author": "Bram Stoker",
+              "notes": "",
+              "id": "d"
+            },
+            {
+              "status": "unread",
+              "coverTried": true,
+              "letter": "E",
+              "title": "Emma",
+              "date": "",
+              "cover": "https://covers.openlibrary.org/b/id/9278312-M.jpg",
+              "author": "Jane Austen",
+              "notes": "",
+              "id": "e"
+            },
+            {
+              "letter": "F",
+              "status": "unread",
+              "coverTried": true,
+              "title": "Frankenstein",
+              "date": "",
+              "cover": "https://covers.openlibrary.org/b/id/12356249-M.jpg",
+              "author": "Mary Shelley",
+              "notes": "",
+              "id": "f"
+            },
+            {
+              "coverTried": true,
+              "letter": "G",
+              "status": "unread",
+              "title": "The Great Gatsby",
+              "date": "",
+              "cover": "https://covers.openlibrary.org/b/id/10590366-M.jpg",
+              "author": "F. Scott Fitzgerald",
+              "notes": "",
+              "id": "g"
+            },
+            {
+              "status": "unread",
+              "letter": "H",
+              "coverTried": true,
+              "title": "The Handmaid’s Tale",
+              "cover": "https://covers.openlibrary.org/b/id/8231851-M.jpg",
+              "date": "",
+              "author": "Margaret Atwood",
+              "notes": "",
+              "id": "h"
+            },
+            {
+              "coverTried": true,
+              "letter": "I",
+              "status": "unread",
+              "title": "The Importance of Being Earnest",
+              "cover": "https://covers.openlibrary.org/b/id/1260453-M.jpg",
+              "date": "",
+              "author": "Oscar Wilde",
+              "notes": "",
+              "id": "i"
+            },
+            {
+              "coverTried": true,
+              "status": "unread",
+              "letter": "J",
+              "title": "Jane Eyre",
+              "date": "",
+              "cover": "https://covers.openlibrary.org/b/id/8235363-M.jpg",
+              "author": "Charlotte Brontë",
+              "notes": "",
+              "id": "j"
+            },
+            {
+              "status": "unread",
+              "letter": "K",
+              "coverTried": true,
+              "title": "The Kite Runner",
+              "cover": "https://covers.openlibrary.org/b/id/14846827-M.jpg",
+              "date": "",
+              "author": "Khaled Hosseini",
+              "notes": "",
+              "id": "k"
+            },
+            {
+              "coverTried": true,
+              "letter": "L",
+              "status": "unread",
+              "title": "Lord of the Flies",
+              "date": "",
+              "cover": "https://covers.openlibrary.org/b/id/8684447-M.jpg",
+              "author": "William Golding",
+              "notes": "",
+              "id": "l"
+            },
+            {
+              "letter": "M",
+              "status": "unread",
+              "coverTried": true,
+              "title": "Murder on the Orient Express",
+              "cover": "https://covers.openlibrary.org/b/id/11100465-M.jpg",
+              "date": "",
+              "author": "Agatha Christie",
+              "notes": "",
+              "id": "m"
+            },
+            {
+              "coverTried": true,
+              "status": "unread",
+              "letter": "N",
+              "title": "Night",
+              "date": "",
+              "cover": "https://covers.openlibrary.org/b/id/7732035-M.jpg",
+              "author": "Elie Wiesel",
+              "notes": "",
+              "id": "n"
+            },
+            {
+              "status": "unread",
+              "coverTried": true,
+              "letter": "O",
+              "title": "Oliver Twist",
+              "cover": "https://covers.openlibrary.org/b/id/13300802-M.jpg",
+              "date": "",
+              "author": "Charles Dickens",
+              "notes": "",
+              "id": "o"
+            },
+            {
+              "letter": "P",
+              "coverTried": true,
+              "status": "unread",
+              "title": "Pride and Prejudice",
+              "cover": "https://covers.openlibrary.org/b/id/14348537-M.jpg",
+              "date": "",
+              "author": "Jane Austen",
+              "notes": "",
+              "id": "p1"
+            },
+            {
+              "coverTried": true,
+              "letter": "P",
+              "status": "unread",
+              "title": "The Picture of Dorian Gray",
+              "cover": "https://covers.openlibrary.org/b/id/14314858-M.jpg",
+              "date": "",
+              "author": "Oscar Wilde",
+              "notes": "",
+              "id": "p2"
+            },
+            {
+              "letter": "Q",
+              "coverTried": true,
+              "status": "unread",
+              "title": "Quicksand",
+              "date": "",
+              "cover": "https://covers.openlibrary.org/b/id/314762-M.jpg",
+              "author": "Nella Larsen",
+              "notes": "",
+              "id": "q"
+            },
+            {
+              "letter": "R",
+              "status": "unread",
+              "coverTried": true,
+              "title": "The Raven",
+              "date": "",
+              "cover": "https://covers.openlibrary.org/b/id/8246077-M.jpg",
+              "author": "Edgar Allan Poe",
+              "notes": "",
+              "id": "r"
+            },
+            {
+              "coverTried": true,
+              "status": "unread",
+              "letter": "S",
+              "title": "The Shining",
+              "date": "",
+              "cover": "https://covers.openlibrary.org/b/id/12376585-M.jpg",
+              "author": "Stephen King",
+              "notes": "",
+              "id": "s"
+            },
+            {
+              "coverTried": true,
+              "status": "unread",
+              "letter": "T",
+              "title": "A Tale of Two Cities",
+              "date": "",
+              "cover": "https://covers.openlibrary.org/b/id/13301713-M.jpg",
+              "author": "Charles Dickens",
+              "notes": "",
+              "id": "t"
+            },
+            {
+              "letter": "U",
+              "status": "unread",
+              "coverTried": true,
+              "title": "Uncle Tom’s Cabin",
+              "cover": "https://covers.openlibrary.org/b/id/12728198-M.jpg",
+              "date": "",
+              "author": "Harriet Beecher Stowe",
+              "notes": "",
+              "id": "u"
+            },
+            {
+              "coverTried": true,
+              "status": "unread",
+              "letter": "V",
+              "title": "The Virgin Suicides",
+              "cover": "https://covers.openlibrary.org/b/id/486854-M.jpg",
+              "date": "",
+              "author": "Jeffrey Eugenides",
+              "notes": "",
+              "id": "v"
+            },
+            {
+              "coverTried": true,
+              "letter": "W",
+              "status": "unread",
+              "title": "Wuthering Heights",
+              "date": "",
+              "cover": "https://covers.openlibrary.org/b/id/12818862-M.jpg",
+              "author": "Emily Brontë",
+              "notes": "",
+              "id": "w"
+            },
+            {
+              "status": "unread",
+              "letter": "X",
+              "coverTried": true,
+              "title": "1984",
+              "date": "",
+              "cover": "https://covers.openlibrary.org/b/id/8745958-M.jpg",
+              "author": "George Orwell",
+              "notes": "",
+              "id": "x"
+            },
+            {
+              "letter": "Y",
+              "status": "unread",
+              "coverTried": true,
+              "title": "The Yellow Wallpaper",
+              "date": "",
+              "cover": "https://covers.openlibrary.org/b/id/652029-M.jpg",
+              "author": "Charlotte Perkins Gilman",
+              "notes": "",
+              "id": "y"
+            },
+            {
+              "status": "unread",
+              "letter": "Z",
+              "coverTried": true,
+              "title": "Zastrozzi",
+              "cover": "https://covers.openlibrary.org/b/id/770324-M.jpg",
+              "date": "",
+              "author": "Percy Bysshe Shelley",
+              "notes": "",
+              "id": "z"
+            }
+          ]
+        },
+        "subcollections": {}
+      },
+      "couch-list": {
+        "exists": true,
+        "data": {
+          "items": [
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "rewatch": true,
+              "who": "danni",
+              "endDate": "2025-08-15",
+              "priD": 0,
+              "runtime": 110,
+              "image": "https://image.tmdb.org/t/p/w500/9wV65OmsjLAqBfDnYTkMPutXH8j.jpg",
+              "seasons": [],
+              "priB": 0,
+              "rewatches": [
+                "2026-09-11"
+              ],
+              "tmdbId": 1125257,
+              "type": "movie",
+              "watchedMin": 110,
+              "status": "watched",
+              "title": "Freakier Friday",
+              "added": 1789145863941,
+              "id": "mtx793wlxd883"
+            },
+            {
+              "streams": [
+                "Hulu"
+              ],
+              "runtime": 109,
+              "who": "danni",
+              "rewatch": false,
+              "priD": 0,
+              "image": "https://image.tmdb.org/t/p/w500/kDUEegV4P8odhUTjHE2e2kWMZo3.jpg",
+              "seasons": [],
+              "priB": 0,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Much Ado About Nothing",
+              "added": 1789000789955,
+              "id": "mtusvo3nwgkzp"
+            },
+            {
+              "streams": [
+                "Apple TV+",
+                "Prime Video"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 113,
+              "priD": 2,
+              "image": "https://image.tmdb.org/t/p/w500/de5QBIdVR4dnkBZ4a0zjkS4lTg.jpg",
+              "seasons": [],
+              "priB": 2,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "American Reunion",
+              "added": 1788916043941,
+              "id": "mttef9npivwti"
+            },
+            {
+              "streams": [
+                "Apple TV+",
+                "Prime Video"
+              ],
+              "runtime": 103,
+              "who": "together",
+              "rewatch": false,
+              "priD": 2,
+              "priB": 2,
+              "seasons": [],
+              "image": "https://image.tmdb.org/t/p/w500/pCO3lJv2PzPkJty29APxCVSjyoE.jpg",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "American Wedding",
+              "added": 1788915882741,
+              "id": "mttebt9xjzllc"
+            },
+            {
+              "streams": [
+                "Apple TV+",
+                "Prime Video"
+              ],
+              "runtime": 111,
+              "who": "together",
+              "rewatch": false,
+              "priD": 2,
+              "image": "https://image.tmdb.org/t/p/w500/854ZZxXdeabAs90mrV72NqShJqR.jpg",
+              "seasons": [],
+              "priB": 2,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "American Pie 2",
+              "added": 1788912971382,
+              "id": "mttcleuua1r2p"
+            },
+            {
+              "streams": [
+                "Apple TV+",
+                "Prime Video"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 95,
+              "priD": 2,
+              "image": "https://image.tmdb.org/t/p/w500/5P68by2Thn8wHAziyWGEw2O7hco.jpg",
+              "seasons": [],
+              "priB": 2,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "American Pie",
+              "added": 1788912889983,
+              "id": "mttcjo1rc9o3v"
+            },
+            {
+              "streams": [
+                "Paramount+",
+                "YouTube",
+                "Prime Video",
+                "Apple TV+",
+                "Hulu"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 0,
+              "priD": 2,
+              "priB": 2,
+              "seasons": [
+                {
+                  "episodes": 18,
+                  "watched": 0,
+                  "number": 1
+                },
+                {
+                  "episodes": 22,
+                  "watched": 0,
+                  "number": 2
+                },
+                {
+                  "episodes": 10,
+                  "watched": 0,
+                  "number": 3
+                },
+                {
+                  "episodes": 22,
+                  "watched": 0,
+                  "number": 4
+                },
+                {
+                  "episodes": 22,
+                  "watched": 0,
+                  "number": 5
+                },
+                {
+                  "episodes": 22,
+                  "watched": 0,
+                  "number": 6
+                }
+              ],
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/590/1475093.jpg",
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Ghosts",
+              "added": 1788834186329,
+              "id": "mts1orx5x6004",
+              "tvmazeId": 46573
+            },
+            {
+              "streams": [
+                "Peacock",
+                "YouTube",
+                "Prime Video",
+                "Apple TV+"
+              ],
+              "runtime": 109,
+              "who": "danni",
+              "endDate": "2026-09-10",
+              "priD": 2,
+              "rewatch": false,
+              "priB": 0,
+              "seasons": [],
+              "image": "https://image.tmdb.org/t/p/w500/bRwnj8WEKBCvmfeUNOukJPwB43K.jpg",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 109,
+              "status": "watched",
+              "title": "Obsession",
+              "added": 1788834111230,
+              "id": "mts1n5z28ftow"
+            },
+            {
+              "streams": [
+                "HBO Max",
+                "Hulu",
+                "Prime Video",
+                "Apple TV+",
+                "YouTube"
+              ],
+              "runtime": 105,
+              "who": "danni",
+              "rewatch": false,
+              "priD": 2,
+              "image": "https://image.tmdb.org/t/p/w500/rnIOUhzwJDfgQakx8EjoNyItKgs.jpg",
+              "seasons": [],
+              "priB": 0,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Drama",
+              "added": 1788834010763,
+              "id": "mts1l0gbqzoa0"
+            },
+            {
+              "streams": [
+                "Apple TV+",
+                "Prime Video"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "endDate": "2026-07-20",
+              "priD": 3,
+              "runtime": 103,
+              "priB": 1,
+              "seasons": [],
+              "image": "https://image.tmdb.org/t/p/w500/nSlKzxvXWOeDC9qZiwkhGuTAKkq.jpg",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 103,
+              "status": "watched",
+              "title": "Forbidden Fruits",
+              "added": 1788833905769,
+              "id": "mts1irftv24rj"
+            },
+            {
+              "streams": [
+                "Prime Video"
+              ],
+              "runtime": 0,
+              "who": "brendon",
+              "rewatch": false,
+              "priD": 0,
+              "priB": 3,
+              "seasons": [
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 1
+                },
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 2
+                },
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 3
+                },
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 4
+                }
+              ],
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/618/1545777.jpg",
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Invincible",
+              "tvmazeId": 37196,
+              "id": "mts1hcp73kb4w",
+              "added": 1788833840011
+            },
+            {
+              "streams": [
+                "Prime Video"
+              ],
+              "rewatch": false,
+              "who": "brendon",
+              "runtime": 0,
+              "priD": 0,
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/619/1547768.jpg",
+              "seasons": [
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 1
+                },
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 2
+                },
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 3
+                },
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 4
+                },
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 5
+                }
+              ],
+              "priB": 3,
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Boys",
+              "added": 1788833814974,
+              "id": "mts1gtdqg55cc",
+              "tvmazeId": 15299
+            },
+            {
+              "streams": [
+                "Apple TV+",
+                "Prime Video",
+                "YouTube"
+              ],
+              "runtime": 133,
+              "who": "together",
+              "rewatch": true,
+              "priD": 3,
+              "priB": 3,
+              "seasons": [],
+              "image": "https://image.tmdb.org/t/p/w500/srb1XnrlDZHcdpjBKqUu4qAzxKU.jpg",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "A Knight's Tale",
+              "added": 1788833772962,
+              "id": "mts1fwyqenppb"
+            },
+            {
+              "streams": [
+                "HBO Max",
+                "Hulu",
+                "Apple TV+",
+                "Prime Video"
+              ],
+              "runtime": 99,
+              "who": "together",
+              "rewatch": false,
+              "priD": 2,
+              "priB": 2,
+              "seasons": [],
+              "image": "https://image.tmdb.org/t/p/w500/dtRbVsUb5O12WWO54SRpiMtHKC0.jpg",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Zombieland: Double Tap",
+              "added": 1788833697339,
+              "id": "mts1eam39692x"
+            },
+            {
+              "streams": [
+                "HBO Max",
+                "Apple TV+",
+                "Prime Video"
+              ],
+              "rewatch": true,
+              "who": "together",
+              "runtime": 88,
+              "priD": 2,
+              "priB": 2,
+              "seasons": [],
+              "image": "https://image.tmdb.org/t/p/w500/dUkAmAyPVqubSBNRjRqCgHggZcK.jpg",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Zombieland",
+              "added": 1788833641151,
+              "id": "mts1d39bhmx7q"
+            },
+            {
+              "streams": [
+                "Peacock",
+                "Prime Video",
+                "Apple TV+",
+                "YouTube"
+              ],
+              "rewatch": true,
+              "who": "together",
+              "runtime": 91,
+              "priD": 2,
+              "image": "https://image.tmdb.org/t/p/w500/7nTkHjETdGMYK1phHwDbPsrzbYl.jpg",
+              "seasons": [],
+              "priB": 2,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Monty Python and the Holy Grail",
+              "added": 1788833579786,
+              "id": "mts1brwq9ywjz"
+            },
+            {
+              "streams": [
+                "Apple TV+",
+                "Prime Video",
+                "YouTube"
+              ],
+              "runtime": 95,
+              "who": "together",
+              "rewatch": true,
+              "priD": 2,
+              "image": "https://image.tmdb.org/t/p/w500/fSRdHBtisU0zhks4OjKezI3jnt7.jpg",
+              "seasons": [],
+              "priB": 2,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Grandma's Boy",
+              "added": 1788833478567,
+              "id": "mts19lt31vakh"
+            },
+            {
+              "streams": [
+                "Apple TV+",
+                "Prime Video"
+              ],
+              "runtime": 108,
+              "who": "together",
+              "rewatch": true,
+              "priD": 2,
+              "image": "https://image.tmdb.org/t/p/w500/6stnAm1wSek8ZrislwK4xGTyCnt.jpg",
+              "seasons": [],
+              "priB": 2,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Proposal",
+              "added": 1788833407093,
+              "id": "mts182np9qvsx"
+            },
+            {
+              "streams": [
+                "Hulu",
+                "Disney+",
+                "Apple TV+",
+                "Prime Video"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 119,
+              "priD": 2,
+              "priB": 2,
+              "seasons": [],
+              "image": "https://image.tmdb.org/t/p/w500/xTI42pmsP5EDnvsNJPEDubwWBQO.jpg",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Devil Wears Prada 2",
+              "added": 1788833323899,
+              "id": "mts16agr1moub"
+            },
+            {
+              "streams": [
+                "Hulu",
+                "Disney+",
+                "Apple TV+",
+                "YouTube",
+                "Prime Video"
+              ],
+              "rewatch": true,
+              "who": "together",
+              "runtime": 109,
+              "priD": 2,
+              "image": "https://image.tmdb.org/t/p/w500/8912AsVuS7Sj915apArUFbv6F9L.jpg",
+              "seasons": [],
+              "priB": 2,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Devil Wears Prada",
+              "added": 1788833254511,
+              "id": "mts14sxbvkm0g"
+            },
+            {
+              "streams": [
+                "Apple TV+"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 134,
+              "priD": 2,
+              "priB": 2,
+              "seasons": [],
+              "image": "https://image.tmdb.org/t/p/w500/kz956Y83YtT6vTyg0Q40mzRe2UM.jpg",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Jersey Boys",
+              "added": 1788805667883,
+              "id": "mtrkpiy3rlkwu"
+            },
+            {
+              "streams": [
+                "Hulu",
+                "Prime Video",
+                "Disney+"
+              ],
+              "runtime": 0,
+              "who": "together",
+              "rewatch": false,
+              "priD": 3,
+              "priB": 2,
+              "seasons": [
+                {
+                  "episodes": 3,
+                  "watched": 0,
+                  "number": 1
+                },
+                {
+                  "episodes": 3,
+                  "watched": 0,
+                  "number": 2
+                },
+                {
+                  "episodes": 3,
+                  "watched": 0,
+                  "number": 3
+                },
+                {
+                  "episodes": 3,
+                  "watched": 0,
+                  "number": 4
+                }
+              ],
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/171/428042.jpg",
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Sherlock",
+              "tvmazeId": 335,
+              "id": "mtrkmre5ge599",
+              "added": 1788805538861
+            },
+            {
+              "streams": [
+                "Apple TV+",
+                "Prime Video"
+              ],
+              "runtime": 0,
+              "who": "together",
+              "rewatch": false,
+              "priD": 3,
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/610/1527402.jpg",
+              "seasons": [
+                {
+                  "episodes": 10,
+                  "watched": 0,
+                  "number": 1
+                },
+                {
+                  "episodes": 12,
+                  "watched": 0,
+                  "number": 2
+                },
+                {
+                  "episodes": 12,
+                  "watched": 0,
+                  "number": 3
+                }
+              ],
+              "priB": 2,
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Shrinking",
+              "added": 1788805440982,
+              "id": "mtrkknva2l51i",
+              "tvmazeId": 58323
+            },
+            {
+              "streams": [
+                "Hulu"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 0,
+              "priD": 1,
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/481/1204342.jpg",
+              "seasons": [
+                {
+                  "episodes": 6,
+                  "watched": 0,
+                  "number": 1
+                },
+                {
+                  "episodes": 22,
+                  "watched": 0,
+                  "number": 2
+                },
+                {
+                  "episodes": 25,
+                  "watched": 0,
+                  "number": 3
+                },
+                {
+                  "episodes": 19,
+                  "watched": 0,
+                  "number": 4
+                },
+                {
+                  "episodes": 28,
+                  "watched": 0,
+                  "number": 5
+                },
+                {
+                  "episodes": 26,
+                  "watched": 0,
+                  "number": 6
+                },
+                {
+                  "episodes": 26,
+                  "watched": 0,
+                  "number": 7
+                },
+                {
+                  "episodes": 24,
+                  "watched": 0,
+                  "number": 8
+                },
+                {
+                  "episodes": 27,
+                  "watched": 0,
+                  "number": 9
+                }
+              ],
+              "priB": 1,
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Office",
+              "tvmazeId": 526,
+              "id": "mtrk9wgnm8mqx",
+              "added": 1788804938903
+            },
+            {
+              "streams": [
+                "Hulu"
+              ],
+              "runtime": 0,
+              "who": "together",
+              "rewatch": false,
+              "priD": 3,
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/3/8450.jpg",
+              "seasons": [
+                {
+                  "episodes": 13,
+                  "watched": 0,
+                  "number": 1
+                },
+                {
+                  "episodes": 13,
+                  "watched": 0,
+                  "number": 2
+                }
+              ],
+              "priB": 2,
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Dollhouse",
+              "tvmazeId": 432,
+              "id": "mtrjhddhd5k8x",
+              "added": 1788803607797
+            },
+            {
+              "streams": [
+                "HBO Max",
+                "Hulu",
+                "Apple TV+",
+                "Prime Video",
+                "YouTube"
+              ],
+              "runtime": 0,
+              "who": "together",
+              "rewatch": false,
+              "priD": 2,
+              "priB": 3,
+              "seasons": [
+                {
+                  "episodes": 10,
+                  "watched": 0,
+                  "number": 1
+                },
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 2
+                },
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 3
+                }
+              ],
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/627/1568449.jpg",
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "House of the Dragon",
+              "tvmazeId": 44778,
+              "id": "mtrjdpcy9bgbo",
+              "added": 1788803436706
+            },
+            {
+              "streams": [
+                "Unavailable"
+              ],
+              "runtime": 86,
+              "who": "together",
+              "rewatch": false,
+              "priD": 0,
+              "priB": 0,
+              "seasons": [],
+              "image": "https://image.tmdb.org/t/p/w500/bjYuoz2S8S1AED5QIMvmAi21drc.jpg",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Malibu's Most Wanted",
+              "added": 1788793108339,
+              "id": "mtrd8bxvs2f1c"
+            },
+            {
+              "streams": [
+                "Peacock"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 0,
+              "priD": 0,
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/90/226251.jpg",
+              "seasons": [
+                {
+                  "episodes": 22,
+                  "watched": 0,
+                  "number": 1
+                },
+                {
+                  "episodes": 22,
+                  "watched": 0,
+                  "number": 2
+                },
+                {
+                  "episodes": 22,
+                  "watched": 0,
+                  "number": 3
+                },
+                {
+                  "episodes": 22,
+                  "watched": 0,
+                  "number": 4
+                },
+                {
+                  "episodes": 23,
+                  "watched": 0,
+                  "number": 5
+                },
+                {
+                  "episodes": 23,
+                  "watched": 0,
+                  "number": 6
+                },
+                {
+                  "episodes": 22,
+                  "watched": 0,
+                  "number": 7
+                },
+                {
+                  "episodes": 22,
+                  "watched": 0,
+                  "number": 8
+                }
+              ],
+              "priB": 0,
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Charmed",
+              "tvmazeId": 506,
+              "id": "mtrd6h905n93h",
+              "added": 1788793021908
+            },
+            {
+              "streams": [
+                "Hulu"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 143,
+              "priD": 3,
+              "image": "https://image.tmdb.org/t/p/w500/RO4KoJyoQMQzh9z76d4v4FJMmJ.jpg",
+              "seasons": [],
+              "priB": 0,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "In the Heights",
+              "added": 1788790125121,
+              "id": "mtrbge2pcjqr3"
+            },
+            {
+              "streams": [
+                "Prime Video"
+              ],
+              "runtime": 0,
+              "who": "together",
+              "rewatch": false,
+              "priD": 2,
+              "priB": 2,
+              "seasons": [
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 1
+                },
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 2
+                },
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 3
+                }
+              ],
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/633/1584401.jpg",
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Lord of the Rings: The Rings of Power",
+              "tvmazeId": 33352,
+              "id": "mtr9o0umwnt5t",
+              "added": 1788787121998
+            },
+            {
+              "streams": [
+                "Paramount+"
+              ],
+              "runtime": 99,
+              "who": "together",
+              "rewatch": false,
+              "priD": 2,
+              "priB": 3,
+              "seasons": [],
+              "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTL9jtUUkpIbEFprCNoIa06cj8JCiGp2FEQIaaMSRuuwsWAQRFt",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Aang: The Last Airbender",
+              "added": 1788787043602,
+              "id": "mtr9mccyk78j8"
+            },
+            {
+              "streams": [
+                "Paramount+"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 0,
+              "priD": 1,
+              "priB": 2,
+              "seasons": [
+                {
+                  "episodes": 12,
+                  "watched": 0,
+                  "number": 1
+                },
+                {
+                  "episodes": 14,
+                  "watched": 0,
+                  "number": 2
+                },
+                {
+                  "episodes": 13,
+                  "watched": 0,
+                  "number": 3
+                },
+                {
+                  "episodes": 13,
+                  "watched": 0,
+                  "number": 4
+                }
+              ],
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/260/650489.jpg",
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Legend of Korra",
+              "added": 1788786958762,
+              "id": "mtr9kiwaej614",
+              "tvmazeId": 178
+            },
+            {
+              "streams": [
+                "Prime Video"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 0,
+              "priD": 2,
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/598/1496655.jpg",
+              "seasons": [
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 1
+                }
+              ],
+              "priB": 3,
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Mighty Nein",
+              "tvmazeId": 86172,
+              "id": "mtr9inzat54pp",
+              "added": 1788786872038
+            },
+            {
+              "streams": [
+                "Prime Video"
+              ],
+              "rewatch": true,
+              "who": "together",
+              "runtime": 0,
+              "priD": 2,
+              "priB": 3,
+              "seasons": [
+                {
+                  "episodes": 12,
+                  "watched": 12,
+                  "number": 1,
+                  "watchedEps": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12
+                  ]
+                },
+                {
+                  "episodes": 12,
+                  "watched": 12,
+                  "number": 2,
+                  "watchedEps": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12
+                  ]
+                },
+                {
+                  "episodes": 12,
+                  "watched": 0,
+                  "number": 3
+                },
+                {
+                  "episodes": 12,
+                  "watched": 0,
+                  "number": 4
+                }
+              ],
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/541/1354629.jpg",
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "watching",
+              "title": "The Legend of Vox Machina",
+              "added": 1788786696127,
+              "id": "mtr9ew8vtuvks",
+              "tvmazeId": 44885
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "rewatch": false,
+              "who": "brendon",
+              "runtime": 0,
+              "priD": 0,
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/501/1253498.jpg",
+              "seasons": [
+                {
+                  "episodes": 8,
+                  "watched": 8,
+                  "number": 1,
+                  "watchedEps": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                  ]
+                },
+                {
+                  "episodes": 8,
+                  "watched": 8,
+                  "number": 2,
+                  "watchedEps": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                  ]
+                },
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 3
+                }
+              ],
+              "priB": 2,
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "watching",
+              "title": "The Mandalorian",
+              "tvmazeId": 38963,
+              "id": "mtr9cctbkcel9",
+              "added": 1788786577631
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "runtime": 142,
+              "who": "together",
+              "rewatch": false,
+              "priD": 2,
+              "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTYIVWTZvFCgnGvwfYZp6L-WEEFQzPQwe2-2a8s-O2V8N8E8qf-",
+              "seasons": [],
+              "priB": 2,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Rise of Skywalker",
+              "added": 1788786495428,
+              "id": "mtr9aldwrukzz"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "runtime": 152,
+              "who": "together",
+              "rewatch": false,
+              "priD": 2,
+              "priB": 2,
+              "seasons": [],
+              "image": "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcRlIy4GXVK2e5tkxIixayYlkMGDFGJ-GqZzHxdi6btn2ulMqkAT",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Last Jedi",
+              "added": 1788786425175,
+              "id": "mtr9936f6lia1"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 136,
+              "priD": 2,
+              "image": "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcSobobwiNCS-SLNNTuB-wrJkaO5N0h6PmNKNG4pALt5M7J_iBCL",
+              "seasons": [],
+              "priB": 2,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Force Awakens",
+              "added": 1788786305537,
+              "id": "mtr96iv5jpgkz"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "runtime": 140,
+              "who": "together",
+              "rewatch": false,
+              "priD": 2,
+              "priB": 3,
+              "seasons": [],
+              "image": "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcTZTS3juXvMCxUdbrvxQEmfZpiCZQfNOkqeov_v2CVh4W-qljHb",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Revenge of the Sith",
+              "added": 1788786240318,
+              "id": "mtr954jizh1if"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 142,
+              "priD": 2,
+              "image": "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQDrLeiB4Fv66hgfkgsosdiFoDyAt9rClQWN4GifqTv5UwdJqAV",
+              "seasons": [],
+              "priB": 2,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Attack of the Clones",
+              "added": 1788786173923,
+              "id": "mtr93pb7llq5v"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 136,
+              "priD": 2,
+              "priB": 2,
+              "seasons": [],
+              "image": "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcRp1KRrfKS5cwcCroViA_mQWhxz4yBmfXvqvueWIYXmGy6F0aFP",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Phantom Menace",
+              "added": 1788786116458,
+              "id": "mtr92gyyxade5"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "rewatch": false,
+              "who": "brendon",
+              "runtime": 0,
+              "priD": 0,
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/630/1576859.jpg",
+              "seasons": [
+                {
+                  "episodes": 10,
+                  "watched": 0,
+                  "number": 1
+                },
+                {
+                  "episodes": 9,
+                  "watched": 0,
+                  "number": 2
+                }
+              ],
+              "priB": 3,
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "X-Men '97",
+              "tvmazeId": 58951,
+              "id": "mtr90ez0jbiss",
+              "added": 1788786020556
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "rewatch": false,
+              "who": "brendon",
+              "runtime": 0,
+              "priD": 0,
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/543/1358372.jpg",
+              "seasons": [
+                {
+                  "episodes": 9,
+                  "watched": 0,
+                  "number": 1
+                },
+                {
+                  "episodes": 9,
+                  "watched": 0,
+                  "number": 2
+                },
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 3
+                }
+              ],
+              "priB": 3,
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "What If...?",
+              "tvmazeId": 41750,
+              "id": "mtr8zqh1rmqia",
+              "added": 1788785988805
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "runtime": 0,
+              "who": "together",
+              "rewatch": false,
+              "priD": 2,
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/536/1340567.jpg",
+              "seasons": [
+                {
+                  "episodes": 9,
+                  "watched": 0,
+                  "number": 1
+                }
+              ],
+              "priB": 2,
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Agatha All Along",
+              "tvmazeId": 58948,
+              "id": "mtr8yzio5p18s",
+              "added": 1788785953872
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 0,
+              "priD": 3,
+              "priB": 3,
+              "seasons": [
+                {
+                  "episodes": 6,
+                  "watched": 0,
+                  "number": 1
+                },
+                {
+                  "episodes": 6,
+                  "watched": 0,
+                  "number": 2
+                }
+              ],
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/478/1195717.jpg",
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Loki",
+              "tvmazeId": 41007,
+              "id": "mtr8vx9fqbd21",
+              "added": 1788785810979
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "rewatch": false,
+              "who": "brendon",
+              "runtime": 115,
+              "priD": 0,
+              "priB": 3,
+              "seasons": [],
+              "image": "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcQjCfD6zDQL-x19acm_k6WwjuImyE1uLCTlMmGCrNl7sjj8vq9h",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Fantastic Four: First Steps",
+              "added": 1788785744903,
+              "id": "mtr8ui9zxywxf"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "rewatch": false,
+              "who": "brendon",
+              "runtime": 126,
+              "priD": 0,
+              "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTUWr47D8jZJ_7_U298o1wURdsW6-m43EYG8nWQeEObCLbyztkc",
+              "seasons": [],
+              "priB": 1,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Thunderbolts*",
+              "added": 1788785673649,
+              "id": "mtr8szapg5qfl"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "rewatch": false,
+              "who": "brendon",
+              "runtime": 118,
+              "priD": 0,
+              "priB": 2,
+              "seasons": [],
+              "image": "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcSaEsSWlNa9yiHe17uXb97r7sOLwNcL_S4Fmxxvw4BigMlp1ssU",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Captain America: Brave New World",
+              "added": 1788785623899,
+              "id": "mtr8rwwrma5jo"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "runtime": 105,
+              "who": "brendon",
+              "rewatch": false,
+              "priD": 0,
+              "image": "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcS1fhl_twvBqT9m2mrkElx0jrXXoEaBzuhTmOsGca_i1LJ9dr6z",
+              "seasons": [],
+              "priB": 1,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Marvels",
+              "added": 1788785563241,
+              "id": "mtr8qm3tebiq8"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "rewatch": false,
+              "who": "brendon",
+              "runtime": 149,
+              "priD": 0,
+              "priB": 3,
+              "seasons": [],
+              "image": "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcReck24R45FCO1m_3kQDxl2SZc5DI3V3eM8l1NZlUY12gtK4L7c",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Guardians of the Galaxy Vol. 3",
+              "added": 1788785479325,
+              "id": "mtr8otct494r6"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "runtime": 105,
+              "who": "brendon",
+              "rewatch": false,
+              "priD": 0,
+              "image": "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTFb_n_EedTIqd3fZhsA2EpMUEF710vglYt4RYNd_FXEre3NxMw",
+              "seasons": [],
+              "priB": 2,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Ant-Man and the Wasp: Quantumania",
+              "added": 1788785432145,
+              "id": "mtr8nsy9nh2w0"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "runtime": 161,
+              "who": "brendon",
+              "rewatch": false,
+              "priD": 0,
+              "priB": 3,
+              "seasons": [],
+              "image": "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTUlU_tfTDMzhGezllDN-_vrd_C8i6SSH-tbuIg-tmbt-5jb9R-",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Black Panther: Wakanda Forever",
+              "added": 1788785377528,
+              "id": "mtr8mmt49kegp"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "rewatch": false,
+              "who": "brendon",
+              "runtime": 119,
+              "priD": 0,
+              "priB": 2,
+              "seasons": [],
+              "image": "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcSoLq_3YjHJplLrMwH-jKLn8mAAvKFhqnq0ivwPYd3NEBlqJl1u",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Thor: Love and Thunder",
+              "added": 1788785307373,
+              "id": "mtr8l4odtyrbw"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "rewatch": false,
+              "who": "brendon",
+              "runtime": 126,
+              "priD": 0,
+              "image": "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcRuk_WYIeoPBJf_QsMGWniSB77sIRVTfCo1ztz8FHF0E-3uYOeT",
+              "seasons": [],
+              "priB": 3,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Dr Strang in the Multiverse of Madness",
+              "added": 1788785181724,
+              "id": "mtr8ifq40l4tv"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "rewatch": false,
+              "who": "brendon",
+              "runtime": 156,
+              "priD": 0,
+              "priB": 2,
+              "seasons": [],
+              "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDf90c0JwMNPqf7FQD9NfBvR76MsSCVQko5A0E_XHNp_WaP0iR",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Eternals",
+              "added": 1788785081370,
+              "id": "mtr8gaailfae5"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "rewatch": false,
+              "who": "brendon",
+              "runtime": 132,
+              "priD": 0,
+              "priB": 2,
+              "seasons": [],
+              "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLQhXOo-ZCDjhaYeFotnjkJD9mfixaNJxO-LonJGdUz-6sQovb",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Shag-Chi and the Legend of the Ten Rings",
+              "added": 1788784959938,
+              "id": "mtr8dolew4do0"
+            },
+            {
+              "streams": [
+                "Apple TV+"
+              ],
+              "runtime": 0,
+              "who": "together",
+              "rewatch": false,
+              "priD": 0,
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/634/1585930.jpg",
+              "seasons": [
+                {
+                  "episodes": 10,
+                  "watched": 0,
+                  "number": 1
+                },
+                {
+                  "episodes": 12,
+                  "watched": 0,
+                  "number": 2
+                },
+                {
+                  "episodes": 12,
+                  "watched": 0,
+                  "number": 3
+                },
+                {
+                  "episodes": 10,
+                  "watched": 0,
+                  "number": 4
+                }
+              ],
+              "priB": 0,
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Ted Lasso",
+              "added": 1788744734732,
+              "id": "mtqkfimk49o22",
+              "tvmazeId": 44458
+            },
+            {
+              "endDate": "2026-09-04",
+              "rewatch": false,
+              "who": "together",
+              "streams": [
+                "Prime Video"
+              ],
+              "tags": [],
+              "runtime": 94,
+              "priD": 0,
+              "image": "https://image.tmdb.org/t/p/w500/aRxbYOYHS8T73nzR8hsLousoplR.jpg",
+              "seasons": [],
+              "priB": 0,
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 94,
+              "status": "watched",
+              "title": "Clue",
+              "added": 1788628674113,
+              "id": "mtonbxoh8bz9z"
+            },
+            {
+              "streams": [
+                "DropOut"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 0,
+              "tags": [],
+              "priD": 0,
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/628/1571749.jpg",
+              "seasons": [
+                {
+                  "episodes": 9,
+                  "watched": 9,
+                  "number": 1,
+                  "aired": 9
+                },
+                {
+                  "episodes": 15,
+                  "watched": 15,
+                  "number": 2,
+                  "aired": 15
+                },
+                {
+                  "episodes": 7,
+                  "watched": 4,
+                  "number": 3,
+                  "aired": 15,
+                  "watchedEps": [
+                    1,
+                    2,
+                    3,
+                    5
+                  ]
+                }
+              ],
+              "priB": 0,
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "watching",
+              "title": "Smartypants",
+              "tvmazeId": 76418,
+              "id": "mtolrbr633ia2",
+              "added": 1788626032962
+            },
+            {
+              "streams": [
+                "DropOut"
+              ],
+              "runtime": 0,
+              "who": "together",
+              "rewatch": false,
+              "priD": 0,
+              "tags": [],
+              "priB": 0,
+              "seasons": [
+                {
+                  "episodes": 5,
+                  "watched": 5,
+                  "number": 1
+                },
+                {
+                  "episodes": 6,
+                  "watched": 6,
+                  "number": 2
+                },
+                {
+                  "episodes": 15,
+                  "watched": 15,
+                  "number": 3
+                },
+                {
+                  "episodes": 11,
+                  "watched": 11,
+                  "number": 4
+                },
+                {
+                  "episodes": 14,
+                  "watched": 14,
+                  "number": 5
+                },
+                {
+                  "episodes": 9,
+                  "watched": 9,
+                  "number": 6
+                },
+                {
+                  "episodes": 11,
+                  "watched": 11,
+                  "number": 7
+                },
+                {
+                  "episodes": 8,
+                  "watched": 8,
+                  "number": 8,
+                  "watchedEps": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                  ]
+                }
+              ],
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/625/1564281.jpg",
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "watching",
+              "title": "Game Changer",
+              "added": 1788624740993,
+              "id": "mtokzmv5bieth",
+              "tvmazeId": 50895
+            },
+            {
+              "streams": [
+                "Paramount+",
+                "Netflix"
+              ],
+              "runtime": 0,
+              "who": "danni",
+              "rewatch": false,
+              "priD": 1,
+              "tags": [],
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/554/1387457.jpg",
+              "seasons": [
+                {
+                  "episodes": 10,
+                  "watched": 10,
+                  "number": 1
+                },
+                {
+                  "episodes": 9,
+                  "watched": 9,
+                  "number": 2
+                },
+                {
+                  "episodes": 10,
+                  "watched": 10,
+                  "number": 3
+                },
+                {
+                  "episodes": 0,
+                  "watched": 0,
+                  "number": 4,
+                  "watchedEps": null
+                }
+              ],
+              "priB": 0,
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "watched",
+              "title": "Yellowjackets",
+              "added": 1788620281147,
+              "id": "mtoic1mjsdrf4",
+              "tvmazeId": 36672
+            },
+            {
+              "streams": [],
+              "runtime": 0,
+              "who": "brendon",
+              "rewatch": false,
+              "tags": [
+                "B Only"
+              ],
+              "priD": 0,
+              "priB": 0,
+              "seasons": [
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 1
+                }
+              ],
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/637/1592971.jpg",
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Lanterns",
+              "tvmazeId": 44776,
+              "id": "mtoh00m5avgbi",
+              "added": 1788618040349
+            },
+            {
+              "streams": [],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 108,
+              "tags": [],
+              "priD": 0,
+              "priB": 0,
+              "seasons": [],
+              "image": "https://image.tmdb.org/t/p/w500/13ZcJzSGEqVgDSqsS9U5EkQwPkV.jpg",
+              "rewatches": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Ready or Not: Here I Come",
+              "added": 1788617548159,
+              "id": "mtogpgu7zmhmm"
+            },
+            {
+              "streams": [],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 0,
+              "priD": 0,
+              "tags": [],
+              "priB": 0,
+              "seasons": [
+                {
+                  "episodes": 12,
+                  "watched": 12,
+                  "number": 1
+                },
+                {
+                  "episodes": 22,
+                  "watched": 22,
+                  "number": 2
+                },
+                {
+                  "episodes": 22,
+                  "watched": 22,
+                  "number": 3
+                },
+                {
+                  "episodes": 22,
+                  "watched": 22,
+                  "number": 4
+                },
+                {
+                  "episodes": 22,
+                  "watched": 22,
+                  "number": 5
+                },
+                {
+                  "episodes": 22,
+                  "watched": 22,
+                  "number": 6
+                },
+                {
+                  "episodes": 22,
+                  "watched": 22,
+                  "number": 7
+                }
+              ],
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/2/7490.jpg",
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "watched",
+              "title": "Buffy the Vampire Slayer",
+              "added": 1788615928777,
+              "id": "mtofqrbdlptvx",
+              "tvmazeId": 427
+            },
+            {
+              "streams": [
+                "Netflix"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 0,
+              "tags": [],
+              "priD": 0,
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/633/1582667.jpg",
+              "seasons": [
+                {
+                  "episodes": 8,
+                  "watched": 0,
+                  "number": 1
+                },
+                {
+                  "episodes": 7,
+                  "watched": 0,
+                  "number": 2
+                }
+              ],
+              "priB": 0,
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Avatar: The Last Airbender",
+              "tvmazeId": 38753,
+              "id": "mtofq149bgoj9",
+              "added": 1788615894825
+            },
+            {
+              "streams": [
+                "Netflix"
+              ],
+              "runtime": 0,
+              "who": "family",
+              "rewatch": false,
+              "tags": [],
+              "priD": 0,
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/79/199224.jpg",
+              "seasons": [
+                {
+                  "episodes": 20,
+                  "watched": 20,
+                  "number": 1
+                },
+                {
+                  "episodes": 20,
+                  "watched": 20,
+                  "number": 2
+                },
+                {
+                  "episodes": 21,
+                  "watched": 21,
+                  "number": 3
+                }
+              ],
+              "priB": 0,
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "watched",
+              "title": "Avatar: The Last Airbender",
+              "tvmazeId": 555,
+              "id": "mtofpnhti2pcq",
+              "added": 1788615877169
+            },
+            {
+              "streams": [
+                "Peacock"
+              ],
+              "rewatch": true,
+              "who": "together",
+              "runtime": 0,
+              "priD": 2,
+              "tags": [
+                "Rewatch"
+              ],
+              "priB": 0,
+              "seasons": [
+                {
+                  "episodes": 13,
+                  "watched": 0,
+                  "number": 1
+                },
+                {
+                  "episodes": 13,
+                  "watched": 0,
+                  "number": 2
+                },
+                {
+                  "episodes": 13,
+                  "watched": 0,
+                  "number": 3
+                },
+                {
+                  "episodes": 13,
+                  "watched": 0,
+                  "number": 4
+                }
+              ],
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/395/989291.jpg",
+              "rewatches": [],
+              "type": "series",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Good Place",
+              "added": 1788615770931,
+              "id": "mtofndirh2vo4",
+              "tvmazeId": 2790
+            },
+            {
+              "streams": [
+                "Hulu"
+              ],
+              "runtime": 0,
+              "who": "together",
+              "rewatch": false,
+              "priD": 3,
+              "tags": [],
+              "image": "https://static.tvmaze.com/uploads/images/original_untouched/3/7507.jpg",
+              "seasons": [
+                {
+                  "episodes": 22,
+                  "watched": 22,
+                  "number": 1
+                },
+                {
+                  "episodes": 22,
+                  "watched": 22,
+                  "number": 2
+                },
+                {
+                  "episodes": 22,
+                  "watched": 22,
+                  "number": 3
+                },
+                {
+                  "episodes": 22,
+                  "watched": 22,
+                  "number": 4
+                },
+                {
+                  "episodes": 22,
+                  "watched": 20,
+                  "number": 5,
+                  "watchedEps": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12,
+                    13,
+                    14,
+                    15,
+                    16,
+                    17,
+                    18,
+                    19,
+                    20
+                  ]
+                }
+              ],
+              "priB": 3,
+              "rewatches": [],
+              "type": "series",
+              "status": "watching",
+              "title": "Angel",
+              "tvmazeId": 428,
+              "id": "mtoeqtlcbq0cd",
+              "added": 1788614252112
+            }
+          ],
+          "updated": 1789145908330,
+          "subs": [
+            "Netflix",
+            "HBO Max",
+            "Hulu",
+            "Disney+",
+            "Prime Video",
+            "Peacock",
+            "Paramount+",
+            "DropOut",
+            "YouTube"
+          ]
+        },
+        "subcollections": {}
+      },
+      "spooky-list": {
+        "exists": true,
+        "data": {
+          "items": [
+            {
+              "streams": [
+                "Peacock"
+              ],
+              "rewatch": false,
+              "tradition": false,
+              "runtime": 109,
+              "priD": 0,
+              "who": "danni",
+              "endDate": "2026-09-10",
+              "priB": 0,
+              "seasons": [],
+              "years": [
+                2026
+              ],
+              "rewatches": [],
+              "tmdbId": 1339713,
+              "type": "movie",
+              "watchedMin": 109,
+              "image": "https://image.tmdb.org/t/p/w500/bRwnj8WEKBCvmfeUNOukJPwB43K.jpg",
+              "status": "watched",
+              "title": "Obsession",
+              "added": 1789086128779,
+              "id": "mtw7oryjwga7h"
+            },
+            {
+              "streams": [
+                "Paramount+"
+              ],
+              "rewatch": false,
+              "tradition": false,
+              "who": "together",
+              "priD": 0,
+              "runtime": 95,
+              "priB": 0,
+              "seasons": [],
+              "image": "https://image.tmdb.org/t/p/w500/uGGpnWHOmWTARVN9wbC1nPxNgps.jpg",
+              "rewatches": [],
+              "tmdbId": 4488,
+              "type": "movie",
+              "watchedMin": 0,
+              "years": [],
+              "status": "want",
+              "title": "Friday the 13th",
+              "added": 1789056977555,
+              "id": "mtvqbyqbqk65r"
+            },
+            {
+              "streams": [
+                "Unavailable"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "tradition": false,
+              "priD": 0,
+              "runtime": 91,
+              "image": "https://image.tmdb.org/t/p/w500/tI0RQFYevX97NSdDSYmn0Z19i3r.jpg",
+              "years": [],
+              "seasons": [],
+              "rewatches": [],
+              "tmdbId": 377,
+              "type": "movie",
+              "watchedMin": 0,
+              "priB": 0,
+              "status": "want",
+              "title": "A Nightmare on Elm Street",
+              "added": 1789056904841,
+              "id": "mtvqaemh5ay55"
+            },
+            {
+              "streams": [
+                "YouTube"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "tradition": false,
+              "priD": 2,
+              "runtime": 127,
+              "priB": 0,
+              "seasons": [],
+              "image": "https://m.media-amazon.com/images/M/MV5BZmM1MTlhZWUtODM1Yy00YTUxLWEyZjktMzhiYjE5YmZlOTAyXkEyXkFqcGc@._V1_.jpg",
+              "rewatches": [],
+              "years": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Headless: A Sleepy Hollow Story | The Complete Cut",
+              "added": 1789056671306,
+              "id": "mtvq5efegvpjv"
+            },
+            {
+              "streams": [
+                "HBO Max"
+              ],
+              "rewatch": false,
+              "tradition": false,
+              "who": "together",
+              "priD": 2,
+              "runtime": 105,
+              "image": "https://image.tmdb.org/t/p/w500/kKgQzkUCnQmeTPkyIwHly2t6ZFI.jpg",
+              "seasons": [],
+              "years": [],
+              "rewatches": [],
+              "priB": 0,
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Beetlejuice Beetlejuice",
+              "added": 1789055302528,
+              "id": "mtvpc29s0hmhy"
+            },
+            {
+              "streams": [
+                "HBO Max"
+              ],
+              "runtime": 92,
+              "tradition": false,
+              "rewatch": true,
+              "priD": 1,
+              "who": "together",
+              "image": "https://image.tmdb.org/t/p/w500/nnl6OWkyPpuMm595hmAxNW3rZFn.jpg",
+              "years": [],
+              "seasons": [],
+              "rewatches": [],
+              "priB": 0,
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Beetlejuice",
+              "added": 1789055267086,
+              "id": "mtvpbaxawcwjk"
+            },
+            {
+              "streams": [
+                "Unavailable"
+              ],
+              "runtime": 91,
+              "who": "together",
+              "tradition": false,
+              "priD": 0,
+              "rewatch": false,
+              "image": "https://image.tmdb.org/t/p/w500/6yrrddjIjx0ElCRZp5pTZeqrj3k.jpg",
+              "years": [],
+              "priB": 0,
+              "rewatches": [],
+              "seasons": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Thir13en Ghosts",
+              "added": 1788793254909,
+              "id": "mtrdbh194mp6f"
+            },
+            {
+              "streams": [
+                "HBO Max"
+              ],
+              "runtime": 104,
+              "tradition": false,
+              "who": "danni",
+              "priD": 2,
+              "rewatch": true,
+              "image": "https://image.tmdb.org/t/p/w500/AwmToSgf2IL3aHv0QRVsR5KvChv.jpg",
+              "years": [],
+              "priB": 0,
+              "rewatches": [],
+              "seasons": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Practical Magic",
+              "added": 1788744504177,
+              "id": "mtqkakq9mwv1u"
+            },
+            {
+              "endDate": "2026-09-07",
+              "runtime": 94,
+              "who": "together",
+              "tradition": false,
+              "priD": 2,
+              "rewatch": true,
+              "streams": [
+                "Hulu"
+              ],
+              "priB": 1,
+              "seasons": [],
+              "years": [
+                2026
+              ],
+              "rewatches": [],
+              "image": "https://image.tmdb.org/t/p/w500/hSuTjDmqRdy7Dii8ymnF2WILTeP.jpg",
+              "type": "movie",
+              "watchedMin": 94,
+              "status": "watched",
+              "title": "Bodies Bodies Bodies",
+              "added": 1788649605181,
+              "id": "mtozsk71r5knd"
+            },
+            {
+              "streams": [
+                "Hulu"
+              ],
+              "runtime": 92,
+              "tradition": false,
+              "who": "together",
+              "priD": 0,
+              "rewatch": true,
+              "priB": 0,
+              "years": [],
+              "seasons": [],
+              "rewatches": [],
+              "image": "https://image.tmdb.org/t/p/w500/gAEUXC37vl1SnM7PXsHTF23I2vq.jpg",
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Tarot",
+              "added": 1788649562140,
+              "id": "mtozrmzg0and2"
+            },
+            {
+              "streams": [
+                "Unavailable"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "runtime": 90,
+              "priD": 0,
+              "tradition": false,
+              "priB": 0,
+              "seasons": [],
+              "years": [],
+              "rewatches": [],
+              "image": "https://image.tmdb.org/t/p/w500/4D246dpe7yy2GvHI2IbpeqkUXry.jpg",
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Amityville Horror",
+              "added": 1788649486516,
+              "id": "mtozq0msow1pb"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "runtime": 104,
+              "tradition": true,
+              "who": "family",
+              "priD": 3,
+              "rewatch": false,
+              "image": "https://image.tmdb.org/t/p/w500/7ze7YNmUaX81ufctGqt0AgHxRtL.jpg",
+              "years": [],
+              "priB": 3,
+              "rewatches": [],
+              "seasons": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Hocus Pocus 2",
+              "added": 1788647165964,
+              "id": "mtoyca309tsve"
+            },
+            {
+              "streams": [
+                "Disney+"
+              ],
+              "runtime": 96,
+              "tradition": true,
+              "rewatch": false,
+              "priD": 3,
+              "who": "family",
+              "priB": 2,
+              "years": [],
+              "seasons": [],
+              "rewatches": [],
+              "image": "https://image.tmdb.org/t/p/w500/by4D4Q9NlUjFSEUA1yrxq6ksXmk.jpg",
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Hocus Pocus",
+              "added": 1788647126907,
+              "id": "mtoybfy3k5obo"
+            },
+            {
+              "streams": [
+                "HBO Max"
+              ],
+              "rewatch": false,
+              "tradition": true,
+              "who": "together",
+              "priD": 0,
+              "runtime": 134,
+              "priB": 0,
+              "seasons": [],
+              "image": "https://image.tmdb.org/t/p/w500/zEqyD0SBt6HL7W9JQoWwtd5Do1T.jpg",
+              "rewatches": [],
+              "years": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Conjuring 2",
+              "added": 1788647006775,
+              "id": "mtoy8v93affr7"
+            },
+            {
+              "streams": [
+                "HBO Max"
+              ],
+              "runtime": 112,
+              "tradition": true,
+              "rewatch": false,
+              "priD": 0,
+              "who": "together",
+              "image": "https://image.tmdb.org/t/p/w500/wVYREutTvI2tmxr6ujrHT704wGF.jpg",
+              "years": [],
+              "priB": 0,
+              "rewatches": [],
+              "seasons": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Conjuring",
+              "added": 1788646953161,
+              "id": "mtoy7pvt36hmr"
+            },
+            {
+              "streams": [
+                "HBO Max"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "tradition": true,
+              "priD": 0,
+              "runtime": 95,
+              "image": "https://image.tmdb.org/t/p/w500/zZZe5wn0udlhMtdlDjN4NB72R6e.jpg",
+              "seasons": [],
+              "years": [],
+              "rewatches": [],
+              "priB": 0,
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "The Cabin in the Woods",
+              "added": 1788646742898,
+              "id": "mtoy37n6den1l"
+            },
+            {
+              "endDate": "2026-09-07",
+              "runtime": 120,
+              "tradition": true,
+              "who": "together",
+              "priD": 0,
+              "streams": [
+                "Paramount+"
+              ],
+              "rewatch": false,
+              "image": "https://image.tmdb.org/t/p/w500/dORlVasiaDkJXTqt9bdH7nFNs6C.jpg",
+              "years": [
+                2026
+              ],
+              "seasons": [],
+              "rewatches": [],
+              "priB": 0,
+              "type": "movie",
+              "watchedMin": 120,
+              "status": "watched",
+              "title": "Scream 2",
+              "added": 1788646489631,
+              "id": "mtoxxs7zm2kos"
+            },
+            {
+              "streams": [
+                "Paramount+"
+              ],
+              "rewatch": false,
+              "tradition": true,
+              "who": "together",
+              "priD": 0,
+              "endDate": "2026-09-07",
+              "runtime": 112,
+              "priB": 0,
+              "seasons": [],
+              "image": "https://image.tmdb.org/t/p/w500/lr9ZIrmuwVmZhpZuTCW8D9g0ZJe.jpg",
+              "rewatches": [],
+              "years": [
+                2026
+              ],
+              "type": "movie",
+              "watchedMin": 112,
+              "status": "watched",
+              "title": "Scream",
+              "added": 1788646393370,
+              "id": "mtoxvpy2l544z"
+            },
+            {
+              "streams": [
+                "Hulu"
+              ],
+              "rewatch": false,
+              "tradition": false,
+              "runtime": 108,
+              "priD": 0,
+              "who": "together",
+              "priB": 0,
+              "seasons": [],
+              "image": "https://image.tmdb.org/t/p/w500/13ZcJzSGEqVgDSqsS9U5EkQwPkV.jpg",
+              "rewatches": [],
+              "years": [],
+              "type": "movie",
+              "watchedMin": 0,
+              "status": "want",
+              "title": "Ready or Not: Here I Come",
+              "added": 1788646312276,
+              "id": "mtoxtzdgau5zu"
+            },
+            {
+              "endDate": "2026-09-04",
+              "runtime": 96,
+              "tradition": false,
+              "rewatch": false,
+              "priD": 0,
+              "streams": [
+                "Hulu"
+              ],
+              "who": "together",
+              "priB": 0,
+              "years": [
+                2026
+              ],
+              "image": "https://image.tmdb.org/t/p/w500/oJD9KQFoObZmxAS1je56SIFVNJt.jpg",
+              "rewatches": [],
+              "seasons": [],
+              "type": "movie",
+              "watchedMin": 96,
+              "status": "watched",
+              "title": "Ready or Not",
+              "added": 1788646288124,
+              "id": "mtoxtgqk9jj2x"
+            },
+            {
+              "streams": [
+                "Paramount+"
+              ],
+              "rewatch": false,
+              "who": "together",
+              "tradition": false,
+              "priD": 0,
+              "endDate": "2026-09-04",
+              "runtime": 94,
+              "image": "https://image.tmdb.org/t/p/w500/aRxbYOYHS8T73nzR8hsLousoplR.jpg",
+              "years": [
+                2026
+              ],
+              "seasons": [],
+              "rewatches": [],
+              "priB": 0,
+              "type": "movie",
+              "watchedMin": 94,
+              "status": "watched",
+              "title": "Clue",
+              "added": 1788646222290,
+              "id": "mtoxs1xu8mzsz"
+            }
+          ],
+          "updated": 1789096530118,
+          "subs": [
+            "Netflix",
+            "HBO Max",
+            "Hulu",
+            "Disney+",
+            "Apple TV+",
+            "Prime Video",
+            "Peacock",
+            "Paramount+",
+            "DropOut",
+            "YouTube"
+          ]
+        },
+        "subcollections": {}
+      }
+    },
+    "writingroom": {
+      "book-7pjwgihni8": {
+        "exists": true,
+        "data": {
+          "start": "",
+          "updated": "2026-09-11T17:04:22.592Z",
+          "order": 0,
+          "name": "History",
+          "id": "7pjwgihni8",
+          "type": "book"
+        },
+        "subcollections": {}
+      },
+      "book-9jbk69hni9": {
+        "exists": true,
+        "data": {
+          "start": "",
+          "updated": "2026-09-11T17:04:22.593Z",
+          "order": 3,
+          "name": "Book 2",
+          "id": "9jbk69hni9",
+          "type": "book"
+        },
+        "subcollections": {}
+      },
+      "book-c5wz86hni9": {
+        "exists": true,
+        "data": {
+          "start": "2023-01-01",
+          "updated": "2026-09-11T17:04:22.593Z",
+          "name": "Prequel",
+          "order": 1,
+          "id": "c5wz86hni9",
+          "type": "book"
+        },
+        "subcollections": {}
+      },
+      "book-w7ciq3hni9": {
+        "exists": true,
+        "data": {
+          "start": "2026-09-06",
+          "updated": "2026-09-11T17:04:22.593Z",
+          "order": 2,
+          "name": "Book 1",
+          "id": "w7ciq3hni9",
+          "type": "book"
+        },
+        "subcollections": {}
+      },
+      "cast-0ee364uiua": {
+        "exists": true,
+        "data": {
+          "type": "cast",
+          "facts": [],
+          "updated": "2026-09-11T02:23:45.467Z",
+          "born": {
+            "date": "2010-05-23",
+            "label": "16"
+          },
+          "portrait": "https://i.pinimg.com/736x/94/97/dd/9497dd77c024462c6614ec6c3ec9cbc2.jpg",
+          "sheet": [],
+          "role": "Main Character",
+          "playedBy": "Sammi Hanratty",
+          "crop": "",
+          "color": "#C85D87",
+          "name": "Ophelia Montgomery",
+          "aka": [
+            "Phey",
+            "Pheybie Girl"
+          ],
+          "id": "0ee364uiua",
+          "created": "2026-09-10"
+        },
+        "subcollections": {}
+      },
+      "cast-kythy04hkb": {
+        "exists": true,
+        "data": {
+          "id": "kythy04hkb",
+          "facts": [],
+          "updated": "2026-09-11T14:57:50.459Z",
+          "born": {
+            "date": "2006-01-23",
+            "label": ""
+          },
+          "portrait": "https://i.pinimg.com/1200x/dd/50/c3/dd50c3fdbb7a82722759125780d4df18.jpg",
+          "sheet": [],
+          "role": "Main Character",
+          "crop": "",
+          "playedBy": "Jacob Elordi",
+          "color": "#B23A3A",
+          "aka": [
+            "Ambrose"
+          ],
+          "name": "Ambrose Whitmore",
+          "type": "cast",
+          "created": "2026-09-11"
+        },
+        "subcollections": {}
+      },
+      "cast-nmovyx4e1f": {
+        "exists": true,
+        "data": {
+          "id": "nmovyx4e1f",
+          "facts": [],
+          "updated": "2026-09-11T14:14:49.294Z",
+          "born": {
+            "date": "2010-03-17",
+            "label": ""
+          },
+          "portrait": "https://i.pinimg.com/736x/b2/b7/ad/b2b7adbf84e652e679db0508f0d14832.jpg",
+          "sheet": [
+            {
+              "label": "Wants",
+              "text": "Phey"
+            }
+          ],
+          "role": "Main Character",
+          "crop": "",
+          "playedBy": "Ian Ousley",
+          "color": "#6D8259",
+          "aka": [
+            "Ez",
+            "Ezra"
+          ],
+          "name": "Ezra Everhart",
+          "type": "cast",
+          "created": "2026-09-10"
+        },
+        "subcollections": {}
+      },
+      "rel-q3lzxjy7j6": {
+        "exists": true,
+        "data": {
+          "type": "rel",
+          "kind": "crush",
+          "updated": "2026-09-11T15:53:16.194Z",
+          "note": "",
+          "b": "0ee364uiua",
+          "a": "nmovyx4e1f",
+          "from": "",
+          "id": "q3lzxjy7j6",
+          "to": ""
+        },
+        "subcollections": {}
+      },
+      "rel-yg9e6w2ffu": {
+        "exists": true,
+        "data": {
+          "to": "2024-07-14",
+          "kind": "bestfriend",
+          "updated": "2026-09-11T15:28:33.450Z",
+          "note": "",
+          "a": "nmovyx4e1f",
+          "b": "0ee364uiua",
+          "from": "2010-05-23",
+          "id": "yg9e6w2ffu",
+          "type": "rel"
+        },
+        "subcollections": {}
+      },
+      "scene-4wwsfyrk91": {
+        "exists": true,
+        "data": {
+          "id": "4wwsfyrk91",
+          "state": "finished",
+          "updated": "2026-09-11T03:03:23.042Z",
+          "cast": [
+            "nmovyx4e1f",
+            "0ee364uiua"
+          ],
+          "left": "",
+          "summary": "",
+          "title": "My First Kiss Went a Little Like This",
+          "posts": [
+            {
+              "id": "xsmc8tsd07",
+              "edited": "2026-09-10",
+              "who": "nmovyx4e1f",
+              "md": " The sounds of laughter and rowdy pent up angsty energy filled the air in an increasing volume. [[Ezra]] hovered outside the school gym waiting for [[Raven]] & [[Phey | Ophelia]] to finish getting changed and emerge from the girls’ locker room. It was the end of the school day so there was a lot of hustle and bustle going on outside the middle school. He kept his gaze on the ground and kicked around the dirt at his feet, trying not to draw attention to himself as his peers passed him by; however, this trick didn’t work when you’re being specifically targeted. \n\n“What’s up, homo? You out here day dreaming about being a girl?” The voice was undeniably his older brother, [[JC]]. The group of young teenage boys chuckled at the insult, and one of them muttered a gay slur under his breath.\n\nThe younger brother shakes his head and rolls his eyes, “Leave me alone, JC, you know I’m just waiting for my friends.”\n\n“Your female friends,” Archer, his brother’s second in command, notes with a shrug, “Funny how you don’t have any guy friends… that’s pretty gay, dude.”\n\nEzra sighs and shakes his head, “At least girls will talk to me.”\n\n“Yeah, but you’ve never kissed one, have you?” JC taunts.\n\nThe color that rushes into Ezra’s cheeks only riles up the older group of boys even more, so he drops his gaze to the ground again. They’re still teasing him and making kissy faces at him as Raven and Phey come out from the locker rooms",
+              "written": "2026-09-10",
+              "created": "2026-09-11T02:16:54.487Z"
+            },
+            {
+              "id": "aygt8mtja9",
+              "who": "0ee364uiua",
+              "md": "“What’s all the noise about?” Phey asks, immediately taking her spot by her best friend’s side, and Raven flanking him on the other.\n\n The energy of the older boys immediately shifts; for most of them, their crush had just entered the chat. There was an immediate cacophony of mumbled excuses and denial, so Phey turned to the victim for his version of events.\n\nAt first, Ezra purses his lips, not wanting to embarrass himself in front of more people, especially her. It’s mere seconds before he gives a defiant huff to signal his surrender. “They were calling me gay and saying I’ve never kissed a girl and stuff.”\n\nPhey nods as she processes the information and waits to make sure he’s finished before responding. A smirk dances across her lips as she says, “Oh, is that all?” She pauses a moment, having a flair for the dramatic, before grabbing Ezra by the collar and pulling him into a kiss. She pulls away from the quick peck with the proud smirk back on her lips; he remains utterly stunned. \n\nThen she turns back to the gaggle of older boys with a satisfied grin and says, “There. Now he has kissed a girl. Can all of you say that?”\n\nThe cacophony of mumbled excuses and denials chimes in again.\n\nThe younger trio begins to walk away, but Phey stops and turns back to the boys she just put in their place. “Oh, and by the way, using gay as an insult is immature and makes you sound dumb. There’s nothing wrong with being queer but plenty wrong with being hateful.” Then she shrugs and turns back to her friends as they walk away with their heads held high.\n\nEzra can’t seem to stop smiling the entire walk home.",
+              "written": "2026-09-10",
+              "created": "2026-09-11T02:17:49.281Z"
+            }
+          ],
+          "when": {
+            "date": "2023-05-15",
+            "time": "15:00",
+            "label": ""
+          },
+          "thread": null,
+          "where": "",
+          "type": "scene",
+          "created": "2026-09-10"
+        },
+        "subcollections": {}
+      },
+      "scene-ggad0fd501": {
+        "exists": true,
+        "data": {
+          "state": "writing",
+          "where": "",
+          "cast": [
+            "nmovyx4e1f",
+            "0ee364uiua"
+          ],
+          "updated": "2026-09-11T15:50:12.134Z",
+          "type": "scene",
+          "summary": "",
+          "title": "The First Fracture",
+          "posts": [
+            {
+              "written": "2026-09-11",
+              "who": "0ee364uiua",
+              "edited": "2026-09-11",
+              "md": "It was the second week of **June 2024** when the first true heatwave of the summer struck. It was the sticky kind of humid heat that drove everyone indoors to their central air conditioned homes - for those who were lucky enough to have it.\n\nAs one of the heirs of the [[founding families]], the [[Everharts]] had an expansive estate, which included a temperature and weather controlled [[guest house]] on the far side of the pool from the perspective of the main house. Ezra had discovered the value of this separate building a few years prior while looking to escape from [[JC]] & [[Archer]]’s harassment; he didn’t believe for a second that they ‘just wanted to see if he still fit in the suitcase’. At any rate, he was still technically home, and his brother and friends had access to all of the higher quality televisions and consoles and food, so they had very little reason to bother coming out back - even just to torture him.\n\nThat was how it became the regular hang out spot for the trio that affectionately referred to themselves as ‘[[Phezrave]]’ - a portmanteau of the members: [[Phey | Ophelia “Phey” Montgomery]], [[Ez | Ezra Cody Everhart]] and [[Raven | Raven Jane Hawthorne]]. All three of them were from founding families, which meant they had grown up together - attending family and town events together, growing up in the same neighborhood, and so on. They were the youngest children of the most recent generation, so they were sort of best friends by default, but they did all get along and were fiercely protective of one another.\n\nThe three recent middle school graduates sat around the coffee table playing a card game where they could only speak in one syllable words when the outside door opened. Three different voices came spilling in and each of the trio had a different reaction. Ezra froze - three voices meant it wasn’t just a parent grabbing something or a staff member coming to clean. Besides, he recognized the voices and knew it was best to fear them and stay vigilant. Raven was a frustrated level of annoyed; not quite rolling her eyes, a bit more perturbed by the disturbance than that. Phey was a different kind of annoyed - less frustrated by their existence and more upset that the game was interrupted. She’s the first to speak up and say, “What are you guys doing here?”\n\n[[JC | Joshua Collin Everhart]] - more infamously known as JC - had an amused smirk dance across his lips. “Um, last time I checked, I was the one who actually lived here,” he pointed out. This got a chuckle out of his cronies - Archer C. Hawthorne and [[Paisley Lockwood]] - a sort of delinquent trio of their own. \n\nThis time Phey actually rolls her eyes and says, “You know what I mean… We usually hang out here so that you guys can have the whole house to yourself,” she reminds them as if it were some sort of established treaty between rival sibling gangs.\n\n“Well, now we want to hang out here,” Archer shrugs, rummaging through the snacks the Phezrave trio had accumulated over several hang out sessions. “It has a certain… No snooping parents vibe that we want to take advantage of.” This notion seems to really excite Paisley who had never looked more like a wide eyed bimbo than she did in that moment.\n\n“We could just move inside,” Ezra mutters, barely enough for his friends to hear.\n\nRaven scowled as she replied, “But we shouldn’t have to.”\n\n“Alright, alright,” JC says, holding his hands up as if in surrender, “Look, we got our hands on a bottle… And we were hoping to drink it out here, outside of mom and dad’s general vicinity. But… Perhaps a deal can be made.” His devious smile deepens as he continues, “If one of you take a shot of this vodka, we’ll go back inside the main house.”\n\nRaven scoffs and says, “It’s probably toilet water or something gross.” After all, she had lived with Archer her entire life, she knew what he was capable of - especially if Ezra was their victim.\n\nThe older Everhart smirked at the accusation, as he twisted the cap off the bottle and took a noticeable swig himself, wincing lightly at the burn. “See? It’s not,” he explains. Then he pours some into a shot glass and hands it to Archer who doesn’t even blink before taking the shot. Then he pours another shot into the glass and puts it on the coffee table.\n\n“And if one of us drinks that, you’ll leave us alone and go back inside? The main house, I mean,” Phey replies.\n\n“We swearrr it,” Paisley says with a slur that sounds like she’d already had a few drinks herself.\n\nAs Phey looked around at the three older teens, she couldn’t help but compare them to the three hyenas from the animated Lion King, eager to pounce on those smaller and more innocent. Phey lets out a sharp breath, always willing to take one for the team - especially team Phezrave - and grabs the glass. Her nose wrinkles at the smell as she brings it closer and she hesitates.\n\n“It’s easier if you do it fast,” Paisley coaches, seeming a bit impressed that she’d even picked up the shot.\n\nRaven was less impressed. “Ophelia, don’t… This is literally peer pressure.”\n\n“Oh, relax,” Phey says, she’d seen her older brother Grant take shots plenty of times before, it couldn’t be that terrible. With that, she lets out another sharp breath and takes the shot - quickly as had been suggested. Her nose wrinkles and she winces hard at the burning sensation as the room erupts into a range of reactions:\n\nEzra isn’t sure if he’s impressed, grateful or disappointed and somehow his expression conveys all three.\nRaven is folding her arms across her chest, sneering in disgust.\nPaisley is clapping and cheering for Phey, definitely finding the most fun in the situation.\nArcher is shocked but impressed that Miss Goody Two Shoes with her soap box speeches was actually willing to drink alcohol.\n\nJC’s reaction was a bit darker; he’s impressed, of course, but also delightfully intrigued. Was this the beginning of Ophelia’s reckless and rebellious phase? If so, what could he do to fan that flame to burn brighter.\n\nPhey, on the other hand, felt proud of herself for sticking up for her friends, but not great about taking the shot - especially because she didn’t hate it. Still, she did what JC asked and therefore the agreement had to be honored. “Alright, back to the main house,” Phey reminds them. \n\nThe older teens grumble but concede and make their way back out. JC can be heard saying, “I didn’t think they’d do it…”\n\nEzra’s frozen state seems to melt and he shakes his head saying, “You didn’t have to do that.”\n\n“That was stupid,” Raven adds.\n\nPhey shrugs and says, “Hey, it kept us and our sanctuary safe. I’m not mad about it.”",
+              "id": "ybohozifzc",
+              "created": "2026-09-11T15:41:00.648Z"
+            }
+          ],
+          "when": {
+            "date": "2026-07-14",
+            "time": "",
+            "label": ""
+          },
+          "thread": null,
+          "left": "",
+          "id": "ggad0fd501",
+          "created": "2026-09-11"
+        },
+        "subcollections": {}
+      }
+    }
+  }
+}
