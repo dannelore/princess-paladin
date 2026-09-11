@@ -163,7 +163,7 @@ function postHTML(p){
   if(editingPost === p.id) return editHTML(p);
 
   return `<article class="rp-post${narr ? " narration" : ""}" id="p-${esc(p.id)}" style="--who:${color}">
-    ${narr ? "" : RP.mini(who)}
+    ${narr ? "" : RP.mini(who, { on: sc.when && sc.when.date })}
     <div class="rp-post-body">
       <div class="rp-byline">
         ${narr ? "" : `<span class="who">${esc(who ? who.name : "Unknown")}</span>`}
@@ -231,10 +231,12 @@ function renderRail(){
   $("people").innerHTML = people.length
     ? people.map(p => {
         const n = sc.posts.filter(x => x.who === p.id).length;
+        const age = RP.ageText(RP.ageOn(p.born && p.born.date, sc.when && sc.when.date));
+        const note = [age, p.role].filter(Boolean).join(" \u00b7 ");
         return `<a class="rp-person" href="${esc(RP.castUrl(p.id))}">
           ${RP.face(p, 34)}
           <span><span class="rp-person-name">${esc(p.name)}</span>
-          ${p.role ? `<span class="rp-person-note">${esc(p.role)}</span>` : ""}</span>
+          ${note ? `<span class="rp-person-note">${esc(note)}</span>` : ""}</span>
           <span class="n">${n || ""}</span>
         </a>`;
       }).join("")

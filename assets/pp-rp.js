@@ -39,6 +39,8 @@ window.RP = (function(){
 
   var COLLECTION = "writingroom";
   var CACHE_KEY  = "writingroom-v1";
+  var OUTBOX_KEY = "writingroom-v1-outbox";   /* changes Firestore hasn't confirmed */
+  var SYNCED_KEY = "writingroom-v1-synced";   /* set once this device has reached Firestore */
   var BASE       = "/dannelore/rp/";
 
   var TYPES = ["thread","scene","cast","wiki","draft"];
@@ -171,6 +173,33 @@ window.RP = (function(){
     return longDate(w.date) + (w.time ? ", " + w.time : "");
   }
 
+  /* ---------------- birthdays ----------------
+     A character's birthday is a real calendar date, like a scene's, with an
+     optional "shown as" for the story's own calendar. Their age is worked out
+     against whichever scene you're looking at, so the same person is 19 in
+     one thread and 23 in another without anyone updating anything. */
+  function ageOn(born, on){
+    var b = parseISO(born), d = parseISO(on);
+    if(!b || !d) return null;
+    var early = d.m < b.m || (d.m === b.m && d.d < b.d);
+    var years = d.y - b.y - (early ? 1 : 0);
+    if(years < 0) return null;   /* not born yet */
+    var months = (d.y - b.y) * 12 + (d.m - b.m) - (d.d < b.d ? 1 : 0);
+    return { years:years, months:months, birthday: d.m === b.m && d.d === b.d };
+  }
+
+  function ageText(a){
+    if(!a) return "";
+    var n = a.years >= 1 ? String(a.years)
+          : (a.months >= 1 ? plural(a.months, "month") : "Newborn");
+    return a.birthday && a.years >= 1 ? n + " \u00b7 birthday" : n;
+  }
+
+  function bornLabel(p){
+    var b = (p && p.born) || {};
+    return b.label || (parseISO(b.date) ? longDate(b.date) : "");
+  }
+
   /* ==========================================================================
      STORE
      ========================================================================== */
@@ -178,6 +207,7 @@ window.RP = (function(){
   var state = { threads:[], scenes:[], cast:[], wiki:[], drafts:{} };
   var db = null;
   var online = false;
+  var lastError = null;   /* Firestore's error code, so the readout can say why */
   var pending = 0;
   var syncEls = [];
 
@@ -204,6 +234,7 @@ window.RP = (function(){
       if(!Array.isArray(r.aka))   r.aka = [];
       if(!Array.isArray(r.facts)) r.facts = [];
       if(!Array.isArray(r.sheet)) r.sheet = [];
+      if(!r.born || typeof r.born !== "object") r.born = {};
     }
     if(type === "wiki"){
       if(!Array.isArray(r.aka)) r.aka = [];
@@ -242,6 +273,31 @@ window.RP = (function(){
     catch(e){ return null; }
   }
 
+  /* ---------------- outbox ----------------
+     Every save and delete is written here first and crossed off only when
+     Firestore confirms it. Anything still listed when the page next reaches
+     Firestore gets sent then — so work done while disconnected is uploaded
+     rather than overwritten by the (older, or empty) copy in the cloud. */
+
+  function readOutbox(){
+    try{ return JSON.parse(localStorage.getItem(OUTBOX_KEY) || "{}") || {}; }
+    catch(e){ return {}; }
+  }
+
+  function outboxAdd(key, op){
+    var box = readOutbox();
+    box[key] = { op:op, at:new Date().toISOString() };
+    try{ localStorage.setItem(OUTBOX_KEY, JSON.stringify(box)); }catch(e){}
+    return box[key].at;
+  }
+
+  /* Only cross it off if nothing newer has been queued for the same record. */
+  function outboxDone(key, at){
+    var box = readOutbox();
+    if(box[key] && box[key].at === at) delete box[key];
+    try{ localStorage.setItem(OUTBOX_KEY, JSON.stringify(box)); }catch(e){}
+  }
+
   /* ---------------- sync readout ---------------- */
 
   function setSync(text, s){
@@ -254,7 +310,10 @@ window.RP = (function(){
   function watchSync(el){ if(el) syncEls.push(el); }
 
   function refreshSync(){
-    if(!db)          return setSync("Offline \u2014 saved on this device", "error");
+    if(!db)          return setSync(lastError === "permission-denied"
+                       ? "Not connected \u2014 Firestore rules are blocking this"
+                       : "Offline \u2014 saved on this device", "error");
+    if(lastError === "permission-denied") return setSync("Firestore refused that save \u2014 check the rules", "error");
     if(pending > 0)  return setSync("Saving\u2026", "saving");
     setSync(online ? "Saved" : "Saved on this device", online ? "" : "error");
   }
@@ -297,11 +356,16 @@ window.RP = (function(){
       var snap = await db.collection(COLLECTION).get();
       var docs = {};
       snap.forEach(function(d){ docs[d.id] = d.data(); });
-      ingest(docs);
       online = !(snap.metadata && snap.metadata.fromCache);
+      lastError = null;
+      var uploads = reconcile(docs);
+      ingest(docs);
       writeCache();
+      uploads.forEach(function(fn){ fn(); });
+      if(online){ try{ localStorage.setItem(SYNCED_KEY, new Date().toISOString()); }catch(e){} }
     }catch(err){
       console.error("Firestore unavailable, working from the local copy:", err);
+      lastError = (err && err.code) || null;
       db = null;
       ingest(readCache() || {});
     }
@@ -310,9 +374,51 @@ window.RP = (function(){
     return state;
   }
 
+  /* Merge what this device has waiting into what Firestore sent. Mutates
+     `docs`; returns the uploads to start once state is in place.
+
+     A device that has never reached Firestore treats its whole local copy as
+     waiting — that covers everything written before the outbox existed. A
+     record changed in both places keeps whichever was saved last. */
+  function reconcile(docs){
+    var local = readCache() || {};
+    var box = readOutbox();
+    var ever = false;
+    try{ ever = !!localStorage.getItem(SYNCED_KEY); }catch(e){}
+
+    if(!ever){
+      Object.keys(local).forEach(function(key){
+        if(!box[key]) box[key] = { op:"set", at:"" };
+      });
+    }
+
+    var uploads = [];
+    Object.keys(box).forEach(function(key){
+      var job = box[key];
+      var ref = db.collection(COLLECTION).doc(key);
+
+      if(job.op === "delete"){
+        delete docs[key];
+        uploads.push(function(){ track(ref.delete(), key, job.at); });
+        return;
+      }
+
+      var mine = local[key];
+      if(!mine){ outboxDone(key, job.at); return; }
+      var theirs = docs[key];
+      if(theirs && String(theirs.updated || "") > String(mine.updated || "")){
+        outboxDone(key, job.at);
+        return;
+      }
+      docs[key] = mine;
+      uploads.push(function(){ track(ref.set(clean(mine)), key, job.at); });
+    });
+    return uploads;
+  }
+
   /* ---------------- save + delete ---------------- */
 
-  function track(promise){
+  function track(promise, key, at){
     pending++;
     refreshSync();
 
@@ -324,9 +430,12 @@ window.RP = (function(){
 
     return promise.then(function(){
       online = true;
+      lastError = null;
+      if(key) outboxDone(key, at);
     }).catch(function(err){
       console.error("Sync to Firestore failed:", err);
       online = false;
+      lastError = (err && err.code) || null;
     }).then(function(){
       clearTimeout(slow);
       pending = Math.max(0, pending - 1);
@@ -346,9 +455,11 @@ window.RP = (function(){
       if(i < 0) list.push(rec); else list[i] = rec;
     }
     writeCache();
+    var key = docId(type, rec.id);
+    var at = outboxAdd(key, "set");
 
     if(!db){ refreshSync(); return Promise.resolve(); }
-    return track(db.collection(COLLECTION).doc(docId(type, rec.id)).set(clean(rec)));
+    return track(db.collection(COLLECTION).doc(key).set(clean(rec)), key, at);
   }
 
   function remove(type, id){
@@ -360,9 +471,11 @@ window.RP = (function(){
       if(i > -1) list.splice(i, 1);
     }
     writeCache();
+    var key = docId(type, id);
+    var at = outboxAdd(key, "delete");
 
     if(!db){ refreshSync(); return Promise.resolve(); }
-    return track(db.collection(COLLECTION).doc(docId(type, id)).delete());
+    return track(db.collection(COLLECTION).doc(key).delete(), key, at);
   }
 
   /* ---------------- lookups ---------------- */
@@ -372,6 +485,25 @@ window.RP = (function(){
   function scene(id){  return byId(state.scenes, id); }
   function person(id){ return id === "narration" ? NARRATION : byId(state.cast, id); }
   function entry(id){  return byId(state.wiki, id); }
+
+  /* The latest story date this character is in — posting, or listed on the
+     scene. Used where there's no scene to measure their age against. */
+  function latestDate(castId){
+    var best = null;
+    state.scenes.forEach(function(sc){
+      var d = sc.when && sc.when.date;
+      if(!parseISO(d)) return;
+      var here = (sc.cast || []).indexOf(castId) > -1 ||
+                 (sc.posts || []).some(function(p){ return p.who === castId; });
+      if(here && (!best || d > best)) best = d;
+    });
+    return best;
+  }
+
+  /* Every word that links to a record: the name first, then its link words. */
+  function linkWords(kind, r){
+    return [kind === "wiki" ? r.title : r.name].concat(r.aka || []).filter(Boolean);
+  }
 
   function sortByName(list, key){
     return list.slice().sort(function(a,b){
@@ -719,17 +851,24 @@ window.RP = (function(){
 
   /* The card beside every post. Portrait, name, role, the facts this
      character chose to show, and the face claim credit. */
-  function mini(p){
+  function mini(p, opts){
+    opts = opts || {};
     if(!p){
       return '<div class="rp-mini rp-mini-missing"><div class="rp-mini-body">' +
              '<p class="rp-mini-name">Unknown</p><p class="rp-mini-role">This character was removed.</p></div></div>';
     }
     var color = safeColor(p.color);
     var url = safeUrl(p.portrait);
-    var facts = (p.facts || []).filter(function(f){ return f && f.value; })
+    /* With a birthday and a dated scene, Age is worked out and goes first.
+       A hand-written "Age" fact would only disagree with it, so it steps aside. */
+    var age = ageText(ageOn(p.born && p.born.date, opts.on));
+    var facts = (p.facts || []).filter(function(f){
+        return f && f.value && !(age && norm(f.label) === "age");
+      })
       .slice(0, MINI_FACT_LIMIT)
       .map(function(f){ return "<div><dt>" + esc(f.label) + "</dt><dd>" + esc(f.value) + "</dd></div>"; })
       .join("");
+    if(age) facts = '<div class="rp-mini-age"><dt>Age</dt><dd>' + esc(age) + "</dd></div>" + facts;
 
     return '<a class="rp-mini" href="' + esc(castUrl(p.id)) + '" style="--who:' + color + '">' +
       '<span class="rp-mini-band"></span>' +
@@ -744,6 +883,12 @@ window.RP = (function(){
         (p.playedBy ? '<span class="rp-mini-fc">Played by ' + esc(p.playedBy) + "</span>" : "") +
       "</span>" +
     "</a>";
+  }
+
+  /* "Link with [[Ophelia Montgomery]] [[Phey]]" — on sheets and entries. */
+  function linkLine(kind, r){
+    return '<p class="rp-linkwords"><span>Link with</span> ' +
+      linkWords(kind, r).map(function(w){ return "<code>[[" + esc(w) + "]]</code>"; }).join(" ") + "</p>";
   }
 
   function statePill(s){
@@ -924,6 +1069,7 @@ window.RP = (function(){
     todayISO:todayISO, parseISO:parseISO, shortDate:shortDate, longDate:longDate,
     relative:relative, plural:plural, MONTHS:MONTHS,
     storyKey:storyKey, storyLabel:storyLabel,
+    ageOn:ageOn, ageText:ageText, bornLabel:bornLabel, latestDate:latestDate, linkWords:linkWords,
     thread:thread, scene:scene, person:person, entry:entry,
     castSorted:castSorted, wikiSorted:wikiSorted, threadsSorted:threadsSorted, threadColor:threadColor,
     wordCount:wordCount, sceneWords:sceneWords, plainText:plainText,
@@ -932,7 +1078,7 @@ window.RP = (function(){
     backlinks:backlinks, unresolved:unresolved, keepOldName:keepOldName,
     markdown:markdown, inline:inline,
     sceneUrl:sceneUrl, castUrl:castUrl, wikiUrl:wikiUrl,
-    initials:initials, face:face, mini:mini, statePill:statePill, threadChip:threadChip,
+    initials:initials, face:face, mini:mini, linkLine:linkLine, statePill:statePill, threadChip:threadChip,
     colorPicker:colorPicker, splitList:splitList, wirePreview:wirePreview,
     compareStory:compareStory, timelineScenes:timelineScenes, neighbours:neighbours
   };

@@ -993,6 +993,21 @@
 
 .rp-entry-head{ display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
 .rp-entry-aka{ font-family: var(--font-body); font-size: .74rem; color: var(--ink-soft); margin: 0 0 12px; }
+
+/* "Link with [[Name]] [[Nickname]]" under a sheet or entry title */
+.rp-linkwords{
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px 6px;
+  font-family: var(--font-body); font-size: .74rem; color: var(--ink-soft);
+  margin: -8px 0 16px;
+}
+.rp-linkwords > span{ margin-right: 2px; }
+.rp-linkwords code{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .72rem; color: var(--accent-deep);
+  background: var(--accent-soft); border-radius: 5px; padding: 1px 6px;
+  user-select: all;
+}
+.rp-entry-head + .rp-linkwords{ margin-top: 0; }
 .rp-entry-when{ font-family: var(--font-serif); font-style: italic; color: var(--burgundy); margin: 0 0 10px; }
 .rp-entry-sum{
   font-family: var(--font-serif);

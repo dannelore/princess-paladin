@@ -110,7 +110,7 @@ function renderEntry(w){
         <span class="rp-sync" data-sync></span>
         <button class="pp-btn pp-btn-quiet pp-btn-sm" type="button" data-edit>Edit entry</button>
       </div>
-      ${(w.aka || []).length ? `<p class="rp-entry-aka">Also written as ${w.aka.map(esc).join(", ")}</p>` : ""}
+      ${RP.linkLine("wiki", w)}
       ${when ? `<p class="rp-entry-when">On the timeline: <a href="${RP.BASE}timeline.html#w-${esc(w.id)}">${esc(when)}</a></p>` : ""}
       ${w.summary ? `<div class="rp-entry-sum">${RP.markdown(w.summary)}</div>` : ""}
       <div class="rp-prose rp-entry-body">
@@ -163,9 +163,9 @@ function renderEditor(w){
             ${RP.KIND_KEYS.map(k => `<option value="${k}"${k === w.kind ? " selected" : ""}>${RP.KINDS[k].label}</option>`).join("")}
           </select></div>
 
-        <div class="pp-field wide"><label for="ef-aka">Also written as</label>
+        <div class="pp-field wide"><label for="ef-aka">Link words</label>
           <input id="ef-aka" name="aka" maxlength="300" placeholder="the inn, the Crossing" value="${esc((w.aka || []).join(", "))}">
-          <span class="pp-hint">Comma separated. Any of these inside <code>[[ ]]</code> lands here.</span></div>
+          <span class="pp-hint">Comma separated. Any of these inside <code>[[ ]]</code> links here, same as the title.</span></div>
 
         <div class="pp-field wide"><label for="ef-summary">Summary</label>
           <textarea id="ef-summary" name="summary" rows="2" maxlength="500" style="min-height:64px;">${esc(w.summary || "")}</textarea></div>

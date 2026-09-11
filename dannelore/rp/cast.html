@@ -75,9 +75,11 @@ function renderSheet(c){
   const words = RP.state.scenes.reduce((n, sc) =>
     n + sc.posts.filter(p => p.who === c.id).reduce((m, p) => m + RP.wordCount(p.md), 0), 0);
 
+  const latest = RP.latestDate(c.id);
+  const ageNow = RP.ageOn(c.born && c.born.date, latest);
   const meta = [
     c.playedBy ? "Played by " + esc(c.playedBy) : "",
-    (c.aka || []).length ? "Also " + c.aka.map(esc).join(", ") : "",
+    RP.bornLabel(c) ? "Born " + esc(RP.bornLabel(c)) : "",
     words ? RP.plural(words, "word") + " spoken" : ""
   ].filter(Boolean).join(" &nbsp;/&nbsp; ");
 
@@ -85,7 +87,8 @@ function renderSheet(c){
     <a class="rp-back" href="${RP.castUrl()}" data-nav="">&larr; All cast</a>
     <div class="rp-sheet">
       <div>
-        ${RP.mini(c)}
+        ${RP.mini(c, { on: latest })}
+        ${ageNow ? `<p class="pp-hint" style="margin:8px 0 0;">Age as of their latest scene.</p>` : ""}
         <div class="rp-actions" style="margin-top:12px;">
           <button class="pp-btn pp-btn-quiet pp-btn-sm" type="button" data-edit="${esc(c.id)}">Edit character</button>
         </div>
@@ -99,6 +102,7 @@ function renderSheet(c){
         </div>
         ${c.role ? `<p class="rp-sheet-role">${esc(c.role)}</p>` : ""}
         ${meta ? `<p class="rp-sheet-meta">${meta}</p>` : ""}
+        ${RP.linkLine("cast", c)}
 
         ${(c.sheet || []).filter(s => s.text).length
           ? (c.sheet || []).filter(s => s.text).map(s => `
@@ -113,7 +117,9 @@ function renderSheet(c){
           ${posted.length
             ? posted.map(x => `<a class="rp-backrow" href="${esc(RP.sceneUrl(x.sc.id))}">
                 <span class="t">${esc(x.sc.title || "Untitled scene")}</span>
-                <span class="q">${esc(RP.storyLabel(x.sc) || "No story date")}</span>
+                <span class="q">${esc(RP.storyLabel(x.sc) || "No story date")}${
+                  RP.ageOn(c.born && c.born.date, x.sc.when && x.sc.when.date)
+                    ? " &middot; age " + esc(RP.ageText(RP.ageOn(c.born.date, x.sc.when.date))) : ""}</span>
                 <span class="n">${RP.plural(x.n, "post")}</span>
               </a>`).join("")
             : `<p class="rp-none">Hasn&rsquo;t said a word yet.</p>`}
@@ -167,9 +173,9 @@ function rowTools(){
 function renderEdit(c){
   const isNew = !c;
   c = c || {
-    id: RP.uid(), name:"", aka:[], role:"", playedBy:"", portrait:"", crop:"",
+    id: RP.uid(), name:"", aka:[], role:"", playedBy:"", portrait:"", crop:"", born:{},
     color: RP.COLORS[RP.state.cast.length % RP.COLORS.length].hex,
-    facts:[{ label:"Age", value:"" }],
+    facts:[{ label:"From", value:"" }],
     sheet:[{ label:"Wants", text:"" }, { label:"Won't say", text:"" }]
   };
 
@@ -178,7 +184,7 @@ function renderEdit(c){
     <form class="rp-sheet" id="castForm" autocomplete="off" data-id="${esc(c.id)}">
       <div>
         <div id="preview"></div>
-        <p class="pp-hint" style="margin-top:10px;">Updates as you type.</p>
+        <p class="pp-hint" style="margin-top:10px;" id="previewNote">Updates as you type.</p>
       </div>
 
       <div class="pp-panel pp-panel-lg">
@@ -187,8 +193,9 @@ function renderEdit(c){
         <div class="rp-fields">
           <div class="pp-field"><label for="cf-name">Name</label>
             <input id="cf-name" name="name" required maxlength="80" value="${esc(c.name)}"></div>
-          <div class="pp-field"><label for="cf-aka">Also known as</label>
-            <input id="cf-aka" name="aka" maxlength="200" placeholder="Comma separated" value="${esc((c.aka || []).join(", "))}"></div>
+          <div class="pp-field"><label for="cf-aka">Link words</label>
+            <input id="cf-aka" name="aka" maxlength="200" placeholder="Phey, Miss Montgomery" value="${esc((c.aka || []).join(", "))}">
+            <span class="pp-hint">Comma separated. Any of these inside <code>[[ ]]</code> links here, same as the full name.</span></div>
 
           <div class="pp-field wide"><label for="cf-role">Role</label>
             <input id="cf-role" name="role" maxlength="120" placeholder="One line, shown under their name" value="${esc(c.role || "")}"></div>
@@ -199,6 +206,14 @@ function renderEdit(c){
             <select id="cf-crop" name="crop">
               ${CROPS.map(o => `<option value="${o.key}"${o.key === (c.crop || "") ? " selected" : ""}>${o.label}</option>`).join("")}
             </select></div>
+
+          <div class="pp-field wide"><div class="rp-fields">
+            <div class="pp-field"><label for="cf-born">Birthday</label>
+              <input id="cf-born" name="bornDate" type="date" value="${esc((c.born || {}).date || "")}"></div>
+            <div class="pp-field"><label for="cf-bornlabel">Shown as</label>
+              <input id="cf-bornlabel" name="bornLabel" maxlength="80" placeholder="Optional" value="${esc((c.born || {}).label || "")}"></div>
+            </div>
+            <span class="pp-hint">Their age beside each post is worked out from this and the scene&rsquo;s story date. Use &ldquo;Shown as&rdquo; if the story keeps its own calendar.</span></div>
 
           <div class="pp-field wide"><label for="cf-portrait">Portrait image</label>
             <input id="cf-portrait" name="portrait" type="text" inputmode="url" spellcheck="false" maxlength="600" placeholder="https://…  or  /assets/rp/name.jpg" value="${esc(c.portrait || "")}">
@@ -283,6 +298,7 @@ function readForm(){
     playedBy: f.elements.playedBy.value.trim(),
     portrait: f.elements.portrait.value.trim(),
     crop: f.elements.crop.value,
+    born: { date: f.elements.bornDate.value, label: f.elements.bornLabel.value.trim() },
     color: picked ? picked.value : RP.COLORS[0].hex,
     facts: readRows($("facts"), ["label","value"]).slice(0, RP.MINI_FACT_LIMIT),
     /* the preview reads this too, so it matches what gets saved */
@@ -293,8 +309,12 @@ function readForm(){
 function paintPreview(){
   const c = readForm();
   c.name = c.name || "Their name";
+  const latest = RP.latestDate(c.id);
+  const aged = RP.ageOn(c.born.date, latest);
+  $("previewNote").textContent = aged ? "Updates as you type. Age as of their latest scene."
+    : (c.born.date ? "Updates as you type. Age shows once they\u2019re in a dated scene." : "Updates as you type.");
   /* The preview isn't a link anywhere. */
-  $("preview").innerHTML = RP.mini(c).replace(/^<a /, "<div ").replace(/<\/a>$/, "</div>").replace(/ href="[^"]*"/, "");
+  $("preview").innerHTML = RP.mini(c, { on: latest }).replace(/^<a /, "<div ").replace(/<\/a>$/, "</div>").replace(/ href="[^"]*"/, "");
 }
 
 /* Row tools: reorder and remove */
