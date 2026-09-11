@@ -39,6 +39,9 @@ let asOfFor = null;     /* which character the "as of" choice belongs to */
 let asOfScene = null;   /* the scene a profile is being read as of */
 let relOpen = false;    /* the relationship editor */
 let relEditId = null;   /* the relationship being edited, or null for a new one */
+let genFilter = "";     /* cast grid: "" | "teen" | "adult" */
+let tierFilter = "";    /* cast grid: "" | "pov" | "secondary" | "tertiary" */
+let sortBy = "name";    /* cast grid: "name" | "tier" | "generation" */
 
 const CROPS = [
   { key:"",       label:"Upper third" },
@@ -50,22 +53,59 @@ const CROPS = [
 /* ---------------- grid ---------------- */
 
 function renderGrid(){
-  const cast = RP.castSorted();
+  let cast = RP.castSorted();
+  if(genFilter)  cast = cast.filter(c => (c.generation || "") === genFilter);
+  if(tierFilter) cast = cast.filter(c => (c.tier || "") === tierFilter);
+  if(sortBy === "tier"){
+    const order = { pov:0, secondary:1, tertiary:2 };
+    cast = cast.slice().sort((a, b) =>
+      (order.hasOwnProperty(a.tier) ? order[a.tier] : 3) - (order.hasOwnProperty(b.tier) ? order[b.tier] : 3) ||
+      a.name.localeCompare(b.name));
+  } else if(sortBy === "generation"){
+    const order = { teen:0, adult:1 };
+    cast = cast.slice().sort((a, b) =>
+      (order.hasOwnProperty(a.generation) ? order[a.generation] : 2) - (order.hasOwnProperty(b.generation) ? order[b.generation] : 2) ||
+      a.name.localeCompare(b.name));
+  }
+
+  const empty = !cast.length
+    ? (RP.state.cast.length
+        ? `<div class="pp-panel rp-empty"><p>No one matches these filters.</p></div>`
+        : `<div class="pp-panel rp-empty">
+            <h2 class="rp-title">No one here yet</h2>
+            <p>Add the first character: a name, a face claim, and the few facts worth seeing while you write.</p>
+            <div class="rp-actions"><button class="pp-btn" type="button" data-new>Add character</button></div>
+          </div>`)
+    : "";
+
   $("view").innerHTML = `
     <p class="rp-lede">Everyone in the world. The card is exactly what rides beside their posts.</p>
     <div class="rp-bar">
+      <label class="rp-asof"><span>Generation</span>
+        <select id="genFilter">
+          <option value="">All</option>
+          ${RP.GENERATIONS.map(g => `<option value="${g.key}"${g.key === genFilter ? " selected" : ""}>${esc(g.label)}</option>`).join("")}
+        </select></label>
+      <label class="rp-asof"><span>Tier</span>
+        <select id="tierFilter">
+          <option value="">All</option>
+          ${RP.TIERS.map(t => `<option value="${t.key}"${t.key === tierFilter ? " selected" : ""}>${esc(t.label)}</option>`).join("")}
+        </select></label>
+      <label class="rp-asof"><span>Sort</span>
+        <select id="sortBy">
+          <option value="name"${sortBy === "name" ? " selected" : ""}>Name</option>
+          <option value="tier"${sortBy === "tier" ? " selected" : ""}>Cast tier</option>
+          <option value="generation"${sortBy === "generation" ? " selected" : ""}>Generation</option>
+        </select></label>
       <span class="rp-sp"></span>
       <span class="rp-sync" data-sync></span>
       <button class="pp-btn" type="button" data-new>Add character</button>
     </div>
-    ${cast.length
-      ? `<div class="rp-cast-grid">${cast.map(RP.mini).join("")}</div>`
-      : `<div class="pp-panel rp-empty">
-          <h2 class="rp-title">No one here yet</h2>
-          <p>Add the first character: a name, a face claim, and the few facts worth seeing while you write.</p>
-          <div class="rp-actions"><button class="pp-btn" type="button" data-new>Add character</button></div>
-        </div>`}`;
+    ${cast.length ? `<div class="rp-cast-grid">${cast.map(RP.mini).join("")}</div>` : empty}`;
   watch();
+  $("genFilter").addEventListener("change", e => { genFilter = e.target.value; renderGrid(); });
+  $("tierFilter").addEventListener("change", e => { tierFilter = e.target.value; renderGrid(); });
+  $("sortBy").addEventListener("change", e => { sortBy = e.target.value; renderGrid(); });
 }
 
 /* ---------------- sheet ---------------- */
@@ -190,7 +230,7 @@ function relationsHTML(c, on){
     tree.grand.map(n => famRow(n, n.step ? "Step-grandparent" : "Grandparent")),
     tree.parents.map(n => famRow(n, n.step ? "Step-parent" : "Parent")),
     tree.spouses.map(n => famRow(n, "Spouse")),
-    tree.siblings.map(n => famRow(n, "Sibling")),
+    tree.siblings.map(n => famRow(n, n.half ? "Half-sibling" : "Sibling")),
     tree.children.map(n => famRow(n, n.step ? "Step-child" : "Child"))
   ).filter(Boolean);
 
@@ -214,12 +254,33 @@ function relationsHTML(c, on){
    from parent to child, dashed for step-family, doubled for marriages. */
 const NODE_W = 112, ROW_H = 132;
 
+/* Oldest first, left to right. Anyone without a birthday sorts to the end
+   of their row rather than bunching at the start. */
+function byAge(ids){
+  return ids.slice().sort((a, b) => {
+    const pa = RP.person(a), pb = RP.person(b);
+    const da = (pa && pa.born && pa.born.date) || "";
+    const db = (pb && pb.born && pb.born.date) || "";
+    if(da && db) return da < db ? -1 : da > db ? 1 : 0;
+    if(da) return -1;
+    if(db) return 1;
+    return 0;
+  });
+}
+
 function treeHTML(c, t){
+  /* Siblings and self are one birth-order line; spouses sit beside self
+     rather than being sorted into it by their own age. */
+  const siblingsAndSelf = byAge(t.siblings.map(n => n.id).concat([c.id]));
+  const selfAt = siblingsAndSelf.indexOf(c.id);
+  const row3 = siblingsAndSelf.slice(0, selfAt + 1)
+    .concat(t.spouses.map(n => n.id), siblingsAndSelf.slice(selfAt + 1));
+
   const rows = [
-    t.grand.map(n => n.id),
-    t.parents.map(n => n.id),
-    t.siblings.map(n => n.id).concat([c.id], t.spouses.map(n => n.id)),
-    t.children.map(n => n.id)
+    byAge(t.grand.map(n => n.id)),
+    byAge(t.parents.map(n => n.id)),
+    row3,
+    byAge(t.children.map(n => n.id))
   ].filter(r => r.length);
 
   const W = Math.max(360, Math.max.apply(null, rows.map(r => r.length)) * (NODE_W + 12));
@@ -376,6 +437,7 @@ function renderEdit(c){
   const isNew = !c;
   c = c || {
     id: RP.uid(), name:"", aka:[], role:"", playedBy:"", portrait:"", crop:"", born:{},
+    generation:"", tier:"",
     color: RP.COLORS[RP.state.cast.length % RP.COLORS.length].hex,
     facts:[{ label:"From", value:"" }],
     sheet:[{ label:"Wants", text:"" }, { label:"Won't say", text:"" }]
@@ -401,6 +463,17 @@ function renderEdit(c){
 
           <div class="pp-field wide"><label for="cf-role">Role</label>
             <input id="cf-role" name="role" maxlength="120" placeholder="One line, shown under their name" value="${esc(c.role || "")}"></div>
+
+          <div class="pp-field"><label for="cf-gen">Generation</label>
+            <select id="cf-gen" name="generation">
+              <option value="">Unset</option>
+              ${RP.GENERATIONS.map(g => `<option value="${g.key}"${g.key === (c.generation || "") ? " selected" : ""}>${esc(g.label)}</option>`).join("")}
+            </select></div>
+          <div class="pp-field"><label for="cf-tier">Cast tier</label>
+            <select id="cf-tier" name="tier">
+              <option value="">Unset</option>
+              ${RP.TIERS.map(t => `<option value="${t.key}"${t.key === (c.tier || "") ? " selected" : ""}>${esc(t.label)}</option>`).join("")}
+            </select></div>
 
           <div class="pp-field"><label for="cf-played">Played by</label>
             <input id="cf-played" name="playedBy" maxlength="80" placeholder="Face claim" value="${esc(c.playedBy || "")}"></div>
@@ -497,6 +570,8 @@ function readForm(){
     name: f.elements.name.value.trim(),
     aka: RP.splitList(f.elements.aka.value),
     role: f.elements.role.value.trim(),
+    generation: f.elements.generation.value,
+    tier: f.elements.tier.value,
     playedBy: f.elements.playedBy.value.trim(),
     portrait: f.elements.portrait.value.trim(),
     crop: f.elements.crop.value,
