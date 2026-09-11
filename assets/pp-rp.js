@@ -43,7 +43,7 @@ window.RP = (function(){
   var SYNCED_KEY = "writingroom-v1-synced";   /* set once this device has reached Firestore */
   var BASE       = "/dannelore/rp/";
 
-  var TYPES = ["thread","scene","cast","wiki","draft"];
+  var TYPES = ["thread","scene","cast","wiki","rel","draft"];
 
   /* ---------------- vocabulary ---------------- */
 
@@ -173,6 +173,130 @@ window.RP = (function(){
     return longDate(w.date) + (w.time ? ", " + w.time : "");
   }
 
+  /* ---------------- relationships ----------------
+     One record per relationship, shared by both people, so it can't say one
+     thing on Ezra's profile and another on Phey's.
+
+       { id, a, b, kind, from, to, note }
+
+     `aIs` is what a is to b; `bIs` is what b is to a. For a parent record,
+     a is the parent. Symmetric kinds use the same word both ways.
+
+     from/until are story dates and both optional. A relationship that
+     changes is two records: friends until June, dating from June. */
+  var REL_KINDS = {
+    parent:     { family:true,  aIs:"Parent",       bIs:"Child" },
+    step:       { family:true,  aIs:"Step-parent",  bIs:"Step-child", step:true },
+    sibling:    { family:true,  aIs:"Sibling",      bIs:"Sibling" },
+    spouse:     { family:true,  aIs:"Spouse",       bIs:"Spouse" },
+    partner:    { family:false, aIs:"Partner",      bIs:"Partner" },
+    bestfriend: { family:false, aIs:"Best friend",  bIs:"Best friend" },
+    friend:     { family:false, aIs:"Friend",       bIs:"Friend" },
+    rival:      { family:false, aIs:"Rival",        bIs:"Rival" },
+    enemy:      { family:false, aIs:"Enemy",        bIs:"Enemy" },
+    crush:      { family:false, aIs:"Has a crush on them", bIs:"Crush" }
+  };
+
+  /* How the editor asks it: "[this character] is ___ [other]". Each choice
+     names a kind and whether this character is a or b. */
+  var REL_PHRASES = [
+    { key:"parent",     kind:"parent",     me:"a", text:"parent of" },
+    { key:"child",      kind:"parent",     me:"b", text:"child of" },
+    { key:"step",       kind:"step",       me:"a", text:"step-parent of" },
+    { key:"stepchild",  kind:"step",       me:"b", text:"step-child of" },
+    { key:"sibling",    kind:"sibling",    me:"a", text:"sibling of" },
+    { key:"spouse",     kind:"spouse",     me:"a", text:"married to" },
+    { key:"partner",    kind:"partner",    me:"a", text:"dating" },
+    { key:"bestfriend", kind:"bestfriend", me:"a", text:"best friends with" },
+    { key:"friend",     kind:"friend",     me:"a", text:"friends with" },
+    { key:"rival",      kind:"rival",      me:"a", text:"rivals with" },
+    { key:"enemy",      kind:"enemy",      me:"a", text:"enemies with" },
+    { key:"crush",      kind:"crush",      me:"a", text:"has a crush on" },
+    { key:"crushed",    kind:"crush",      me:"b", text:"the crush of" }
+  ];
+
+  function phraseFor(rel, me){
+    var side = rel.a === me ? "a" : "b";
+    var sym = REL_KINDS[rel.kind] && REL_KINDS[rel.kind].aIs === REL_KINDS[rel.kind].bIs;
+    return REL_PHRASES.find(function(p){ return p.kind === rel.kind && (sym || p.me === side); }) || null;
+  }
+
+  /* Every relationship involving this character where the other person
+     still exists, seen from their side. */
+  function relsFor(id){
+    return state.rels.filter(function(r){ return r.a === id || r.b === id; }).map(function(r){
+      var other = person(r.a === id ? r.b : r.a);
+      if(!other || other.id === id) return null;
+      var k = REL_KINDS[r.kind];
+      return { rec:r, other:other, family:k.family, label: r.a === id ? k.bIs : k.aIs };
+    }).filter(Boolean);
+  }
+
+  /* Where a relationship stands on a given story date. With no date to
+     measure against, anything without an end is current. */
+  function relStatus(r, on){
+    if(!parseISO(on)) return r.to ? "past" : "now";
+    if(r.from && r.from > on) return "later";
+    if(r.to && r.to <= on) return "past";
+    return "now";
+  }
+
+  function relSpan(r){
+    if(r.from && r.to) return longDate(r.from) + " \u2013 " + longDate(r.to);
+    if(r.from) return "from " + longDate(r.from);
+    if(r.to)   return "until " + longDate(r.to);
+    return "";
+  }
+
+  /* The family around one character, as it stood on a date. Siblings count
+     whether they were entered directly or just share a parent. */
+  function familyAround(id, on){
+    var live = state.rels.filter(function(r){
+      return REL_KINDS[r.kind].family && relStatus(r, on) === "now" && person(r.a) && person(r.b);
+    });
+    function parentsOf(x){
+      return live.filter(function(r){ return (r.kind === "parent" || r.kind === "step") && r.b === x; })
+                 .map(function(r){ return { id:r.a, step:r.kind === "step" }; });
+    }
+    function childrenOf(x){
+      return live.filter(function(r){ return (r.kind === "parent" || r.kind === "step") && r.a === x; })
+                 .map(function(r){ return { id:r.b, step:r.kind === "step" }; });
+    }
+    function uniq(list){
+      var seen = {};
+      return list.filter(function(n){ if(seen[n.id] || n.id === id) return false; seen[n.id] = true; return true; });
+    }
+
+    var parents = uniq(parentsOf(id));
+    var grand = [];
+    parents.forEach(function(p){
+      parentsOf(p.id).forEach(function(g){
+        if(!grand.some(function(x){ return x.id === g.id; }) && !parents.some(function(x){ return x.id === g.id; }))
+          grand.push({ id:g.id, step:g.step, of:p.id });
+      });
+    });
+
+    var siblings = live.filter(function(r){ return r.kind === "sibling" && (r.a === id || r.b === id); })
+                       .map(function(r){ return { id: r.a === id ? r.b : r.a }; });
+    parents.forEach(function(p){
+      childrenOf(p.id).forEach(function(c){ siblings.push({ id:c.id }); });
+    });
+    siblings = uniq(siblings).filter(function(sb){ return !parents.some(function(p){ return p.id === sb.id; }); });
+
+    var spouses = uniq(live.filter(function(r){ return r.kind === "spouse" && (r.a === id || r.b === id); })
+                           .map(function(r){ return { id: r.a === id ? r.b : r.a }; }));
+    var children = uniq(childrenOf(id));
+
+    /* lines to draw: parent -> child for every pair on the chart, and spouses */
+    var onChart = {}; onChart[id] = true;
+    [grand, parents, siblings, spouses, children].forEach(function(g){ g.forEach(function(n){ onChart[n.id] = true; }); });
+    var links = live.filter(function(r){ return onChart[r.a] && onChart[r.b]; })
+                    .map(function(r){ return { from:r.a, to:r.b, kind:r.kind }; });
+
+    return { grand:grand, parents:parents, siblings:siblings, spouses:spouses, children:children, links:links,
+             empty: !(grand.length || parents.length || siblings.length || spouses.length || children.length) };
+  }
+
   /* ---------------- birthdays ----------------
      A character's birthday is a real calendar date, like a scene's, with an
      optional "shown as" for the story's own calendar. Their age is worked out
@@ -204,7 +328,7 @@ window.RP = (function(){
      STORE
      ========================================================================== */
 
-  var state = { threads:[], scenes:[], cast:[], wiki:[], drafts:{} };
+  var state = { threads:[], scenes:[], cast:[], wiki:[], rels:[], drafts:{} };
   var db = null;
   var online = false;
   var lastError = null;   /* Firestore's error code, so the readout can say why */
@@ -214,7 +338,7 @@ window.RP = (function(){
   function docId(type, id){ return type + "-" + id; }
 
   function listFor(type){
-    return { thread:state.threads, scene:state.scenes, cast:state.cast, wiki:state.wiki }[type];
+    return { thread:state.threads, scene:state.scenes, cast:state.cast, wiki:state.wiki, rel:state.rels }[type];
   }
 
   function clean(obj){
@@ -236,6 +360,11 @@ window.RP = (function(){
       if(!Array.isArray(r.sheet)) r.sheet = [];
       if(!r.born || typeof r.born !== "object") r.born = {};
     }
+    if(type === "rel"){
+      if(!REL_KINDS[r.kind]) r.kind = "friend";
+      if(!parseISO(r.from)) r.from = "";
+      if(!parseISO(r.to))   r.to = "";
+    }
     if(type === "wiki"){
       if(!Array.isArray(r.aka)) r.aka = [];
       if(!KINDS[r.kind]) r.kind = "idea";
@@ -245,7 +374,7 @@ window.RP = (function(){
   }
 
   function ingest(docs){
-    state = { threads:[], scenes:[], cast:[], wiki:[], drafts:{} };
+    state = { threads:[], scenes:[], cast:[], wiki:[], rels:[], drafts:{} };
     Object.keys(docs).forEach(function(key){
       var r = docs[key];
       if(!r || TYPES.indexOf(r.type) < 0 || !r.id) return;
@@ -256,7 +385,7 @@ window.RP = (function(){
 
   function snapshotDocs(){
     var out = {};
-    ["thread","scene","cast","wiki"].forEach(function(t){
+    ["thread","scene","cast","wiki","rel"].forEach(function(t){
       listFor(t).forEach(function(r){ out[docId(t, r.id)] = r; });
     });
     Object.keys(state.drafts).forEach(function(id){ out[docId("draft", id)] = state.drafts[id]; });
@@ -1069,6 +1198,8 @@ window.RP = (function(){
     todayISO:todayISO, parseISO:parseISO, shortDate:shortDate, longDate:longDate,
     relative:relative, plural:plural, MONTHS:MONTHS,
     storyKey:storyKey, storyLabel:storyLabel,
+    REL_KINDS:REL_KINDS, REL_PHRASES:REL_PHRASES, phraseFor:phraseFor, relsFor:relsFor,
+    relStatus:relStatus, relSpan:relSpan, familyAround:familyAround,
     ageOn:ageOn, ageText:ageText, bornLabel:bornLabel, latestDate:latestDate, linkWords:linkWords,
     thread:thread, scene:scene, person:person, entry:entry,
     castSorted:castSorted, wikiSorted:wikiSorted, threadsSorted:threadsSorted, threadColor:threadColor,

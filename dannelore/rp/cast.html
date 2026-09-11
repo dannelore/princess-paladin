@@ -35,6 +35,10 @@ const { $, esc } = RP;
 let mode = "grid";      /* grid | sheet | edit */
 let openId = null;      /* the character, or null for a new one */
 let dirty = false;      /* unsaved edits in the editor */
+let asOfFor = null;     /* which character the "as of" choice belongs to */
+let asOfScene = null;   /* the scene a profile is being read as of */
+let relOpen = false;    /* the relationship editor */
+let relEditId = null;   /* the relationship being edited, or null for a new one */
 
 const CROPS = [
   { key:"",       label:"Upper third" },
@@ -73,8 +77,16 @@ function renderSheet(c){
     .sort((a, b) => RP.compareStory(a.sc, b.sc));
   const back = RP.backlinks("cast", c);
 
-  const latest = RP.latestDate(c.id);
-  const ageNow = RP.ageOn(c.born && c.born.date, latest);
+  /* "As of": pick any scene they're in; age, relationships and the tree
+     all read from it. Defaults to their latest. */
+  const dated = datedScenes(c.id);
+  if(asOfFor !== c.id){
+    asOfFor = c.id;
+    asOfScene = dated.length ? dated[dated.length - 1].id : null;
+    relOpen = false; relEditId = null;
+  }
+  const asOfSc = dated.find(sc => sc.id === asOfScene) || null;
+  const latest = asOfSc ? asOfSc.when.date : null;
   const meta = [
     c.playedBy ? "Played by " + esc(c.playedBy) : "",
     RP.bornLabel(c) ? "Born " + esc(RP.bornLabel(c)) : ""
@@ -85,7 +97,6 @@ function renderSheet(c){
     <div class="rp-sheet">
       <div>
         ${RP.mini(c, { on: latest })}
-        ${ageNow ? `<p class="pp-hint" style="margin:8px 0 0;">Age as of their latest scene.</p>` : ""}
         <div class="rp-actions" style="margin-top:12px;">
           <button class="pp-btn pp-btn-quiet pp-btn-sm" type="button" data-edit="${esc(c.id)}">Edit character</button>
         </div>
@@ -100,6 +111,9 @@ function renderSheet(c){
         ${c.role ? `<p class="rp-sheet-role">${esc(c.role)}</p>` : ""}
         ${meta ? `<p class="rp-sheet-meta">${meta}</p>` : ""}
         ${RP.linkLine("cast", c)}
+        ${dated.length ? `<label class="rp-asof"><span>As of</span>
+          <select id="asOf">${dated.map(sc => `<option value="${esc(sc.id)}"${sc.id === asOfScene ? " selected" : ""}>${esc(sc.title || "Untitled scene")} &mdash; ${esc(RP.storyLabel(sc))}</option>`).join("")}</select>
+        </label>` : ""}
 
         ${(c.sheet || []).filter(s => s.text).length
           ? (c.sheet || []).filter(s => s.text).map(s => `
@@ -108,6 +122,8 @@ function renderSheet(c){
                 <div class="rp-prose">${RP.markdown(s.text)}</div>
               </section>`).join("")
           : `<p class="rp-none">No sheet yet. Edit the character to add what they carry, want, and won&rsquo;t say.</p>`}
+
+        ${relationsHTML(c, latest)}
 
         <section class="rp-appears">
           <h2 class="rp-head">Speaks in</h2>
@@ -136,6 +152,195 @@ function renderSheet(c){
       </article>
     </div>`;
   watch();
+}
+
+/* ---------------- family + relationships ---------------- */
+
+function datedScenes(id){
+  return RP.timelineScenes().filter(sc => RP.parseISO(sc.when && sc.when.date) &&
+    ((sc.cast || []).indexOf(id) > -1 || sc.posts.some(p => p.who === id)));
+}
+
+function relRow(v, status){
+  const span = status === "past" && v.rec.to ? "until " + RP.longDate(v.rec.to) : "";
+  return `<a class="rp-relrow" href="${esc(RP.castUrl(v.other.id))}">
+    ${RP.face(v.other, 30)}
+    <span class="nm">${esc(v.other.name)}</span>
+    <span class="lb">${esc(v.label)}${span ? ` <small>${esc(span)}</small>` : ""}</span>
+    ${v.rec.note ? `<span class="nt">${esc(v.rec.note)}</span>` : ""}
+  </a>`;
+}
+
+function relationsHTML(c, on){
+  const all = RP.relsFor(c.id);
+  const now = all.filter(v => RP.relStatus(v.rec, on) === "now");
+  const past = all.filter(v => RP.relStatus(v.rec, on) === "past");
+  const others = now.filter(v => !v.family);
+  const tree = RP.familyAround(c.id, on);
+
+  /* The family list comes from the same picture as the tree, so it includes
+     siblings through a shared parent and grandparents, not just what was
+     entered directly. Notes come from the direct record where there is one. */
+  const direct = otherId => now.find(v => v.family && v.other.id === otherId);
+  const famRow = (n, label) => {
+    const other = RP.person(n.id), d = direct(n.id);
+    return other ? { other, label, rec: d ? d.rec : { note:"" } } : null;
+  };
+  const family = [].concat(
+    tree.grand.map(n => famRow(n, n.step ? "Step-grandparent" : "Grandparent")),
+    tree.parents.map(n => famRow(n, n.step ? "Step-parent" : "Parent")),
+    tree.spouses.map(n => famRow(n, "Spouse")),
+    tree.siblings.map(n => famRow(n, "Sibling")),
+    tree.children.map(n => famRow(n, n.step ? "Step-child" : "Child"))
+  ).filter(Boolean);
+
+  return `<section class="rp-appears" id="relations">
+    <div class="rp-rel-top">
+      <h2 class="rp-head">Family &amp; relationships</h2>
+      <button class="rp-textlink" type="button" id="relToggle">${relOpen ? "Done" : "Edit"}</button>
+    </div>
+    ${!tree.empty ? treeHTML(c, tree) : ""}
+    ${family.length ? `<h3 class="rp-rel-sub">Family</h3><div class="rp-rels">${family.map(v => relRow(v, "now")).join("")}</div>` : ""}
+    ${others.length ? `<h3 class="rp-rel-sub">Relationships</h3><div class="rp-rels">${others.map(v => relRow(v, "now")).join("")}</div>` : ""}
+    ${past.length ? `<h3 class="rp-rel-sub">Before this</h3><div class="rp-rels is-past">${past.map(v => relRow(v, "past")).join("")}</div>` : ""}
+    ${!family.length && !others.length && !past.length && !relOpen
+      ? `<p class="rp-none">${all.length ? "Nothing yet at this point in the story." : "No family or relationships yet."}</p>` : ""}
+    ${relOpen ? relEditorHTML(c, all) : ""}
+  </section>`;
+}
+
+/* Drawn around this one person: grandparents, parents, then siblings, them
+   and their spouse, then children. Each row is spread evenly; lines run
+   from parent to child, dashed for step-family, doubled for marriages. */
+const NODE_W = 112, ROW_H = 132;
+
+function treeHTML(c, t){
+  const rows = [
+    t.grand.map(n => n.id),
+    t.parents.map(n => n.id),
+    t.siblings.map(n => n.id).concat([c.id], t.spouses.map(n => n.id)),
+    t.children.map(n => n.id)
+  ].filter(r => r.length);
+
+  const W = Math.max(360, Math.max.apply(null, rows.map(r => r.length)) * (NODE_W + 12));
+  const H = rows.length * ROW_H - 40;
+  const at = {};
+  rows.forEach((r, ri) => r.forEach((id, i) => { at[id] = { x: (i + 0.5) / r.length * W, y: ri * ROW_H, row: ri }; }));
+
+  const FACE = 44, NAME_BOTTOM = 88;
+  const lines = t.links.map(l => {
+    const a = at[l.from], b = at[l.to];
+    if(!a || !b) return "";
+    if(l.kind === "spouse" && a.row === b.row){
+      const [x1, x2] = a.x < b.x ? [a.x, b.x] : [b.x, a.x];
+      const y = a.y + FACE / 2;
+      return `<path d="M${x1 + FACE/2 + 4},${y - 2}H${x2 - FACE/2 - 4}M${x1 + FACE/2 + 4},${y + 2}H${x2 - FACE/2 - 4}" class="sp"/>`;
+    }
+    if((l.kind === "parent" || l.kind === "step") && b.row === a.row + 1){
+      const y1 = a.y + NAME_BOTTOM, y2 = b.y - 4, mid = (y1 + y2) / 2;
+      return `<path d="M${a.x},${y1}V${mid}H${b.x}V${y2}"${l.kind === "step" ? ' class="st"' : ""}/>`;
+    }
+    return "";
+  }).join("");
+
+  const nodes = Object.keys(at).map(id => {
+    const p = RP.person(id), pos = at[id], me = id === c.id;
+    const tag = me ? "span" : "a";
+    return `<${tag} class="rp-tree-node${me ? " is-me" : ""}"${me ? "" : ` href="${esc(RP.castUrl(id))}"`}
+      style="left:${pos.x - NODE_W / 2}px;top:${pos.y}px;width:${NODE_W}px;">
+      ${RP.face(p, FACE)}<span>${esc(p.name)}</span></${tag}>`;
+  }).join("");
+
+  return `<div class="rp-tree-wrap"><div class="rp-tree" style="width:${W}px;height:${H}px;">
+    <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">${lines}</svg>${nodes}
+  </div></div>`;
+}
+
+function relEditorHTML(c, all){
+  const others = RP.castSorted().filter(o => o.id !== c.id);
+  if(!others.length) return `<p class="rp-none">Add another character first &mdash; relationships are between cast members.</p>`;
+
+  const editing = relEditId ? RP.state.rels.find(r => r.id === relEditId) : null;
+  const ph = editing ? RP.phraseFor(editing, c.id) : null;
+  const otherId = editing ? (editing.a === c.id ? editing.b : editing.a) : "";
+  const sorted = all.slice().sort((x, y) => String(x.rec.from || "").localeCompare(String(y.rec.from || "")));
+
+  return `<div class="rp-releditor">
+    ${sorted.length ? `<div class="rp-rel-all">${sorted.map(v => {
+      const phrase = RP.phraseFor(v.rec, c.id);
+      return `<div class="rp-rel-line${v.rec.id === relEditId ? " is-editing" : ""}">
+        <span>${esc(c.name)} is <b>${esc(phrase ? phrase.text : v.label)}</b> ${esc(v.other.name)}${RP.relSpan(v.rec) ? ` <small>${esc(RP.relSpan(v.rec))}</small>` : ""}</span>
+        <button class="rp-iconbtn" type="button" data-rel-edit="${esc(v.rec.id)}" aria-label="Edit">&#9998;</button>
+        <button class="rp-iconbtn" type="button" data-rel-drop="${esc(v.rec.id)}" aria-label="Delete">&times;</button>
+      </div>`;
+    }).join("")}</div>` : ""}
+
+    <form id="relForm" autocomplete="off">
+      <div class="rp-fields">
+        <div class="pp-field"><label for="rf-phrase">${esc(c.name)} is</label>
+          <select id="rf-phrase" name="phrase">${RP.REL_PHRASES.map(p =>
+            `<option value="${p.key}"${ph && ph.key === p.key ? " selected" : ""}>${esc(p.text)}</option>`).join("")}</select></div>
+        <div class="pp-field"><label for="rf-other">Who</label>
+          <select id="rf-other" name="other" required>
+            <option value="">Choose&hellip;</option>
+            ${others.map(o => `<option value="${esc(o.id)}"${o.id === otherId ? " selected" : ""}>${esc(o.name)}</option>`).join("")}
+          </select></div>
+        <div class="pp-field"><label for="rf-from">From</label>
+          <input id="rf-from" name="from" type="date" value="${esc(editing ? editing.from : "")}"></div>
+        <div class="pp-field"><label for="rf-to">Until</label>
+          <input id="rf-to" name="to" type="date" value="${esc(editing ? editing.to : "")}"></div>
+        <div class="pp-field wide"><label for="rf-note">Note</label>
+          <input id="rf-note" name="note" maxlength="120" placeholder="Optional" value="${esc(editing ? editing.note || "" : "")}"></div>
+      </div>
+      <p class="pp-hint" style="margin:8px 0 0;">Dates are story dates, and both are optional. When something changes &mdash; friends, then dating &mdash; give the old one an Until date and add the new one from the same day.</p>
+      <div class="rp-actions">
+        <button class="pp-btn pp-btn-sm" type="submit">${editing ? "Save relationship" : "Add relationship"}</button>
+        ${editing ? `<button class="rp-textlink" type="button" data-rel-cancel>Cancel</button>` : ""}
+      </div>
+    </form>
+  </div>`;
+}
+
+function saveRel(c){
+  const f = $("relForm");
+  const ph = RP.REL_PHRASES.find(p => p.key === f.elements.phrase.value);
+  const other = f.elements.other.value;
+  if(!ph || !other) return;
+
+  const rec = {
+    id: relEditId || RP.uid(),
+    kind: ph.kind,
+    a: ph.me === "a" ? c.id : other,
+    b: ph.me === "a" ? other : c.id,
+    from: f.elements.from.value,
+    to: f.elements.to.value,
+    note: f.elements.note.value.trim()
+  };
+  const otherName = RP.person(other).name;
+
+  if(rec.from && rec.to && rec.to <= rec.from){
+    alert("“Until” needs to be after “From”.");
+    return;
+  }
+  const k = RP.REL_KINDS[rec.kind];
+  const symmetric = k.aIs === k.bIs;
+  const samePair = r => (r.a === rec.a && r.b === rec.b) || (symmetric && r.a === rec.b && r.b === rec.a);
+  const overlaps = r => (!r.to || !rec.from || rec.from < r.to) && (!rec.to || !r.from || r.from < rec.to);
+  const others = RP.state.rels.filter(r => r.id !== rec.id);
+
+  if(others.some(r => r.kind === rec.kind && samePair(r) && overlaps(r))){
+    alert(`That's already recorded for ${otherName} over those dates. Edit the existing one instead, or give it an Until date.`);
+    return;
+  }
+  if((rec.kind === "parent" || rec.kind === "step") &&
+     others.some(r => (r.kind === "parent" || r.kind === "step") && r.a === rec.b && r.b === rec.a)){
+    alert(`${otherName} is already recorded the other way round — they can't be each other's parent.`);
+    return;
+  }
+
+  RP.save("rel", rec);
+  relEditId = null;
+  renderSheet(c);
 }
 
 function pageChip(p){
@@ -365,7 +570,10 @@ function deleteCast(id){
     alert(`${c.name} has ${RP.plural(posts, "post")}. Delete or reassign ${posts === 1 ? "it" : "them"} first — each post's edit box lets you change who's speaking.`);
     return;
   }
-  if(!confirm(`Delete ${c.name}? Links to them will go back to plain text.`)) return;
+  const rels = RP.state.rels.filter(r => r.a === id || r.b === id);
+  const relNote = rels.length ? ` Their ${RP.plural(rels.length, "relationship")} will be deleted too.` : "";
+  if(!confirm(`Delete ${c.name}? Links to them will go back to plain text.${relNote}`)) return;
+  rels.forEach(r => RP.remove("rel", r.id));
   RP.remove("cast", id);
   dirty = false;
   show("grid", null, true);
@@ -405,11 +613,49 @@ function render(){
   document.title = title + " — The Writing Room";
 }
 
+/* Re-rendering the sheet shouldn't throw you back to the top of it. */
+function keepRelInView(){
+  const el = $("relations");
+  if(el && el.getBoundingClientRect && el.getBoundingClientRect().top < 0) el.scrollIntoView({ block:"start" });
+}
+
 function watch(){
   document.querySelectorAll("[data-sync]").forEach(el => { if(!el.dataset.watched){ el.dataset.watched = 1; RP.watchSync(el); } });
 }
 
+document.addEventListener("change", e => {
+  if(e.target.id !== "asOf") return;
+  asOfScene = e.target.value;
+  const c = RP.person(openId);
+  if(c) renderSheet(c);
+});
+
+document.addEventListener("submit", e => {
+  if(e.target.id !== "relForm") return;
+  e.preventDefault();
+  const c = RP.person(openId);
+  if(c) saveRel(c);
+});
+
 document.addEventListener("click", e => {
+  if(mode === "sheet"){
+    const c = RP.person(openId);
+    if(c && e.target.closest("#relToggle")){ relOpen = !relOpen; relEditId = null; renderSheet(c); keepRelInView(); return; }
+    const re = e.target.closest("[data-rel-edit]");
+    if(c && re){ relEditId = re.dataset.relEdit; renderSheet(c); keepRelInView(); return; }
+    if(c && e.target.closest("[data-rel-cancel]")){ relEditId = null; renderSheet(c); keepRelInView(); return; }
+    const rd = e.target.closest("[data-rel-drop]");
+    if(c && rd){
+      const r = RP.state.rels.find(x => x.id === rd.dataset.relDrop);
+      const v = r && RP.relsFor(c.id).find(x => x.rec.id === r.id);
+      if(r && confirm(`Delete this relationship${v ? " with " + v.other.name : ""}? It goes from both profiles.`)){
+        RP.remove("rel", r.id);
+        if(relEditId === r.id) relEditId = null;
+        renderSheet(c); keepRelInView();
+      }
+      return;
+    }
+  }
   if(e.target.closest("[data-new]")){ show("edit", null, false); return; }
   const ed = e.target.closest("[data-edit]");
   if(ed){ show("edit", ed.dataset.edit, false); return; }
