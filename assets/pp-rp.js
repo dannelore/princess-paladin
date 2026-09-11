@@ -43,7 +43,7 @@ window.RP = (function(){
   var SYNCED_KEY = "writingroom-v1-synced";   /* set once this device has reached Firestore */
   var BASE       = "/dannelore/rp/";
 
-  var TYPES = ["thread","scene","cast","wiki","rel","draft"];
+  var TYPES = ["thread","scene","cast","wiki","rel","book","draft"];
 
   /* ---------------- vocabulary ---------------- */
 
@@ -328,7 +328,7 @@ window.RP = (function(){
      STORE
      ========================================================================== */
 
-  var state = { threads:[], scenes:[], cast:[], wiki:[], rels:[], drafts:{} };
+  var state = { threads:[], scenes:[], cast:[], wiki:[], rels:[], books:[], drafts:{} };
   var db = null;
   var online = false;
   var lastError = null;   /* Firestore's error code, so the readout can say why */
@@ -338,7 +338,7 @@ window.RP = (function(){
   function docId(type, id){ return type + "-" + id; }
 
   function listFor(type){
-    return { thread:state.threads, scene:state.scenes, cast:state.cast, wiki:state.wiki, rel:state.rels }[type];
+    return { thread:state.threads, scene:state.scenes, cast:state.cast, wiki:state.wiki, rel:state.rels, book:state.books }[type];
   }
 
   function clean(obj){
@@ -360,6 +360,12 @@ window.RP = (function(){
       if(!Array.isArray(r.sheet)) r.sheet = [];
       if(!r.born || typeof r.born !== "object") r.born = {};
     }
+    if(type === "book"){
+      if(!parseISO(r.start)) r.start = "";
+      if(typeof r.order !== "number") r.order = 0;
+      r.name = String(r.name || "Untitled book");
+    }
+    if(type === "scene" && typeof r.book !== "string") r.book = "";
     if(type === "rel"){
       if(!REL_KINDS[r.kind]) r.kind = "friend";
       if(!parseISO(r.from)) r.from = "";
@@ -374,7 +380,7 @@ window.RP = (function(){
   }
 
   function ingest(docs){
-    state = { threads:[], scenes:[], cast:[], wiki:[], rels:[], drafts:{} };
+    state = { threads:[], scenes:[], cast:[], wiki:[], rels:[], books:[], drafts:{} };
     Object.keys(docs).forEach(function(key){
       var r = docs[key];
       if(!r || TYPES.indexOf(r.type) < 0 || !r.id) return;
@@ -385,7 +391,7 @@ window.RP = (function(){
 
   function snapshotDocs(){
     var out = {};
-    ["thread","scene","cast","wiki","rel"].forEach(function(t){
+    ["thread","scene","cast","wiki","rel","book"].forEach(function(t){
       listFor(t).forEach(function(r){ out[docId(t, r.id)] = r; });
     });
     Object.keys(state.drafts).forEach(function(id){ out[docId("draft", id)] = state.drafts[id]; });
@@ -1093,6 +1099,77 @@ window.RP = (function(){
 
   function timelineScenes(){ return state.scenes.slice().sort(compareStory); }
 
+  /* ---------------- books ----------------
+     A book is a stretch of story time: { id, name, start, order }.
+
+     A date belongs to the book with the latest start on or before it. A book
+     with no start date only catches something if it's first in order — that's
+     "History", everything before the first dated book. Any other book without
+     a start (Book 2, before you know when it begins) only holds scenes pinned
+     to it by hand. A pin always wins over the date. */
+  var STARTER_BOOKS = [
+    { name:"History", start:"" },
+    { name:"Prequel", start:"2023-01-01" },
+    { name:"Book 1",  start:"2026-09-06" },
+    { name:"Book 2",  start:"" }
+  ];
+
+  function booksOrdered(){
+    return state.books.slice().sort(function(a, b){
+      return (a.order - b.order) || String(a.name).localeCompare(String(b.name));
+    });
+  }
+
+  function bookForDate(date){
+    if(!parseISO(date)) return null;
+    var ordered = booksOrdered();
+    var best = null;
+    ordered.forEach(function(b){
+      if(b.start && b.start <= date && (!best || b.start > best.start)) best = b;
+    });
+    if(best) return best;
+    return ordered.length && !ordered[0].start ? ordered[0] : null;
+  }
+
+  function bookOf(sc){
+    if(sc && sc.book){
+      var pinned = state.books.find(function(b){ return b.id === sc.book; });
+      if(pinned) return pinned;
+    }
+    return bookForDate(sc && sc.when && sc.when.date);
+  }
+
+  /* Where a book ends: the day before the next dated book starts. */
+  function bookEnd(book){
+    var later = state.books.filter(function(b){ return b.start && book.start && b.start > book.start; })
+                           .map(function(b){ return b.start; }).sort();
+    if(!later.length) return "";
+    var p = parseISO(later[0]);
+    var d = new Date(Date.UTC(p.y, p.m - 1, p.d - 1));
+    return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
+  }
+
+  function bookWords(book){
+    return state.scenes.reduce(function(n, sc){
+      var b = bookOf(sc);
+      return n + (b && b.id === book.id ? sceneWords(sc) : 0);
+    }, 0);
+  }
+
+  /* ---------------- point of view ----------------
+     Words per character in a scene, most first. Narration belongs to nobody,
+     so it doesn't count. A tie goes to whoever posted first. */
+  function povOf(sc){
+    var tally = {}, first = {};
+    (sc.posts || []).forEach(function(p, i){
+      if(p.who === "narration" || !person(p.who)) return;
+      tally[p.who] = (tally[p.who] || 0) + wordCount(p.md);
+      if(!(p.who in first)) first[p.who] = i;
+    });
+    return Object.keys(tally).map(function(id){ return { person:person(id), words:tally[id], first:first[id] }; })
+      .sort(function(a, b){ return (b.words - a.words) || (a.first - b.first); });
+  }
+
   /* The scene either side of this one on the timeline, in any thread. */
   function neighbours(sc){
     var list = timelineScenes().filter(function(s){ return storyKey(s); });
@@ -1137,6 +1214,14 @@ window.RP = (function(){
         "</div>" +
         '<span class="pp-hint">The date puts the scene in its place on the timeline. Use &ldquo;Shown as&rdquo; if the story keeps its own calendar.</span></div>' +
 
+        (state.books.length ? '<div class="pp-field"><label for="sf-book">Book</label>' +
+          '<select id="sf-book" name="book">' +
+            '<option value="">By story date</option>' +
+            booksOrdered().map(function(b){
+              return '<option value="' + esc(b.id) + '"' + (b.id === sc.book ? " selected" : "") + ">" + esc(b.name) + "</option>";
+            }).join("") +
+          '</select><span class="pp-hint">Leave it on the date, or pin it to a book you know it belongs in.</span></div><div></div>' : "") +
+
         (sc.id ? '<div class="pp-field"><label for="sf-state">State</label>' +
           '<select id="sf-state" name="state">' +
             STATES.map(function(s){
@@ -1180,6 +1265,7 @@ window.RP = (function(){
     sc.summary = val("summary");
     sc.when    = { date:val("date"), time:val("time"), label:val("label") };
     var st = val("state"); if(st) sc.state = st;
+    if(root.querySelector('[name="book"]')) sc.book = val("book");
     sc.cast = Array.prototype.map.call(
       root.querySelectorAll('.rp-castpick button[aria-pressed="true"]'),
       function(b){ return b.getAttribute("data-cast"); }
@@ -1211,6 +1297,8 @@ window.RP = (function(){
     sceneUrl:sceneUrl, castUrl:castUrl, wikiUrl:wikiUrl,
     initials:initials, face:face, mini:mini, linkLine:linkLine, statePill:statePill, threadChip:threadChip,
     colorPicker:colorPicker, splitList:splitList, wirePreview:wirePreview,
-    compareStory:compareStory, timelineScenes:timelineScenes, neighbours:neighbours
+    compareStory:compareStory, timelineScenes:timelineScenes,
+    STARTER_BOOKS:STARTER_BOOKS, booksOrdered:booksOrdered, bookForDate:bookForDate, bookOf:bookOf,
+    bookEnd:bookEnd, bookWords:bookWords, povOf:povOf, neighbours:neighbours
   };
 })();

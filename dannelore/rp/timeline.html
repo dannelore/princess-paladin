@@ -13,13 +13,18 @@
 </head>
 <body class="pp-dannelore rp-room" data-nav-eyebrow="The Writing Room" data-nav-title="Timeline">
 
-<div class="rp-wrap" style="max-width:calc(900px + (var(--pad-x) * 2));">
+<div class="rp-wrap rp-tl-page">
 
   <p class="rp-lede">What happened, in the order it happened to them &mdash; every thread woven together.</p>
 
-  <div class="rp-bar" id="filters"></div>
+  <div class="rp-tl-layout">
+    <aside class="rp-tl-side" aria-label="Timeline controls">
+      <section class="pp-panel" id="booksPanel"></section>
+      <section class="pp-panel" id="showPanel"></section>
+    </aside>
 
-  <div id="timeline"></div>
+    <main id="timeline"></main>
+  </div>
 
   <footer class="pp-footer">
     <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
@@ -39,20 +44,93 @@ const { $, esc } = RP;
 /* Threads switched on. Empty means every thread. */
 let onThreads = [];
 let showEvents = true;
+let editingBooks = false;
 
-function renderFilters(){
+/* ---------------- collapsed sections ----------------
+   Remembered on this device, not synced: how you like to read the timeline
+   on your phone needn't match the laptop. Keys look like
+   "b:bookId", "y:bookId:2023", "m:bookId:2023-05". */
+const FOLD_KEY = "writingroom-v1-timeline-folds";
+let folds = {};
+try{ folds = JSON.parse(localStorage.getItem(FOLD_KEY) || "{}") || {}; }catch(e){ folds = {}; }
+
+function isFolded(key){ return !!folds[key]; }
+function setFold(key, on){
+  if(on) folds[key] = 1; else delete folds[key];
+  try{ localStorage.setItem(FOLD_KEY, JSON.stringify(folds)); }catch(e){}
+}
+
+/* ---------------- sidebar ---------------- */
+
+function span(book){
+  const end = RP.bookEnd(book);
+  if(book.start && end) return RP.longDate(book.start) + " \u2013 " + RP.longDate(end);
+  if(book.start) return "From " + RP.longDate(book.start);
+  const ordered = RP.booksOrdered();
+  const firstDated = ordered.filter(b => b.start).map(b => b.start).sort()[0];
+  if(ordered[0] && ordered[0].id === book.id && firstDated) return "Before " + RP.longDate(firstDated);
+  return "No start date \u2014 pinned scenes only";
+}
+
+function renderBooks(){
+  const books = RP.booksOrdered();
+
+  if(!books.length){
+    $("booksPanel").innerHTML = `
+      <h2 class="rp-head">Books</h2>
+      <p class="rp-none" style="margin:0 0 10px;">Split the timeline into books, each with its own word count.</p>
+      <button class="pp-btn pp-btn-sm" type="button" id="starterBooks">Start with History, Prequel, Book 1 &amp; Book 2</button>
+      <button class="rp-textlink" type="button" data-books-edit style="display:block;margin-top:8px;">Or make your own</button>`;
+    if(editingBooks) $("booksPanel").insertAdjacentHTML("beforeend", booksEditor(books));
+    return;
+  }
+
+  const counts = {};
+  RP.state.scenes.forEach(sc => { const b = RP.bookOf(sc); if(b) counts[b.id] = (counts[b.id] || 0) + 1; });
+
+  $("booksPanel").innerHTML = `
+    <div class="rp-rel-top"><h2 class="rp-head">Books</h2>
+      <button class="rp-textlink" type="button" data-books-edit>${editingBooks ? "Done" : "Edit"}</button></div>
+    ${editingBooks ? booksEditor(books) : `<div class="rp-books">${books.map(b => `
+      <a class="rp-book-link" href="#book-${esc(b.id)}" data-jump="${esc(b.id)}">
+        <span class="nm">${esc(b.name)}</span>
+        <span class="wd">${RP.plural(RP.bookWords(b), "word")}</span>
+        <span class="sp">${esc(span(b))} &middot; ${RP.plural(counts[b.id] || 0, "scene")}</span>
+      </a>`).join("")}</div>`}`;
+}
+
+function booksEditor(books){
+  return `<div class="rp-books-edit">
+    ${books.map((b, i) => `
+      <div class="rp-book-row" data-book="${esc(b.id)}">
+        <input class="pp-input" data-k="name" value="${esc(b.name)}" maxlength="60" aria-label="Book name">
+        <input class="pp-input" data-k="start" type="date" value="${esc(b.start)}" aria-label="Starts on">
+        <span class="rp-row-tools">
+          <button class="rp-iconbtn" type="button" data-book-move="-1" aria-label="Move up"${i === 0 ? " disabled" : ""}>&uarr;</button>
+          <button class="rp-iconbtn" type="button" data-book-move="1" aria-label="Move down"${i === books.length - 1 ? " disabled" : ""}>&darr;</button>
+          <button class="rp-iconbtn" type="button" data-book-drop aria-label="Delete book">&times;</button>
+        </span>
+      </div>`).join("")}
+    <button class="rp-textlink" type="button" id="addBook">+ Add a book</button>
+    <p class="pp-hint" style="margin:8px 0 0;">A scene goes in the book whose start date it falls after. Leave a start date empty on the first book to catch everything earlier, or on a later book you only pin scenes to for now. Changes save as you go.</p>
+  </div>`;
+}
+
+function renderShow(){
   const threads = RP.threadsSorted();
   const hasEvents = RP.state.wiki.some(w => RP.storyKey(w));
-  const hasLoose = RP.state.scenes.some(sc => !RP.thread(sc.thread));
-
-  $("filters").innerHTML =
-    (threads.length > 1 || (threads.length && hasLoose)
-      ? `<button class="pp-pill" type="button" data-thread="" aria-pressed="${!onThreads.length}">Every thread</button>` +
-        threads.map(t => `<button class="pp-pill rp-pill-thread" type="button" data-thread="${esc(t.id)}"
-          style="--thread:${RP.safeColor(t.color)}" aria-pressed="${onThreads.indexOf(t.id) > -1}">${esc(t.name)}</button>`).join("")
-      : "") +
-    (hasEvents ? `<button class="pp-pill" type="button" data-events aria-pressed="${showEvents}">Wiki events</button>` : "");
+  $("showPanel").innerHTML = `
+    <h2 class="rp-head">Show</h2>
+    ${threads.length ? `<div class="rp-show-list">
+      <button class="rp-show" type="button" data-thread="" aria-pressed="${!onThreads.length}">Every thread</button>
+      ${threads.map(t => `<button class="rp-show" type="button" data-thread="${esc(t.id)}" aria-pressed="${onThreads.indexOf(t.id) > -1}"
+        style="--thread:${RP.safeColor(t.color)}"><i></i>${esc(t.name)}</button>`).join("")}
+    </div>` : ""}
+    ${hasEvents ? `<button class="rp-show" type="button" data-events aria-pressed="${showEvents}" style="margin-top:6px;">Wiki events</button>` : ""}
+    <p class="pp-hint" style="margin:10px 0 0;">Each circle is coloured for whoever has the most words in that scene. Hover one for the count.</p>`;
 }
+
+/* ---------------- rows ---------------- */
 
 function inFilter(sc){
   return !onThreads.length || onThreads.indexOf(sc.thread) > -1;
@@ -60,9 +138,13 @@ function inFilter(sc){
 
 function sceneRow(sc){
   const cast = (sc.cast || []).map(id => RP.person(id)).filter(Boolean);
+  const pov = RP.povOf(sc);
+  const dot = pov.length ? RP.safeColor(pov[0].person.color) : RP.threadColor(sc);
+  const tally = pov.length ? pov.map(x => `${x.person.name}: ${x.words.toLocaleString()} words`).join("\n") : "No character words yet";
   return `<a class="rp-tl-row${sc.state === "resting" ? " is-resting" : ""}" id="s-${esc(sc.id)}"
-      href="${esc(RP.sceneUrl(sc.id))}" style="--thread:${RP.threadColor(sc)}">
-    <div class="rp-tl-when">${esc(RP.storyLabel(sc) || "Undated")}</div>
+      href="${esc(RP.sceneUrl(sc.id))}" style="--dot:${dot}">
+    <span class="rp-tl-dot" title="${esc(tally)}" aria-label="${esc(pov.length ? "Most words: " + pov[0].person.name : "No character words yet")}"></span>
+    ${RP.storyLabel(sc) ? `<div class="rp-tl-when">${esc(RP.storyLabel(sc))}</div>` : ""}
     <div class="rp-tl-what">${esc(sc.title || "Untitled scene")} ${RP.statePill(sc.state)}</div>
     ${sc.summary ? `<p class="rp-tl-note">${esc(sc.summary)}</p>` : ""}
     <div class="rp-tl-foot">
@@ -75,7 +157,8 @@ function sceneRow(sc){
 
 function eventRow(w){
   return `<a class="rp-tl-row is-event" id="w-${esc(w.id)}" href="${esc(RP.wikiUrl(w.id))}"
-      style="--thread:${RP.KINDS[w.kind].color}">
+      style="--dot:${RP.KINDS[w.kind].color}">
+    <span class="rp-tl-dot"></span>
     <div class="rp-tl-when">${esc(RP.storyLabel(w))}</div>
     <div class="rp-tl-real">from the wiki</div>
     <div class="rp-tl-what">${esc(w.title)} <span class="rp-kind" style="background:${RP.KINDS[w.kind].color}">${esc(RP.KINDS[w.kind].label)}</span></div>
@@ -83,19 +166,88 @@ function eventRow(w){
   </a>`;
 }
 
+/* ---------------- main ---------------- */
+
+function foldBtn(key, inner, cls){
+  const open = !isFolded(key);
+  return `<button class="rp-fold ${cls}" type="button" data-fold="${esc(key)}" aria-expanded="${open}">
+    <span class="rp-chev" aria-hidden="true"></span>${inner}</button>`;
+}
+
+function wordsIn(items){
+  return items.reduce((n, it) => n + (it.kind === "scene" ? RP.sceneWords(it.rec) : 0), 0);
+}
+
+/* Years and months for one run of dated items. */
+function datedHTML(items, scope){
+  let html = "";
+  const years = [];
+  items.forEach(it => {
+    const d = RP.parseISO(it.rec.when.date);
+    let y = years[years.length - 1];
+    if(!y || y.y !== d.y){ y = { y:d.y, months:[] }; years.push(y); }
+    let m = y.months[y.months.length - 1];
+    if(!m || m.m !== d.m){ m = { m:d.m, items:[] }; y.months.push(m); }
+    m.items.push(it);
+  });
+
+  years.forEach(y => {
+    const all = y.months.reduce((a, m) => a.concat(m.items), []);
+    const yKey = `y:${scope}:${y.y}`;
+    const scenes = all.filter(i => i.kind === "scene").length;
+    html += `<div class="rp-tl-year">
+      ${foldBtn(yKey, `<h3 class="rp-title">${y.y < 0 ? Math.abs(y.y) + " BCE" : y.y}</h3>`, "is-year")}
+      <span class="rp-rule"></span>
+      <span class="rp-fold-count">${RP.plural(scenes, "scene")} &middot; ${RP.plural(wordsIn(all), "word")}</span>
+    </div>`;
+    if(isFolded(yKey)) return;
+    y.months.forEach(m => {
+      const mKey = `m:${scope}:${y.y}-${String(m.m).padStart(2, "0")}`;
+      const n = m.items.filter(i => i.kind === "scene").length;
+      html += `<div class="rp-tl-month">${foldBtn(mKey, RP.MONTHS[m.m - 1], "is-month")}
+        ${isFolded(mKey) ? `<span class="rp-fold-count">${RP.plural(n, "scene")}</span>` : ""}</div>`;
+      if(isFolded(mKey)) return;
+      html += `<div class="rp-tl-rows">${m.items.map(it => it.kind === "scene" ? sceneRow(it.rec) : eventRow(it.rec)).join("")}</div>`;
+    });
+  });
+  return html;
+}
+
+function sortItems(items){
+  /* Same moment: an event sets the scene, so it goes first. */
+  return items.sort((a, b) =>
+    a.key < b.key ? -1 : a.key > b.key ? 1 : (a.kind === b.kind ? 0 : (a.kind === "event" ? -1 : 1)));
+}
+
+function sectionHTML(id, name, sub, dated, undated, totalWords){
+  const key = "b:" + id;
+  const scenes = dated.filter(i => i.kind === "scene").length + undated.length;
+  let inner = "";
+  if(!isFolded(key)){
+    inner += dated.length ? datedHTML(dated, id) : "";
+    if(undated.length){
+      inner += `<div class="rp-tl-year"><h3 class="rp-title rp-tl-undated">No date yet</h3><span class="rp-rule"></span>
+        <span class="rp-fold-count">${RP.plural(undated.length, "scene")}</span></div>
+        <div class="rp-tl-rows">${undated.map(sceneRow).join("")}</div>`;
+    }
+    if(!dated.length && !undated.length) inner += `<p class="rp-none">Nothing here${onThreads.length ? " in these threads" : ""} yet.</p>`;
+  }
+  return `<section class="pp-panel rp-tl rp-tl-book${isFolded(key) ? " is-folded" : ""}" id="book-${esc(id)}">
+    <div class="rp-tl-bookhead">
+      ${foldBtn(key, `<h2 class="rp-title">${esc(name)}</h2>`, "is-book")}
+      <span class="rp-tl-booksub">${esc(sub)}</span>
+      <span class="rp-tl-bookwords">${RP.plural(totalWords, "word")} <small>${RP.plural(scenes, "scene")}${onThreads.length ? " shown" : ""}</small></span>
+    </div>
+    ${inner}
+  </section>`;
+}
+
 function render(){
-  renderFilters();
+  renderBooks();
+  renderShow();
 
   const scenes = RP.state.scenes.filter(inFilter);
-  const dated = scenes.filter(sc => RP.storyKey(sc)).map(sc => ({ kind:"scene", rec:sc, key:RP.storyKey(sc) }));
-  const events = showEvents
-    ? RP.state.wiki.filter(w => RP.storyKey(w)).map(w => ({ kind:"event", rec:w, key:RP.storyKey(w) }))
-    : [];
-  const undated = scenes.filter(sc => !RP.storyKey(sc)).sort(RP.compareStory);
-
-  /* Same moment: an event sets the scene, so it goes first. */
-  const items = dated.concat(events).sort((a, b) =>
-    a.key < b.key ? -1 : a.key > b.key ? 1 : (a.kind === b.kind ? 0 : (a.kind === "event" ? -1 : 1)));
+  const events = showEvents ? RP.state.wiki.filter(w => RP.storyKey(w)) : [];
 
   if(!RP.state.scenes.length && !events.length){
     $("timeline").innerHTML = `<div class="pp-panel rp-empty">
@@ -106,39 +258,71 @@ function render(){
     return;
   }
 
-  let html = "";
-  if(items.length){
-    let year = null, month = null;
-    html += `<div class="pp-panel rp-tl">`;
-    items.forEach(it => {
-      const d = RP.parseISO(it.rec.when.date);
-      if(d.y !== year){
-        year = d.y; month = null;
-        html += `<div class="rp-tl-year"><h2 class="rp-title">${year < 0 ? Math.abs(year) + " BCE" : year}</h2><span class="rp-rule"></span></div>`;
-      }
-      if(d.m !== month){
-        month = d.m;
-        html += `<div class="rp-tl-month">${RP.MONTHS[month - 1]}</div>`;
-      }
-      html += it.kind === "scene" ? sceneRow(it.rec) : eventRow(it.rec);
-    });
-    html += `</div>`;
-  } else {
-    html += `<div class="pp-panel"><p class="rp-none">No dated scenes${onThreads.length ? " in this thread" : ""} yet.</p></div>`;
+  const books = RP.booksOrdered();
+
+  /* No books yet: one run, as before. */
+  if(!books.length){
+    const dated = sortItems(scenes.filter(sc => RP.storyKey(sc)).map(sc => ({ kind:"scene", rec:sc, key:RP.storyKey(sc) }))
+      .concat(events.map(w => ({ kind:"event", rec:w, key:RP.storyKey(w) }))));
+    const undated = scenes.filter(sc => !RP.storyKey(sc)).sort(RP.compareStory);
+    $("timeline").innerHTML = sectionHTML("all", "The whole story", "", dated, [],
+      RP.state.scenes.reduce((n, sc) => n + RP.sceneWords(sc), 0)) +
+      (undated.length ? `<div class="rp-tl-lane">
+        <div class="rp-group-name"><h2 class="rp-title" style="font-size:1.35rem;">Not placed yet</h2><span class="rp-rule"></span><span>${undated.length}</span></div>
+        <p class="rp-lede" style="margin-bottom:12px;">These scenes have no story date. Open one and add it under Edit details.</p>
+        <div class="pp-panel rp-tl"><div class="rp-tl-rows">${undated.map(sceneRow).join("")}</div></div>
+      </div>` : "");
+    return;
   }
 
-  if(undated.length){
-    html += `<div class="rp-tl-lane">
-      <div class="rp-group-name"><h2 class="rp-title" style="font-size:1.35rem;">Not placed yet</h2><span class="rp-rule"></span><span>${undated.length}</span></div>
-      <p class="rp-lede" style="margin-bottom:12px;">These scenes have no story date. Open one and add it under Edit details.</p>
-      <div class="pp-panel rp-tl">${undated.map(sceneRow).join("")}</div>
-    </div>`;
-  }
+  const byBook = {};
+  const bucket = id => byBook[id] || (byBook[id] = { dated:[], undated:[] });
+  scenes.forEach(sc => {
+    const b = RP.bookOf(sc);
+    const box = bucket(b ? b.id : "none");
+    if(RP.storyKey(sc)) box.dated.push({ kind:"scene", rec:sc, key:RP.storyKey(sc) });
+    else box.undated.push(sc);
+  });
+  events.forEach(w => {
+    const b = RP.bookForDate(w.when.date);
+    bucket(b ? b.id : "none").dated.push({ kind:"event", rec:w, key:RP.storyKey(w) });
+  });
 
+  let html = books.map(b => {
+    const box = bucket(b.id);
+    return sectionHTML(b.id, b.name, span(b), sortItems(box.dated), box.undated.sort(RP.compareStory), RP.bookWords(b));
+  }).join("");
+
+  const loose = byBook.none;
+  if(loose && (loose.dated.length || loose.undated.length)){
+    const words = RP.state.scenes.filter(sc => !RP.bookOf(sc)).reduce((n, sc) => n + RP.sceneWords(sc), 0);
+    html += sectionHTML("none", "No book", "Undated, or earlier than every book", sortItems(loose.dated), loose.undated.sort(RP.compareStory), words);
+  }
   $("timeline").innerHTML = html;
 }
 
+/* ---------------- book editing ---------------- */
+
+function saveBookRow(row){
+  const b = RP.state.books.find(x => x.id === row.dataset.book);
+  if(!b) return;
+  const name = row.querySelector('[data-k="name"]').value.trim();
+  const start = row.querySelector('[data-k="start"]').value;
+  if(name) b.name = name;
+  b.start = start;
+  RP.save("book", b);
+}
+
+function renumber(list){
+  list.forEach((b, i) => { if(b.order !== i){ b.order = i; RP.save("book", b); } });
+}
+
+/* ---------------- events ---------------- */
+
 document.addEventListener("click", e => {
+  const f = e.target.closest("[data-fold]");
+  if(f){ setFold(f.dataset.fold, !isFolded(f.dataset.fold)); render(); return; }
+
   const t = e.target.closest("[data-thread]");
   if(t){
     const id = t.dataset.thread;
@@ -150,12 +334,87 @@ document.addEventListener("click", e => {
     render();
     return;
   }
-  if(e.target.closest("[data-events]")){ showEvents = !showEvents; render(); }
+  if(e.target.closest("[data-events]")){ showEvents = !showEvents; render(); return; }
+
+  const jump = e.target.closest("[data-jump]");
+  if(jump){
+    e.preventDefault();
+    setFold("b:" + jump.dataset.jump, false);
+    render();
+    const el = $("book-" + jump.dataset.jump);
+    if(el) el.scrollIntoView({ block:"start", behavior:"smooth" });
+    return;
+  }
+
+  if(e.target.closest("[data-books-edit]")){ editingBooks = !editingBooks; render(); return; }
+
+  if(e.target.closest("#starterBooks")){
+    RP.STARTER_BOOKS.forEach((b, i) => RP.save("book", { id: RP.uid(), name:b.name, start:b.start, order:i }));
+    render();
+    return;
+  }
+
+  if(e.target.closest("#addBook")){
+    const list = RP.booksOrdered();
+    RP.save("book", { id: RP.uid(), name:"Book " + (list.filter(b => /^Book \d+$/.test(b.name)).length + 1), start:"", order:list.length });
+    render();
+    const rows = document.querySelectorAll(".rp-book-row input[data-k=name]");
+    if(rows.length) rows[rows.length - 1].select();
+    return;
+  }
+
+  const mv = e.target.closest("[data-book-move]");
+  if(mv){
+    const list = RP.booksOrdered();
+    const i = list.findIndex(b => b.id === mv.closest(".rp-book-row").dataset.book);
+    const j = i + Number(mv.dataset.bookMove);
+    if(i < 0 || j < 0 || j >= list.length) return;
+    list.splice(j, 0, list.splice(i, 1)[0]);
+    renumber(list);
+    render();
+    return;
+  }
+
+  const dr = e.target.closest("[data-book-drop]");
+  if(dr){
+    const id = dr.closest(".rp-book-row").dataset.book;
+    const b = RP.state.books.find(x => x.id === id);
+    const pinned = RP.state.scenes.filter(sc => sc.book === id);
+    const msg = `Delete “${b.name}”? Its scenes aren't touched — they'll fall into whichever book their date belongs to.` +
+      (pinned.length ? ` ${RP.plural(pinned.length, "scene")} pinned to it will go back to following their date.` : "");
+    if(!confirm(msg)) return;
+    pinned.forEach(sc => { sc.book = ""; RP.save("scene", sc); });
+    RP.remove("book", id);
+    renumber(RP.booksOrdered());
+    render();
+  }
+});
+
+/* Book names and dates save when you leave the field, not on every key. */
+document.addEventListener("change", e => {
+  const row = e.target.closest(".rp-book-row");
+  if(row){ saveBookRow(row); render(); }
 });
 
 RP.load().then(() => {
+  const id = location.hash && location.hash.slice(1);
+  /* Linked straight to a scene: unfold whatever it's tucked inside. */
+  if(id && /^[sw]-/.test(id)){
+    const recId = id.slice(2);
+    const rec = id[0] === "s" ? RP.scene(recId) : RP.entry(recId);
+    if(rec){
+      const b = id[0] === "s" ? RP.bookOf(rec) : RP.bookForDate(rec.when && rec.when.date);
+      const scope = RP.state.books.length ? (b ? b.id : "none") : "all";
+      setFold("b:" + scope, false);
+      const d = RP.parseISO(rec.when && rec.when.date);
+      if(d){
+        setFold(`y:${scope}:${d.y}`, false);
+        setFold(`m:${scope}:${d.y}-${String(d.m).padStart(2, "0")}`, false);
+      }
+    }
+  }
   render();
-  const target = location.hash && document.getElementById(location.hash.slice(1));
+  const target = id && document.getElementById(id);
   if(target){ target.scrollIntoView({ block:"center" }); target.classList.add("rp-highlight"); }
 });
 </script>
