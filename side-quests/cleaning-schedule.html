@@ -3,19 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Castle Keeping — princessandpaladin.com</title>
+<title>Cleaning Schedule — princessandpaladin.com</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/pp.css">
 <style>
-  /* Castle-only */
-  .back-row{
-    display: flex;
-    justify-content: center;
-    gap: 18px;
-    margin-top: 20px;
+  .coming-soon{
+    max-width: 520px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .coming-soon svg{
+    width: 40px;
+    height: 40px;
+    color: var(--burgundy);
+    margin-bottom: 12px;
+  }
+  .coming-soon p{
+    margin-top: 8px;
+    opacity: .8;
   }
 </style>
 </head>
@@ -57,44 +65,17 @@
 
   <div class="pp-page-title">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M4 21V10l3-2V6h2v2l3-2v3l3-2v3l3-2v2l3 2v11Z"/>
-      <path d="M4 21h16"/>
+      <path d="M12 2c2 3 5 6 5 10a5 5 0 0 1-10 0c0-4 3-7 5-10Z"/>
     </svg>
-    <h2>Castle Keeping</h2>
+    <h2>Cleaning Schedule</h2>
   </div>
 
-  <div class="pp-cards">
-
-    <a class="pp-panel pp-panel-tight pp-card" href="meal-planner.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M7 3v7a2 2 0 0 0 2 2v9M7 3v5M9 3v5"/>
-        <path d="M17 3c-1.5 0-2.5 1.5-2.5 4s.5 4 .5 4v10"/>
-      </svg>
-      <h3>Meal Planner</h3>
-    </a>
-
-    <a class="pp-panel pp-panel-tight pp-card" href="recipe-book.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M4 6.5C6 5 9 5 12 6.5V19c-3-1.5-6-1.5-8 0V6.5Z"/>
-        <path d="M20 6.5C18 5 15 5 12 6.5V19c3-1.5 6-1.5 8 0V6.5Z"/>
-      </svg>
-      <h3>Recipe Book</h3>
-    </a>
-
-    <a class="pp-panel pp-panel-tight pp-card" href="recipe-construction.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2-2 2.8-2.8Z"/>
-      </svg>
-      <h3>Recipe Construction</h3>
-    </a>
-
-    <a class="pp-panel pp-panel-tight pp-card" href="cleaning-schedule.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M12 2c2 3 5 6 5 10a5 5 0 0 1-10 0c0-4 3-7 5-10Z"/>
-      </svg>
-      <h3>Cleaning Schedule</h3>
-    </a>
-
+  <div class="pp-panel pp-panel-lg coming-soon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 2c2 3 5 6 5 10a5 5 0 0 1-10 0c0-4 3-7 5-10Z"/>
+    </svg>
+    <h3>Coming soon</h3>
+    <p>The cleaning schedule tracker isn't built yet — check back later!</p>
   </div>
 
 </main>

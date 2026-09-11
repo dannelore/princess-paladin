@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recipes — Princess & Paladin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<style>/* ---- recipe book only ---- */
+
+.layout{ display:flex; gap:22px; align-items:flex-start; }
+.recipe-main{ flex:1 1 auto; min-width:0; }
+
+.toc{ flex:0 0 auto; width:max-content; min-width:200px; max-width:380px; position:sticky; top:20px; max-height:calc(100vh - 40px); overflow-y:auto; overflow-x:auto; }
+/* The table of contents scrolls internally, so the inset line would scroll
+   away with it. This is the one panel on the site without the frame. */
+.toc::before{ display:none; }
+.toc h2{ margin-bottom:.5em; font-size:1.2rem; }
+.toc-list{ list-style:none; margin:0; padding:0; }
+.toc-list li{ margin-bottom:6px; }
+.toc-list a{ text-decoration:none; color:var(--sage-deep); font-size:.92rem; white-space:nowrap; }
+.toc-list a:hover{ color:var(--sage); text-decoration:underline; }
+
+@media (max-width: 720px){
+  .layout{ flex-direction:column; }
+  .toc{ position:static; max-height:none; flex-basis:auto; width:100%; min-width:0; max-width:none; }
+}
+
+.filter-panel{ margin-bottom:18px; }
+.filter-block{ margin-bottom:12px; }
+.filter-block:last-child{ margin-bottom:0; }
+.filter-label{ display:block; font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:var(--gold); font-weight:600; margin-bottom:6px; }
+.chip-group{ display:flex; flex-wrap:wrap; gap:8px; }
+.chip{ display:inline-flex; align-items:center; font-family:var(--font-body); font-size:.85rem; padding:7px 14px;
+  border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--ink); cursor:pointer; }
+.chip.checked{ background:var(--sage); border-color:var(--sage); color:#fff; }
+.filter-head{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
+.filter-head h2{ margin:0; font-size:1.2rem; }
+.filter-count{ font-size:.8rem; color:var(--ink-soft); font-style:italic; }
+.recipe-entry{ scroll-margin-top:16px; }
+.recipe-entry + .recipe-entry{ margin-top:22px; }
+.recipe-meta{ font-size:.85rem; color:var(--ink-soft); margin-bottom:6px; }
+.recipe-tags{ margin-bottom:10px; }
+.recipe-entry h4{ margin:10px 0 4px; font-size:.85rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); }
+.recipe-entry ul, .recipe-entry ol{ margin:0 0 10px; padding-left:22px; }
+.recipe-entry li{ margin-bottom:4px; }
+</style>
+</head>
+<body class="pp-castle">
+
+<header class="pp-ribbon">
+  <div class="pp-ribbon-inner">
+    <a class="pp-ribbon-mark" href="/" aria-label="Princess &amp; Paladin home">
+      <span class="pp-emblem pp-emblem-sm" style="margin:0;">
+        <!-- Tiara -->
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M8 44 H56" stroke="#9C7440" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="32" cy="10" r="3.5" fill="#9C7440"/>
+          <circle cx="4" cy="18" r="3" fill="#9C7440"/>
+          <circle cx="60" cy="18" r="3" fill="#9C7440"/>
+        </svg>
+        <!-- Sword -->
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g transform="translate(16,0)">
+            <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
+            <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+            <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
+            <circle cx="16" cy="60" r="3.4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+          </g>
+        </svg>
+      </span>
+    </a>
+    <div class="pp-ribbon-titles">
+      <span class="pp-ribbon-eyebrow">Castle Keep</span>
+      <span class="pp-ribbon-title">Recipe Book</span>
+    </div>
+    <nav class="pp-nav" aria-label="Main navigation">
+      <a href="/">Home</a>
+      <a href="/dannelore/">Princess</a>
+      <a href="/vmprman/">Paladin</a>
+      <a href="/castle/" aria-current="page">Castle Keep</a>
+      <a href="/side-quests/">Side Quests</a>
+      <a href="/templates/">Templates</a>
+    </nav>
+  </div>
+</header>
+
+<div class="shell shell-wide">
+
+
+  <div class="layout">
+    <aside class="panel toc" id="tocPanel">
+      <h2>Table of Contents</h2>
+      <ul class="toc-list" id="tocList"></ul>
+    </aside>
+
+    <main class="recipe-main">
+      <section class="panel filter-panel">
+        <div class="filter-head">
+          <h2>Filters</h2>
+          <button type="button" class="btn small secondary" id="clearFilters">Clear</button>
+        </div>
+        <div id="filterChips"></div>
+        <p class="filter-count" id="filterCount"></p>
+      </section>
+      <div id="recipeListing"></div>
+      <p class="empty" id="emptyMsg" style="display:none;">No recipes yet — add some in <a href="recipe-construction.html" style="color:var(--pink-accent-deep);">Recipe Construction</a> and they'll show up here.</p>
+    </main>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<script>
+/* ============ FIREBASE SETUP ============
+   Shared across Recipe Construction, Meal Planner, and Recipe Book —
+   all three pages read and write the same Firestore document. */
+const firebaseConfig = {
+  apiKey: "AIzaSyAdNZBoh1pH80-ZFBbOlcrlsLdMi3D62Wg",
+  authDomain: "princess-paladin.firebaseapp.com",
+  projectId: "princess-paladin",
+  storageBucket: "princess-paladin.firebasestorage.app",
+  messagingSenderId: "282931655557",
+  appId: "1:282931655557:web:cae6ccd23f32cb9be54aec",
+  measurementId: "G-E5K2NMCR3Y"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+// No login: everything reads/writes this one fixed document — same
+// tradeoff as the quest log, fine for a private site nobody else knows
+// the address of.
+const mealDocRef = db.collection('mealplanning').doc('danni-meal-plan');
+
+/* ============ STATE LAYER ============
+   State lives in Firestore, with localStorage kept only as a same-device
+   cache so the page has something to show instantly on load. This page
+   only reads mealState.recipes — it never writes. */
+const MEAL_STORE_KEY = 'pp-mealplanning-v1';
+
+function defaultMealState(){
+  return {
+    recipes: [],
+    tagOptions: ['beef','chicken','turkey','pork','pasta','2 servings','4 servings','6 servings','8 servings','kid friendly','oven','stove top','slow cooker','air fryer','toaster oven'],
+    mealplan: {},
+    shoppingExtras: {},
+    shoppingChecked: {},
+    pantryItems: ['eggs','milk','butter','olive oil','salt','black pepper','garlic','onions','flour','sugar','rice','pasta','bread','paper towels','dish soap','coffee'],
+    pantryChecked: {}
+  };
+}
+function loadLegacyMealState(){
+  function legacyJSON(key, fallback){
+    try{ const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }catch(e){ return fallback; }
+  }
+  const d = defaultMealState();
+  return {
+    recipes: legacyJSON('pp_recipes', d.recipes),
+    tagOptions: legacyJSON('pp_tag_options', d.tagOptions),
+    mealplan: legacyJSON('pp_mealplan', d.mealplan),
+    shoppingExtras: legacyJSON('pp_shopping_extras', d.shoppingExtras),
+    shoppingChecked: legacyJSON('pp_shopping_checked', d.shoppingChecked),
+    pantryItems: legacyJSON('pp_pantry_items', d.pantryItems),
+    pantryChecked: legacyJSON('pp_pantry_checked', d.pantryChecked)
+  };
+}
+function saveMealState(){
+  localStorage.setItem(MEAL_STORE_KEY, JSON.stringify(mealState));
+  mealDocRef.set(mealState).catch(err => console.error('Sync to Firestore failed:', err));
+}
+async function loadMealStateFromFirestore(){
+  const snap = await mealDocRef.get();
+  if (snap.exists){
+    mealState = Object.assign(defaultMealState(), snap.data());
+  } else {
+    const raw = localStorage.getItem(MEAL_STORE_KEY);
+    mealState = raw ? Object.assign(defaultMealState(), JSON.parse(raw)) : loadLegacyMealState();
+    await mealDocRef.set(mealState);
+  }
+  localStorage.setItem(MEAL_STORE_KEY, JSON.stringify(mealState));
+}
+let mealState = null;
+
+function getRecipes(){ return mealState.recipes; }
+
+const FREQUENCY_LABELS = {
+  weekly: 'whenever',
+  'current-favorite': 'current favorite',
+  biweekly: 'every other week',
+  occasional: 'occasional',
+  'date-night': 'date night default'
+};
+const METHOD_OPTIONS = [
+  { value: 'oven', label: 'Oven' },
+  { value: 'stovetop', label: 'Stove Top' },
+  { value: 'crockpot', label: 'Slow Cooker' },        // value kept as 'crockpot' so existing recipes keep working
+  { value: 'air-fryer', label: 'Air Fryer' },
+  { value: 'toaster-oven', label: 'Toaster Oven' }
+];
+function methodLabel(value){
+  return (METHOD_OPTIONS.find(m => m.value === value) || {}).label || value;
+}
+
+// Cooking methods come from each recipe's checkboxes, not from tags —
+// same source of truth as Recipe Construction.
+const RETIRED_METHOD_TAGS = ['oven','stove top','stovetop','slow cooker','crockpot','crock pot','air fryer','toaster oven'];
+let activeTagFilters = new Set();
+let activeMethodFilters = new Set();
+
+function recipeMethods(r){ return r.methods || (r.method ? [r.method] : []); }
+
+function renderFilters(){
+  const wrap = document.getElementById('filterChips');
+  const tags = Array.from(new Set(getRecipes().flatMap(r => r.tags || [])))
+    .filter(t => !RETIRED_METHOD_TAGS.includes(String(t).toLowerCase()))
+    .sort();
+
+  const methodChips = METHOD_OPTIONS.map(m =>
+    `<button type="button" class="chip ${activeMethodFilters.has(m.value) ? 'checked' : ''}" data-method="${m.value}">${m.label}</button>`
+  ).join('');
+  const tagChips = tags.map(t =>
+    `<button type="button" class="chip ${activeTagFilters.has(t) ? 'checked' : ''}" data-tag="${t}">${t}</button>`
+  ).join('');
+
+  wrap.innerHTML = `
+    <div class="filter-block">
+      <span class="filter-label">Cooking method</span>
+      <div class="chip-group">${methodChips}</div>
+    </div>
+    <div class="filter-block">
+      <span class="filter-label">Tags</span>
+      <div class="chip-group">${tagChips || '<span class="filter-count">No tags yet.</span>'}</div>
+    </div>`;
+
+  wrap.querySelectorAll('[data-method]').forEach(btn => btn.addEventListener('click', () => {
+    const v = btn.dataset.method;
+    activeMethodFilters.has(v) ? activeMethodFilters.delete(v) : activeMethodFilters.add(v);
+    render();
+  }));
+  wrap.querySelectorAll('[data-tag]').forEach(btn => btn.addEventListener('click', () => {
+    const v = btn.dataset.tag;
+    activeTagFilters.has(v) ? activeTagFilters.delete(v) : activeTagFilters.add(v);
+    render();
+  }));
+}
+
+function applyFilters(list){
+  let out = list;
+  if (activeTagFilters.size){
+    out = out.filter(r => {
+      const t = r.tags || [];
+      return Array.from(activeTagFilters).every(f => t.includes(f));
+    });
+  }
+  if (activeMethodFilters.size){
+    out = out.filter(r => {
+      const m = recipeMethods(r);
+      return Array.from(activeMethodFilters).every(f => m.includes(f));
+    });
+  }
+  return out;
+}
+
+function render(){
+  // In circulation first (A–Z), then everything out of circulation (A–Z).
+  const all = getRecipes().slice().sort((a,b) =>
+    ((a.active === false) - (b.active === false)) || a.name.localeCompare(b.name)
+  );
+  const recipes = applyFilters(all);
+
+  renderFilters();
+  const filtering = activeTagFilters.size || activeMethodFilters.size;
+  document.getElementById('filterCount').textContent =
+    filtering ? `showing ${recipes.length} of ${all.length} recipes` : `${all.length} recipes`;
+
+  document.getElementById('tocPanel').style.display = recipes.length ? 'block' : 'none';
+  const emptyMsg = document.getElementById('emptyMsg');
+  emptyMsg.style.display = recipes.length ? 'none' : 'block';
+  if (!recipes.length && all.length){
+    emptyMsg.textContent = 'No recipes match those filters.';
+  }
+
+  document.getElementById('tocList').innerHTML = recipes.map(r =>
+    `<li><a href="#${r.id}">${r.name}</a></li>`
+  ).join('');
+
+  document.getElementById('recipeListing').innerHTML = recipes.map(r => `
+    <div class="panel recipe-entry" id="${r.id}">
+      <h3>${r.name}</h3>
+      <div class="recipe-meta">serves ${r.servings} · prep ${r.prepTime||'—'} · cook ${r.cookTime||'—'} · ${(r.methods || (r.method ? [r.method] : [])).map(methodLabel).join(', ') || '—'}</div>
+      <div class="recipe-tags">${(r.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}<span class="tag">${FREQUENCY_LABELS[r.frequency] || r.frequency}</span>${r.active === false ? '<span class="tag inactive-tag">not in circulation</span>' : ''}</div>
+      <h4>Ingredients</h4>
+      <ul>${(r.ingredients||[]).map(i => `<li>${[i.qty, i.unit, i.name].filter(Boolean).join(' ')}</li>`).join('') || '<li>—</li>'}</ul>
+      <h4>Instructions</h4>
+      <ol>${(r.instructions||[]).map(s => `<li>${s}</li>`).join('') || '<li>—</li>'}</ol>
+    </div>
+  `).join('');
+}
+
+document.getElementById('clearFilters').addEventListener('click', () => {
+  activeTagFilters.clear();
+  activeMethodFilters.clear();
+  render();
+});
+
+loadMealStateFromFirestore().then(render);
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>
