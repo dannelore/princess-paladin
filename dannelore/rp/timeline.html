@@ -6,16 +6,16 @@
 <title>Timeline — The Writing Room</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Petit+Formal+Script&family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/pp.css">
 <link rel="stylesheet" href="/assets/pp-rp.css">
 </head>
-<body class="pp-dannelore" data-nav-eyebrow="The Writing Room" data-nav-title="Timeline">
+<body class="pp-dannelore rp-room" data-nav-eyebrow="The Writing Room" data-nav-title="Timeline">
 
 <div class="rp-wrap" style="max-width:calc(900px + (var(--pad-x) * 2));">
 
-  <p class="rp-lede">What happened, in the order it happened to them &mdash; every thread woven together. The story&rsquo;s date sits on top; the day you wrote it sits underneath.</p>
+  <p class="rp-lede">What happened, in the order it happened to them &mdash; every thread woven together.</p>
 
   <div class="rp-bar" id="filters"></div>
 
@@ -63,7 +63,6 @@ function sceneRow(sc){
   return `<a class="rp-tl-row${sc.state === "resting" ? " is-resting" : ""}" id="s-${esc(sc.id)}"
       href="${esc(RP.sceneUrl(sc.id))}" style="--thread:${RP.threadColor(sc)}">
     <div class="rp-tl-when">${esc(RP.storyLabel(sc) || "Undated")}</div>
-    <div class="rp-tl-real">${esc(RP.writtenLabel(sc))}</div>
     <div class="rp-tl-what">${esc(sc.title || "Untitled scene")} ${RP.statePill(sc.state)}</div>
     ${sc.summary ? `<p class="rp-tl-note">${esc(sc.summary)}</p>` : ""}
     <div class="rp-tl-foot">

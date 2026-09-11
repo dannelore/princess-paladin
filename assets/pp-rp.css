@@ -1222,6 +1222,37 @@ a.rp-wl:hover{
   .rp-backrow .q{ white-space: normal; flex-basis: 100%; }
 }
 
+/* ==========================================================================
+   12. THE ROOM'S OWN LOOK
+   Every Writing Room page carries body.rp-room alongside pp-dannelore. The
+   folder's colours and nav stay; the background turns pale blue and the
+   headings go to Petit Formal Script. Small uppercase labels stay in Jost —
+   a script set in spaced capitals stops being readable.
+   ========================================================================== */
+
+body.rp-room{
+  --rp-script: 'Petit Formal Script', 'Cormorant Garamond', cursive;
+  background-image:
+    radial-gradient(circle at 15% 8%, rgba(255,255,255,0.55), transparent 42%),
+    linear-gradient(135deg, #EEF4F9 0%, #DBE7F1 100%);
+}
+
+body.rp-room .pp-title,
+body.rp-room .pp-ribbon-title,
+body.rp-room h1.rp-title,
+body.rp-room h2.rp-title,
+body.rp-room .rp-scene-head h3,
+body.rp-room .rp-sheet-sec h3,
+body.rp-room .rp-prose.rp-entry-body h3,
+body.rp-room .rp-prose.rp-entry-body h4,
+body.rp-room .rp-prose.rp-entry-body h5{
+  font-family: var(--rp-script);
+  font-weight: 400;          /* the face has one weight; anything more is faked */
+  font-style: normal;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 @media (prefers-reduced-motion: reduce){
   .rp-highlight{ animation: none; }
 }

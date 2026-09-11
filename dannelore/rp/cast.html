@@ -6,12 +6,12 @@
 <title>Cast — The Writing Room</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Petit+Formal+Script&family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Spicy+Rice&family=Ubuntu:ital,wght@0,300;0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/pp.css">
 <link rel="stylesheet" href="/assets/pp-rp.css">
 </head>
-<body class="pp-dannelore" data-nav-eyebrow="The Writing Room" data-nav-title="Cast">
+<body class="pp-dannelore rp-room" data-nav-eyebrow="The Writing Room" data-nav-title="Cast">
 
 <div class="rp-wrap">
   <div id="view"></div>
@@ -72,15 +72,12 @@ function renderSheet(c){
     .filter(x => x.n)
     .sort((a, b) => RP.compareStory(a.sc, b.sc));
   const back = RP.backlinks("cast", c);
-  const words = RP.state.scenes.reduce((n, sc) =>
-    n + sc.posts.filter(p => p.who === c.id).reduce((m, p) => m + RP.wordCount(p.md), 0), 0);
 
   const latest = RP.latestDate(c.id);
   const ageNow = RP.ageOn(c.born && c.born.date, latest);
   const meta = [
     c.playedBy ? "Played by " + esc(c.playedBy) : "",
-    RP.bornLabel(c) ? "Born " + esc(RP.bornLabel(c)) : "",
-    words ? RP.plural(words, "word") + " spoken" : ""
+    RP.bornLabel(c) ? "Born " + esc(RP.bornLabel(c)) : ""
   ].filter(Boolean).join(" &nbsp;/&nbsp; ");
 
   $("view").innerHTML = `
