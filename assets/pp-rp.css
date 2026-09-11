@@ -1306,12 +1306,11 @@ a.rp-tree-node:hover .rp-face{ box-shadow: 0 0 0 2px var(--accent); }
    12. THE ROOM'S OWN LOOK
    Every Writing Room page carries body.rp-room alongside pp-dannelore. The
    folder's colours and nav stay; the background turns pale blue and the
-   headings go to Petit Formal Script. Small uppercase labels stay in Jost —
-   a script set in spaced capitals stops being readable.
+   headings go to Fraunces, upright. Small uppercase labels stay in Jost.
    ========================================================================== */
 
 body.rp-room{
-  --rp-script: 'Petit Formal Script', 'Cormorant Garamond', cursive;
+  --rp-head: 'Fraunces', 'Cormorant Garamond', serif;
   background-image:
     radial-gradient(circle at 15% 8%, rgba(255,255,255,0.55), transparent 42%),
     linear-gradient(135deg, #EEF4F9 0%, #DBE7F1 100%);
@@ -1326,15 +1325,22 @@ body.rp-room .rp-sheet-sec h3,
 body.rp-room .rp-prose.rp-entry-body h3,
 body.rp-room .rp-prose.rp-entry-body h4,
 body.rp-room .rp-prose.rp-entry-body h5{
-  font-family: var(--rp-script);
-  font-weight: 400;          /* the face has one weight; anything more is faked */
+  font-family: var(--rp-head);
+  font-weight: 600;
   font-style: normal;
   letter-spacing: 0;
   text-transform: none;
 }
 
-/* Section headings inside sheets and entries were small spaced capitals.
-   A script can't be that small, so it comes up to a size it reads at. */
+/* The big title on the Scenes page: lighter weight, and dark rather than
+   the folder's pink. */
+body.rp-room .pp-title{
+  font-weight: 400;
+  color: var(--ink);
+}
+
+/* Section headings inside sheets and entries — once small spaced capitals,
+   now proper headings at a readable size. */
 body.rp-room .rp-sheet-sec h3,
 body.rp-room .rp-prose.rp-entry-body h3,
 body.rp-room .rp-prose.rp-entry-body h4,
@@ -1343,6 +1349,14 @@ body.rp-room .rp-prose.rp-entry-body h5{
   line-height: 1.3;
   color: var(--gold-deep);
   margin-bottom: 2px;
+}
+
+/* **Bold** in a character's post takes that character's colour, the one
+   picked on their profile. Narration keeps plain ink. The composer preview
+   follows whoever is selected as the speaker. */
+.rp-post:not(.narration) .rp-prose strong,
+.rp-composer:not(.is-narration) .rp-prose strong{
+  color: var(--who, inherit);
 }
 
 @media (prefers-reduced-motion: reduce){
