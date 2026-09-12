@@ -637,6 +637,19 @@
   color: var(--ink-soft);
   margin-top: 2px;
 }
+.rp-mini-tags{ display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.rp-mini-tag{
+  font-family: var(--font-body);
+  font-size: .6rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  background: var(--panel-tint);
+  border: 1px solid var(--line-gold);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
 .rp-mini-facts{ margin: 9px 0 0; padding: 9px 0 0; border-top: 1px dashed var(--line); }
 .rp-mini-facts div{ display: flex; gap: 8px; align-items: baseline; margin-top: 4px; }
 .rp-mini-facts div:first-child{ margin-top: 0; }
@@ -1265,6 +1278,14 @@ a.rp-wl:hover{
 .rp-relrow .lb small{ font-family: var(--font-body); font-style: normal; font-size: .7rem; margin-left: 4px; }
 .rp-relrow .nt{ flex-basis: 100%; padding-left: 40px; font-family: var(--font-body); font-size: .74rem; color: var(--ink-soft); }
 .rp-rels.is-past .rp-relrow{ opacity: .7; }
+
+.rp-relrow-editable{
+  display: flex; align-items: center; gap: 4px;
+  padding: 7px 4px; border-bottom: 1px dashed var(--line);
+}
+.rp-relrow-editable:last-child{ border-bottom: 0; }
+.rp-relrow-editable .rp-relrow{ flex: 1 1 auto; padding: 0; border-bottom: 0; }
+.rp-rels.is-past .rp-relrow-editable{ opacity: .7; }
 
 /* the tree */
 .rp-tree-wrap{ overflow-x: auto; margin: 14px 0 4px; padding: 6px 0; }

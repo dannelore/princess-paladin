@@ -43,7 +43,7 @@ window.RP = (function(){
   var SYNCED_KEY = "writingroom-v1-synced";   /* set once this device has reached Firestore */
   var BASE       = "/dannelore/rp/";
 
-  var TYPES = ["thread","scene","cast","wiki","rel","book","draft"];
+  var TYPES = ["thread","scene","cast","wiki","rel","relkind","book","draft"];
 
   /* ---------------- vocabulary ---------------- */
 
@@ -233,10 +233,33 @@ window.RP = (function(){
     { key:"crushed",     kind:"crush",       me:"b", text:"the crush of" }
   ];
 
+  /* Custom kinds Danni's added live in state.relKinds — {id, aIs, bIs}, always
+     non-family. This is the one place that knows how to look either up, so
+     everything else asks it rather than reaching into REL_KINDS directly. */
+  function kindInfo(kind){
+    if(REL_KINDS[kind]) return REL_KINDS[kind];
+    var custom = state.relKinds.find(function(k){ return k.id === kind; });
+    return custom ? { family:false, aIs:custom.aIs, bIs:custom.bIs, custom:true }
+                   : { family:false, aIs:"Connected to", bIs:"Connected to" };
+  }
+
+  /* One phrase per custom kind, two if it reads differently each way. */
+  function customPhrases(){
+    var out = [];
+    state.relKinds.forEach(function(k){
+      out.push({ key:"c:" + k.id + ":a", kind:k.id, me:"a", text:k.aIs, custom:true });
+      if(k.aIs !== k.bIs) out.push({ key:"c:" + k.id + ":b", kind:k.id, me:"b", text:k.bIs, custom:true });
+    });
+    return out;
+  }
+
+  function allRelPhrases(){ return REL_PHRASES.concat(customPhrases()); }
+
   function phraseFor(rel, me){
     var side = rel.a === me ? "a" : "b";
-    var sym = REL_KINDS[rel.kind] && REL_KINDS[rel.kind].aIs === REL_KINDS[rel.kind].bIs;
-    return REL_PHRASES.find(function(p){ return p.kind === rel.kind && (sym || p.me === side); }) || null;
+    var k = kindInfo(rel.kind);
+    var sym = k.aIs === k.bIs;
+    return allRelPhrases().find(function(p){ return p.kind === rel.kind && (sym || p.me === side); }) || null;
   }
 
   /* Every relationship involving this character where the other person
@@ -245,7 +268,7 @@ window.RP = (function(){
     return state.rels.filter(function(r){ return r.a === id || r.b === id; }).map(function(r){
       var other = person(r.a === id ? r.b : r.a);
       if(!other || other.id === id) return null;
-      var k = REL_KINDS[r.kind];
+      var k = kindInfo(r.kind);
       return { rec:r, other:other, family:k.family, label: r.a === id ? k.bIs : k.aIs };
     }).filter(Boolean);
   }
@@ -270,7 +293,7 @@ window.RP = (function(){
      whether they were entered directly or just share a parent. */
   function familyAround(id, on){
     var live = state.rels.filter(function(r){
-      return REL_KINDS[r.kind].family && relStatus(r, on) === "now" && person(r.a) && person(r.b);
+      return kindInfo(r.kind).family && relStatus(r, on) === "now" && person(r.a) && person(r.b);
     });
     function parentsOf(x){
       return live.filter(function(r){ return (r.kind === "parent" || r.kind === "step") && r.b === x; })
@@ -342,11 +365,23 @@ window.RP = (function(){
     return b.label || (parseISO(b.date) ? longDate(b.date) : "");
   }
 
+  function diedLabel(p){
+    var d = (p && p.died) || {};
+    return d.label || (parseISO(d.date) ? longDate(d.date) : "");
+  }
+
+  /* What's shown everywhere a name appears — their display name if they
+     have one, otherwise their full name. `name` itself never changes: it's
+     still what [[links]] and uniqueness checks match against. */
+  function displayName(p){
+    return (p && (p.displayName || p.name)) || "";
+  }
+
   /* ==========================================================================
      STORE
      ========================================================================== */
 
-  var state = { threads:[], scenes:[], cast:[], wiki:[], rels:[], books:[], drafts:{} };
+  var state = { threads:[], scenes:[], cast:[], wiki:[], rels:[], relKinds:[], books:[], drafts:{} };
   var db = null;
   var online = false;
   var lastError = null;   /* Firestore's error code, so the readout can say why */
@@ -356,7 +391,7 @@ window.RP = (function(){
   function docId(type, id){ return type + "-" + id; }
 
   function listFor(type){
-    return { thread:state.threads, scene:state.scenes, cast:state.cast, wiki:state.wiki, rel:state.rels, book:state.books }[type];
+    return { thread:state.threads, scene:state.scenes, cast:state.cast, wiki:state.wiki, rel:state.rels, relkind:state.relKinds, book:state.books }[type];
   }
 
   function clean(obj){
@@ -377,6 +412,8 @@ window.RP = (function(){
       if(!Array.isArray(r.facts)) r.facts = [];
       if(!Array.isArray(r.sheet)) r.sheet = [];
       if(!r.born || typeof r.born !== "object") r.born = {};
+      if(!r.died || typeof r.died !== "object") r.died = {};
+      if(typeof r.displayName !== "string") r.displayName = "";
     }
     if(type === "book"){
       if(!parseISO(r.start)) r.start = "";
@@ -385,9 +422,14 @@ window.RP = (function(){
     }
     if(type === "scene" && typeof r.book !== "string") r.book = "";
     if(type === "rel"){
-      if(!REL_KINDS[r.kind]) r.kind = "friend";
+      if(!REL_KINDS[r.kind] && !state.relKinds.some(function(k){ return k.id === r.kind; })) r.kind = "friend";
       if(!parseISO(r.from)) r.from = "";
       if(!parseISO(r.to))   r.to = "";
+    }
+    if(type === "relkind"){
+      r.aIs = String(r.aIs || "").trim() || "Connected to";
+      r.bIs = String(r.bIs || "").trim() || r.aIs;
+      r.family = false;
     }
     if(type === "wiki"){
       if(!Array.isArray(r.aka)) r.aka = [];
@@ -398,8 +440,17 @@ window.RP = (function(){
   }
 
   function ingest(docs){
-    state = { threads:[], scenes:[], cast:[], wiki:[], rels:[], books:[], drafts:{} };
-    Object.keys(docs).forEach(function(key){
+    state = { threads:[], scenes:[], cast:[], wiki:[], rels:[], relKinds:[], books:[], drafts:{} };
+    /* relkind docs must land in state before any rel doc is normalized,
+       since normalizing a rel checks state.relKinds for custom kinds — a
+       plain Object.keys order can't guarantee that, so relkind goes first. */
+    var keys = Object.keys(docs).sort(function(a, b){
+      var ra = docs[a], rb = docs[b];
+      var oa = (ra && ra.type === "relkind") ? 0 : 1;
+      var ob = (rb && rb.type === "relkind") ? 0 : 1;
+      return oa - ob;
+    });
+    keys.forEach(function(key){
       var r = docs[key];
       if(!r || TYPES.indexOf(r.type) < 0 || !r.id) return;
       if(r.type === "draft"){ state.drafts[r.id] = r; return; }
@@ -409,7 +460,7 @@ window.RP = (function(){
 
   function snapshotDocs(){
     var out = {};
-    ["thread","scene","cast","wiki","rel","book"].forEach(function(t){
+    ["thread","scene","cast","wiki","rel","relkind","book"].forEach(function(t){
       listFor(t).forEach(function(r){ out[docId(t, r.id)] = r; });
     });
     Object.keys(state.drafts).forEach(function(id){ out[docId("draft", id)] = state.drafts[id]; });
@@ -653,6 +704,19 @@ window.RP = (function(){
     return best;
   }
 
+  /* Total words spoken and scenes appeared in, across everything written.
+     Counts a scene whether they posted in it or were just listed as there. */
+  function castStats(id){
+    var words = 0, scenes = 0;
+    state.scenes.forEach(function(sc){
+      var posts = (sc.posts || []).filter(function(p){ return p.who === id; });
+      var inCast = (sc.cast || []).indexOf(id) > -1;
+      if(posts.length || inCast) scenes++;
+      posts.forEach(function(p){ words += wordCount(p.md); });
+    });
+    return { words:words, scenes:scenes };
+  }
+
   /* Every word that links to a record: the name first, then its link words. */
   function linkWords(kind, r){
     return [kind === "wiki" ? r.title : r.name].concat(r.aka || []).filter(Boolean);
@@ -664,7 +728,11 @@ window.RP = (function(){
     });
   }
 
-  function castSorted(){   return sortByName(state.cast, "name"); }
+  function castSorted(){
+    return state.cast.slice().sort(function(a, b){
+      return String(displayName(a)).localeCompare(String(displayName(b)), undefined, { sensitivity:"base" });
+    });
+  }
   function wikiSorted(){   return sortByName(state.wiki, "title"); }
   function threadsSorted(){ return sortByName(state.threads, "name"); }
 
@@ -994,7 +1062,7 @@ window.RP = (function(){
     var color = safeColor(p && p.color);
     var url = safeUrl(p && p.portrait);
     var style = "width:" + size + "px;height:" + size + "px;background:" + color + ";font-size:" + Math.round(size * 0.4) + "px;";
-    var inner = (p && p.id === "narration") ? "\u2767" : esc(initials(p && p.name));
+    var inner = (p && p.id === "narration") ? "\u2767" : esc(initials(displayName(p)));
     if(url){
       inner = '<img src="' + esc(url) + '" alt="" style="object-position:' + portraitPos(p) + '" ' +
               'onerror="this.remove()">' + inner;
@@ -1002,8 +1070,9 @@ window.RP = (function(){
     return '<span class="rp-face" style="' + style + '" aria-hidden="true">' + inner + "</span>";
   }
 
-  /* The card beside every post. Portrait, name, role, the facts this
-     character chose to show, and the face claim credit. */
+  /* The card beside every post. Portrait, name, the facts this character
+     chose to show, and the face claim credit. opts.meta adds generation and
+     cast-tier tags — used on the cast grid, not beside every scene post. */
   function mini(p, opts){
     opts = opts || {};
     if(!p){
@@ -1012,6 +1081,7 @@ window.RP = (function(){
     }
     var color = safeColor(p.color);
     var url = safeUrl(p.portrait);
+    var dn = displayName(p);
     /* With a birthday and a dated scene, Age is worked out and goes first.
        A hand-written "Age" fact would only disagree with it, so it steps aside. */
     var age = ageText(ageOn(p.born && p.born.date, opts.on));
@@ -1023,15 +1093,24 @@ window.RP = (function(){
       .join("");
     if(age) facts = '<div class="rp-mini-age"><dt>Age</dt><dd>' + esc(age) + "</dd></div>" + facts;
 
+    var tags = [];
+    if(opts.meta){
+      var g = GENERATIONS.find(function(x){ return x.key === p.generation; });
+      var t = TIERS.find(function(x){ return x.key === p.tier; });
+      if(g) tags.push(g.label);
+      if(t) tags.push(t.label);
+    }
+
     return '<a class="rp-mini" href="' + esc(castUrl(p.id)) + '" style="--who:' + color + '">' +
       '<span class="rp-mini-band"></span>' +
       '<span class="rp-portrait">' +
-        '<span class="rp-portrait-mono">' + esc(initials(p.name)) + "</span>" +
-        (url ? '<img src="' + esc(url) + '" alt="' + esc(p.name) + '" loading="lazy" style="object-position:' + portraitPos(p) + '" onerror="this.remove()">' : "") +
+        '<span class="rp-portrait-mono">' + esc(initials(dn)) + "</span>" +
+        (url ? '<img src="' + esc(url) + '" alt="' + esc(dn) + '" loading="lazy" style="object-position:' + portraitPos(p) + '" onerror="this.remove()">' : "") +
       "</span>" +
       '<span class="rp-mini-body">' +
-        '<span class="rp-mini-name">' + esc(p.name) + "</span>" +
-        (p.role ? '<span class="rp-mini-role">' + esc(p.role) + "</span>" : "") +
+        '<span class="rp-mini-name">' + esc(dn) + (p.died && p.died.date ? " \u2020" : "") + "</span>" +
+        (dn !== p.name ? '<span class="rp-mini-role">' + esc(p.name) + "</span>" : "") +
+        (tags.length ? '<span class="rp-mini-tags">' + tags.map(function(x){ return '<span class="rp-mini-tag">' + esc(x) + "</span>"; }).join("") + "</span>" : "") +
         (facts ? '<dl class="rp-mini-facts">' + facts + "</dl>" : "") +
         (p.playedBy ? '<span class="rp-mini-fc">Played by ' + esc(p.playedBy) + "</span>" : "") +
       "</span>" +
@@ -1262,7 +1341,7 @@ window.RP = (function(){
     }
     return '<div class="rp-castpick">' + cast.map(function(c){
       var on = selected.indexOf(c.id) > -1;
-      return '<button type="button" data-cast="' + esc(c.id) + '" aria-pressed="' + on + '">' + face(c, 26) + esc(c.name) + "</button>";
+      return '<button type="button" data-cast="' + esc(c.id) + '" aria-pressed="' + on + '">' + face(c, 26) + esc(displayName(c)) + "</button>";
     }).join("") + "</div>";
   }
 
@@ -1303,9 +1382,11 @@ window.RP = (function(){
     todayISO:todayISO, parseISO:parseISO, shortDate:shortDate, longDate:longDate,
     relative:relative, plural:plural, MONTHS:MONTHS,
     storyKey:storyKey, storyLabel:storyLabel,
-    REL_KINDS:REL_KINDS, REL_PHRASES:REL_PHRASES, phraseFor:phraseFor, relsFor:relsFor,
+    REL_KINDS:REL_KINDS, REL_PHRASES:REL_PHRASES, allRelPhrases:allRelPhrases, kindInfo:kindInfo,
+    phraseFor:phraseFor, relsFor:relsFor,
     relStatus:relStatus, relSpan:relSpan, familyAround:familyAround,
-    ageOn:ageOn, ageText:ageText, bornLabel:bornLabel, latestDate:latestDate, linkWords:linkWords,
+    ageOn:ageOn, ageText:ageText, bornLabel:bornLabel, diedLabel:diedLabel, displayName:displayName,
+    latestDate:latestDate, linkWords:linkWords, castStats:castStats,
     thread:thread, scene:scene, person:person, entry:entry,
     castSorted:castSorted, wikiSorted:wikiSorted, threadsSorted:threadsSorted, threadColor:threadColor,
     wordCount:wordCount, sceneWords:sceneWords, plainText:plainText,
