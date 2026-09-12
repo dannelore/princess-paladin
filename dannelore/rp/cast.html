@@ -246,7 +246,9 @@ function relationsHTML(c, on){
     tree.parents.map(n => famRow(n, n.step ? "Step-parent" : "Parent")),
     tree.spouses.map(n => famRow(n, "Spouse")),
     tree.siblings.map(n => famRow(n, n.half ? "Half-sibling" : "Sibling")),
-    tree.children.map(n => famRow(n, n.step ? "Step-child" : "Child"))
+    tree.cousins.map(n => famRow(n, "Cousin")),
+    tree.children.map(n => famRow(n, n.step ? "Step-child" : "Child")),
+    tree.grandchildren.map(n => famRow(n, n.step ? "Step-grandchild" : "Grandchild"))
   ).filter(Boolean);
 
   return `<section class="rp-appears" id="relations">
@@ -285,17 +287,19 @@ function byAge(ids){
 
 function treeHTML(c, t){
   /* Siblings and self are one birth-order line; spouses sit beside self
-     rather than being sorted into it by their own age. */
+     rather than being sorted into it by their own age, and cousins sit
+     out at the edge rather than interleaved into direct birth order. */
   const siblingsAndSelf = byAge(t.siblings.map(n => n.id).concat([c.id]));
   const selfAt = siblingsAndSelf.indexOf(c.id);
   const row3 = siblingsAndSelf.slice(0, selfAt + 1)
-    .concat(t.spouses.map(n => n.id), siblingsAndSelf.slice(selfAt + 1));
+    .concat(t.spouses.map(n => n.id), siblingsAndSelf.slice(selfAt + 1), byAge(t.cousins.map(n => n.id)));
 
   const rows = [
     byAge(t.grand.map(n => n.id)),
     byAge(t.parents.map(n => n.id)),
     row3,
-    byAge(t.children.map(n => n.id))
+    byAge(t.children.map(n => n.id)),
+    byAge(t.grandchildren.map(n => n.id))
   ].filter(r => r.length);
 
   const W = Math.max(360, Math.max.apply(null, rows.map(r => r.length)) * (NODE_W + 12));
@@ -312,7 +316,7 @@ function treeHTML(c, t){
       const y = a.y + FACE / 2;
       return `<path d="M${x1 + FACE/2 + 4},${y - 2}H${x2 - FACE/2 - 4}M${x1 + FACE/2 + 4},${y + 2}H${x2 - FACE/2 - 4}" class="sp"/>`;
     }
-    if((l.kind === "parent" || l.kind === "step") && b.row === a.row + 1){
+    if((l.kind === "parent" || l.kind === "step" || l.kind === "grandparent") && b.row > a.row){
       const y1 = a.y + NAME_BOTTOM, y2 = b.y - 4, mid = (y1 + y2) / 2;
       return `<path d="M${a.x},${y1}V${mid}H${b.x}V${y2}"${l.kind === "step" ? ' class="st"' : ""}/>`;
     }
