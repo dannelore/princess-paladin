@@ -66,7 +66,7 @@ function castMatches(c, q){
   if(!q) return true;
   return RP.norm(c.name).includes(q) ||
     (c.aka || []).some(a => RP.norm(a).includes(q)) ||
-    RP.norm(c.role).includes(q);
+    RP.norm(c.displayName || "").includes(q);
 }
 
 function castGroup(q){
@@ -77,7 +77,7 @@ function castGroup(q){
     ${people.map(c => {
       const alias = q && !RP.norm(c.name).includes(q) ? (c.aka || []).find(a => RP.norm(a).includes(q)) : null;
       return `<a class="rp-wiki-link" href="${esc(RP.castUrl(c.id))}">
-        ${esc(c.name)}${alias ? `<small>as ${esc(alias)}</small>` : ""}</a>`;
+        ${esc(RP.displayName(c))}${alias ? `<small>as ${esc(alias)}</small>` : ""}</a>`;
     }).join("")}
   </div>`;
 }
@@ -150,7 +150,7 @@ function renderEntry(w){
           : `<p class="rp-none">Not linked in anything you&rsquo;ve written yet. Write <code>[[${esc(w.title)}]]</code> in a post and the scene shows up here.</p>`}
         ${back.pages.length ? `<h2 class="rp-head" style="margin-top:16px;">Linked from</h2>
           <div class="rp-chiplinks">${back.pages.map(p =>
-            `<a href="${esc(p.kind === "wiki" ? RP.wikiUrl(p.rec.id) : RP.castUrl(p.rec.id))}">${esc(p.kind === "wiki" ? p.rec.title : p.rec.name)}</a>`
+            `<a href="${esc(p.kind === "wiki" ? RP.wikiUrl(p.rec.id) : RP.castUrl(p.rec.id))}">${esc(p.kind === "wiki" ? p.rec.title : RP.displayName(p.rec))}</a>`
           ).join("")}</div>` : ""}
       </section>
     </article>`;

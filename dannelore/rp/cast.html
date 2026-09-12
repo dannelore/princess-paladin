@@ -60,12 +60,18 @@ function renderGrid(){
     const order = { pov:0, secondary:1, tertiary:2 };
     cast = cast.slice().sort((a, b) =>
       (order.hasOwnProperty(a.tier) ? order[a.tier] : 3) - (order.hasOwnProperty(b.tier) ? order[b.tier] : 3) ||
-      a.name.localeCompare(b.name));
+      RP.displayName(a).localeCompare(RP.displayName(b)));
   } else if(sortBy === "generation"){
     const order = { teen:0, adult:1 };
     cast = cast.slice().sort((a, b) =>
       (order.hasOwnProperty(a.generation) ? order[a.generation] : 2) - (order.hasOwnProperty(b.generation) ? order[b.generation] : 2) ||
-      a.name.localeCompare(b.name));
+      RP.displayName(a).localeCompare(RP.displayName(b)));
+  } else if(sortBy === "words"){
+    cast = cast.slice().sort((a, b) => RP.castStats(b.id).words - RP.castStats(a.id).words ||
+      RP.displayName(a).localeCompare(RP.displayName(b)));
+  } else if(sortBy === "scenes"){
+    cast = cast.slice().sort((a, b) => RP.castStats(b.id).scenes - RP.castStats(a.id).scenes ||
+      RP.displayName(a).localeCompare(RP.displayName(b)));
   }
 
   const empty = !cast.length
@@ -96,12 +102,14 @@ function renderGrid(){
           <option value="name"${sortBy === "name" ? " selected" : ""}>Name</option>
           <option value="tier"${sortBy === "tier" ? " selected" : ""}>Cast tier</option>
           <option value="generation"${sortBy === "generation" ? " selected" : ""}>Generation</option>
+          <option value="words"${sortBy === "words" ? " selected" : ""}>Most words</option>
+          <option value="scenes"${sortBy === "scenes" ? " selected" : ""}>Most scenes</option>
         </select></label>
       <span class="rp-sp"></span>
       <span class="rp-sync" data-sync></span>
       <button class="pp-btn" type="button" data-new>Add character</button>
     </div>
-    ${cast.length ? `<div class="rp-cast-grid">${cast.map(RP.mini).join("")}</div>` : empty}`;
+    ${cast.length ? `<div class="rp-cast-grid">${cast.map(c => RP.mini(c, { meta:true })).join("")}</div>` : empty}`;
   watch();
   $("genFilter").addEventListener("change", e => { genFilter = e.target.value; renderGrid(); });
   $("tierFilter").addEventListener("change", e => { tierFilter = e.target.value; renderGrid(); });
@@ -127,16 +135,18 @@ function renderSheet(c){
   }
   const asOfSc = dated.find(sc => sc.id === asOfScene) || null;
   const latest = asOfSc ? asOfSc.when.date : null;
+  const dn = RP.displayName(c);
   const meta = [
     c.playedBy ? "Played by " + esc(c.playedBy) : "",
-    RP.bornLabel(c) ? "Born " + esc(RP.bornLabel(c)) : ""
+    RP.bornLabel(c) ? "Born " + esc(RP.bornLabel(c)) : "",
+    RP.diedLabel(c) ? "Died " + esc(RP.diedLabel(c)) : ""
   ].filter(Boolean).join(" &nbsp;/&nbsp; ");
 
   $("view").innerHTML = `
     <a class="rp-back" href="${RP.castUrl()}" data-nav="">&larr; All cast</a>
     <div class="rp-sheet">
       <div>
-        ${RP.mini(c, { on: latest })}
+        ${RP.mini(c, { on: latest, meta: true })}
         <div class="rp-actions" style="margin-top:12px;">
           <button class="pp-btn pp-btn-quiet pp-btn-sm" type="button" data-edit="${esc(c.id)}">Edit character</button>
         </div>
@@ -144,11 +154,11 @@ function renderSheet(c){
 
       <article class="pp-panel pp-panel-lg">
         <div class="rp-sheet-head">
-          <h1 class="rp-title">${esc(c.name)}</h1>
+          <h1 class="rp-title">${esc(dn)}${c.died && c.died.date ? " &#8224;" : ""}</h1>
           <span class="rp-sp" style="flex:1 1 auto;"></span>
           <span class="rp-sync" data-sync></span>
         </div>
-        ${c.role ? `<p class="rp-sheet-role">${esc(c.role)}</p>` : ""}
+        ${dn !== c.name ? `<p class="rp-sheet-role">${esc(c.name)}</p>` : ""}
         ${meta ? `<p class="rp-sheet-meta">${meta}</p>` : ""}
         ${RP.linkLine("cast", c)}
         ${dated.length ? `<label class="rp-asof"><span>As of</span>
@@ -185,7 +195,7 @@ function renderSheet(c){
                 <span class="t">${esc(m.scene.title || "Untitled scene")}</span>
                 <span class="q">${esc(m.quote)}</span>
               </a>`).join("")
-            : `<p class="rp-none">No scene links to ${esc(c.name)} yet. Write <code>[[${esc(c.name)}]]</code> in a post and it will show here.</p>`}
+            : `<p class="rp-none">No scene links to ${esc(dn)} yet. Write <code>[[${esc(c.name)}]]</code> in a post and it will show here.</p>`}
           ${back.pages.length ? `<h2 class="rp-head" style="margin-top:16px;">Linked from</h2>
             <div class="rp-chiplinks">${back.pages.map(pageChip).join("")}</div>` : ""}
         </section>
@@ -203,12 +213,17 @@ function datedScenes(id){
 
 function relRow(v, status){
   const span = status === "past" && v.rec.to ? "until " + RP.longDate(v.rec.to) : "";
-  return `<a class="rp-relrow" href="${esc(RP.castUrl(v.other.id))}">
+  const link = `<a class="rp-relrow" href="${esc(RP.castUrl(v.other.id))}">
     ${RP.face(v.other, 30)}
-    <span class="nm">${esc(v.other.name)}</span>
+    <span class="nm">${esc(RP.displayName(v.other))}</span>
     <span class="lb">${esc(v.label)}${span ? ` <small>${esc(span)}</small>` : ""}</span>
     ${v.rec.note ? `<span class="nt">${esc(v.rec.note)}</span>` : ""}
   </a>`;
+  if(!relOpen) return link;
+  return `<div class="rp-relrow-editable">${link}
+    <button class="rp-iconbtn" type="button" data-rel-edit="${esc(v.rec.id)}" aria-label="Edit relationship">&#9998;</button>
+    <button class="rp-iconbtn" type="button" data-rel-drop="${esc(v.rec.id)}" aria-label="Delete relationship">&times;</button>
+  </div>`;
 }
 
 function relationsHTML(c, on){
@@ -245,7 +260,7 @@ function relationsHTML(c, on){
     ${past.length ? `<h3 class="rp-rel-sub">Before this</h3><div class="rp-rels is-past">${past.map(v => relRow(v, "past")).join("")}</div>` : ""}
     ${!family.length && !others.length && !past.length && !relOpen
       ? `<p class="rp-none">${all.length ? "Nothing yet at this point in the story." : "No family or relationships yet."}</p>` : ""}
-    ${relOpen ? relEditorHTML(c, all) : ""}
+    ${relOpen ? relEditorHTML(c) : ""}
   </section>`;
 }
 
@@ -307,9 +322,10 @@ function treeHTML(c, t){
   const nodes = Object.keys(at).map(id => {
     const p = RP.person(id), pos = at[id], me = id === c.id;
     const tag = me ? "span" : "a";
+    const dead = p.died && p.died.date ? " \u2020" : "";
     return `<${tag} class="rp-tree-node${me ? " is-me" : ""}"${me ? "" : ` href="${esc(RP.castUrl(id))}"`}
       style="left:${pos.x - NODE_W / 2}px;top:${pos.y}px;width:${NODE_W}px;">
-      ${RP.face(p, FACE)}<span>${esc(p.name)}</span></${tag}>`;
+      ${RP.face(p, FACE)}<span>${esc(RP.displayName(p))}${dead}</span></${tag}>`;
   }).join("");
 
   return `<div class="rp-tree-wrap"><div class="rp-tree" style="width:${W}px;height:${H}px;">
@@ -317,34 +333,27 @@ function treeHTML(c, t){
   </div></div>`;
 }
 
-function relEditorHTML(c, all){
+function relEditorHTML(c){
   const others = RP.castSorted().filter(o => o.id !== c.id);
   if(!others.length) return `<p class="rp-none">Add another character first &mdash; relationships are between cast members.</p>`;
 
   const editing = relEditId ? RP.state.rels.find(r => r.id === relEditId) : null;
   const ph = editing ? RP.phraseFor(editing, c.id) : null;
   const otherId = editing ? (editing.a === c.id ? editing.b : editing.a) : "";
-  const sorted = all.slice().sort((x, y) => String(x.rec.from || "").localeCompare(String(y.rec.from || "")));
 
   return `<div class="rp-releditor">
-    ${sorted.length ? `<div class="rp-rel-all">${sorted.map(v => {
-      const phrase = RP.phraseFor(v.rec, c.id);
-      return `<div class="rp-rel-line${v.rec.id === relEditId ? " is-editing" : ""}">
-        <span>${esc(c.name)} is <b>${esc(phrase ? phrase.text : v.label)}</b> ${esc(v.other.name)}${RP.relSpan(v.rec) ? ` <small>${esc(RP.relSpan(v.rec))}</small>` : ""}</span>
-        <button class="rp-iconbtn" type="button" data-rel-edit="${esc(v.rec.id)}" aria-label="Edit">&#9998;</button>
-        <button class="rp-iconbtn" type="button" data-rel-drop="${esc(v.rec.id)}" aria-label="Delete">&times;</button>
-      </div>`;
-    }).join("")}</div>` : ""}
-
     <form id="relForm" autocomplete="off">
+      <p class="pp-hint" style="margin:0 0 8px;">Use the &#9998; and &times; on any relationship above to edit or remove it. This adds a new one.</p>
       <div class="rp-fields">
-        <div class="pp-field"><label for="rf-phrase">${esc(c.name)} is</label>
-          <select id="rf-phrase" name="phrase">${RP.REL_PHRASES.map(p =>
-            `<option value="${p.key}"${ph && ph.key === p.key ? " selected" : ""}>${esc(p.text)}</option>`).join("")}</select></div>
+        <div class="pp-field"><label for="rf-phrase">${esc(RP.displayName(c))} is</label>
+          <select id="rf-phrase" name="phrase">${RP.allRelPhrases().map(p =>
+            `<option value="${esc(p.key)}"${ph && ph.key === p.key ? " selected" : ""}>${esc(p.text)}</option>`).join("")}
+            <option value="__new__">+ Add a custom type&hellip;</option>
+          </select></div>
         <div class="pp-field"><label for="rf-other">Who</label>
           <select id="rf-other" name="other" required>
             <option value="">Choose&hellip;</option>
-            ${others.map(o => `<option value="${esc(o.id)}"${o.id === otherId ? " selected" : ""}>${esc(o.name)}</option>`).join("")}
+            ${others.map(o => `<option value="${esc(o.id)}"${o.id === otherId ? " selected" : ""}>${esc(RP.displayName(o))}</option>`).join("")}
           </select></div>
         <div class="pp-field"><label for="rf-from">From</label>
           <input id="rf-from" name="from" type="date" value="${esc(editing ? editing.from : "")}"></div>
@@ -352,6 +361,15 @@ function relEditorHTML(c, all){
           <input id="rf-to" name="to" type="date" value="${esc(editing ? editing.to : "")}"></div>
         <div class="pp-field wide"><label for="rf-note">Note</label>
           <input id="rf-note" name="note" maxlength="120" placeholder="Optional" value="${esc(editing ? editing.note || "" : "")}"></div>
+        <div class="pp-field wide" id="newKindBox" hidden>
+          <label for="rf-new-a">${esc(RP.displayName(c))} is ___ them</label>
+          <input id="rf-new-a" maxlength="60" placeholder="e.g. mentor of">
+          <label style="margin-top:6px;display:block;"><input type="checkbox" id="rf-new-sym" style="width:auto;"> Same relationship, both ways</label>
+          <div id="newBWrap" style="margin-top:6px;">
+            <label for="rf-new-b">They are ___ ${esc(RP.displayName(c))}</label>
+            <input id="rf-new-b" maxlength="60" placeholder="e.g. mentee of">
+          </div>
+        </div>
       </div>
       <p class="pp-hint" style="margin:8px 0 0;">Dates are story dates, and both are optional. When something changes &mdash; friends, then dating &mdash; give the old one an Until date and add the new one from the same day.</p>
       <div class="rp-actions">
@@ -364,26 +382,46 @@ function relEditorHTML(c, all){
 
 function saveRel(c){
   const f = $("relForm");
-  const ph = RP.REL_PHRASES.find(p => p.key === f.elements.phrase.value);
+  const phraseVal = f.elements.phrase.value;
   const other = f.elements.other.value;
-  if(!ph || !other) return;
+  if(!other) return;
+
+  let kind, meIsA;
+  if(phraseVal === "__new__"){
+    const aIs = $("rf-new-a").value.trim();
+    const sameBothWays = $("rf-new-sym").checked;
+    const bIs = sameBothWays ? aIs : $("rf-new-b").value.trim();
+    if(!aIs || !bIs){
+      alert("Give both sides a label \u2014 or check \u201cSame relationship, both ways\u201d if it only needs one.");
+      return;
+    }
+    const kindRec = { id: RP.uid(), aIs, bIs };
+    RP.save("relkind", kindRec);
+    kind = kindRec.id;
+    meIsA = true;
+  } else {
+    const ph = RP.allRelPhrases().find(p => p.key === phraseVal);
+    if(!ph) return;
+    kind = ph.kind;
+    meIsA = ph.me === "a";
+  }
 
   const rec = {
     id: relEditId || RP.uid(),
-    kind: ph.kind,
-    a: ph.me === "a" ? c.id : other,
-    b: ph.me === "a" ? other : c.id,
+    kind: kind,
+    a: meIsA ? c.id : other,
+    b: meIsA ? other : c.id,
     from: f.elements.from.value,
     to: f.elements.to.value,
     note: f.elements.note.value.trim()
   };
-  const otherName = RP.person(other).name;
+  const otherName = RP.displayName(RP.person(other));
 
   if(rec.from && rec.to && rec.to <= rec.from){
     alert("“Until” needs to be after “From”.");
     return;
   }
-  const k = RP.REL_KINDS[rec.kind];
+  const k = RP.kindInfo(rec.kind);
   const symmetric = k.aIs === k.bIs;
   const samePair = r => (r.a === rec.a && r.b === rec.b) || (symmetric && r.a === rec.b && r.b === rec.a);
   const overlaps = r => (!r.to || !rec.from || rec.from < r.to) && (!rec.to || !r.from || r.from < rec.to);
@@ -406,7 +444,8 @@ function saveRel(c){
 
 function pageChip(p){
   const href = p.kind === "wiki" ? RP.wikiUrl(p.rec.id) : RP.castUrl(p.rec.id);
-  return `<a href="${esc(href)}">${esc(p.kind === "wiki" ? p.rec.title : p.rec.name)}</a>`;
+  const label = p.kind === "wiki" ? p.rec.title : RP.displayName(p.rec);
+  return `<a href="${esc(href)}">${esc(label)}</a>`;
 }
 
 /* ---------------- editor ---------------- */
@@ -436,7 +475,7 @@ function rowTools(){
 function renderEdit(c){
   const isNew = !c;
   c = c || {
-    id: RP.uid(), name:"", aka:[], role:"", playedBy:"", portrait:"", crop:"", born:{},
+    id: RP.uid(), name:"", aka:[], displayName:"", playedBy:"", portrait:"", crop:"", born:{}, died:{},
     generation:"", tier:"",
     color: RP.COLORS[RP.state.cast.length % RP.COLORS.length].hex,
     facts:[{ label:"From", value:"" }],
@@ -444,7 +483,7 @@ function renderEdit(c){
   };
 
   $("view").innerHTML = `
-    <a class="rp-back" href="${esc(isNew ? RP.castUrl() : RP.castUrl(c.id))}" data-nav="${isNew ? "" : esc(c.id)}">&larr; ${isNew ? "All cast" : "Back to " + esc(c.name)}</a>
+    <a class="rp-back" href="${esc(isNew ? RP.castUrl() : RP.castUrl(c.id))}" data-nav="${isNew ? "" : esc(c.id)}">&larr; ${isNew ? "All cast" : "Back to " + esc(RP.displayName(c))}</a>
     <form class="rp-sheet" id="castForm" autocomplete="off" data-id="${esc(c.id)}">
       <div>
         <div id="preview"></div>
@@ -452,7 +491,7 @@ function renderEdit(c){
       </div>
 
       <div class="pp-panel pp-panel-lg">
-        <h1 class="rp-title" style="margin-bottom:18px;">${isNew ? "New character" : "Edit " + esc(c.name)}</h1>
+        <h1 class="rp-title" style="margin-bottom:18px;">${isNew ? "New character" : "Edit " + esc(RP.displayName(c))}</h1>
 
         <div class="rp-fields">
           <div class="pp-field"><label for="cf-name">Name</label>
@@ -461,8 +500,9 @@ function renderEdit(c){
             <input id="cf-aka" name="aka" maxlength="200" placeholder="Phey, Miss Montgomery" value="${esc((c.aka || []).join(", "))}">
             <span class="pp-hint">Comma separated. Any of these inside <code>[[ ]]</code> links here, same as the full name.</span></div>
 
-          <div class="pp-field wide"><label for="cf-role">Role</label>
-            <input id="cf-role" name="role" maxlength="120" placeholder="One line, shown under their name" value="${esc(c.role || "")}"></div>
+          <div class="pp-field wide"><label for="cf-display">Display name</label>
+            <input id="cf-display" name="displayName" maxlength="80" placeholder="Optional — shown everywhere instead of their full name" value="${esc(c.displayName || "")}">
+            <span class="pp-hint">Leave blank to just use their name. Their full name still stays visible in small text underneath, and is still what <code>[[links]]</code> match against.</span></div>
 
           <div class="pp-field"><label for="cf-gen">Generation</label>
             <select id="cf-gen" name="generation">
@@ -489,6 +529,14 @@ function renderEdit(c){
               <input id="cf-bornlabel" name="bornLabel" maxlength="80" placeholder="Optional" value="${esc((c.born || {}).label || "")}"></div>
             </div>
             <span class="pp-hint">Their age beside each post is worked out from this and the scene&rsquo;s story date. Use &ldquo;Shown as&rdquo; if the story keeps its own calendar.</span></div>
+
+          <div class="pp-field wide"><div class="rp-fields">
+            <div class="pp-field"><label for="cf-died">Died</label>
+              <input id="cf-died" name="diedDate" type="date" value="${esc((c.died || {}).date || "")}"></div>
+            <div class="pp-field"><label for="cf-diedlabel">Shown as</label>
+              <input id="cf-diedlabel" name="diedLabel" maxlength="80" placeholder="Optional" value="${esc((c.died || {}).label || "")}"></div>
+            </div>
+            <span class="pp-hint">Leave blank if they&rsquo;re alive. Marks their name with &#8224; wherever it appears.</span></div>
 
           <div class="pp-field wide"><label for="cf-portrait">Portrait image</label>
             <input id="cf-portrait" name="portrait" type="text" inputmode="url" spellcheck="false" maxlength="600" placeholder="https://…  or  /assets/rp/name.jpg" value="${esc(c.portrait || "")}">
@@ -569,13 +617,14 @@ function readForm(){
     id: f.dataset.id,
     name: f.elements.name.value.trim(),
     aka: RP.splitList(f.elements.aka.value),
-    role: f.elements.role.value.trim(),
+    displayName: f.elements.displayName.value.trim(),
     generation: f.elements.generation.value,
     tier: f.elements.tier.value,
     playedBy: f.elements.playedBy.value.trim(),
     portrait: f.elements.portrait.value.trim(),
     crop: f.elements.crop.value,
     born: { date: f.elements.bornDate.value, label: f.elements.bornLabel.value.trim() },
+    died: { date: f.elements.diedDate.value, label: f.elements.diedLabel.value.trim() },
     color: picked ? picked.value : RP.COLORS[0].hex,
     facts: readRows($("facts"), ["label","value"]).slice(0, RP.MINI_FACT_LIMIT),
     /* the preview reads this too, so it matches what gets saved */
@@ -640,14 +689,15 @@ function submitCast(e){
 function deleteCast(id){
   const c = RP.person(id);
   if(!c) return;
+  const dn = RP.displayName(c);
   const posts = RP.state.scenes.reduce((n, sc) => n + sc.posts.filter(p => p.who === id).length, 0);
   if(posts){
-    alert(`${c.name} has ${RP.plural(posts, "post")}. Delete or reassign ${posts === 1 ? "it" : "them"} first — each post's edit box lets you change who's speaking.`);
+    alert(`${dn} has ${RP.plural(posts, "post")}. Delete or reassign ${posts === 1 ? "it" : "them"} first — each post's edit box lets you change who's speaking.`);
     return;
   }
   const rels = RP.state.rels.filter(r => r.a === id || r.b === id);
   const relNote = rels.length ? ` Their ${RP.plural(rels.length, "relationship")} will be deleted too.` : "";
-  if(!confirm(`Delete ${c.name}? Links to them will go back to plain text.${relNote}`)) return;
+  if(!confirm(`Delete ${dn}? Links to them will go back to plain text.${relNote}`)) return;
   rels.forEach(r => RP.remove("rel", r.id));
   RP.remove("cast", id);
   dirty = false;
@@ -682,7 +732,7 @@ function render(){
   else if(mode === "sheet" && c) renderSheet(c);
   else { mode = "grid"; renderGrid(); }
 
-  const title = mode === "sheet" && c ? c.name : (mode === "edit" ? (c ? "Edit " + c.name : "New character") : "Cast");
+  const title = mode === "sheet" && c ? RP.displayName(c) : (mode === "edit" ? (c ? "Edit " + RP.displayName(c) : "New character") : "Cast");
   const t = document.querySelector(".pp-ribbon-title");
   if(t) t.textContent = title;
   document.title = title + " — The Writing Room";
@@ -699,6 +749,16 @@ function watch(){
 }
 
 document.addEventListener("change", e => {
+  if(e.target.id === "rf-phrase"){
+    const box = $("newKindBox");
+    if(box) box.hidden = e.target.value !== "__new__";
+    return;
+  }
+  if(e.target.id === "rf-new-sym"){
+    const wrap = $("newBWrap");
+    if(wrap) wrap.hidden = e.target.checked;
+    return;
+  }
   if(e.target.id !== "asOf") return;
   asOfScene = e.target.value;
   const c = RP.person(openId);
@@ -723,7 +783,7 @@ document.addEventListener("click", e => {
     if(c && rd){
       const r = RP.state.rels.find(x => x.id === rd.dataset.relDrop);
       const v = r && RP.relsFor(c.id).find(x => x.rec.id === r.id);
-      if(r && confirm(`Delete this relationship${v ? " with " + v.other.name : ""}? It goes from both profiles.`)){
+      if(r && confirm(`Delete this relationship${v ? " with " + RP.displayName(v.other) : ""}? It goes from both profiles.`)){
         RP.remove("rel", r.id);
         if(relEditId === r.id) relEditId = null;
         renderSheet(c); keepRelInView();

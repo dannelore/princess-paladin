@@ -140,10 +140,10 @@ function sceneRow(sc){
   const cast = (sc.cast || []).map(id => RP.person(id)).filter(Boolean);
   const pov = RP.povOf(sc);
   const dot = pov.length ? RP.safeColor(pov[0].person.color) : RP.threadColor(sc);
-  const tally = pov.length ? pov.map(x => `${x.person.name}: ${x.words.toLocaleString()} words`).join("\n") : "No character words yet";
+  const tally = pov.length ? pov.map(x => `${RP.displayName(x.person)}: ${x.words.toLocaleString()} words`).join("\n") : "No character words yet";
   return `<a class="rp-tl-row${sc.state === "resting" ? " is-resting" : ""}" id="s-${esc(sc.id)}"
       href="${esc(RP.sceneUrl(sc.id))}" style="--dot:${dot}">
-    <span class="rp-tl-dot" title="${esc(tally)}" aria-label="${esc(pov.length ? "Most words: " + pov[0].person.name : "No character words yet")}"></span>
+    <span class="rp-tl-dot" title="${esc(tally)}" aria-label="${esc(pov.length ? "Most words: " + RP.displayName(pov[0].person) : "No character words yet")}"></span>
     ${RP.storyLabel(sc) ? `<div class="rp-tl-when">${esc(RP.storyLabel(sc))}</div>` : ""}
     <div class="rp-tl-what">${esc(sc.title || "Untitled scene")} ${RP.statePill(sc.state)}</div>
     ${sc.summary ? `<p class="rp-tl-note">${esc(sc.summary)}</p>` : ""}

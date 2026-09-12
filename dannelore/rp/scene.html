@@ -166,7 +166,7 @@ function postHTML(p){
     ${narr ? "" : RP.mini(who, { on: sc.when && sc.when.date })}
     <div class="rp-post-body">
       <div class="rp-byline">
-        ${narr ? "" : `<span class="who">${esc(who ? who.name : "Unknown")}</span>`}
+        ${narr ? "" : `<span class="who">${esc(who ? RP.displayName(who) : "Unknown")}</span>`}
         <span class="stamp">${esc(stampFor(p))}</span>
         ${narr ? "" : `<span class="rp-sp"></span>`}
         <span class="rp-post-tools">
@@ -181,7 +181,7 @@ function postHTML(p){
 
 function speakerOptions(selected){
   const people = RP.castSorted();
-  return people.map(c => `<option value="${esc(c.id)}"${c.id === selected ? " selected" : ""}>${esc(c.name)}</option>`).join("") +
+  return people.map(c => `<option value="${esc(c.id)}"${c.id === selected ? " selected" : ""}>${esc(RP.displayName(c))}</option>`).join("") +
     `<option value="narration"${selected === "narration" ? " selected" : ""}>Narration</option>`;
 }
 
@@ -232,11 +232,10 @@ function renderRail(){
     ? people.map(p => {
         const n = sc.posts.filter(x => x.who === p.id).length;
         const age = RP.ageText(RP.ageOn(p.born && p.born.date, sc.when && sc.when.date));
-        const note = [age, p.role].filter(Boolean).join(" \u00b7 ");
         return `<a class="rp-person" href="${esc(RP.castUrl(p.id))}">
           ${RP.face(p, 34)}
-          <span><span class="rp-person-name">${esc(p.name)}</span>
-          ${note ? `<span class="rp-person-note">${esc(note)}</span>` : ""}</span>
+          <span><span class="rp-person-name">${esc(RP.displayName(p))}</span>
+          ${age ? `<span class="rp-person-note">${esc(age)}</span>` : ""}</span>
           <span class="n">${n || ""}</span>
         </a>`;
       }).join("")
@@ -265,7 +264,7 @@ function renderRail(){
     const key = hit.kind + hit.rec.id;
     if(seen[key]) return;
     seen[key] = true;
-    chips.push(`<a href="${esc(RP.hrefFor(hit))}">${esc(hit.kind === "wiki" ? hit.rec.title : hit.rec.name)}</a>`);
+    chips.push(`<a href="${esc(RP.hrefFor(hit))}">${esc(hit.kind === "wiki" ? hit.rec.title : RP.displayName(hit.rec))}</a>`);
   }));
   $("mentionsPanel").hidden = !chips.length;
   $("mentions").innerHTML = chips.join("");
@@ -277,7 +276,7 @@ function paintSpeaker(){
   const p = RP.person(speaker) || RP.NARRATION;
   if(!RP.person(speaker)) speaker = "narration";
   $("speakerFace").innerHTML = RP.face(p, 30);
-  $("speakerName").textContent = p.name;
+  $("speakerName").textContent = RP.displayName(p);
   $("composer").classList.toggle("is-narration", speaker === "narration");
   $("composer").style.setProperty("--who", RP.safeColor(p.color));
 }
@@ -286,7 +285,7 @@ function buildMenu(){
   const inScene = RP.castSorted().filter(c => sc.cast.indexOf(c.id) > -1);
   const others  = RP.castSorted().filter(c => sc.cast.indexOf(c.id) < 0);
   const item = p => `<button type="button" role="menuitemradio" data-speak="${esc(p.id)}" aria-checked="${p.id === speaker}">
-      ${RP.face(p, 28)}<span class="nm">${esc(p.name)}</span></button>`;
+      ${RP.face(p, 28)}<span class="nm">${esc(RP.displayName(p))}</span></button>`;
 
   $("speakerMenu").innerHTML =
     (inScene.length ? `<div class="rp-menu-head">In this scene</div>` + inScene.map(item).join("") : "") +
@@ -428,7 +427,7 @@ document.addEventListener("click", e => {
     if(i < 0) return;
     const p = sc.posts[i];
     const who = RP.person(p.who);
-    if(!confirm(`Delete this ${RP.plural(RP.wordCount(p.md), "word")} post by ${who ? who.name : "Unknown"}? This can't be undone.`)) return;
+    if(!confirm(`Delete this ${RP.plural(RP.wordCount(p.md), "word")} post by ${who ? RP.displayName(who) : "Unknown"}? This can't be undone.`)) return;
     sc.posts.splice(i, 1);
     RP.save("scene", sc);
     render();
