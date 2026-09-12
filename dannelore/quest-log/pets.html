@@ -588,6 +588,7 @@
               <span class="hint">gold into <span id="exchangePreview">500</span> Meow Bucks</span>
               <button class="btn sm" id="exchangeBtn">Exchange</button>
             </div>
+            <p class="hint" id="exchangeConfirm" style="margin:6px 0 0;min-height:1.2em;"></p>
             <p class="hint" style="margin:6px 0 14px;">One way only. That gold is real money you've earned.</p>
 
             <div class="shop-cols">
@@ -1004,9 +1005,12 @@ document.getElementById('exchangeGold').oninput = e => {
 document.getElementById('exchangeBtn').onclick = () => {
   const n = Math.max(1, parseInt(document.getElementById('exchangeGold').value) || 0);
   if(S().gold < n) return;
+  const gained = n * PQ.MEOW_PER_GOLD;
   S().gold -= n;
-  S().meowBucks += n * PQ.MEOW_PER_GOLD;
+  S().meowBucks += gained;
   save();
+  const note = document.getElementById('exchangeConfirm');
+  if(note) note.textContent = `Exchanged ${n} gold for ${gained.toLocaleString()} Meow Bucks \u2014 you now have ${S().meowBucks.toLocaleString()}.`;
 };
 
 function renderFood(){
@@ -1029,7 +1033,7 @@ function renderFood(){
     btn.onclick = () => {
       if(!pet || S().meowBucks < f.price) return;
       S().meowBucks -= f.price;
-      PQ.feed(pet, f.hunger);
+      PQ.feed(S(), pet, f.hunger, PQ.makeCtx(S()));
       if(f.xp) pet.xp = (pet.xp || 0) + f.xp;
       save();
     };
