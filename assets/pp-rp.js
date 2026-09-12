@@ -199,8 +199,10 @@ window.RP = (function(){
   var REL_KINDS = {
     parent:      { family:true,  aIs:"Parent",       bIs:"Child" },
     step:        { family:true,  aIs:"Step-parent",  bIs:"Step-child", step:true },
+    grandparent: { family:true,  aIs:"Grandparent",  bIs:"Grandchild" },
     sibling:     { family:true,  aIs:"Sibling",      bIs:"Sibling" },
     halfsibling: { family:true,  aIs:"Half-sibling", bIs:"Half-sibling", half:true },
+    cousin:      { family:true,  aIs:"Cousin",       bIs:"Cousin" },
     spouse:      { family:true,  aIs:"Spouse",       bIs:"Spouse" },
     partner:     { family:false, aIs:"Partner",      bIs:"Partner" },
     expartner:   { family:false, aIs:"Ex-partner",   bIs:"Ex-partner" },
@@ -219,8 +221,11 @@ window.RP = (function(){
     { key:"child",       kind:"parent",      me:"b", text:"child of" },
     { key:"step",        kind:"step",        me:"a", text:"step-parent of" },
     { key:"stepchild",   kind:"step",        me:"b", text:"step-child of" },
+    { key:"grandparent", kind:"grandparent", me:"a", text:"grandparent of" },
+    { key:"grandchild",  kind:"grandparent", me:"b", text:"grandchild of" },
     { key:"sibling",     kind:"sibling",     me:"a", text:"sibling of" },
     { key:"halfsibling", kind:"halfsibling", me:"a", text:"half-sibling of" },
+    { key:"cousin",      kind:"cousin",      me:"a", text:"cousin of" },
     { key:"spouse",      kind:"spouse",      me:"a", text:"married to" },
     { key:"partner",     kind:"partner",     me:"a", text:"dating" },
     { key:"expartner",   kind:"expartner",   me:"a", text:"an ex of" },
@@ -316,6 +321,12 @@ window.RP = (function(){
           grand.push({ id:g.id, step:g.step, of:p.id });
       });
     });
+    /* Directly-recorded grandparents — for when the connecting parent isn't
+       in the cast, or that generation just isn't written out. */
+    live.filter(function(r){ return r.kind === "grandparent" && r.b === id; }).forEach(function(r){
+      if(!grand.some(function(x){ return x.id === r.a; }) && !parents.some(function(x){ return x.id === r.a; }))
+        grand.push({ id:r.a, direct:true });
+    });
 
     var siblings = live.filter(function(r){ return (r.kind === "sibling" || r.kind === "halfsibling") && (r.a === id || r.b === id); })
                        .map(function(r){ return { id: r.a === id ? r.b : r.a, half: r.kind === "halfsibling" }; });
@@ -324,18 +335,38 @@ window.RP = (function(){
     });
     siblings = uniq(siblings).filter(function(sb){ return !parents.some(function(p){ return p.id === sb.id; }); });
 
+    var cousins = uniq(live.filter(function(r){ return r.kind === "cousin" && (r.a === id || r.b === id); })
+                           .map(function(r){ return { id: r.a === id ? r.b : r.a }; }));
+
     var spouses = uniq(live.filter(function(r){ return r.kind === "spouse" && (r.a === id || r.b === id); })
                            .map(function(r){ return { id: r.a === id ? r.b : r.a }; }));
     var children = uniq(childrenOf(id));
 
-    /* lines to draw: parent -> child for every pair on the chart, and spouses */
+    var grandchildren = [];
+    children.forEach(function(ch){
+      childrenOf(ch.id).forEach(function(g){
+        if(!grandchildren.some(function(x){ return x.id === g.id; }))
+          grandchildren.push({ id:g.id, step:g.step, of:ch.id });
+      });
+    });
+    /* Directly-recorded grandchildren, same reasoning as grandparents above. */
+    live.filter(function(r){ return r.kind === "grandparent" && r.a === id; }).forEach(function(r){
+      if(!grandchildren.some(function(x){ return x.id === r.b; }))
+        grandchildren.push({ id:r.b, direct:true });
+    });
+    grandchildren = uniq(grandchildren);
+
+    /* lines to draw: parent -> child for every pair on the chart, spouses,
+       and direct grandparent -> grandchild links that skip a generation. */
     var onChart = {}; onChart[id] = true;
-    [grand, parents, siblings, spouses, children].forEach(function(g){ g.forEach(function(n){ onChart[n.id] = true; }); });
+    [grand, parents, siblings, cousins, spouses, children, grandchildren].forEach(function(g){ g.forEach(function(n){ onChart[n.id] = true; }); });
     var links = live.filter(function(r){ return onChart[r.a] && onChart[r.b]; })
                     .map(function(r){ return { from:r.a, to:r.b, kind:r.kind }; });
 
-    return { grand:grand, parents:parents, siblings:siblings, spouses:spouses, children:children, links:links,
-             empty: !(grand.length || parents.length || siblings.length || spouses.length || children.length) };
+    return { grand:grand, parents:parents, siblings:siblings, cousins:cousins, spouses:spouses,
+             children:children, grandchildren:grandchildren, links:links,
+             empty: !(grand.length || parents.length || siblings.length || cousins.length ||
+                      spouses.length || children.length || grandchildren.length) };
   }
 
   /* ---------------- birthdays ----------------
