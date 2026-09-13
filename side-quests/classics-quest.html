@@ -399,6 +399,22 @@
     <span class="clq-sync" id="sync"></span>
   </div>
 
+  <div class="cq-selects">
+    <div class="cq-pick">
+      <label for="sortBy">Sort</label>
+      <select id="sortBy">
+        <option value="title-asc">Title (A–Z)</option>
+        <option value="title-desc">Title (Z–A)</option>
+        <option value="author-asc">Author last name (A–Z)</option>
+        <option value="author-desc">Author last name (Z–A)</option>
+        <option value="progress-desc">% complete (high to low)</option>
+        <option value="progress-asc">% complete (low to high)</option>
+        <option value="year-asc">Year written (oldest first)</option>
+        <option value="year-desc">Year written (newest first)</option>
+      </select>
+    </div>
+  </div>
+
   <section class="pp-panel cq-form" id="form">
     <h2 class="pp-panel-title" id="formTitle">Add a book</h2>
 
@@ -421,6 +437,11 @@
       <div class="cq-field">
         <label for="fLetter">Shelf letter</label>
         <input id="fLetter" type="text" maxlength="1" style="text-transform:uppercase;max-width:4em;" autocomplete="off">
+      </div>
+
+      <div class="cq-field">
+        <label for="fYear">Year written</label>
+        <input id="fYear" type="number" placeholder="1949" autocomplete="off">
       </div>
     </div>
 
@@ -519,7 +540,7 @@ const esc = s => String(s == null ? "" : s)
   .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 
 let state = { items: [] };
-let docRef = null, openId = null, filter = "all";
+let docRef = null, openId = null, filter = "all", sortBy = "title-asc";
 let editId = null, pendingCover = "";
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
@@ -565,6 +586,7 @@ function normalize(item){
   if(typeof item.pages !== "number" || !isFinite(item.pages)) item.pages = 0;
   if(typeof item.mins !== "number" || !isFinite(item.mins)) item.mins = 0;
   if(typeof item.totalMins !== "number" || !isFinite(item.totalMins)) item.totalMins = 0;
+  if(typeof item.year !== "number" || !isFinite(item.year)) item.year = null;
   return item;
 }
 
@@ -707,6 +729,7 @@ function pickBook(r){
   $("fTitle").value  = r.name;
   $("fAuthor").value = (r.raw.author_name || [])[0] || "";
   $("fLetter").value = deriveLetter($("fTitle").value);
+  if(r.raw.first_publish_year) $("fYear").value = r.raw.first_publish_year;
   pendingCover = r.image || "";
   $("results").classList.remove("open");
   $("lookupHint").textContent = pendingCover
@@ -731,6 +754,7 @@ function openForm(item){
   $("fTitle").value  = item ? item.title  : "";
   $("fAuthor").value = item ? item.author : "";
   $("fLetter").value = item ? item.letter : "";
+  $("fYear").value = item && item.year != null ? item.year : "";
   $("results").innerHTML = "";
   $("results").classList.remove("open");
   $("lookupHint").textContent = "";
@@ -751,6 +775,8 @@ function saveBook(){
   const author = $("fAuthor").value.trim();
   const letterInput = $("fLetter").value.trim();
   const letter = (letterInput || deriveLetter(title)).slice(0,1).toUpperCase();
+  const yearInput = $("fYear").value.trim();
+  const year = yearInput ? parseInt(yearInput, 10) : null;
 
   if(editId){
     const item = state.items.find(i => i.id === editId);
@@ -758,11 +784,13 @@ function saveBook(){
       item.title  = title;
       item.author = author;
       item.letter = letter;
+      item.year   = (year != null && isFinite(year)) ? year : null;
       if(pendingCover){ item.cover = pendingCover; item.coverTried = true; }
     }
   }else{
     state.items.push(normalize({
       id: uid(), letter, title, author,
+      year: (year != null && isFinite(year)) ? year : null,
       status: "unread", date: "", notes: "",
       cover: pendingCover, coverTried: !!pendingCover
     }));
@@ -836,6 +864,58 @@ function visible(){
   });
 }
 
+/* ---------------- sorting ----------------
+   Default matches the shelf's own order (letter, ignoring "The"/"A"/"An",
+   then title) so picking "Title (A-Z)" never visibly reshuffles anything. */
+function authorLastName(author){
+  const parts = String(author || "").trim().split(/\s+/).filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : "";
+}
+
+/* A book marked Read counts as fully complete even if its page/percent
+   tracking was never filled in — the status is the more trustworthy signal. */
+function completionFrac(item){
+  if(item.status === "read") return 1;
+  if(item.status === "unread") return 0;
+  return progressFrac(item);
+}
+
+/* Books with no year sit at the end no matter which direction is picked,
+   rather than clustering at "year zero" on an ascending sort. */
+function yearCompare(a, b, ascending){
+  const ay = a.year, by = b.year;
+  if(ay == null && by == null) return a.title.localeCompare(b.title);
+  if(ay == null) return 1;
+  if(by == null) return -1;
+  return ascending ? (ay - by) : (by - ay);
+}
+
+function sorted(rows){
+  const out = rows.slice();
+  if(sortBy === "title-desc"){
+    out.sort((a,b) => b.letter === a.letter
+      ? b.title.localeCompare(a.title)
+      : b.letter.localeCompare(a.letter));
+  }else if(sortBy === "author-asc"){
+    out.sort((a,b) => authorLastName(a.author).localeCompare(authorLastName(b.author)) || a.title.localeCompare(b.title));
+  }else if(sortBy === "author-desc"){
+    out.sort((a,b) => authorLastName(b.author).localeCompare(authorLastName(a.author)) || b.title.localeCompare(a.title));
+  }else if(sortBy === "progress-desc"){
+    out.sort((a,b) => completionFrac(b) - completionFrac(a) || a.title.localeCompare(b.title));
+  }else if(sortBy === "progress-asc"){
+    out.sort((a,b) => completionFrac(a) - completionFrac(b) || a.title.localeCompare(b.title));
+  }else if(sortBy === "year-asc"){
+    out.sort((a,b) => yearCompare(a, b, true));
+  }else if(sortBy === "year-desc"){
+    out.sort((a,b) => yearCompare(a, b, false));
+  }else{
+    out.sort((a,b) => a.letter === b.letter
+      ? a.title.localeCompare(b.title)
+      : a.letter.localeCompare(b.letter));
+  }
+  return out;
+}
+
 function renderProgress(){
   const total = state.items.length;
   const done  = state.items.filter(i => i.status === "read").length;
@@ -853,7 +933,7 @@ function renderProgress(){
 function render(){
   renderProgress();
 
-  const rows = visible();
+  const rows = sorted(visible());
   const total = state.items.length;
   $("count").textContent = rows.length === total
     ? `${total} books`
@@ -911,7 +991,7 @@ function openDetail(id){
         : `<div class="clq-detail-nocover">${esc(item.letter)}</div>`}
       <div style="flex:1 1 auto;min-width:0;">
         <h2>${esc(item.title)}</h2>
-        <p class="clq-author">${esc(item.author)}</p>
+        <p class="clq-author">${esc(item.author)}${item.year != null ? ` &middot; ${item.year}` : ""}</p>
       </div>
       <button class="pp-btn pp-btn-quiet pp-btn-sm" id="editBook">Edit</button>
       <button class="pp-btn pp-btn-quiet pp-btn-sm" id="closeDetail">Close</button>
@@ -1153,6 +1233,8 @@ async function lookupOne(id){
 }
 
 document.addEventListener("keydown", e => { if(e.key === "Escape" && openId) closeDetail(); });
+
+$("sortBy").onchange = e => { sortBy = e.target.value; render(); };
 
 load();
 </script>
