@@ -268,8 +268,26 @@ function applyStarvation(pet, overflow){
   pet.xp = Math.max(0, (pet.xp || 0) - loss);
 }
 
-function feed(pet, amount){
-  pet.hunger = Math.max(0, Math.min(100, (pet.hunger == null ? 100 : pet.hunger) + amount));
+/* Feeding needs to change what's displayed right now (today's live hunger),
+   not just the value settled as of this morning — but the stored value is
+   exactly what gets today's drain subtracted from it again on every render,
+   so simply adding the food amount to the live number and storing that
+   double-subtracts the drain next render (it can even go DOWN). The fix:
+   store the new live value with today's not-yet-settled drain banked back
+   in, so re-subtracting that same drain at render time lands exactly back
+   on the live value we intended. */
+function feed(state, pet, amount, ctx){
+  const base = pet.hunger == null ? 100 : pet.hunger;
+  if(pet.tier === 'stable' || ctx.isVacation(ctx.todayKey)){
+    pet.hunger = Math.max(0, Math.min(100, base + amount));
+    return;
+  }
+  const buffs = legendBuffs(state);
+  const ratio = dayCompletionRatio(state, ctx.todayKey, ctx.isScheduled, ctx.isDone);
+  const drain = drainFor(pet, ratio, buffs);
+  const liveNow   = Math.max(0, Math.min(100, base - drain));
+  const liveAfter = Math.max(0, Math.min(100, liveNow + amount));
+  pet.hunger = liveAfter + drain;
 }
 
 /* ---------- pet XP ---------- */
