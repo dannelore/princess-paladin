@@ -411,6 +411,8 @@
         <option value="progress-asc">% complete (low to high)</option>
         <option value="year-asc">Year written (oldest first)</option>
         <option value="year-desc">Year written (newest first)</option>
+        <option value="pages-asc">Estimated pages (shortest first)</option>
+        <option value="pages-desc">Estimated pages (longest first)</option>
       </select>
     </div>
   </div>
@@ -442,6 +444,11 @@
       <div class="cq-field">
         <label for="fYear">Year written</label>
         <input id="fYear" type="number" placeholder="1949" autocomplete="off">
+      </div>
+
+      <div class="cq-field">
+        <label for="fEstPages">Estimated pages</label>
+        <input id="fEstPages" type="number" min="0" placeholder="Looked up when known, or type your own" autocomplete="off">
       </div>
     </div>
 
@@ -511,10 +518,187 @@ const SEED = [
   { id:"u",  letter:"U", title:"Uncle Tom\u2019s Cabin",          author:"Harriet Beecher Stowe" },
   { id:"v",  letter:"V", title:"The Virgin Suicides",             author:"Jeffrey Eugenides" },
   { id:"w",  letter:"W", title:"Wuthering Heights",               author:"Emily Bront\u00eb" },
-  { id:"x",  letter:"X", title:"1984",                            author:"George Orwell" },
+  { id:"x",  letter:"N", title:"Nineteen Eighty-Four",             author:"George Orwell" },
   { id:"y",  letter:"Y", title:"The Yellow Wallpaper",            author:"Charlotte Perkins Gilman" },
-  { id:"z",  letter:"Z", title:"Zastrozzi",                       author:"Percy Bysshe Shelley" }
+  { id:"z",  letter:"Z", title:"Zastrozzi",                       author:"Percy Bysshe Shelley" },
+
+  /* The Cla-Zsics master list, added on top of the original 27. Ids pick
+     up after the existing letter for each row so nothing collides. */
+  { id:"a2", letter:"A", title:"Alice\u2019s Adventures in Wonderland", author:"Lewis Carroll" },
+  { id:"a3", letter:"A", title:"The Adventures of Huckleberry Finn", author:"Mark Twain" },
+  { id:"a4", letter:"A", title:"All My Sons", author:"Arthur Miller" },
+  { id:"a5", letter:"A", title:"Anne of Green Gables", author:"L. M. Montgomery" },
+  { id:"b2", letter:"B", title:"Brave New World", author:"Aldous Huxley" },
+  { id:"c2", letter:"C", title:"The Crucible", author:"Arthur Miller" },
+  { id:"c3", letter:"C", title:"Charlotte\u2019s Web", author:"E. B. White" },
+  { id:"c4", letter:"C", title:"Carrie", author:"Stephen King" },
+  { id:"c5", letter:"C", title:"The Color Purple", author:"Alice Walker" },
+  { id:"c6", letter:"C", title:"Catch-22", author:"Joseph Heller" },
+  { id:"d2", letter:"D", title:"The Diary of a Young Girl", author:"Anne Frank" },
+  { id:"d3", letter:"D", title:"Death of a Salesman", author:"Arthur Miller" },
+  { id:"d4", letter:"D", title:"Do Androids Dream of Electric Sheep?", author:"Philip K. Dick" },
+  { id:"f2", letter:"F", title:"The Fall of the House of Usher", author:"Edgar Allan Poe" },
+  { id:"f3", letter:"F", title:"The Federalist Papers", author:"Alexander Hamilton, James Madison & John Jay" },
+  { id:"f4", letter:"F", title:"For Whom the Bell Tolls", author:"Ernest Hemingway" },
+  { id:"g2", letter:"G", title:"The Gift of the Magi", author:"O. Henry" },
+  { id:"h2", letter:"H", title:"Hamlet", author:"William Shakespeare" },
+  { id:"h3", letter:"H", title:"The Haunting of Hill House", author:"Shirley Jackson" },
+  { id:"h4", letter:"H", title:"The House on Mango Street", author:"Sandra Cisneros" },
+  { id:"h5", letter:"H", title:"The House of Mirth", author:"Edith Wharton" },
+  { id:"i2", letter:"I", title:"The Invisible Man", author:"H. G. Wells" },
+  { id:"j2", letter:"J", title:"Journey to the Center of the Earth", author:"Jules Verne" },
+  { id:"l2", letter:"L", title:"Little Women", author:"Louisa May Alcott" },
+  { id:"l3", letter:"L", title:"The Little Prince", author:"Antoine de Saint-Exup\u00e9ry" },
+  { id:"l4", letter:"L", title:"The Legend of Sleepy Hollow", author:"Washington Irving" },
+  { id:"m2", letter:"M", title:"Macbeth", author:"William Shakespeare" },
+  { id:"m3", letter:"M", title:"The Metamorphosis", author:"Franz Kafka" },
+  { id:"m4", letter:"M", title:"The Monkey\u2019s Paw", author:"W. W. Jacobs" },
+  { id:"o2", letter:"O", title:"Of Mice and Men", author:"John Steinbeck" },
+  { id:"o3", letter:"O", title:"Othello", author:"William Shakespeare" },
+  { id:"o4", letter:"O", title:"The Odyssey", author:"Homer" },
+  { id:"o5", letter:"O", title:"The Old Man and the Sea", author:"Ernest Hemingway" },
+  { id:"o6", letter:"O", title:"One Flew Over the Cuckoo\u2019s Nest", author:"Ken Kesey" },
+  { id:"p3", letter:"P", title:"The Phantom of the Opera", author:"Gaston Leroux" },
+  { id:"p4", letter:"P", title:"The Pit and the Pendulum", author:"Edgar Allan Poe" },
+  { id:"p5", letter:"P", title:"The Prince", author:"Niccol\u00f2 Machiavelli" },
+  { id:"q2", letter:"Q", title:"The Queen of Spades", author:"Alexander Pushkin" },
+  { id:"r2", letter:"R", title:"Rebecca", author:"Daphne du Maurier" },
+  { id:"r3", letter:"R", title:"Romeo and Juliet", author:"William Shakespeare" },
+  { id:"r4", letter:"R", title:"The Red-Headed League", author:"Arthur Conan Doyle" },
+  { id:"r5", letter:"R", title:"The Red Shoes", author:"Hans Christian Andersen" },
+  { id:"r6", letter:"R", title:"Rip Van Winkle", author:"Washington Irving" },
+  { id:"s2", letter:"S", title:"The Scarlet Letter", author:"Nathaniel Hawthorne" },
+  { id:"s3", letter:"S", title:"The Stranger", author:"Albert Camus" },
+  { id:"s4", letter:"S", title:"Slaughterhouse-Five", author:"Kurt Vonnegut" },
+  { id:"s5", letter:"S", title:"The Secret Garden", author:"Frances Hodgson Burnett" },
+  { id:"s6", letter:"S", title:"The Strange Case of Dr Jekyll and Mr Hyde", author:"Robert Louis Stevenson" },
+  { id:"t2", letter:"T", title:"The Tell-Tale Heart", author:"Edgar Allan Poe" },
+  { id:"t3", letter:"T", title:"The Time Machine", author:"H. G. Wells" },
+  { id:"t4", letter:"T", title:"The Turn of the Screw", author:"Henry James" },
+  { id:"t5", letter:"T", title:"Twelve Angry Men", author:"Reginald Rose" },
+  { id:"t6", letter:"T", title:"The Three Musketeers", author:"Alexandre Dumas" },
+  { id:"t7", letter:"T", title:"The Tempest", author:"William Shakespeare" },
+  { id:"t8", letter:"T", title:"The Taming of the Shrew", author:"William Shakespeare" },
+  { id:"u2", letter:"U", title:"Utopia", author:"Thomas More" },
+  { id:"u3", letter:"U", title:"The Ugly Duckling", author:"Hans Christian Andersen" },
+  { id:"v2", letter:"V", title:"The Velveteen Rabbit", author:"Margery Williams" },
+  { id:"v3", letter:"V", title:"The Vampyre", author:"John Polidori" },
+  { id:"v4", letter:"V", title:"A Vindication of the Rights of Woman", author:"Mary Wollstonecraft" },
+  { id:"w2", letter:"W", title:"The War of the Worlds", author:"H. G. Wells" },
+  { id:"w3", letter:"W", title:"The Wonderful Wizard of Oz", author:"L. Frank Baum" },
+  { id:"w4", letter:"W", title:"Waiting for Godot", author:"Samuel Beckett" },
+  { id:"w5", letter:"W", title:"Who\u2019s Afraid of Virginia Woolf?", author:"Edward Albee" },
+  { id:"w6", letter:"W", title:"A Wrinkle in Time", author:"Madeleine L\u2019Engle" },
+  { id:"x1", letter:"X", title:"Xingu", author:"Edith Wharton" },
+  { id:"y2", letter:"Y", title:"Young Goodman Brown", author:"Nathaniel Hawthorne" },
+  { id:"y3", letter:"Y", title:"The Young King", author:"Oscar Wilde" },
+  { id:"z2", letter:"Z", title:"Zadig", author:"Voltaire" },
+  { id:"z3", letter:"Z", title:"The Zoo Story", author:"Edward Albee" }
 ];
+
+/* Rough page counts for the master list, Danni's own "estimated" framing --
+   common paperback editions, not any one authoritative source. Used only
+   to backfill estPages on books that don't have one yet (see normalize()
+   below), so correcting one by hand in the edit form always wins. */
+const PAGE_ESTIMATES = {
+  "A Tale of Two Cities": 380,
+  "A Vindication of the Rights of Woman": 250,
+  "A Wrinkle in Time": 215,
+  "Alice\u2019s Adventures in Wonderland": 130,
+  "All My Sons": 90,
+  "Animal Farm": 140,
+  "Anne of Green Gables": 320,
+  "Brave New World": 310,
+  "Carrie": 230,
+  "Catch-22": 450,
+  "Charlotte\u2019s Web": 180,
+  "Death of a Salesman": 140,
+  "Do Androids Dream of Electric Sheep?": 210,
+  "Dracula": 420,
+  "Emma": 470,
+  "For Whom the Bell Tolls": 470,
+  "Frankenstein": 280,
+  "Hamlet": 150,
+  "Jane Eyre": 500,
+  "Journey to the Center of the Earth": 250,
+  "Little Women": 450,
+  "Lord of the Flies": 225,
+  "Macbeth": 130,
+  "Murder on the Orient Express": 260,
+  "Night": 120,
+  "Nineteen Eighty-Four": 330,
+  "Of Mice and Men": 105,
+  "Oliver Twist": 500,
+  "One Flew Over the Cuckoo\u2019s Nest": 325,
+  "Othello": 130,
+  "Pride and Prejudice": 430,
+  "Quicksand": 135,
+  "Rebecca": 420,
+  "Rip Van Winkle": 40,
+  "Romeo and Juliet": 150,
+  "Slaughterhouse-Five": 275,
+  "The Adventures of Huckleberry Finn": 360,
+  "The Bell Jar": 280,
+  "The Catcher in the Rye": 230,
+  "The Color Purple": 300,
+  "The Crucible": 150,
+  "The Diary of a Young Girl": 330,
+  "The Fall of the House of Usher": 20,
+  "The Federalist Papers": 620,
+  "The Gift of the Magi": 10,
+  "The Great Gatsby": 180,
+  "The Handmaid\u2019s Tale": 310,
+  "The Haunting of Hill House": 250,
+  "The House of Mirth": 350,
+  "The House on Mango Street": 110,
+  "The Importance of Being Earnest": 100,
+  "The Invisible Man": 150,
+  "The Kite Runner": 370,
+  "The Legend of Sleepy Hollow": 40,
+  "The Little Prince": 90,
+  "The Metamorphosis": 90,
+  "The Monkey\u2019s Paw": 15,
+  "The Odyssey": 450,
+  "The Old Man and the Sea": 130,
+  "The Phantom of the Opera": 300,
+  "The Picture of Dorian Gray": 250,
+  "The Pit and the Pendulum": 20,
+  "The Prince": 130,
+  "The Queen of Spades": 40,
+  "The Raven": 10,
+  "The Red Shoes": 10,
+  "The Red-Headed League": 30,
+  "The Scarlet Letter": 240,
+  "The Secret Garden": 330,
+  "The Shining": 450,
+  "The Strange Case of Dr Jekyll and Mr Hyde": 90,
+  "The Stranger": 120,
+  "The Taming of the Shrew": 140,
+  "The Tell-Tale Heart": 15,
+  "The Tempest": 130,
+  "The Three Musketeers": 700,
+  "The Time Machine": 100,
+  "The Turn of the Screw": 140,
+  "The Ugly Duckling": 10,
+  "The Vampyre": 40,
+  "The Velveteen Rabbit": 35,
+  "The Virgin Suicides": 250,
+  "The War of the Worlds": 190,
+  "The Wonderful Wizard of Oz": 150,
+  "The Yellow Wallpaper": 60,
+  "The Young King": 20,
+  "The Zoo Story": 40,
+  "Twelve Angry Men": 70,
+  "Uncle Tom\u2019s Cabin": 450,
+  "Utopia": 150,
+  "Waiting for Godot": 100,
+  "Who\u2019s Afraid of Virginia Woolf?": 140,
+  "Wuthering Heights": 340,
+  "Xingu": 40,
+  "Young Goodman Brown": 20,
+  "Zadig": 100,
+  "Zastrozzi": 100
+};
 
 const STATES = [
   { key:"unread",  label:"Not started" },
@@ -587,6 +771,10 @@ function normalize(item){
   if(typeof item.mins !== "number" || !isFinite(item.mins)) item.mins = 0;
   if(typeof item.totalMins !== "number" || !isFinite(item.totalMins)) item.totalMins = 0;
   if(typeof item.year !== "number" || !isFinite(item.year)) item.year = null;
+  if(typeof item.estPages !== "number" || !isFinite(item.estPages)){
+    const known = PAGE_ESTIMATES[item.title];
+    item.estPages = (typeof known === "number") ? known : null;
+  }
   return item;
 }
 
@@ -686,7 +874,7 @@ async function fillCovers(){
 function searchBooks(q){
   $("lookupHint").textContent = "Searching\u2026";
   const url = OL_SEARCH + "?q=" + encodeURIComponent(q) +
-    "&fields=title,author_name,first_publish_year,cover_i&limit=8";
+    "&fields=title,author_name,first_publish_year,number_of_pages_median,cover_i&limit=8";
   fetch(url)
     .then(res => { if(!res.ok) throw new Error("bad status"); return res.json(); })
     .then(data => showBookResults((data.docs || []).map(d => ({
@@ -730,6 +918,7 @@ function pickBook(r){
   $("fAuthor").value = (r.raw.author_name || [])[0] || "";
   $("fLetter").value = deriveLetter($("fTitle").value);
   if(r.raw.first_publish_year) $("fYear").value = r.raw.first_publish_year;
+  if(r.raw.number_of_pages_median) $("fEstPages").value = r.raw.number_of_pages_median;
   pendingCover = r.image || "";
   $("results").classList.remove("open");
   $("lookupHint").textContent = pendingCover
@@ -755,6 +944,7 @@ function openForm(item){
   $("fAuthor").value = item ? item.author : "";
   $("fLetter").value = item ? item.letter : "";
   $("fYear").value = item && item.year != null ? item.year : "";
+  $("fEstPages").value = item && item.estPages != null ? item.estPages : "";
   $("results").innerHTML = "";
   $("results").classList.remove("open");
   $("lookupHint").textContent = "";
@@ -777,20 +967,24 @@ function saveBook(){
   const letter = (letterInput || deriveLetter(title)).slice(0,1).toUpperCase();
   const yearInput = $("fYear").value.trim();
   const year = yearInput ? parseInt(yearInput, 10) : null;
+  const pagesInput = $("fEstPages").value.trim();
+  const estPages = pagesInput ? parseInt(pagesInput, 10) : null;
 
   if(editId){
     const item = state.items.find(i => i.id === editId);
     if(item){
-      item.title  = title;
-      item.author = author;
-      item.letter = letter;
-      item.year   = (year != null && isFinite(year)) ? year : null;
+      item.title    = title;
+      item.author   = author;
+      item.letter   = letter;
+      item.year     = (year != null && isFinite(year)) ? year : null;
+      item.estPages = (estPages != null && isFinite(estPages)) ? estPages : null;
       if(pendingCover){ item.cover = pendingCover; item.coverTried = true; }
     }
   }else{
     state.items.push(normalize({
       id: uid(), letter, title, author,
       year: (year != null && isFinite(year)) ? year : null,
+      estPages: (estPages != null && isFinite(estPages)) ? estPages : null,
       status: "unread", date: "", notes: "",
       cover: pendingCover, coverTried: !!pendingCover
     }));
@@ -890,6 +1084,16 @@ function yearCompare(a, b, ascending){
   return ascending ? (ay - by) : (by - ay);
 }
 
+/* Same null-last shape as yearCompare — a book with no estimate yet sits at
+   the end of the list either way, rather than sorting as if it were 0 pages. */
+function pagesCompare(a, b, ascending){
+  const ap = a.estPages, bp = b.estPages;
+  if(ap == null && bp == null) return a.title.localeCompare(b.title);
+  if(ap == null) return 1;
+  if(bp == null) return -1;
+  return ascending ? (ap - bp) : (bp - ap);
+}
+
 function sorted(rows){
   const out = rows.slice();
   if(sortBy === "title-desc"){
@@ -908,6 +1112,10 @@ function sorted(rows){
     out.sort((a,b) => yearCompare(a, b, true));
   }else if(sortBy === "year-desc"){
     out.sort((a,b) => yearCompare(a, b, false));
+  }else if(sortBy === "pages-asc"){
+    out.sort((a,b) => pagesCompare(a, b, true));
+  }else if(sortBy === "pages-desc"){
+    out.sort((a,b) => pagesCompare(a, b, false));
   }else{
     out.sort((a,b) => a.letter === b.letter
       ? a.title.localeCompare(b.title)
@@ -970,6 +1178,7 @@ function render(){
       <span class="clq-body">
         <span class="clq-title">${esc(item.title)}</span>
         <span class="clq-author">${esc(item.author)}</span>
+        ${item.estPages != null ? `<span class="clq-when">~${item.estPages}pp</span>` : ""}
         ${when}
         ${prog}
       </span>
@@ -991,7 +1200,7 @@ function openDetail(id){
         : `<div class="clq-detail-nocover">${esc(item.letter)}</div>`}
       <div style="flex:1 1 auto;min-width:0;">
         <h2>${esc(item.title)}</h2>
-        <p class="clq-author">${esc(item.author)}${item.year != null ? ` &middot; ${item.year}` : ""}</p>
+        <p class="clq-author">${esc(item.author)}${item.year != null ? ` &middot; ${item.year}` : ""}${item.estPages != null ? ` &middot; ~${item.estPages}pp` : ""}</p>
       </div>
       <button class="pp-btn pp-btn-quiet pp-btn-sm" id="editBook">Edit</button>
       <button class="pp-btn pp-btn-quiet pp-btn-sm" id="closeDetail">Close</button>
