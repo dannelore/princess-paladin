@@ -38,7 +38,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 
    Dannelore pages add these three as well:
-   Montserrat:ital,wght@0,500;0,600;0,700;1,500  |  Spicy+Rice  |  Ubuntu:ital,wght@0,300;0,400;0,500;1,400
+   Montserrat:ital,wght@0,500;0,600;0,700;1,500  |  Princess+Sofia  |  Ubuntu:ital,wght@0,300;0,400;0,500;1,400
    -------------------------------------------------------------------------- */
 
 /* --------------------------------------------------------------------------
@@ -1254,8 +1254,7 @@ footer{
 
 .pp-dannelore .pp-title,
 .pp-dannelore h1.site-title{
-  font-family: 'Spicy Rice', sans-serif;
-  font-weight: 600;
+  font-family: 'Princess Sofia', cursive;
   font-size: clamp(2.4rem, 6vw, 4rem);
   letter-spacing: 0.02em;
   color: var(--pink-deep);

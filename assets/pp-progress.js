@@ -66,6 +66,12 @@ window.PPProgress = (function(){
     var circ = 2 * Math.PI * r;
     var done = v.total > 0 && v.current >= v.total;
 
+    /* Fixed pixel box, set every draw (not just on first build) — a ring
+       must never depend on flex/content auto-sizing for its shape, or a
+       parent layout change can squash it into an oval. */
+    el.style.width  = size + "px";
+    el.style.height = size + "px";
+
     if(!el.querySelector("svg")){
       el.innerHTML =
         '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'" aria-hidden="true">' +
@@ -77,7 +83,7 @@ window.PPProgress = (function(){
     }
 
     el.querySelector(".pp-ring-fill").style.strokeDashoffset = circ * (1 - v.pct);
-    el.querySelector(".pp-ring-text").textContent = done ? "✓" : Math.round(v.pct * 100) + "";
+    el.querySelector(".pp-ring-text").textContent = done ? "✓" : Math.round(v.pct * 100) + "%";
     el.classList.toggle("is-complete", done);
 
     setA11y(el, v, el.getAttribute("data-label") || "");
