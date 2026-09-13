@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Quest &middot; Side Quests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/themes/side-quests.css">
+<link rel="stylesheet" href="/assets/pp-tracker.css">
+
+<style>
+  /* ======================================================================
+     THE QUEST TO CLEAR THE BACKLOG
+
+     Same shape as Couch Quest: a shared card/form/detail tracker, styled by
+     pp-tracker.css. Games don't have seasons or streaming providers, so
+     that half of Couch Quest is dropped rather than carried over unused —
+     what's left is status, who's playing, priority, platform and a rough
+     "hours to beat" instead of a runtime.
+
+     Firestore: sidequest/game-list
+     ====================================================================== */
+
+  .gq-card .cq-poster,
+  .gq-card .cq-poster-none{ aspect-ratio: 16/9; }
+
+  .gq-platform{
+    font-family: var(--font-body); font-size: .66rem; font-weight: 600;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft);
+    background: rgba(46,36,31,.06); border-radius: 999px; padding: 3px 9px;
+  }
+  .gq-hours{
+    font-family: var(--font-serif); font-style: italic; font-size: .82rem; color: var(--gold-deep);
+  }
+  .gq-credit{
+    font-family: var(--font-serif); font-style: italic; font-size: .78rem;
+    color: var(--ink-soft); margin: 6px 0 0;
+  }
+</style>
+</head>
+<body class="pp-sidequest" data-nav-eyebrow="Side Quests" data-nav-title="Game Quest">
+
+<div class="pp-wrap">
+
+  <div class="pp-page-title">
+    <h2>The Quest to Clear the Backlog</h2>
+  </div>
+
+  <p class="clq-intro" style="font-family:var(--font-serif);font-style:italic;color:var(--ink-soft);text-align:center;max-width:640px;margin:0 auto 22px;line-height:1.5;">
+    Everything queued up, in progress, or finally, mercifully finished.
+  </p>
+
+  <div class="cq-bar">
+    <button class="cq-filter" data-filter="all"      aria-pressed="true">Everything</button>
+    <button class="cq-filter" data-filter="want"     aria-pressed="false">Backlog</button>
+    <button class="cq-filter" data-filter="playing"  aria-pressed="false">Playing</button>
+    <button class="cq-filter" data-filter="played"   aria-pressed="false">Played</button>
+    <span class="cq-spacer"></span>
+    <button class="pp-btn" id="addBtn">Add a game</button>
+  </div>
+
+  <div class="cq-selects">
+    <div class="cq-pick">
+      <label for="fltPlatform">Platform</label>
+      <select id="fltPlatform">
+        <option value="all">All</option>
+      </select>
+    </div>
+    <div class="cq-pick">
+      <label for="fltWho">Who</label>
+      <select id="fltWho">
+        <option value="all">Everyone</option>
+        <option value="together">Together</option>
+        <option value="danni">Danni</option>
+        <option value="brendon">Brendon</option>
+      </select>
+    </div>
+    <div class="cq-pick">
+      <label for="sortBy">Sort</label>
+      <select id="sortBy">
+        <option value="added-desc">Newest first</option>
+        <option value="added-asc">Oldest first</option>
+        <option value="title-asc">Title A&ndash;Z</option>
+        <option value="priority-desc">Priority</option>
+      </select>
+    </div>
+    <button class="cq-reset" id="resetBtn">Clear filters</button>
+  </div>
+
+  <!-- ---------------- add / edit ---------------- -->
+  <section class="pp-panel cq-form" id="form">
+    <h2 class="pp-panel-title" id="formTitle">Add a game</h2>
+
+    <div class="cq-fields">
+      <div class="cq-field wide">
+        <label for="fTitle">Title</label>
+        <div class="cq-inline">
+          <input id="fTitle" type="text" placeholder="Hades" autocomplete="off">
+          <button class="pp-btn pp-btn-quiet" id="lookupBtn" style="white-space:nowrap;">Look it up</button>
+        </div>
+        <span class="cq-hint" id="lookupHint"></span>
+        <div class="cq-results" id="results"></div>
+      </div>
+
+      <div class="cq-field">
+        <label for="fStatus">Status</label>
+        <select id="fStatus">
+          <option value="want">Backlog</option>
+          <option value="playing">Playing</option>
+          <option value="played">Played</option>
+        </select>
+      </div>
+
+      <div class="cq-field">
+        <label for="fPlatform">Platform</label>
+        <select id="fPlatform">
+          <option value="Steam">Steam</option>
+          <option value="PlayStation">PlayStation</option>
+          <option value="Xbox / Game Pass">Xbox / Game Pass</option>
+          <option value="Switch">Switch</option>
+          <option value="Epic Games">Epic Games</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <div class="cq-field">
+        <label for="fWho">Who's playing</label>
+        <select id="fWho">
+          <option value="together">Together</option>
+          <option value="danni">D only</option>
+          <option value="brendon">B only</option>
+        </select>
+      </div>
+
+      <div class="cq-field">
+        <label for="fHours">Hours to beat</label>
+        <input id="fHours" type="number" min="0" placeholder="Looked up automatically, or type your own">
+      </div>
+
+      <div class="cq-field">
+        <label for="fPriD">Danni's priority</label>
+        <select id="fPriD">
+          <option value="0">&mdash;</option>
+          <option value="1">Low</option>
+          <option value="2">Medium</option>
+          <option value="3">High</option>
+        </select>
+      </div>
+
+      <div class="cq-field">
+        <label for="fPriB">Brendon's priority</label>
+        <select id="fPriB">
+          <option value="0">&mdash;</option>
+          <option value="1">Low</option>
+          <option value="2">Medium</option>
+          <option value="3">High</option>
+        </select>
+      </div>
+
+      <div class="cq-field wide">
+        <label class="cq-check-label">
+          <input type="checkbox" id="fReplay"> Replay
+        </label>
+      </div>
+    </div>
+
+    <div class="cq-actions">
+      <button class="pp-btn" id="saveBtn">Save</button>
+      <button class="pp-btn pp-btn-quiet" id="cancelBtn">Cancel</button>
+      <span class="cq-spacer"></span>
+      <button class="pp-btn pp-btn-quiet" id="deleteBtn" style="display:none;">Delete</button>
+    </div>
+  </section>
+
+  <div class="cq-bar" style="margin-bottom:14px;">
+    <span class="cq-count" id="count"></span>
+    <span class="cq-spacer"></span>
+    <span class="cq-sync" id="sync" data-state="idle">Connecting</span>
+  </div>
+
+  <div class="cq-grid" id="grid"></div>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+
+</div>
+
+<!-- ---------------- detail ---------------- -->
+<section class="pp-panel cq-detail" id="detail">
+  <div class="cq-detail-head">
+    <img id="dImg" alt="">
+    <div style="flex:1 1 auto; min-width:0;">
+      <h2 id="dTitle"></h2>
+      <p class="cq-detail-meta" id="dMeta"></p>
+    </div>
+    <button class="pp-btn pp-btn-quiet pp-btn-sm" id="detailClose">Close</button>
+  </div>
+  <p class="gq-credit" id="dCredit" style="display:none;"></p>
+  <div class="cq-actions">
+    <button class="pp-btn pp-btn-quiet" id="detailEdit">Edit</button>
+  </div>
+</section>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script>
+"use strict";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAdNZBoh1pH80-ZFBbOlcrlsLdMi3D62Wg",
+  authDomain: "princess-paladin.firebaseapp.com",
+  projectId: "princess-paladin",
+  storageBucket: "princess-paladin.appspot.com",
+  messagingSenderId: "282931655557",
+  appId: "1:282931655557:web:cae6ccd23f32cb9be54aec"
+};
+
+const DOC_PATH  = "sidequest/game-list";
+const CACHE_KEY = "pp_game_list";
+
+/* Get a free key at https://rawg.io/apidocs (instant signup, no cost) and
+   paste it in below — same "key lives in the page" tradeoff already
+   accepted for TMDB on Couch Quest. Until then, lookup is quietly disabled
+   and everything still works by typing things in by hand. */
+const RAWG_KEY = "PASTE_YOUR_RAWG_KEY_HERE";
+const RAWG = "https://api.rawg.io/api/games";
+const hasRawg = () => RAWG_KEY && RAWG_KEY.indexOf("PASTE") !== 0;
+const HINT_NOKEY = "Lookup needs a free RAWG.io key \u2014 ask Claude to help you add one, or fill this in by hand.";
+
+const LABEL     = { want:"Backlog", playing:"Playing", played:"Played" };
+const WHO_LABEL = { together:"Together", danni:"D only", brendon:"B only" };
+const WHO_KEYS  = ["together","danni","brendon"];
+
+const $   = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+let state  = { items: [] };
+let docRef = null, saving = false, saveTimer = null;
+let editId = null, openId = null;
+let filter = "all", fltPlatform = "all", fltWho = "all", sortBy = "added-desc";
+let pendingHours = null;
+
+/* ---------------- shape ---------------- */
+function migrate(){
+  let touched = false;
+  state.items.forEach(it => {
+    if(!WHO_KEYS.includes(it.who)){ it.who = "together"; touched = true; }
+    if(it.priD == null){ it.priD = 0; touched = true; }
+    if(it.priB == null){ it.priB = 0; touched = true; }
+    if(!LABEL[it.status]){ it.status = "want"; touched = true; }
+    if(!it.platform){ it.platform = "Other"; touched = true; }
+    if(typeof it.hours !== "number"){ it.hours = 0; touched = true; }
+    if(it.added == null){ it.added = Date.now(); touched = true; }
+  });
+  return touched;
+}
+
+function priAvg(item){
+  const vals = [item.priD, item.priB].filter(v => v > 0);
+  return vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : 0;
+}
+
+/* ---------------- storage ---------------- */
+function writeCache(){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(state)); }catch(e){} }
+
+function setSync(state_, text){
+  const el = $("sync");
+  el.textContent = text;
+  el.setAttribute("data-state", state_);
+}
+
+function save(){
+  writeCache();
+  renderPlatformFilter();
+  render();
+  if(openId) openDetail(openId);
+  if(!docRef) return;
+  setSync("saving","Saving");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saving = true;
+    docRef.set({ items: state.items, updated: Date.now() })
+      .then(() => setSync("idle","Synced"))
+      .catch(e => { console.error(e); setSync("error","Couldn't save"); })
+      .finally(() => { saving = false; });
+  }, 500);
+}
+
+function startFirebase(){
+  try{
+    firebase.initializeApp(firebaseConfig);
+    docRef = firebase.firestore().doc(DOC_PATH);
+    docRef.onSnapshot(snap => {
+      if(saving) return;
+      const data = snap.data();
+      if(data && Array.isArray(data.items)){
+        state = { items: data.items };
+        migrate();
+        writeCache();
+        renderPlatformFilter();
+        render();
+        if(openId) openDetail(openId);
+      }
+      setSync("idle","Synced");
+    }, err => { console.error(err); setSync("error","Offline \u2014 saved here"); });
+  }catch(err){
+    console.error("Firestore unavailable, working from the local copy:", err);
+    setSync("error","Offline");
+  }
+}
+
+function loadCache(){
+  try{
+    const raw = localStorage.getItem(CACHE_KEY);
+    if(raw){
+      const p = JSON.parse(raw);
+      if(p && Array.isArray(p.items)) state = { items: p.items };
+    }
+  }catch(e){}
+  migrate();
+}
+
+/* ---------------- lookup ---------------- */
+function lookup(q){
+  if(!hasRawg()){ $("lookupHint").textContent = HINT_NOKEY; return; }
+  $("lookupHint").textContent = "Searching\u2026";
+  const url = RAWG + "?key=" + encodeURIComponent(RAWG_KEY) + "&search=" + encodeURIComponent(q) + "&page_size=8";
+  fetch(url)
+    .then(r => { if(r.status === 401) throw new Error("bad key"); return r.json(); })
+    .then(data => {
+      showResults((data.results || []).map(g => ({
+        raw: g,
+        name: g.name,
+        image: g.background_image || "",
+        meta: [g.released ? g.released.slice(0,4) : "", g.playtime ? g.playtime + "h avg" : ""].filter(Boolean).join(" \u00b7 ")
+      })), pickGame);
+    })
+    .catch(e => {
+      console.error(e);
+      $("lookupHint").textContent = (e.message === "bad key")
+        ? "RAWG rejected that key. Check it was copied whole."
+        : "Lookup failed \u2014 fill it in by hand.";
+    });
+}
+
+function showResults(rows, onPick){
+  const box = $("results");
+  box.innerHTML = "";
+  if(!rows.length){
+    $("lookupHint").textContent = "Nothing found. Check the spelling, or fill it in by hand.";
+    box.classList.remove("open");
+    return;
+  }
+  $("lookupHint").textContent = "Pick the right one:";
+  rows.forEach(r => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cq-result";
+    b.innerHTML =
+      (r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy" style="aspect-ratio:16/9;">`
+               : `<div class="cq-poster-none" style="font-size:.8rem;aspect-ratio:16/9;">${esc(r.name)}</div>`) +
+      `<div class="cq-rname">${esc(r.name)}</div>` +
+      `<div class="cq-rmeta">${esc(r.meta)}</div>`;
+    b.onclick = () => onPick(r);
+    box.appendChild(b);
+  });
+  box.classList.add("open");
+}
+
+function pickGame(r){
+  $("fTitle").value = r.name;
+  pendingHours = r.raw.playtime || null;
+  if(pendingHours) $("fHours").value = pendingHours;
+  const plats = (r.raw.platforms || []).map(p => p.platform && p.platform.name).filter(Boolean);
+  const guess = ["Steam","PlayStation","Xbox / Game Pass","Switch","Epic Games"]
+    .find(p => plats.some(n => p.toLowerCase().indexOf(n.toLowerCase().replace(/^\s*pc\s*$/i,"steam")) > -1
+                             || n.toLowerCase().indexOf(p.split(" ")[0].toLowerCase()) > -1));
+  if(guess) $("fPlatform").value = guess;
+  pendingImage = r.image || "";
+  $("results").classList.remove("open");
+  $("lookupHint").textContent = "Picked \u2014 credit added automatically.";
+}
+let pendingImage = "";
+
+/* ---------------- form ---------------- */
+function openForm(item){
+  closeDetail();
+  editId = item ? item.id : null;
+  pendingHours = null;
+  pendingImage = item ? (item.image || "") : "";
+  $("formTitle").textContent = item ? "Edit" : "Add a game";
+  $("fTitle").value    = item ? item.title : "";
+  $("fStatus").value   = item ? item.status : "want";
+  $("fPlatform").value = item ? item.platform : "Steam";
+  $("fWho").value      = item ? item.who : "together";
+  $("fHours").value    = item && item.hours ? item.hours : "";
+  $("fPriD").value     = item ? String(item.priD || 0) : "0";
+  $("fPriB").value     = item ? String(item.priB || 0) : "0";
+  $("fReplay").checked = !!(item && item.replay);
+  $("lookupHint").textContent = hasRawg() ? "" : HINT_NOKEY;
+  $("results").innerHTML = "";
+  $("results").classList.remove("open");
+  $("deleteBtn").style.display = item ? "inline-block" : "none";
+  $("form").classList.add("open");
+  $("fTitle").focus();
+}
+function closeForm(){ $("form").classList.remove("open"); editId = null; pendingHours = null; }
+
+$("addBtn").onclick      = () => openForm(null);
+$("cancelBtn").onclick   = closeForm;
+$("detailClose").onclick = closeDetail;
+$("fTitle").onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); $("saveBtn").click(); } };
+$("lookupBtn").onclick = () => { const q = $("fTitle").value.trim(); if(q) lookup(q); };
+
+$("saveBtn").onclick = () => {
+  const title = $("fTitle").value.trim();
+  if(!title){ $("fTitle").focus(); return; }
+
+  const payload = {
+    title: title,
+    image: pendingImage || "",
+    status: $("fStatus").value,
+    platform: $("fPlatform").value,
+    who: $("fWho").value,
+    hours: parseInt($("fHours").value, 10) || 0,
+    priD: parseInt($("fPriD").value, 10) || 0,
+    priB: parseInt($("fPriB").value, 10) || 0,
+    replay: $("fReplay").checked
+  };
+
+  if(editId){
+    const i = state.items.findIndex(x => x.id === editId);
+    if(i > -1) state.items[i] = Object.assign({}, state.items[i], payload);
+  }else{
+    state.items.unshift(Object.assign({ id: uid(), added: Date.now() }, payload));
+  }
+  closeForm();
+  save();
+};
+
+$("deleteBtn").onclick = () => {
+  if(!editId) return;
+  if(!confirm("Remove this from the backlog?")) return;
+  const id = editId;
+  state.items = state.items.filter(x => x.id !== id);
+  closeForm();
+  if(openId === id) closeDetail();
+  save();
+};
+
+/* ---------------- detail ---------------- */
+function openDetail(id){
+  const item = state.items.find(x => x.id === id);
+  if(!item){ closeDetail(); return; }
+  openId = id;
+
+  $("dTitle").textContent = item.title;
+  $("dImg").src = item.image || "";
+  $("dImg").style.display = item.image ? "" : "none";
+
+  const bits = [LABEL[item.status], WHO_LABEL[item.who], item.platform];
+  if(item.hours) bits.push(item.hours + "h to beat");
+  const avg = priAvg(item);
+  if(avg){
+    const words = ["","low","med","high"];
+    const pieces = [];
+    if(item.priD) pieces.push("D " + words[item.priD]);
+    if(item.priB) pieces.push("B " + words[item.priB]);
+    bits.push("priority (" + pieces.join(", ") + ")");
+  }
+  if(item.replay) bits.push("Replay");
+  $("dMeta").textContent = bits.filter(Boolean).join(" \u00b7 ");
+
+  const credit = $("dCredit");
+  if(item.image){
+    credit.style.display = "";
+    credit.innerHTML = `Picture via <a href="https://rawg.io" target="_blank" rel="noopener">RAWG.io</a>`;
+  }else{
+    credit.style.display = "none";
+  }
+
+  $("detail").classList.add("open");
+}
+function closeDetail(){ openId = null; $("detail").classList.remove("open"); }
+
+$("detailEdit").onclick = () => { const i = state.items.find(x => x.id === openId); if(i) openForm(i); };
+
+/* ---------------- filters ---------------- */
+function renderPlatformFilter(){
+  const used = new Set(state.items.map(i => i.platform).filter(Boolean));
+  const sel = $("fltPlatform");
+  const current = sel.value || "all";
+  sel.innerHTML = `<option value="all">All</option>` +
+    Array.from(used).sort().map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join("");
+  sel.value = Array.from(used).includes(current) ? current : "all";
+}
+
+document.querySelectorAll(".cq-filter").forEach(btn => {
+  btn.onclick = () => {
+    filter = btn.dataset.filter;
+    document.querySelectorAll(".cq-filter").forEach(b => b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+    render();
+  };
+});
+$("fltPlatform").onchange = e => { fltPlatform = e.target.value; render(); };
+$("fltWho").onchange      = e => { fltWho = e.target.value; render(); };
+$("sortBy").onchange      = e => { sortBy = e.target.value; render(); };
+$("resetBtn").onclick = () => {
+  filter = "all"; fltPlatform = "all"; fltWho = "all"; sortBy = "added-desc";
+  $("fltPlatform").value = "all"; $("fltWho").value = "all"; $("sortBy").value = "added-desc";
+  document.querySelectorAll(".cq-filter").forEach(b => b.setAttribute("aria-pressed", b.dataset.filter === "all" ? "true" : "false"));
+  render();
+};
+
+/* ---------------- render ---------------- */
+function visible(){
+  return state.items.filter(i => {
+    if(filter !== "all" && i.status !== filter) return false;
+    if(fltPlatform !== "all" && i.platform !== fltPlatform) return false;
+    if(fltWho !== "all" && i.who !== fltWho) return false;
+    return true;
+  });
+}
+
+function sorted(rows){
+  const out = rows.slice();
+  if(sortBy === "added-desc")   out.sort((a,b) => b.added - a.added);
+  if(sortBy === "added-asc")    out.sort((a,b) => a.added - b.added);
+  if(sortBy === "title-asc")    out.sort((a,b) => a.title.localeCompare(b.title));
+  if(sortBy === "priority-desc")out.sort((a,b) => priAvg(b) - priAvg(a));
+  return out;
+}
+
+function render(){
+  const rows = sorted(visible());
+  const total = state.items.length;
+  $("count").textContent = rows.length === total ? `${total} game${total === 1 ? "" : "s"}` : `Showing ${rows.length} of ${total}`;
+
+  if(!rows.length){
+    $("grid").innerHTML = `<p class="pp-empty">Nothing here yet.</p>`;
+    return;
+  }
+
+  $("grid").innerHTML = rows.map(item => {
+    const art = item.image
+      ? `<img class="cq-poster" src="${esc(item.image)}" alt="" loading="lazy"
+           onerror="this.outerHTML='<div class=&quot;cq-poster-none&quot;>${esc(item.title)}</div>'">`
+      : `<div class="cq-poster-none">${esc(item.title)}</div>`;
+    const who = item.who;
+    const whoBadge = who !== "together" ? `<span class="cq-who" data-who="${who}">${esc(WHO_LABEL[who])}</span>` : "";
+
+    return `<button class="cq-card gq-card${item.status === "played" ? " is-done" : ""}" data-open="${esc(item.id)}">
+      <div class="cq-posterwrap" data-open="${esc(item.id)}">${art}${whoBadge}</div>
+      <div class="cq-tools">
+        <button data-edit="${esc(item.id)}" aria-label="Edit ${esc(item.title)}">\u270e</button>
+        <button data-del="${esc(item.id)}" aria-label="Remove ${esc(item.title)}">\u2715</button>
+      </div>
+      <div class="cq-body">
+        <h3 class="cq-name">${esc(item.title)}</h3>
+        <div class="cq-meta">
+          <span class="cq-status" data-status="${item.status}">${esc(LABEL[item.status])}</span>
+          <span class="gq-platform">${esc(item.platform)}</span>
+        </div>
+        ${item.hours ? `<span class="gq-hours">${item.hours}h to beat</span>` : ""}
+      </div>
+    </button>`;
+  }).join("");
+}
+
+document.addEventListener("click", e => {
+  const edit = e.target.closest("[data-edit]");
+  if(edit){ const i = state.items.find(x => x.id === edit.dataset.edit); if(i) openForm(i); return; }
+
+  const del = e.target.closest("[data-del]");
+  if(del){
+    const i = state.items.find(x => x.id === del.dataset.del);
+    if(i && confirm(`Remove "${i.title}" from the backlog?`)){
+      if(openId === i.id) closeDetail();
+      state.items = state.items.filter(x => x.id !== i.id);
+      save();
+    }
+    return;
+  }
+
+  const open = e.target.closest("[data-open]");
+  if(open){ openDetail(open.dataset.open); return; }
+});
+
+loadCache();
+renderPlatformFilter();
+render();
+startFirebase();
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>
