@@ -38,7 +38,7 @@
   }
 
   /* ---- progress ---- */
-  .clq-progress{ margin-bottom: 20px; }
+  .clq-progress{ margin-bottom: 20px; display: flex; flex-direction: column; gap: 14px; }
   .clq-track{ padding: 18px 22px; }
   .clq-track h3{
     font-family: var(--font-body);
@@ -48,6 +48,26 @@
     text-transform: uppercase;
     color: var(--dusk-deep);
     margin: 0 0 10px;
+  }
+
+  /* Round 1: a letter grid marking which shelf-letters already have a
+     finished book, so "complete the alphabet before doubling up" is
+     something to glance at rather than tally by hand. */
+  .clq-rgrid{ display: flex; flex-wrap: wrap; gap: 6px; }
+  .clq-rletter{
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px;
+    font-family: var(--font-body); font-size: .74rem; font-weight: 600;
+    color: var(--ink-soft);
+    background: var(--parchment); border: 1px solid var(--parchment-border);
+    border-radius: var(--radius-sm);
+  }
+  .clq-rletter.is-done{
+    color: #fff; background: var(--sage); border-color: var(--sage-deep);
+  }
+  .clq-rnote{
+    font-family: var(--font-serif); font-style: italic; font-size: .85rem;
+    color: var(--ink-soft); margin: 10px 0 0;
   }
 
   /* ---- controls ---- */
@@ -1124,6 +1144,32 @@ function sorted(rows){
   return out;
 }
 
+const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+/* Danni's own house rule: read in any order, but no second book from a
+   letter until every letter has had a first finished book. This just makes
+   that visible — it doesn't stop anything on its own (see setStatus). */
+function readLetters(){
+  return new Set(state.items.filter(i => i.status === "read").map(i => i.letter));
+}
+
+function renderRoundOne(){
+  const covered = readLetters();
+  const missing = ALPHABET.filter(l => !covered.has(l));
+  const cells = ALPHABET.map(l =>
+    `<span class="clq-rletter${covered.has(l) ? " is-done" : ""}">${l}</span>`
+  ).join("");
+  const note = missing.length
+    ? `${covered.size} of 26 letters have a finished book — still need a first read for ${missing.join(", ")}.`
+    : "Every letter has a finished book. Doubles are fair game.";
+  return `
+    <div class="pp-panel pp-panel-tight clq-track">
+      <h3>Round 1 — one from every letter</h3>
+      <div class="clq-rgrid">${cells}</div>
+      <p class="clq-rnote">${note}</p>
+    </div>`;
+}
+
 function renderProgress(){
   const total = state.items.length;
   const done  = state.items.filter(i => i.status === "read").length;
@@ -1133,7 +1179,8 @@ function renderProgress(){
       <h3>Books read</h3>
       <div class="pp-progress" data-color="sage"
            data-current="${done}" data-total="${total}" data-format="both"></div>
-    </div>`;
+    </div>
+    ${renderRoundOne()}`;
 
   if(window.PPProgress) PPProgress.draw($("progress"));
 }
@@ -1301,6 +1348,21 @@ function closeDetail(){
 function setStatus(id, status){
   const item = state.items.find(i => i.id === id);
   if(!item) return;
+
+  if(status === "read" && item.status !== "read"){
+    const covered = readLetters();
+    if(covered.has(item.letter)){
+      const missing = ALPHABET.filter(l => !covered.has(l));
+      if(missing.length){
+        const ok = confirm(
+          `You've already got a ${item.letter} finished. Still missing a first ` +
+          `read for: ${missing.join(", ")}. Mark this one read anyway?`
+        );
+        if(!ok) return;
+      }
+    }
+  }
+
   item.status = status;
   if(status === "read" && !item.date){
     const t = new Date();
