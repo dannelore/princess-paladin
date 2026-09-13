@@ -1,0 +1,20 @@
+/* ==========================================================================
+   Princess & Paladin — castle folder theme
+   /assets/themes/castle.css
+
+   Colour + font overrides only — structure and shared components stay in
+   pp.css. Load this right after it:
+     <link rel="stylesheet" href="/assets/pp.css">
+     <link rel="stylesheet" href="/assets/themes/castle.css">
+   Used by: /castle/*, and /side-quests/recipe-book.html (castle-themed by design)
+   ========================================================================== */
+
+/* --- castle: stone and sage --- */
+.pp-castle{
+  background-image: linear-gradient(135deg,#E7E5DF 0%,#D9D6CC 100%);
+  --accent:      var(--sage);
+  --accent-deep: var(--sage-deep);
+  --accent-soft: rgba(143,163,126,0.14);
+  --panel:       #FDFDF9;
+  --panel-tint:  #F6F8F1;
+}

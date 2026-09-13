@@ -127,89 +127,17 @@
    Put the matching class on <body>. Subfolders use the parent's class:
    every page under /castle/ gets class="pp-castle", and so on.
 
-   Each folder sets its background AND its accent. Nothing else needs to
-   change — the components below all follow the accent.
+   Each folder sets its own background + accent (--accent, --accent-deep,
+   --accent-soft, --panel, --panel-tint) plus any font override, in a small
+   file under /assets/themes/ — home.css, castle.css, dannelore.css,
+   side-quests.css, templates.css, vmprman.css. Load the matching one right
+   after this file. The components everywhere else in pp.css just read
+   var(--accent) etc. and never need to change per folder.
    -------------------------------------------------------------------------- */
 
 body[class*="pp-"]{
   background-attachment: fixed;
 }
-
-/* --- home: cream and rose --- */
-.pp-home{
-  background-image: linear-gradient(135deg,#F7F1E4 0%,#EFE4CE 100%);
-  --accent:      var(--pink);
-  --accent-deep: var(--pink-deep);
-  --accent-soft: rgba(232,124,166,0.14);
-  --panel:       #FFFDF8;
-  --panel-tint:  #FFF7FA;
-}
-
-/* --- castle: stone and sage --- */
-.pp-castle{
-  background-image: linear-gradient(135deg,#E7E5DF 0%,#D9D6CC 100%);
-  --accent:      var(--sage);
-  --accent-deep: var(--sage-deep);
-  --accent-soft: rgba(143,163,126,0.14);
-  --panel:       #FDFDF9;
-  --panel-tint:  #F6F8F1;
-}
-
-/* --- dannelore: rose on rose --- */
-.pp-dannelore{
-  background-image:
-    radial-gradient(circle at 15% 8%, rgba(255,255,255,0.5), transparent 40%),
-    linear-gradient(135deg,#F6D9E6 0%,#F2C9DC 100%);
-  --accent:      var(--pink);
-  --accent-deep: var(--pink-deep);
-  --accent-soft: rgba(232,124,166,0.16);
-  --panel:       #FFFDFA;
-  --panel-tint:  #FFF5F9;
-}
-
-/* --- side quests: lavender and dusk --- */
-.pp-sidequest{
-  background-image: linear-gradient(135deg,#EFEAF4 0%,#DFD5EC 100%);
-  --accent:      var(--dusk);
-  --accent-deep: var(--dusk-deep);
-  --accent-soft: rgba(107,74,120,0.13);
-  --panel:       #FEFCFF;
-  --panel-tint:  #F8F3FB;
-}
-
-/* --- spooky quest: dusk background, pumpkin accent --- */
-.pp-spooky{
-  background-image: linear-gradient(160deg,#E6D6E8 0%,#CDB0D2 55%,#B99BC4 100%);
-  --accent:      var(--pumpkin);
-  --accent-deep: var(--pumpkin-deep);
-  --accent-soft: rgba(201,106,46,0.14);
-  --panel:       #FFFCF7;
-  --panel-tint:  #FDF3E9;
-}
-
-/* --- templates: soft green --- */
-.pp-templates{
-  background-image: linear-gradient(135deg,#EAEFE3 0%,#DDE5D3 100%);
-  --accent:      var(--sage);
-  --accent-deep: var(--sage-deep);
-  --accent-soft: rgba(143,163,126,0.14);
-  --panel:       #FDFEFA;
-  --panel-tint:  #F4F8EE;
-}
-
-/* --- vmprman: the dark one. Gold accent, cream type. --- */
-.pp-vmprman{
-  background-image: linear-gradient(135deg,#7C1F2A 0%,#5A1720 100%);
-  --accent:      var(--gold);
-  --accent-deep: var(--gold-deep);
-  --accent-soft: rgba(156,116,64,0.20);
-  --panel:       #FFFDF8;
-  --panel-tint:  #FFF7EC;
-  color: #F7F1E4;
-}
-.pp-vmprman .pp-title{ color: #F7F1E4; }
-.pp-vmprman .pp-tagline{ color: #E5C79A; }
-.pp-vmprman .pp-footer{ color: rgba(247,241,228,0.72); }
 
 
 /* --------------------------------------------------------------------------
@@ -1243,39 +1171,7 @@ footer{
 
 
 /* --------------------------------------------------------------------------
-   17. DANNELORE TYPE OVERRIDE
-   Everything under /dannelore/ keeps its own voice. Colors stay canonical;
-   only the typefaces change.
-   -------------------------------------------------------------------------- */
-
-.pp-dannelore{
-  font-family: 'Ubuntu', sans-serif;
-}
-
-.pp-dannelore .pp-title,
-.pp-dannelore h1.site-title{
-  font-family: 'Princess Sofia', cursive;
-  font-size: clamp(2.4rem, 6vw, 4rem);
-  letter-spacing: 0.02em;
-  color: var(--pink-deep);
-}
-
-.pp-dannelore .pp-panel h2,
-.pp-dannelore .welcome h2{
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 600;
-  color: var(--sage-deep);
-}
-
-.pp-dannelore .pp-tagline,
-.pp-dannelore .tagline{
-  color: var(--ink);
-  opacity: 0.85;
-}
-
-
-/* --------------------------------------------------------------------------
-   18. UTILITIES
+   17. UTILITIES
    -------------------------------------------------------------------------- */
 
 .pp-center{ text-align: center; }
@@ -1309,7 +1205,7 @@ footer{
 
 
 /* --------------------------------------------------------------------------
-   19. MOTION + PRINT
+   18. MOTION + PRINT
    -------------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce){
@@ -1373,7 +1269,7 @@ html.pp-paladin .pp-ribbon-sections{ border-top-color: rgba(156,116,64,0.3); }
 
 
 /* --------------------------------------------------------------------------
-   20. RIBBON NAV DROPDOWNS
+   19. RIBBON NAV DROPDOWNS
    Built by /assets/pp-nav.js. Each folder in the ribbon nav is a
    .pp-navitem holding the folder link, a caret button, and a .pp-dropdown
    listing that folder's pages.
@@ -1515,7 +1411,7 @@ html.pp-paladin .pp-ribbon-sections{ border-top-color: rgba(156,116,64,0.3); }
 
 
 /* --------------------------------------------------------------------------
-   21. PALADIN RIBBON LEGIBILITY
+   20. PALADIN RIBBON LEGIBILITY
    Brendon's quest log sets html.pp-paladin, which turns the page behind the
    ribbon burgundy. The ribbon itself stays cream.
 

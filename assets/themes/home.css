@@ -1,0 +1,20 @@
+/* ==========================================================================
+   Princess & Paladin — home folder theme
+   /assets/themes/home.css
+
+   Colour + font overrides only — structure and shared components stay in
+   pp.css. Load this right after it:
+     <link rel="stylesheet" href="/assets/pp.css">
+     <link rel="stylesheet" href="/assets/themes/home.css">
+   Used by: /index.html
+   ========================================================================== */
+
+/* --- home: cream and rose --- */
+.pp-home{
+  background-image: linear-gradient(135deg,#F7F1E4 0%,#EFE4CE 100%);
+  --accent:      var(--pink);
+  --accent-deep: var(--pink-deep);
+  --accent-soft: rgba(232,124,166,0.14);
+  --panel:       #FFFDF8;
+  --panel-tint:  #FFF7FA;
+}

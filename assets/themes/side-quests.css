@@ -1,0 +1,30 @@
+/* ==========================================================================
+   Princess & Paladin — side-quests folder theme
+   /assets/themes/side-quests.css
+
+   Colour + font overrides only — structure and shared components stay in
+   pp.css. Load this right after it:
+     <link rel="stylesheet" href="/assets/pp.css">
+     <link rel="stylesheet" href="/assets/themes/side-quests.css">
+   Used by: /side-quests/* (spooky-quest.html carries its own .pp-spooky accent)
+   ========================================================================== */
+
+/* --- side quests: lavender and dusk --- */
+.pp-sidequest{
+  background-image: linear-gradient(135deg,#EFEAF4 0%,#DFD5EC 100%);
+  --accent:      var(--dusk);
+  --accent-deep: var(--dusk-deep);
+  --accent-soft: rgba(107,74,120,0.13);
+  --panel:       #FEFCFF;
+  --panel-tint:  #F8F3FB;
+}
+
+/* --- spooky quest: dusk background, pumpkin accent --- */
+.pp-spooky{
+  background-image: linear-gradient(160deg,#E6D6E8 0%,#CDB0D2 55%,#B99BC4 100%);
+  --accent:      var(--pumpkin);
+  --accent-deep: var(--pumpkin-deep);
+  --accent-soft: rgba(201,106,46,0.14);
+  --panel:       #FFFCF7;
+  --panel-tint:  #FDF3E9;
+}

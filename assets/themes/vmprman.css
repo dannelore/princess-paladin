@@ -1,0 +1,24 @@
+/* ==========================================================================
+   Princess & Paladin — vmprman folder theme
+   /assets/themes/vmprman.css
+
+   Colour + font overrides only — structure and shared components stay in
+   pp.css. Load this right after it:
+     <link rel="stylesheet" href="/assets/pp.css">
+     <link rel="stylesheet" href="/assets/themes/vmprman.css">
+   Used by: /vmprman/index.html (vmprman/quest-log/index.html is not yet themed — left as-is)
+   ========================================================================== */
+
+/* --- vmprman: the dark one. Gold accent, cream type. --- */
+.pp-vmprman{
+  background-image: linear-gradient(135deg,#7C1F2A 0%,#5A1720 100%);
+  --accent:      var(--gold);
+  --accent-deep: var(--gold-deep);
+  --accent-soft: rgba(156,116,64,0.20);
+  --panel:       #FFFDF8;
+  --panel-tint:  #FFF7EC;
+  color: #F7F1E4;
+}
+.pp-vmprman .pp-title{ color: #F7F1E4; }
+.pp-vmprman .pp-tagline{ color: #E5C79A; }
+.pp-vmprman .pp-footer{ color: rgba(247,241,228,0.72); }

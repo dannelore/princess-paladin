@@ -1,0 +1,20 @@
+/* ==========================================================================
+   Princess & Paladin — templates folder theme
+   /assets/themes/templates.css
+
+   Colour + font overrides only — structure and shared components stay in
+   pp.css. Load this right after it:
+     <link rel="stylesheet" href="/assets/pp.css">
+     <link rel="stylesheet" href="/assets/themes/templates.css">
+   Used by: /templates/*
+   ========================================================================== */
+
+/* --- templates: soft green --- */
+.pp-templates{
+  background-image: linear-gradient(135deg,#EAEFE3 0%,#DDE5D3 100%);
+  --accent:      var(--sage);
+  --accent-deep: var(--sage-deep);
+  --accent-soft: rgba(143,163,126,0.14);
+  --panel:       #FDFEFA;
+  --panel-tint:  #F4F8EE;
+}

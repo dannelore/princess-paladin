@@ -1,0 +1,47 @@
+/* ==========================================================================
+   Princess & Paladin — dannelore folder theme
+   /assets/themes/dannelore.css
+
+   Colour + font overrides only — structure and shared components stay in
+   pp.css. Load this right after it:
+     <link rel="stylesheet" href="/assets/pp.css">
+     <link rel="stylesheet" href="/assets/themes/dannelore.css">
+   Used by: /dannelore/* (colors + the Princess Sofia/Ubuntu/Montserrat type stack)
+   ========================================================================== */
+
+/* --- dannelore: rose on rose --- */
+.pp-dannelore{
+  background-image:
+    radial-gradient(circle at 15% 8%, rgba(255,255,255,0.5), transparent 40%),
+    linear-gradient(135deg,#F6D9E6 0%,#F2C9DC 100%);
+  --accent:      var(--pink);
+  --accent-deep: var(--pink-deep);
+  --accent-soft: rgba(232,124,166,0.16);
+  --panel:       #FFFDFA;
+  --panel-tint:  #FFF5F9;
+}
+
+.pp-dannelore{
+  font-family: 'Ubuntu', sans-serif;
+}
+
+.pp-dannelore .pp-title,
+.pp-dannelore h1.site-title{
+  font-family: 'Princess Sofia', cursive;
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  letter-spacing: 0.02em;
+  color: var(--pink-deep);
+}
+
+.pp-dannelore .pp-panel h2,
+.pp-dannelore .welcome h2{
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  color: var(--sage-deep);
+}
+
+.pp-dannelore .pp-tagline,
+.pp-dannelore .tagline{
+  color: var(--ink);
+  opacity: 0.85;
+}
