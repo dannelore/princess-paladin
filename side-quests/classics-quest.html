@@ -10,6 +10,7 @@
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/pp.css">
 <link rel="stylesheet" href="/assets/pp-progress.css">
+<link rel="stylesheet" href="/assets/pp-tracker.css">
 
 <style>
   /* ======================================================================
@@ -49,6 +50,8 @@
   }
 
   /* ---- controls ---- */
+  .cq-form{ display: none; margin-bottom: 22px; }
+
   .clq-bar{
     display: flex;
     flex-wrap: wrap;
@@ -390,9 +393,43 @@
     <button class="pp-pill" data-filter="reading" aria-pressed="false">Reading</button>
     <button class="pp-pill" data-filter="read" aria-pressed="false">Read</button>
     <span class="spacer"></span>
+    <button class="pp-btn" id="addBtn">+ Add a book</button>
     <span class="clq-count" id="count"></span>
     <span class="clq-sync" id="sync"></span>
   </div>
+
+  <section class="pp-panel cq-form" id="form">
+    <h2 class="pp-panel-title" id="formTitle">Add a book</h2>
+
+    <div class="cq-fields">
+      <div class="cq-field wide">
+        <label for="fTitle">Title</label>
+        <div class="cq-inline">
+          <input id="fTitle" type="text" placeholder="The Bell Jar" autocomplete="off">
+          <button class="pp-btn pp-btn-quiet" id="lookupBtn" style="white-space:nowrap;">Look it up</button>
+        </div>
+        <span class="cq-hint" id="lookupHint"></span>
+        <div class="cq-results" id="results"></div>
+      </div>
+
+      <div class="cq-field">
+        <label for="fAuthor">Author</label>
+        <input id="fAuthor" type="text" placeholder="Sylvia Plath" autocomplete="off">
+      </div>
+
+      <div class="cq-field">
+        <label for="fLetter">Shelf letter</label>
+        <input id="fLetter" type="text" maxlength="1" style="text-transform:uppercase;max-width:4em;" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="cq-actions">
+      <button class="pp-btn" id="saveBookBtn">Save</button>
+      <button class="pp-btn pp-btn-quiet" id="cancelBookBtn">Cancel</button>
+      <span class="cq-spacer"></span>
+      <button class="pp-btn pp-btn-quiet" id="deleteBookBtn" style="display:none;">Delete</button>
+    </div>
+  </section>
 
   <div class="clq-grid" id="grid"></div>
 
@@ -482,6 +519,8 @@ const esc = s => String(s == null ? "" : s)
 
 let state = { items: [] };
 let docRef = null, openId = null, filter = "all";
+let editId = null, pendingCover = "";
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
 /* ---------------- dates ----------------
    Plain YYYY-MM-DD, split by hand so a UTC parse can't shift the day. */
@@ -616,6 +655,134 @@ async function fillCovers(){
   setSync(found ? "Found " + found + " covers" : "No new covers");
 }
 
+/* ---------------- add / edit ----------------
+   A general title search, separate from findCover() above (which searches by
+   an exact title+author pair for one missing cover). This one is driven by
+   whatever's currently typed and shows several picks, same as the lookup on
+   Couch Quest / Spooky Quest. */
+function searchBooks(q){
+  $("lookupHint").textContent = "Searching\u2026";
+  const url = OL_SEARCH + "?q=" + encodeURIComponent(q) +
+    "&fields=title,author_name,first_publish_year,cover_i&limit=8";
+  fetch(url)
+    .then(res => { if(!res.ok) throw new Error("bad status"); return res.json(); })
+    .then(data => showBookResults((data.docs || []).map(d => ({
+      raw: d,
+      name: d.title,
+      image: d.cover_i ? (OL_COVER + d.cover_i + "-M.jpg") : "",
+      meta: [(d.author_name || [])[0] || "", d.first_publish_year || ""].filter(Boolean).join(" \u00b7 ")
+    }))))
+    .catch(err => {
+      console.error("Book lookup failed:", err);
+      $("lookupHint").textContent = "Couldn't reach Open Library \u2014 fill it in by hand.";
+    });
+}
+
+function showBookResults(rows){
+  const box = $("results");
+  box.innerHTML = "";
+  if(!rows.length){
+    $("lookupHint").textContent = "Nothing found. Check the spelling, or fill it in by hand.";
+    box.classList.remove("open");
+    return;
+  }
+  $("lookupHint").textContent = "Pick the right one:";
+  rows.forEach(r => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cq-result";
+    b.innerHTML =
+      (r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy">`
+               : `<div class="clq-nocover" style="aspect-ratio:2/3;">${esc((r.name || "?").slice(0,1))}</div>`) +
+      `<div class="cq-rname">${esc(r.name)}</div>` +
+      `<div class="cq-rmeta">${esc(r.meta)}</div>`;
+    b.onclick = () => pickBook(r);
+    box.appendChild(b);
+  });
+  box.classList.add("open");
+}
+
+function pickBook(r){
+  $("fTitle").value  = r.name;
+  $("fAuthor").value = (r.raw.author_name || [])[0] || "";
+  $("fLetter").value = deriveLetter($("fTitle").value);
+  pendingCover = r.image || "";
+  $("results").classList.remove("open");
+  $("lookupHint").textContent = pendingCover
+    ? "Cover found."
+    : "No cover on file for that edition \u2014 you can add one after saving.";
+}
+
+/* Library-style alphabetizing: "The Bell Jar" shelves under B, same as the
+   original 27 already do. Falls back to the raw first letter if nothing
+   alphabetic follows the stripped article. */
+function deriveLetter(title){
+  const stripped = String(title || "").trim().replace(/^(the|an?)\s+/i, "");
+  const m = /[a-zA-Z]/.exec(stripped) || /[a-zA-Z]/.exec(title || "");
+  return m ? m[0].toUpperCase() : "?";
+}
+
+function openForm(item){
+  closeDetail();
+  editId = item ? item.id : null;
+  pendingCover = "";
+  $("formTitle").textContent = item ? "Edit book" : "Add a book";
+  $("fTitle").value  = item ? item.title  : "";
+  $("fAuthor").value = item ? item.author : "";
+  $("fLetter").value = item ? item.letter : "";
+  $("results").innerHTML = "";
+  $("results").classList.remove("open");
+  $("lookupHint").textContent = "";
+  $("deleteBookBtn").style.display = item ? "inline-block" : "none";
+  $("form").classList.add("open");
+  $("fTitle").focus();
+}
+
+function closeForm(){
+  $("form").classList.remove("open");
+  editId = null;
+  pendingCover = "";
+}
+
+function saveBook(){
+  const title = $("fTitle").value.trim();
+  if(!title){ $("fTitle").focus(); return; }
+  const author = $("fAuthor").value.trim();
+  const letterInput = $("fLetter").value.trim();
+  const letter = (letterInput || deriveLetter(title)).slice(0,1).toUpperCase();
+
+  if(editId){
+    const item = state.items.find(i => i.id === editId);
+    if(item){
+      item.title  = title;
+      item.author = author;
+      item.letter = letter;
+      if(pendingCover){ item.cover = pendingCover; item.coverTried = true; }
+    }
+  }else{
+    state.items.push(normalize({
+      id: uid(), letter, title, author,
+      status: "unread", date: "", notes: "",
+      cover: pendingCover, coverTried: !!pendingCover
+    }));
+  }
+
+  state.items.sort((a,b) => a.letter === b.letter
+    ? a.title.localeCompare(b.title)
+    : a.letter.localeCompare(b.letter));
+
+  closeForm();
+  save();
+}
+
+function deleteBook(){
+  if(!editId) return;
+  if(!confirm("Remove this book from the shelf?")) return;
+  state.items = state.items.filter(i => i.id !== editId);
+  closeForm();
+  save();
+}
+
 /* ---------------- storage ---------------- */
 function setSync(text, stateName){
   $("sync").textContent = text;
@@ -745,6 +912,7 @@ function openDetail(id){
         <h2>${esc(item.title)}</h2>
         <p class="clq-author">${esc(item.author)}</p>
       </div>
+      <button class="pp-btn pp-btn-quiet pp-btn-sm" id="editBook">Edit</button>
       <button class="pp-btn pp-btn-quiet pp-btn-sm" id="closeDetail">Close</button>
     </div>
 
@@ -901,6 +1069,17 @@ document.addEventListener("click", e => {
 
   if(e.target.id === "coverFind"){ lookupOne(openId); return; }
   if(e.target.id === "coverClear"){ setCover(openId, ""); return; }
+
+  if(e.target.id === "addBtn"){ openForm(null); return; }
+  if(e.target.id === "editBook" && openId){ openForm(state.items.find(i => i.id === openId)); return; }
+  if(e.target.id === "lookupBtn"){
+    const q = $("fTitle").value.trim();
+    if(q) searchBooks(q);
+    return;
+  }
+  if(e.target.id === "saveBookBtn"){ saveBook(); return; }
+  if(e.target.id === "cancelBookBtn"){ closeForm(); return; }
+  if(e.target.id === "deleteBookBtn"){ deleteBook(); return; }
 
   const set = e.target.closest("[data-set]");
   if(set && openId){
