@@ -298,6 +298,64 @@
   }
   .bq-addstep input:focus{ outline:2px solid var(--pink); outline-offset:1px; }
 
+  /* list / gallery switch for a step block */
+  .bq-viewtoggle{ display:flex; gap:6px; margin-bottom:10px; }
+  .bq-viewtoggle button{
+    font-family:var(--font-body); font-size:.7rem; font-weight:600;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft);
+    background:var(--panel-tint); border:1px solid var(--line);
+    border-radius:999px; padding:4px 11px; cursor:pointer;
+  }
+  .bq-viewtoggle button[aria-pressed="true"]{ color:#fff; background:var(--sage); border-color:var(--sage); }
+
+  /* gallery: a collapsed disclosure of smaller pictures instead of a checklist */
+  .bq-gallery{ margin-bottom:4px; }
+  .bq-gallery-summary{
+    cursor:pointer; list-style:none;
+    font-family:var(--font-serif); font-style:italic; font-size:.92rem; color:var(--ink-soft);
+    padding:4px 2px; user-select:none;
+  }
+  .bq-gallery-summary::-webkit-details-marker{ display:none; }
+  .bq-gallery-summary::before{ content:"▸"; display:inline-block; margin-right:6px; transition:transform .15s ease; }
+  .bq-gallery[open] .bq-gallery-summary::before{ transform:rotate(90deg); }
+
+  .bq-gallery-grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr));
+    gap:10px; margin-top:10px;
+  }
+  .bq-gtile{ display:flex; flex-direction:column; gap:4px; }
+  .bq-gthumb{
+    position:relative; padding:0; overflow:hidden; cursor:pointer;
+    aspect-ratio:1/1; border-radius:var(--radius-sm);
+    background:var(--panel-tint); border:1px solid var(--line);
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  .bq-gthumb:hover{ border-color:var(--pink); transform:translateY(-2px); }
+  .bq-gthumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .bq-gplaceholder{
+    width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-serif); font-style:italic; font-size:1.3rem; color:var(--ink-soft);
+  }
+  .bq-gcheck{
+    position:absolute; top:4px; right:4px; width:18px; height:18px; line-height:18px;
+    text-align:center; font-size:.7rem; color:#fff; background:var(--sage-deep); border-radius:50%;
+  }
+  .bq-gtile.is-done .bq-gthumb{ opacity:.55; }
+  .bq-gcaption{
+    font-family:var(--font-body); font-size:.72rem; line-height:1.3; color:var(--ink);
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .bq-gtile.is-done .bq-gcaption{ color:var(--ink-soft); text-decoration:line-through; }
+  .bq-gtools{ display:flex; gap:6px; }
+  .bq-gtool{
+    font-family:var(--font-body); font-size:.62rem; color:var(--ink-soft);
+    background:none; border:0; padding:0; cursor:pointer; text-decoration:underline dotted;
+  }
+  .bq-gtool:hover{ color:var(--burgundy); }
+
+  .bq-gimage-editor{ margin-top:14px; padding-top:12px; border-top:1px dashed var(--line); }
+  .bq-gimage-actions{ display:flex; gap:10px; margin-top:8px; }
+
   /* dates */
   .bq-dates{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
   .bq-dates label{
@@ -693,6 +751,7 @@ CATEGORIES.forEach(c => { CAT_BY_NAME[c.name] = c; });
 
 let state  = { items: [] };
 let editId = null, openId = null, pickedCats = [], pendingImage = null;
+let activeStepId = null;
 let filter = "all", fltCat = "all", fltWho = "all", fltPri = "all";
 
 /* Subtasks being edited in the add/edit form, before they're committed. Kept
@@ -807,6 +866,7 @@ function migrate(){
     if(it.priB == null){ it.priB = 0; touched = true; }
     if(!Array.isArray(it.cats)){ it.cats = []; touched = true; }
     if(!Array.isArray(it.steps)){ it.steps = []; touched = true; }
+    if(it.stepsView !== "gallery" && it.stepsView !== "list"){ it.stepsView = "list"; touched = true; }
     if(!it.status){ it.status = "someday"; touched = true; }
     if(it.notes == null){ it.notes = ""; touched = true; }
   });
@@ -1176,23 +1236,29 @@ function openDetail(id){
     body.appendChild(n);
   }
 
-  /* --- steps --- */
+  /* --- steps ---
+     Two views on the same data: a checklist, or a collapsed picture gallery
+     for things like a honeymoon where each step is really an event you'd
+     rather picture than read. The toggle is per item and only shows once
+     there's something to toggle between. */
   const stepBlock = document.createElement("div");
   stepBlock.className = "bq-block";
-  const rows = (item.steps || []).map(s => `
-    <div class="bq-step${s.done ? " is-done" : ""}">
-      <input type="checkbox" data-step="${s.id}" ${s.done ? "checked" : ""}
-             aria-label="${esc(s.text)}">
-      <span class="bq-step-text">${esc(s.text)}</span>
-      <button class="bq-step-kill" data-step-kill="${s.id}" aria-label="Remove step">✕</button>
-    </div>`).join("");
+  const stepsView = item.stepsView === "gallery" ? "gallery" : "list";
+  const hasSteps = (item.steps || []).length > 0;
+
+  const viewToggle = hasSteps ? `
+    <div class="bq-viewtoggle" role="group" aria-label="Steps view">
+      <button type="button" data-set-stepsview="list"    aria-pressed="${stepsView === "list"}">List</button>
+      <button type="button" data-set-stepsview="gallery"  aria-pressed="${stepsView === "gallery"}">Gallery</button>
+    </div>` : "";
 
   stepBlock.innerHTML = `
     <div class="bq-block-head">
       <span class="bq-block-name">Steps</span>
       <span class="bq-block-count">${t.kind === "steps" ? t.done + " of " + t.total : "none yet"}</span>
     </div>
-    <div class="bq-steps">${rows || `<p class="pp-empty" style="padding:14px;">Break it into steps if it helps — or leave it as one thing.</p>`}</div>
+    ${viewToggle}
+    ${stepsView === "gallery" ? renderStepGallery(item) : renderStepList(item)}
     <div class="bq-addstep">
       <input id="newStep" type="text" placeholder="Add a step, press Enter" autocomplete="off">
       <button class="pp-btn pp-btn-quiet" id="addStepBtn">Add</button>
@@ -1219,6 +1285,93 @@ function openDetail(id){
 }
 
 function closeDetail(){ openId = null; $("detail").classList.remove("open"); }
+
+function renderStepList(item){
+  const rows = (item.steps || []).map(s => `
+    <div class="bq-step${s.done ? " is-done" : ""}">
+      <input type="checkbox" data-step="${s.id}" ${s.done ? "checked" : ""}
+             aria-label="${esc(s.text)}">
+      <span class="bq-step-text">${esc(s.text)}</span>
+      <button class="bq-step-kill" data-step-kill="${s.id}" aria-label="Remove step">✕</button>
+    </div>`).join("");
+  return `<div class="bq-steps">${rows || `<p class="pp-empty" style="padding:14px;">Break it into steps if it helps — or leave it as one thing.</p>`}</div>`;
+}
+
+/* A step tile with no picture yet shows its first letter, same fallback
+   pattern as a book with no cover on Classics Quest. Clicking the picture
+   itself toggles done, same gesture as the checkbox in list view. */
+function renderStepGallery(item){
+  const steps = item.steps || [];
+  if(!steps.length){
+    return `<p class="pp-empty" style="padding:14px;">Break it into steps if it helps — or leave it as one thing.</p>`;
+  }
+  const tiles = steps.map(s => `
+    <div class="bq-gtile${s.done ? " is-done" : ""}">
+      <button type="button" class="bq-gthumb" data-gtoggle="${s.id}"
+              aria-label="${s.done ? "Mark not done" : "Mark done"} — ${esc(s.text)}">
+        ${s.image
+          ? `<img src="${esc(s.image)}" alt="" loading="lazy">`
+          : `<span class="bq-gplaceholder">${esc((s.text || "?").trim().slice(0,1).toUpperCase())}</span>`}
+        ${s.done ? `<span class="bq-gcheck">✓</span>` : ""}
+      </button>
+      <span class="bq-gcaption">${esc(s.text)}</span>
+      <div class="bq-gtools">
+        <button type="button" class="bq-gtool" data-gimage="${s.id}">${s.image ? "Change" : "Add"} image</button>
+        <button type="button" class="bq-gtool" data-gkill="${s.id}">Remove</button>
+      </div>
+    </div>`).join("");
+
+  return `
+    <details class="bq-gallery">
+      <summary class="bq-gallery-summary">${steps.length} event${steps.length === 1 ? "" : "s"}</summary>
+      <div class="bq-gallery-grid">${tiles}</div>
+      <div class="bq-gimage-editor" id="stepImageEditor" style="display:none;">
+        <div class="bq-inline">
+          <input id="stepImageQuery" type="text" placeholder="Search Wikimedia Commons, or paste an address" autocomplete="off">
+          <button type="button" class="pp-btn pp-btn-quiet pp-btn-sm" id="stepImageFind">Find</button>
+        </div>
+        <span class="bq-hint" id="stepImageHint"></span>
+        <div class="bq-results" id="stepImageResults"></div>
+        <div class="bq-gimage-actions">
+          <button type="button" class="pp-btn pp-btn-quiet pp-btn-sm" id="stepImageClear">Remove image</button>
+          <button type="button" class="pp-btn pp-btn-quiet pp-btn-sm" id="stepImageDone">Done</button>
+        </div>
+      </div>
+    </details>`;
+}
+
+function setStepsView(itemId, view){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item) return;
+  item.stepsView = view === "gallery" ? "gallery" : "list";
+  save();
+  openDetail(itemId);
+}
+
+function openStepImageEditor(stepId){
+  activeStepId = stepId;
+  const item = state.items.find(x => x.id === openId);
+  const step = item && (item.steps || []).find(s => s.id === stepId);
+  const editor = $("stepImageEditor");
+  if(!editor || !step) return;
+  editor.style.display = "";
+  $("stepImageQuery").value = step.text || "";
+  $("stepImageHint").textContent = "";
+  $("stepImageResults").innerHTML = "";
+  $("stepImageResults").classList.remove("open");
+  editor.scrollIntoView({ block: "nearest" });
+  $("stepImageQuery").focus();
+}
+
+function setStepImage(itemId, stepId, url){
+  const item = state.items.find(x => x.id === itemId);
+  const step = item && (item.steps || []).find(s => s.id === stepId);
+  if(!step) return;
+  if(url) step.image = url; else delete step.image;
+  activeStepId = null;
+  save();
+  openDetail(itemId);
+}
 
 /* ---------------- step actions ---------------- */
 function addStep(itemId, text){
@@ -1283,8 +1436,10 @@ function isPhoto(title){
   return /\.(jpe?g|png|webp)$/i.test(title || "");
 }
 
-function lookupImage(q){
-  $("imgHint").textContent = "Searching…";
+function lookupImage(q, opts){
+  opts = opts || {};
+  const hintEl = $(opts.hintId || "imgHint");
+  hintEl.textContent = "Searching…";
   const params = new URLSearchParams({
     action: "query",
     format: "json",
@@ -1317,23 +1472,25 @@ function lookupImage(q){
             caption: (pg.title || "").replace(/^File:/, "").replace(/\.[^.]+$/, "").replace(/_/g, " ")
           };
         });
-      showImageResults(rows);
+      showImageResults(rows, opts);
     })
     .catch(e => {
       console.error(e);
-      $("imgHint").textContent = "Search failed — paste an image address instead.";
+      hintEl.textContent = "Search failed — paste an image address instead.";
     });
 }
 
-function showImageResults(rows){
-  const box = $("imgResults");
+function showImageResults(rows, opts){
+  opts = opts || {};
+  const box = $(opts.resultsId || "imgResults");
+  const hintEl = $(opts.hintId || "imgHint");
   box.innerHTML = "";
   if(!rows.length){
-    $("imgHint").textContent = "Nothing found. Try a simpler word, or paste an address.";
+    hintEl.textContent = "Nothing found. Try a simpler word, or paste an address.";
     box.classList.remove("open");
     return;
   }
-  $("imgHint").textContent = "Pick one:";
+  hintEl.textContent = "Pick one:";
   rows.forEach(r => {
     const b = document.createElement("button");
     b.type = "button";
@@ -1342,14 +1499,19 @@ function showImageResults(rows){
       `<img src="${esc(r.thumb)}" alt="" loading="lazy">` +
       `<div class="bq-rcap">${esc(r.caption)}</div>`;
     b.onclick = () => {
+      box.classList.remove("open");
+      if(opts.onPick){
+        opts.onPick(r);
+        hintEl.textContent = r.credit ? ("Picked — " + r.credit) : "Picked.";
+        return;
+      }
       $("fImage").value = r.full;
       pendingImage = {
         url: r.full,
         credit: [r.credit, r.licence].filter(Boolean).join(" · "),
         source: r.source
       };
-      box.classList.remove("open");
-      $("imgHint").textContent = r.credit ? ("Picked — " + r.credit) : "Picked.";
+      hintEl.textContent = r.credit ? ("Picked — " + r.credit) : "Picked.";
     };
     box.appendChild(b);
   });
@@ -1563,6 +1725,42 @@ $("detailBody").onclick = e => {
   const kill = e.target.closest("[data-step-kill]");
   if(kill){ removeStep(openId, kill.getAttribute("data-step-kill")); return; }
 
+  const viewBtn = e.target.closest("[data-set-stepsview]");
+  if(viewBtn){ setStepsView(openId, viewBtn.getAttribute("data-set-stepsview")); return; }
+
+  const gtoggle = e.target.closest("[data-gtoggle]");
+  if(gtoggle){ toggleStep(openId, gtoggle.getAttribute("data-gtoggle")); return; }
+
+  const gkill = e.target.closest("[data-gkill]");
+  if(gkill){ removeStep(openId, gkill.getAttribute("data-gkill")); return; }
+
+  const gimage = e.target.closest("[data-gimage]");
+  if(gimage){ openStepImageEditor(gimage.getAttribute("data-gimage")); return; }
+
+  if(e.target.id === "stepImageFind"){
+    const q = $("stepImageQuery").value.trim();
+    if(q && activeStepId){
+      lookupImage(q, {
+        hintId: "stepImageHint",
+        resultsId: "stepImageResults",
+        onPick: r => setStepImage(openId, activeStepId, r.full)
+      });
+    }
+    return;
+  }
+
+  if(e.target.id === "stepImageClear"){
+    if(activeStepId) setStepImage(openId, activeStepId, "");
+    return;
+  }
+
+  if(e.target.id === "stepImageDone"){
+    activeStepId = null;
+    const editor = $("stepImageEditor");
+    if(editor) editor.style.display = "none";
+    return;
+  }
+
   if(e.target.id === "addStepBtn"){
     const box = $("newStep");
     if(box && box.value.trim()){ addStep(openId, box.value); }
@@ -1594,6 +1792,17 @@ $("detailBody").onkeydown = e => {
   if(e.target.id === "newStep" && e.key === "Enter"){
     e.preventDefault();
     if(e.target.value.trim() && openId) addStep(openId, e.target.value);
+  }
+  if(e.target.id === "stepImageQuery" && e.key === "Enter"){
+    e.preventDefault();
+    const q = e.target.value.trim();
+    if(q && activeStepId){
+      lookupImage(q, {
+        hintId: "stepImageHint",
+        resultsId: "stepImageResults",
+        onPick: r => setStepImage(openId, activeStepId, r.full)
+      });
+    }
   }
 };
 
