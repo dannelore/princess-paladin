@@ -1017,23 +1017,26 @@ function renderFood(){
   const el = document.getElementById('foodList');
   el.innerHTML = '';
   const pet = selected();
+  const ctx = PQ.makeCtx(S());
+  const full = pet && pet.tier !== 'stable' && PQ.liveHunger(S(), pet, ctx) >= 100;
   PQ.FOOD.forEach(f => {
     const row = document.createElement('div');
     row.className = 'shop-row';
+    const useless = full && !f.xp;
     row.innerHTML = `
       <div class="sgrow">
         <div class="sname">${esc(f.name)}</div>
-        <div class="sdesc">${esc(f.desc)} +${f.hunger} hunger${f.xp ? ` · +${f.xp} pet XP` : ''}</div>
+        <div class="sdesc">${esc(f.desc)} +${f.hunger} hunger${f.xp ? ` · +${f.xp} pet XP` : ''}${useless ? ' &mdash; already full' : ''}</div>
       </div>
       <span class="sprice">${f.price} MB</span>
       <button class="btn sm">Feed</button>
     `;
     const btn = row.querySelector('button');
-    btn.disabled = !pet || S().meowBucks < f.price;
+    btn.disabled = !pet || S().meowBucks < f.price || useless;
     btn.onclick = () => {
-      if(!pet || S().meowBucks < f.price) return;
+      if(!pet || S().meowBucks < f.price || useless) return;
       S().meowBucks -= f.price;
-      PQ.feed(S(), pet, f.hunger, PQ.makeCtx(S()));
+      PQ.feed(S(), pet, f.hunger, ctx);
       if(f.xp) pet.xp = (pet.xp || 0) + f.xp;
       save();
     };
