@@ -338,14 +338,35 @@ function activeMonster(ms){
   return (ms.monsters || []).find(m => m.id === ms.activeMonster && !m.dead) || null;
 }
 
+/* Doubled per Danni's request — tasks still pay the same gold, this
+   only changes how hard that gold hits a monster. */
+const MONSTER_DAMAGE_MULTIPLIER = 2;
+
 function damageMonster(ms, amount, who){
   const m = activeMonster(ms);
   if(!m || amount <= 0) return null;
-  m.hp = Math.max(0, m.hp - amount);
+  const dealt = amount * MONSTER_DAMAGE_MULTIPLIER;
+  m.hp = Math.max(0, m.hp - dealt);
   if(!ms.damage[m.id]) ms.damage[m.id] = {};
-  ms.damage[m.id][who] = (ms.damage[m.id][who] || 0) + amount;
+  ms.damage[m.id][who] = (ms.damage[m.id][who] || 0) + dealt;
   if(m.hp === 0){ m.dead = true; m.killed = m.killed || TODAY_KEY; return m; }
   return null;
+}
+
+/* Bring a defeated monster back for another round: same name, HP ceiling
+   and rewards, fresh fight. Both people's damage share and collection
+   record for it are cleared so the HP bar and Collect button start over
+   — collecting again on a reused monster is expected, not a bug. */
+function reviveMonster(ms, monsterId){
+  const m = (ms.monsters || []).find(x => x.id === monsterId);
+  if(!m || !m.dead) return null;
+  m.hp = m.maxHp;
+  m.dead = false;
+  m.killed = null;
+  delete ms.damage[m.id];
+  delete ms.collected[m.id];
+  if(!activeMonster(ms)) ms.activeMonster = m.id;
+  return m;
 }
 
 function hasCollected(ms, monsterId, who){
@@ -992,7 +1013,7 @@ return {
   legendBuffs, partySlots, nextSlotLevel, activePet, partyPets, stablePets,
   settleHunger, liveHunger, feed, awardPetXP,
   ensureFragments, addFragment, randomPrefix, titleText,
-  activeMonster, damageMonster,
+  activeMonster, damageMonster, reviveMonster,
   rollPetOptions, makePet, placePet, petSvg,
   catalogItem, itemsForSlot
 };

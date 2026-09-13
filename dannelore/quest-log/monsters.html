@@ -100,6 +100,59 @@
   .m-reward{ font-size:12.5px; color:var(--ink-soft); margin-top:8px; }
   .m-reward b{ color:var(--ink); font-weight:500; }
   .m-actions{ display:flex; gap:6px; margin-top:12px; flex-wrap:wrap; }
+
+  .m-head-row{ display:flex; gap:12px; align-items:flex-start; }
+  .m-thumb{
+    width:56px; height:56px; flex-shrink:0; border-radius:var(--radius-sm);
+    object-fit:cover; background:var(--cream); border:1px solid rgba(74,59,65,0.15);
+  }
+  .m-thumb-none{
+    width:56px; height:56px; flex-shrink:0; border-radius:var(--radius-sm);
+    background:var(--cream); border:1px dashed rgba(74,59,65,0.2);
+  }
+
+  /* picture search, same shape as the item pickers elsewhere on the site —
+     just kept local since this page doesn't load pp-tracker.css. */
+  .m-inline{ display:flex; gap:8px; align-items:flex-start; }
+  .m-inline input{ flex:1 1 auto; }
+  .m-results{
+    display:none; grid-template-columns:repeat(auto-fill,minmax(96px,1fr));
+    gap:8px; margin-top:10px;
+  }
+  .m-results.open{ display:grid; }
+  .m-result{
+    text-align:left; padding:0; overflow:hidden; cursor:pointer;
+    background:var(--cream); border:1px solid rgba(74,59,65,0.15);
+    border-radius:var(--radius-sm); transition:border-color .15s ease, transform .15s ease;
+  }
+  .m-result:hover{ border-color:var(--accent); transform:translateY(-2px); }
+  .m-result img{ width:100%; aspect-ratio:1/1; object-fit:cover; display:block; }
+  .m-result .m-rcap{
+    font-size:10.5px; line-height:1.3; color:var(--ink-soft); padding:5px 6px;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+
+  /* title words: the shared pool every monster feeds and every title draws from */
+  .frag-group{ margin-bottom:16px; }
+  .frag-group:last-child{ margin-bottom:0; }
+  .frag-group h3{ font-family:var(--font-serif); font-size:15px; font-weight:600; margin:0 0 8px; }
+  .frag-list{ display:flex; flex-wrap:wrap; gap:8px; }
+  .frag-chip{
+    display:flex; align-items:center; gap:6px;
+    background:var(--cream); border:1px solid rgba(74,59,65,0.15);
+    border-radius:14px; padding:5px 6px 5px 12px;
+  }
+  .frag-chip input{
+    border:0; background:none; font-family:var(--font-body); font-size:13px;
+    color:var(--ink); width:auto; min-width:2ch; padding:2px 0;
+  }
+  .frag-chip input:focus{ outline:1px solid var(--accent); border-radius:3px; }
+  .frag-chip button{
+    font-size:11px; color:var(--ink-soft); background:none; border:0;
+    cursor:pointer; padding:2px 4px; line-height:1;
+  }
+  .frag-chip button:hover{ color:var(--blade); }
+
   .modal-card{
     background:var(--cream); border-radius:var(--radius-lg);
     padding:30px 26px; max-width:380px; text-align:center;
@@ -324,6 +377,19 @@
         <label class="f" for="mName">Name</label>
         <input type="text" id="mName" placeholder="The Laundry Beast" maxlength="40">
       </div>
+      <div class="m-head-row" style="align-items:flex-end;grid-column:1 / -1;">
+        <div style="flex:1 1 auto;">
+          <label class="f" for="mImage">Picture</label>
+          <div class="m-inline">
+            <input type="text" id="mImage" placeholder="Searched below, or paste an address" autocomplete="off">
+            <button type="button" class="btn quiet sm" id="mImgFind" style="white-space:nowrap;">Look it up</button>
+          </div>
+        </div>
+        <img id="mImgPreview" class="m-thumb" alt="" style="display:none;">
+      </div>
+      <p class="hint" id="mImgHint" style="grid-column:1 / -1;margin:2px 0 0;"></p>
+      <div class="m-results" id="mImgResults" style="grid-column:1 / -1;"></div>
+
       <div>
         <label class="f" for="mHp">Hit points</label>
         <input type="number" id="mHp" min="10" value="800">
@@ -397,6 +463,17 @@
   <h2 class="section-title">Defeated</h2>
   <div id="deadList"></div>
 
+  <h2 class="section-title">Title words</h2>
+  <div class="card">
+    <p class="hint" style="margin:0 0 14px;">
+      Every prefix and subject either of you has ever earned, in one place. Edit a
+      word to fix a typo, or remove one you don't want turning up in the title
+      builder on the pets page &mdash; it won't touch a title already in use, only
+      what's offered next time.
+    </p>
+    <div id="fragBox"></div>
+  </div>
+
 </div>
 
 <footer>where creativity and chaos meet organization and overthinking 🌷</footer>
@@ -464,6 +541,90 @@ function syncItemPick(){
 document.getElementById('mItem').addEventListener('change', syncItemPick);
 syncItemPick();
 
+function syncImgPreview(){
+  const url = document.getElementById('mImage').value.trim();
+  const img = document.getElementById('mImgPreview');
+  img.src = url;
+  img.style.display = url ? '' : 'none';
+}
+document.getElementById('mImage').addEventListener('input', syncImgPreview);
+
+/* ---------- monster picture lookup ----------
+   Same Wikimedia Commons search the rest of the site already uses for
+   book and bucket-list covers — no key, unauthenticated CORS works with
+   origin=* in the query string. The only difference here is the search
+   term itself gets "cartoon" appended, since a monster wants an
+   illustration, not a photo. Commons' own tagging decides what counts as
+   one, so results vary — paste an address by hand if nothing fits. */
+const M_COMMONS = 'https://commons.wikimedia.org/w/api.php';
+
+function mIsPhoto(title){ return /\.(jpe?g|png|webp)$/i.test(title || ''); }
+
+function lookupMonsterImage(q){
+  const hint = document.getElementById('mImgHint');
+  hint.textContent = 'Searching…';
+  const params = new URLSearchParams({
+    action: 'query', format: 'json', origin: '*',
+    generator: 'search', gsrsearch: q + ' cartoon filetype:bitmap',
+    gsrnamespace: '6', gsrlimit: '18',
+    prop: 'imageinfo', iiprop: 'url|extmetadata', iiurlwidth: '300'
+  });
+  fetch(M_COMMONS + '?' + params.toString())
+    .then(r => r.json())
+    .then(data => {
+      const pages = (data.query && data.query.pages) ? Object.values(data.query.pages) : [];
+      const rows = pages
+        .filter(pg => mIsPhoto(pg.title) && pg.imageinfo && pg.imageinfo[0])
+        .slice(0, 12)
+        .map(pg => {
+          const info = pg.imageinfo[0];
+          return {
+            thumb: info.thumburl || info.url,
+            full:  info.thumburl || info.url,
+            caption: (pg.title || '').replace(/^File:/, '').replace(/\.[^.]+$/, '').replace(/_/g, ' ')
+          };
+        });
+      showMonsterImageResults(rows);
+    })
+    .catch(e => {
+      console.error(e);
+      hint.textContent = 'Search failed — paste an image address instead.';
+    });
+}
+
+function showMonsterImageResults(rows){
+  const box = document.getElementById('mImgResults');
+  const hint = document.getElementById('mImgHint');
+  box.innerHTML = '';
+  if(!rows.length){
+    hint.textContent = 'Nothing cartoonish turned up. Try a simpler word, or paste an address.';
+    box.classList.remove('open');
+    return;
+  }
+  hint.textContent = 'Pick one:';
+  rows.forEach(r => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'm-result';
+    b.innerHTML = `<img src=\"\${esc(r.thumb)}\" alt=\"\" loading=\"lazy\">` +
+      `<div class=\"m-rcap\">\${esc(r.caption)}</div>`;
+    b.onclick = () => {
+      document.getElementById('mImage').value = r.full;
+      syncImgPreview();
+      box.classList.remove('open');
+      hint.textContent = 'Picked.';
+    };
+    box.appendChild(b);
+  });
+  box.classList.add('open');
+}
+
+document.getElementById('mImgFind').onclick = () => {
+  const q = document.getElementById('mName').value.trim();
+  if(q) lookupMonsterImage(q);
+  else document.getElementById('mImgHint').textContent = 'Give it a name first, then search.';
+};
+
 document.querySelectorAll('.hp-preset button').forEach(b => {
   b.onclick = () => { document.getElementById('mHp').value = b.dataset.hp; };
 });
@@ -471,6 +632,7 @@ document.querySelectorAll('.hp-preset button').forEach(b => {
 function readForm(){
   return {
     name: document.getElementById('mName').value.trim(),
+    image: document.getElementById('mImage').value.trim(),
     maxHp: Math.max(10, parseInt(document.getElementById('mHp').value) || 10),
     reward: {
       gold: Math.max(0, parseInt(document.getElementById('mGold').value) || 0),
@@ -486,6 +648,11 @@ function readForm(){
 }
 function resetForm(){
   document.getElementById('mName').value = '';
+  document.getElementById('mImage').value = '';
+  syncImgPreview();
+  document.getElementById('mImgHint').textContent = '';
+  document.getElementById('mImgResults').innerHTML = '';
+  document.getElementById('mImgResults').classList.remove('open');
   document.getElementById('mHp').value = 800;
   document.getElementById('mGold').value = 0;
   document.getElementById('mMeow').value = 500;
@@ -503,6 +670,11 @@ function resetForm(){
 function loadForm(m){
   editingId = m.id;
   document.getElementById('mName').value = m.name;
+  document.getElementById('mImage').value = m.image || '';
+  syncImgPreview();
+  document.getElementById('mImgHint').textContent = '';
+  document.getElementById('mImgResults').innerHTML = '';
+  document.getElementById('mImgResults').classList.remove('open');
   document.getElementById('mHp').value = m.maxHp;
   document.getElementById('mGold').value = m.reward.gold || 0;
   document.getElementById('mMeow').value = m.reward.meow || 0;
@@ -527,12 +699,13 @@ document.getElementById('mSave').onclick = () => {
   if(editingId){
     const m = M().monsters.find(x => x.id === editingId);
     const spent = m.maxHp - m.hp;
-    Object.assign(m, { name: data.name, maxHp: data.maxHp, reward: data.reward });
+    Object.assign(m, { name: data.name, image: data.image, maxHp: data.maxHp, reward: data.reward });
     m.hp = Math.max(0, Math.min(data.maxHp, data.maxHp - spent));
   } else {
     const m = {
       id: 'm' + Math.random().toString(36).slice(2,10),
       name: data.name,
+      image: data.image,
       maxHp: data.maxHp,
       hp: data.maxHp,
       reward: data.reward,
@@ -629,7 +802,13 @@ function monsterCard(m){
   const pct = m.maxHp ? (m.hp / m.maxHp * 100) : 0;
   const div = document.createElement('div');
   div.className = 'monster' + (isActive ? ' is-active' : '') + (m.dead ? ' is-dead' : '');
+  const thumb = m.image
+    ? `<img class="m-thumb" src="${esc(m.image)}" alt="" loading="lazy" onerror="this.outerHTML='<span class=&quot;m-thumb-none&quot;></span>'">`
+    : `<span class="m-thumb-none"></span>`;
   div.innerHTML = `
+    <div class="m-head-row">
+    ${thumb}
+    <div style="flex:1 1 auto;min-width:0;">
     <div class="m-head">
       <div class="m-name">${esc(m.name)}</div>
       ${isActive ? '<span class="m-flag">taking damage</span>' : ''}
@@ -642,6 +821,8 @@ function monsterCard(m){
     <div class="m-reward">${rewardText(m)}</div>
     <div class="m-reward" style="font-size:11.5px;">${damageText(m)}</div>
     <div class="m-actions"></div>
+    </div>
+    </div>
   `;
   const actions = div.querySelector('.m-actions');
 
@@ -650,6 +831,16 @@ function monsterCard(m){
     b.className = 'btn sm';
     b.textContent = 'Collect your share';
     b.onclick = () => collect(m);
+    actions.appendChild(b);
+  }
+  if(m.dead){
+    const b = document.createElement('button');
+    b.className = 'btn quiet sm';
+    b.textContent = 'Fight again';
+    b.onclick = () => {
+      if(!PQ.reviveMonster(M(), m.id)) return;
+      save();
+    };
     actions.appendChild(b);
   }
   if(!m.dead && !isActive){
@@ -704,6 +895,60 @@ function render(){
 
   if(!fallen.length) dead.innerHTML = '<div class="card"><p class="empty-note">None yet.</p></div>';
   fallen.forEach(m => dead.appendChild(monsterCard(m)));
+
+  renderFragments();
+}
+
+/* ---------- title words ---------- */
+function fragGroup(kind, label){
+  const words = PQ.ensureFragments(S())[kind];
+  const wrap = document.createElement('div');
+  wrap.className = 'frag-group';
+  const list = document.createElement('div');
+  list.className = 'frag-list';
+  if(!words.length){
+    list.innerHTML = '<p class="empty-note" style="padding:4px 0;">None yet.</p>';
+  }
+  words.forEach((word, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'frag-chip';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = word;
+    input.size = Math.max(3, word.length);
+    input.onchange = () => {
+      const v = input.value.trim();
+      if(!v){ input.value = word; return; }
+      if(v !== word && words.some((w,j) => j !== i && w === v)){
+        input.value = word;
+        return;
+      }
+      words[i] = v;
+      input.size = Math.max(3, v.length);
+      save();
+    };
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.textContent = '\u2715';
+    del.setAttribute('aria-label', `Remove "${word}"`);
+    del.onclick = () => {
+      words.splice(i, 1);
+      save();
+    };
+    chip.appendChild(input);
+    chip.appendChild(del);
+    list.appendChild(chip);
+  });
+  wrap.innerHTML = `<h3>${esc(label)}</h3>`;
+  wrap.appendChild(list);
+  return wrap;
+}
+function renderFragments(){
+  const box = document.getElementById('fragBox');
+  if(!box) return;
+  box.innerHTML = '';
+  box.appendChild(fragGroup('prefix', 'Prefixes'));
+  box.appendChild(fragGroup('subject', 'Subjects'));
 }
 
 document.querySelectorAll('a[href^="/dannelore/quest-log"]').forEach(a => {
