@@ -25,8 +25,29 @@
      Firestore: sidequest/game-list
      ====================================================================== */
 
+  /* These four rules exist in Couch Quest's own <style> block, not in the
+     shared pp-tracker.css — pp-tracker.css only carries the responsive
+     column-count overrides for .cq-grid and the per-person colour variants
+     for .cq-who. Missing them here is what broke the form-close, the card
+     grid, and the who-badge. */
+  .cq-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:14px; }
+  .cq-form, .cq-detail{ display:none; margin-bottom:22px; }
+  .cq-detail-head{ display:flex; gap:16px; align-items:flex-start; margin-bottom:20px; }
+  .cq-grid{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px; }
+
+  /* who badge — top left of the poster */
+  .cq-who{
+    position:absolute; top:7px; left:7px;
+    font-family:var(--font-body); font-size:.6rem; font-weight:700;
+    letter-spacing:.1em; text-transform:uppercase;
+    border-radius:999px; padding:3px 8px;
+    border:1px solid transparent;
+  }
+  .cq-who[data-who="together"]{ color:var(--ink); background:#F7F1E4; border-color:var(--gold); }
+
   .gq-card .cq-poster,
   .gq-card .cq-poster-none{ aspect-ratio: 16/9; }
+  .cq-detail-head img{ aspect-ratio: 16/9; width: 140px; }
 
   .gq-platform{
     font-family: var(--font-body); font-size: .66rem; font-weight: 600;
@@ -229,7 +250,7 @@ const CACHE_KEY = "pp_game_list";
    paste it in below — same "key lives in the page" tradeoff already
    accepted for TMDB on Couch Quest. Until then, lookup is quietly disabled
    and everything still works by typing things in by hand. */
-const RAWG_KEY = "197c800b5a7342fe9c6a376d64cb830d";
+const RAWG_KEY = "PASTE_YOUR_RAWG_KEY_HERE";
 const RAWG = "https://api.rawg.io/api/games";
 const hasRawg = () => RAWG_KEY && RAWG_KEY.indexOf("PASTE") !== 0;
 const HINT_NOKEY = "Lookup needs a free RAWG.io key \u2014 ask Claude to help you add one, or fill this in by hand.";
