@@ -579,7 +579,7 @@ function render(){
     const who = item.who;
     const whoBadge = who !== "together" ? `<span class="cq-who" data-who="${who}">${esc(WHO_LABEL[who])}</span>` : "";
 
-    return `<button class="cq-card gq-card${item.status === "played" ? " is-done" : ""}" data-open="${esc(item.id)}">
+    return `<div class="cq-card gq-card${item.status === "played" ? " is-done" : ""}">
       <div class="cq-posterwrap" data-open="${esc(item.id)}">${art}${whoBadge}</div>
       <div class="cq-tools">
         <button data-edit="${esc(item.id)}" aria-label="Edit ${esc(item.title)}">\u270e</button>
@@ -593,7 +593,7 @@ function render(){
         </div>
         ${item.hours ? `<span class="gq-hours">${item.hours}h to beat</span>` : ""}
       </div>
-    </button>`;
+    </div>`;
   }).join("");
 }
 
