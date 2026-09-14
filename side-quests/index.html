@@ -77,35 +77,45 @@
     color: var(--ink-soft);
   }
 
-  /* Couch Quest's little family: the main tile plus its seasonal spin-off
-     and the combined archive both read from, shown together instead of as
-     three unrelated squares in the grid. */
+  /* Couch Quest's little family, on its own row below the main grid: the
+     big tile on the left, its seasonal spin-off and the combined archive
+     that both feed as their own smaller squares to the right, one inside
+     the other's border. Spooky Quest and Watch History get no explicit
+     grid-row \u2014 auto-placement fills column 2 top-to-bottom in source
+     order, so which one is "above" is controlled by DOM order (see the
+     markup) rather than by this CSS. */
   .sq-family{
-    grid-column: span 2;
-    aspect-ratio: auto;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: stretch;
-    gap: 18px;
+    max-width: 560px;
+    margin: 0 0 40px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    grid-template-rows: 1fr 1fr;
+    gap: 14px;
     padding: 20px;
-    text-align: left;
   }
   @media (max-width: 480px){
-    .sq-family{ grid-column: span 1; }
+    .sq-family{
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
+    }
+    .sq-family-main{ grid-column: 1; grid-row: auto; }
+    .sq-satellite{ grid-column: 1; grid-row: auto; }
   }
 
   .sq-family-main{
-    flex: 1 1 160px;
+    grid-column: 1;
+    grid-row: 1 / span 2;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
     gap: 10px;
+    padding: 10px;
     color: var(--ink);
     text-decoration: none;
   }
-  .sq-family-main .sq-icon{ transition: transform .22s ease; }
+  .sq-family-main .sq-icon{ width: 54px; height: 54px; transition: transform .22s ease; }
   .sq-family-main:hover .sq-icon{ transform: scale(1.06) rotate(-2deg); }
   .sq-family-main:hover,
   .sq-family-main:focus-visible{ text-decoration: none; }
@@ -116,42 +126,31 @@
     font-family: var(--font-body); font-size: .74rem; color: var(--ink-soft); line-height: 1.35; margin: 0;
   }
 
-  .sq-satellites{
-    flex: 1 1 210px;
+  .sq-satellite{
+    grid-column: 2;
+    aspect-ratio: 1 / 1;
     display: flex;
     flex-direction: column;
+    align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding-left: 18px;
-    border-left: 1px dashed var(--line-strong);
-  }
-  @media (max-width: 480px){
-    .sq-satellites{ padding-left: 0; border-left: 0; border-top: 1px dashed var(--line-strong); padding-top: 14px; }
-  }
-  .sq-satellite-label{
-    font-family: var(--font-body); font-size: .62rem; font-weight: 600;
-    letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft);
-  }
-  .sq-satellite{
-    display: block;
+    text-align: center;
+    gap: 4px;
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    background: rgba(255,253,248,.6);
+    border: 1px solid var(--line);
     color: var(--ink);
     text-decoration: none;
-    padding: 8px 10px;
-    border-radius: var(--radius-sm);
-    background: rgba(255,253,248,.55);
-    border: 1px solid var(--line);
     transition: border-color .15s ease, transform .15s ease;
   }
   .sq-satellite:hover,
-  .sq-satellite:focus-visible{ border-color: var(--burgundy); transform: translateX(2px); text-decoration: none; }
-  .sq-satellite strong{
-    display: block;
-    font-family: var(--font-serif); font-weight: 600; font-size: .92rem;
+  .sq-satellite:focus-visible{ border-color: var(--burgundy); transform: translateY(-2px); text-decoration: none; }
+  .sq-satellite .sq-icon{ width: 28px; height: 28px; }
+  .sq-satellite h4{
+    font-family: var(--font-serif); font-weight: 600; font-size: .8rem; line-height: 1.15; margin: 0;
   }
-  .sq-satellite em{
-    display: block;
-    font-style: normal;
-    font-family: var(--font-body); font-size: .7rem; color: var(--ink-soft);
+  .sq-satellite p{
+    font-family: var(--font-body); font-size: .62rem; color: var(--ink-soft); line-height: 1.2; margin: 0;
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -220,42 +219,20 @@
         <p>Everything we want to do together</p>
       </a>
 
-      <!-- ---------- Couch Quest, with its seasonal spin-off and combined
-           archive grouped alongside it rather than shown as separate,
-           unrelated tiles ---------- -->
-      <div class="pp-panel pp-panel-tight sq-family">
-        <a class="sq-family-main" href="/side-quests/couch-quest.html">
-          <svg class="sq-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <!-- rabbit ears -->
-            <path d="M18 14 L11 5" stroke="#9C7440" stroke-width="2" stroke-linecap="round"/>
-            <path d="M30 14 L37 5" stroke="#9C7440" stroke-width="2" stroke-linecap="round"/>
-            <circle cx="11" cy="4.5" r="2" fill="#9C7440"/>
-            <circle cx="37" cy="4.5" r="2" fill="#9C7440"/>
-            <!-- set -->
-            <rect x="5" y="14" width="38" height="27" rx="5" fill="#6E2430" stroke="#4E1A22" stroke-width="1.6"/>
-            <rect x="9.5" y="18.5" width="24" height="18" rx="3" fill="#F7F1E4"/>
-            <path d="M12.5 21.5 L17 21.5" stroke="#E87CA6" stroke-width="2" stroke-linecap="round" opacity=".7"/>
-            <circle cx="38" cy="23" r="2.4" fill="#9C7440"/>
-            <circle cx="38" cy="31" r="2.4" fill="#9C7440"/>
-            <!-- feet -->
-            <path d="M14 41 L11 45" stroke="#4E1A22" stroke-width="2" stroke-linecap="round"/>
-            <path d="M34 41 L37 45" stroke="#4E1A22" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-          <h3>Couch Quest</h3>
-          <p>Watch list</p>
-        </a>
-        <div class="sq-satellites">
-          <span class="sq-satellite-label">Part of Couch Quest</span>
-          <a class="sq-satellite" href="/side-quests/spooky-quest.html">
-            <strong>Spooky Quest</strong>
-            <em>Seasonal spin-off &middot; Sep 1 &ndash; Oct 31</em>
-          </a>
-          <a class="sq-satellite" href="/side-quests/watch-history.html">
-            <strong>Watch History</strong>
-            <em>Everything both lists have finished, in order</em>
-          </a>
-        </div>
-      </div>
+      <!-- ---------- Classics Quest ---------- -->
+      <a class="pp-panel pp-panel-tight sq-tile" href="/side-quests/classics-quest.html">
+        <svg class="sq-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <!-- a shelf of spines, one of them pulled forward -->
+          <rect x="8"  y="10" width="7"  height="27" rx="1.5" fill="#6B4A78" stroke="#523862" stroke-width="1.6"/>
+          <rect x="16" y="13" width="6"  height="24" rx="1.5" fill="#E87CA6" stroke="#C85D87" stroke-width="1.6"/>
+          <rect x="23" y="9"  width="7"  height="28" rx="1.5" fill="#EDE1C3" stroke="#9C7440" stroke-width="1.6"/>
+          <rect x="31" y="14" width="6"  height="23" rx="1.5" fill="#8FA37E" stroke="#6D8259" stroke-width="1.6"/>
+          <path d="M6 40 H42" stroke="#9C7440" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M25.5 14 V22 M25.5 26 V28" stroke="#9C7440" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <h3>Classics Quest</h3>
+        <p>A classic for every letter, A to Z</p>
+      </a>
 
       <!-- ---------- Game Quest ---------- -->
       <a class="pp-panel pp-panel-tight sq-tile" href="/side-quests/game-quest.html">
@@ -276,27 +253,75 @@
         <p>The backlog</p>
       </a>
 
-      <!-- ---------- Classics Quest ---------- -->
-      <a class="pp-panel pp-panel-tight sq-tile" href="/side-quests/classics-quest.html">
-        <svg class="sq-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <!-- a shelf of spines, one of them pulled forward -->
-          <rect x="8"  y="10" width="7"  height="27" rx="1.5" fill="#6B4A78" stroke="#523862" stroke-width="1.6"/>
-          <rect x="16" y="13" width="6"  height="24" rx="1.5" fill="#E87CA6" stroke="#C85D87" stroke-width="1.6"/>
-          <rect x="23" y="9"  width="7"  height="28" rx="1.5" fill="#EDE1C3" stroke="#9C7440" stroke-width="1.6"/>
-          <rect x="31" y="14" width="6"  height="23" rx="1.5" fill="#8FA37E" stroke="#6D8259" stroke-width="1.6"/>
-          <path d="M6 40 H42" stroke="#9C7440" stroke-width="2.4" stroke-linecap="round"/>
-          <path d="M25.5 14 V22 M25.5 26 V28" stroke="#9C7440" stroke-width="1.6" stroke-linecap="round"/>
-        </svg>
-        <h3>Classics Quest</h3>
-        <p>A classic for every letter, A to Z</p>
-      </a>
-
-      <!-- OPEN SLOTS — to fill one in, copy the Bucket Quest block above,
+      <!-- OPEN SLOTS — to fill one in, copy the Bucket List block above,
            swap the href, icon SVG, h3 and p, then delete one of these divs.
            For a quick icon: lucide.dev → search → copy SVG → paste here with
            class="sq-icon" aria-hidden="true" and set a color via CSS. -->
       <div class="pp-panel pp-panel-tight sq-tile sq-empty"><span>Open slot</span></div>
 
+    </div>
+
+    <!-- ---------- Couch Quest, on its own row, with its seasonal spin-off
+         and combined archive as their own smaller squares to the right,
+         Spooky Quest above Watch History, all three inside one border ---------- -->
+    <div class="pp-panel pp-panel-tight sq-family">
+      <a class="sq-family-main" href="/side-quests/couch-quest.html">
+        <svg class="sq-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <!-- rabbit ears -->
+          <path d="M18 14 L11 5" stroke="#9C7440" stroke-width="2" stroke-linecap="round"/>
+          <path d="M30 14 L37 5" stroke="#9C7440" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="11" cy="4.5" r="2" fill="#9C7440"/>
+          <circle cx="37" cy="4.5" r="2" fill="#9C7440"/>
+          <!-- set -->
+          <rect x="5" y="14" width="38" height="27" rx="5" fill="#6E2430" stroke="#4E1A22" stroke-width="1.6"/>
+          <rect x="9.5" y="18.5" width="24" height="18" rx="3" fill="#F7F1E4"/>
+          <path d="M12.5 21.5 L17 21.5" stroke="#E87CA6" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+          <circle cx="38" cy="23" r="2.4" fill="#9C7440"/>
+          <circle cx="38" cy="31" r="2.4" fill="#9C7440"/>
+          <!-- feet -->
+          <path d="M14 41 L11 45" stroke="#4E1A22" stroke-width="2" stroke-linecap="round"/>
+          <path d="M34 41 L37 45" stroke="#4E1A22" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <h3>Couch Quest</h3>
+        <p>Watch list</p>
+      </a>
+
+      <!-- Spooky Quest: above Watch History by DOM order, since the grid
+           below auto-places them in source order into the column beside
+           the main tile. -->
+      <a class="sq-satellite" href="/side-quests/spooky-quest.html">
+        <svg class="sq-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <!-- stem + curl -->
+          <path d="M24 13 V8" stroke="#6D8259" stroke-width="2.6" stroke-linecap="round"/>
+          <path d="M25 9 C29 6 32 8 31 11" stroke="#6D8259" stroke-width="1.8" stroke-linecap="round"/>
+          <!-- body -->
+          <ellipse cx="24" cy="28" rx="17" ry="14" fill="#9C7440" stroke="#7C5B30" stroke-width="1.8"/>
+          <path d="M24 14 C20 19 20 37 24 42" stroke="#7C5B30" stroke-width="1.4" opacity=".7"/>
+          <path d="M15 16 C12 21 12 35 15 40" stroke="#7C5B30" stroke-width="1.4" opacity=".55"/>
+          <path d="M33 16 C36 21 36 35 33 40" stroke="#7C5B30" stroke-width="1.4" opacity=".55"/>
+          <!-- face -->
+          <path d="M17 25 L20.5 30 L13.5 30 Z" fill="#2E241F"/>
+          <path d="M31 25 L34.5 30 L27.5 30 Z" fill="#2E241F"/>
+          <path d="M17 34 Q24 39 31 34 Q28 36.5 24 36.5 Q20 36.5 17 34 Z" fill="#2E241F"/>
+        </svg>
+        <h4>Spooky Quest</h4>
+        <p>Sep 1 &ndash; Oct 31</p>
+      </a>
+
+      <a class="sq-satellite" href="/side-quests/watch-history.html">
+        <svg class="sq-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <!-- a spine of dates, newest at the top -->
+          <path d="M14 8 V40" stroke="#9C7440" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="14" cy="13" r="4" fill="#C96A2E" stroke="#A4501C" stroke-width="1.6"/>
+          <circle cx="14" cy="24" r="4" fill="#6B4A78" stroke="#523862" stroke-width="1.6"/>
+          <circle cx="14" cy="35" r="4" fill="#6B4A78" stroke="#523862" stroke-width="1.6"/>
+          <path d="M23 11 H38 M23 16 H33" stroke="#2E241F" stroke-width="2" stroke-linecap="round"/>
+          <path d="M23 22 H38 M23 27 H31" stroke="#6B5E54" stroke-width="2" stroke-linecap="round"/>
+          <path d="M23 33 H36 M23 38 H30" stroke="#6B5E54" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <h4>Watch History</h4>
+        <p>Everything finished</p>
+      </a>
     </div>
 
     <footer class="pp-footer">
