@@ -606,8 +606,8 @@ function showMonsterImageResults(rows){
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'm-result';
-    b.innerHTML = `<img src=\"\${esc(r.thumb)}\" alt=\"\" loading=\"lazy\">` +
-      `<div class=\"m-rcap\">\${esc(r.caption)}</div>`;
+    b.innerHTML = `<img src="${esc(r.thumb)}" alt="" loading="lazy">` +
+      `<div class="m-rcap">${esc(r.caption)}</div>`;
     b.onclick = () => {
       document.getElementById('mImage').value = r.full;
       syncImgPreview();
