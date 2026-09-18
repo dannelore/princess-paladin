@@ -379,18 +379,20 @@ function buildWeek(){
     let base = recipes.filter(r => passesExclusions(r, k));
     if (dayTagFilter) base = base.filter(dayTagFilter);
 
-    // No meal repeats within the same week — this is a hard rule, so unlike
-    // the frequency-eligibility check below, it's never loosened as a fallback.
-    let candidates = base.filter(r => eligible(r) && !chosen.has(r.id));
-    if (!candidates.length) candidates = base.filter(r => !chosen.has(r.id));
+    // No meal repeats within the same week, no recipe breaks its frequency
+    // rule (occasional = hasn't run in 3 weeks, biweekly = hasn't run in 1),
+    // and the beef/pasta cap below — these are all hard rules. If nothing
+    // satisfies all of them for a day, the day is left empty rather than
+    // breaking a rule.
+    let candidates = base.filter(r => !chosen.has(r.id) && eligible(r));
 
     if (!candidates.length){
-      // nothing left that fits this day's rules without repeating — leave it empty
+      // nothing left that fits this day's rules without breaking one — leave it empty
       skippedForNoMatch.push(DAY_LABELS[k]);
       return;
     }
 
-    // If we've already hit the beef/pasta limit, exclude them
+    // At most 2 beef or pasta dinners per week — hard cap, never loosened.
     const canAddBeefPasta = beefPastaCount < 2;
     const isBeefOrPasta = (r) => hasTag(r, 'beef') || hasTag(r, 'pasta');
     
@@ -399,16 +401,15 @@ function buildWeek(){
       filtered = filtered.filter(r => !isBeefOrPasta(r));
     }
 
+    if (!filtered.length){
+      skippedForNoMatch.push(DAY_LABELS[k]);
+      return;
+    }
+
     // "Current Favorite" recipes go in every week — if one fits this day's
     // rules and hasn't been placed yet, it wins the slot over everything else.
     const favorites = filtered.filter(r => r.frequency === 'current-favorite');
     const pool = favorites.length ? favorites : filtered;
-
-    if (!pool.length) {
-      // Fallback: if our constraints filtered everything out, use original candidates
-      pool.length = 0;
-      candidates.forEach(c => pool.push(c));
-    }
 
     const pick = pool[Math.floor(Math.random() * pool.length)];
     days[k].dinner = pick.id;
