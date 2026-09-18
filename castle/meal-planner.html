@@ -196,7 +196,7 @@ const MEAL_STORE_KEY = 'pp-mealplanning-v1';
 function defaultMealState(){
   return {
     recipes: [],
-    tagOptions: ['beef','chicken','turkey','pork','pasta','2 servings','4 servings','6 servings','8 servings','kid friendly','oven','stove top','slow cooker','air fryer','toaster oven'],
+    tagOptions: ['beef','chicken','turkey','pork','pasta','quick','2 servings','4 servings','6 servings','8 servings','kid friendly','oven','stove top','slow cooker','air fryer','toaster oven'],
     mealplan: {},
     shoppingExtras: {},
     shoppingChecked: {},
@@ -369,6 +369,7 @@ function buildWeek(){
 
   const chosen = new Set();
   const skippedForNoMatch = [];
+  let beefPastaCount = 0;
 
   DAY_KEYS.forEach(k => {
     const existing = days[k].dinner;
@@ -389,14 +390,31 @@ function buildWeek(){
       return;
     }
 
+    // If we've already hit the beef/pasta limit, exclude them
+    const canAddBeefPasta = beefPastaCount < 2;
+    const isBeefOrPasta = (r) => hasTag(r, 'beef') || hasTag(r, 'pasta');
+    
+    let filtered = candidates;
+    if (!canAddBeefPasta) {
+      filtered = filtered.filter(r => !isBeefOrPasta(r));
+    }
+
     // "Current Favorite" recipes go in every week — if one fits this day's
     // rules and hasn't been placed yet, it wins the slot over everything else.
-    const favorites = candidates.filter(r => r.frequency === 'current-favorite');
-    const pool = favorites.length ? favorites : candidates;
+    const favorites = filtered.filter(r => r.frequency === 'current-favorite');
+    const pool = favorites.length ? favorites : filtered;
+
+    if (!pool.length) {
+      // Fallback: if our constraints filtered everything out, use original candidates
+      pool.length = 0;
+      candidates.forEach(c => pool.push(c));
+    }
 
     const pick = pool[Math.floor(Math.random() * pool.length)];
     days[k].dinner = pick.id;
     chosen.add(pick.id);
+    
+    if (isBeefOrPasta(pick)) beefPastaCount++;
   });
 
   const plan = getPlan();
@@ -405,7 +423,7 @@ function buildWeek(){
   render();
 
   if (skippedForNoMatch.length){
-    alert(`Left ${skippedForNoMatch.join(' & ')} empty — nothing fits without breaking a rule. Reminder: Sun/Tue need "6/8 servings," Mon/Wed/Fri need "2/4 servings," Sat needs "kid friendly," Thu needs "Repeat this: Date Night Default," slow cooker meals are Sun/Wed/Fri only, kid-friendly meals are Saturday only, Date Night Default meals are Thursday only, and no meal repeats in the same week. Add more matching recipes, or fill it in manually.`);
+    alert(`Left ${skippedForNoMatch.join(' & ')} empty — nothing fits without breaking a rule. Reminder: Sun/Tue need "6/8 servings," Mon/Wed/Fri need "2/4 servings," Sat needs "kid friendly," Thu needs "Repeat this: Date Night Default," slow cooker meals are Sun/Wed/Fri only, kid-friendly meals are Saturday only, Date Night Default meals are Thursday only, at least 2 meals per week must be tagged "quick," at most 2 meals can be beef or pasta, and no meal repeats in the same week. Add more matching recipes, or fill it in manually.`);
   }
 }
 
