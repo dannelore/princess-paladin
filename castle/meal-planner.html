@@ -391,15 +391,24 @@ function buildWeek(){
     let base = recipes.filter(r => passesExclusions(r, k));
     if (dayTagFilter) base = base.filter(dayTagFilter);
 
-    // No meal repeats within the same week, no recipe breaks its frequency
-    // rule (occasional = hasn't run in 3 weeks, biweekly = hasn't run in 1),
-    // and the beef/pasta caps below — these are all hard rules. If nothing
-    // satisfies all of them for a day, the day is left empty rather than
-    // breaking a rule.
-    let candidates = base.filter(r => !chosen.has(r.id) && eligible(r));
+    // No meal repeats within the same week, and the beef/pasta caps below,
+    // are hard rules — never loosened. The frequency rule (occasional =
+    // hasn't run in 3 weeks, biweekly = hasn't run in 1) is preferred but
+    // gets loosened as a last resort if nothing else fits the day — and
+    // when it does, a "quick" recipe is preferred for the repeat.
+    const dayCandidates = base.filter(r => !chosen.has(r.id));
+    let candidates = dayCandidates.filter(r => eligible(r));
+    let usedFallback = false;
 
     if (!candidates.length){
-      // nothing left that fits this day's rules without breaking one — leave it empty
+      // Nothing respects the frequency cooldown for this day — fall back to
+      // ignoring it rather than leaving the day empty.
+      candidates = dayCandidates;
+      usedFallback = true;
+    }
+
+    if (!candidates.length){
+      // still nothing at all for this day — leave it empty
       skippedForNoMatch.push(DAY_LABELS[k]);
       return;
     }
@@ -416,10 +425,17 @@ function buildWeek(){
       return;
     }
 
-    // "Current Favorite" recipes go in every week — if one fits this day's
-    // rules and hasn't been placed yet, it wins the slot over everything else.
-    const favorites = filtered.filter(r => r.frequency === 'current-favorite');
-    const pool = favorites.length ? favorites : filtered;
+    let pool;
+    if (usedFallback) {
+      // Repeating a recipe ahead of its normal rotation — prefer a "quick" one.
+      const quickOnes = filtered.filter(r => hasTag(r, 'quick'));
+      pool = quickOnes.length ? quickOnes : filtered;
+    } else {
+      // "Current Favorite" recipes go in every week — if one fits this day's
+      // rules and hasn't been placed yet, it wins the slot over everything else.
+      const favorites = filtered.filter(r => r.frequency === 'current-favorite');
+      pool = favorites.length ? favorites : filtered;
+    }
 
     const pick = pool[Math.floor(Math.random() * pool.length)];
     days[k].dinner = pick.id;
