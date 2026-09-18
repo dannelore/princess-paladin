@@ -369,7 +369,19 @@ function buildWeek(){
 
   const chosen = new Set();
   const skippedForNoMatch = [];
-  let beefPastaCount = 0;
+  let beefCount = 0;
+  let pastaCount = 0;
+
+  // Days already assigned (by hand or from a previous build) count toward
+  // the no-repeat rule and the beef/pasta caps, same as picks made below.
+  DAY_KEYS.forEach(k => {
+    const existing = days[k].dinner;
+    if (!existing || existing === 'SKIP') return;
+    chosen.add(existing);
+    const r = getRecipe(existing);
+    if (r && hasTag(r, 'beef')) beefCount++;
+    if (r && hasTag(r, 'pasta')) pastaCount++;
+  });
 
   DAY_KEYS.forEach(k => {
     const existing = days[k].dinner;
@@ -381,7 +393,7 @@ function buildWeek(){
 
     // No meal repeats within the same week, no recipe breaks its frequency
     // rule (occasional = hasn't run in 3 weeks, biweekly = hasn't run in 1),
-    // and the beef/pasta cap below — these are all hard rules. If nothing
+    // and the beef/pasta caps below — these are all hard rules. If nothing
     // satisfies all of them for a day, the day is left empty rather than
     // breaking a rule.
     let candidates = base.filter(r => !chosen.has(r.id) && eligible(r));
@@ -392,14 +404,12 @@ function buildWeek(){
       return;
     }
 
-    // At most 2 beef or pasta dinners per week — hard cap, never loosened.
-    const canAddBeefPasta = beefPastaCount < 2;
-    const isBeefOrPasta = (r) => hasTag(r, 'beef') || hasTag(r, 'pasta');
-    
+    // At most 2 beef dinners per week AND at most 2 pasta dinners per week —
+    // separate hard caps, never loosened. A recipe tagged both counts against
+    // both and needs room under each.
     let filtered = candidates;
-    if (!canAddBeefPasta) {
-      filtered = filtered.filter(r => !isBeefOrPasta(r));
-    }
+    if (beefCount >= 2) filtered = filtered.filter(r => !hasTag(r, 'beef'));
+    if (pastaCount >= 2) filtered = filtered.filter(r => !hasTag(r, 'pasta'));
 
     if (!filtered.length){
       skippedForNoMatch.push(DAY_LABELS[k]);
@@ -415,7 +425,8 @@ function buildWeek(){
     days[k].dinner = pick.id;
     chosen.add(pick.id);
     
-    if (isBeefOrPasta(pick)) beefPastaCount++;
+    if (hasTag(pick, 'beef')) beefCount++;
+    if (hasTag(pick, 'pasta')) pastaCount++;
   });
 
   const plan = getPlan();
@@ -424,7 +435,7 @@ function buildWeek(){
   render();
 
   if (skippedForNoMatch.length){
-    alert(`Left ${skippedForNoMatch.join(' & ')} empty — nothing fits without breaking a rule. Reminder: Sun/Tue need "6/8 servings," Mon/Wed/Fri need "2/4 servings," Sat needs "kid friendly," Thu needs "Repeat this: Date Night Default," slow cooker meals are Sun/Wed/Fri only, kid-friendly meals are Saturday only, Date Night Default meals are Thursday only, at least 2 meals per week must be tagged "quick," at most 2 meals can be beef or pasta, and no meal repeats in the same week. Add more matching recipes, or fill it in manually.`);
+    alert(`Left ${skippedForNoMatch.join(' & ')} empty — nothing fits without breaking a rule. Reminder: Sun/Tue need "6/8 servings," Mon/Wed/Fri need "2/4 servings," Sat needs "kid friendly," Thu needs "Repeat this: Date Night Default," slow cooker meals are Sun/Wed/Fri only, kid-friendly meals are Saturday only, Date Night Default meals are Thursday only, at least 2 meals per week must be tagged "quick," at most 2 meals can be beef and at most 2 can be pasta (separate caps), and no meal repeats in the same week. Add more matching recipes, or fill it in manually.`);
   }
 }
 
