@@ -805,7 +805,7 @@
       <a href="/templates/">Templates</a>
     </nav>
     <div class="pp-ribbon-extra">
-      <a class="pet-slot" id="petSlot" href="/dannelore/quest-log/pets.html" title="Pets">
+      <a class="pet-slot" id="petSlot" href="/quest-log/pets.html" title="Pets">
             <div class="pet-art" id="petArt"></div>
           </a>
           <div class="party-strip" id="partyStrip"></div>
@@ -826,7 +826,7 @@
               <span class="bar-num" id="hungerNum">100%</span>
             </div>
             <div class="bar-row" id="monsterRow" style="display:none;">
-              <a class="bar-label monster-link" id="monsterName" href="/dannelore/quest-log/monsters.html" title="Monsters"></a>
+              <a class="bar-label monster-link" id="monsterName" href="/quest-log/monsters.html" title="Monsters"></a>
               <div class="bar-track"><div class="bar-fill hp" id="monsterBar" style="width:100%"></div></div>
               <span class="bar-num" id="monsterNum"></span>
             </div>
@@ -2087,7 +2087,7 @@ function renderHeader(){
   PQ.partyPets(S()).forEach(p => {
     const h = PQ.liveHunger(S(), p, ctx);
     const a = document.createElement('a');
-    a.href = '/dannelore/quest-log/pets.html';
+    a.href = '/quest-log/pets.html';
     a.title = `${p.name} · ${h}% fed`;
     if(h < 30) a.classList.add('hungry');
     a.innerHTML = PQ.petSvg(p, {});
@@ -2141,7 +2141,7 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-document.querySelectorAll('a[href^="/dannelore/quest-log"]').forEach(a => {
+document.querySelectorAll('a[href^="/quest-log"]').forEach(a => {
   a.href = PQ.personLink(a.getAttribute('href'));
 });
 
