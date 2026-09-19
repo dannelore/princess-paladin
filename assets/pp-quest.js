@@ -91,30 +91,19 @@ const CATALOG = [
       teen:  { x:50.3, y:53.1, w:95.5 },
       adult: { x:50.1, y:51.3, w:100  }
     } },
+  { id:'hat-3cor',     slot:'hat',        name:'Three Corner H', price:600, unlock:1, questOnly:true },
 
-  /* Same silhouette, three colourways — so one set of fit numbers, pasted
-     three times. If you retune one, retune all three.
+  /* Same silhouette, three colourways — they sit at the `top` slot default,
+     so none of them carries its own fit. Retuning SLOT_FIT.top moves all three.
 
      `art` is the FILENAME, without the extension. These three were drawn as
      shirt-*.png before the slot was renamed to `top`, and the id is what gets
      written into saved outfits and wardrobes — so the id has to stay put and
      the art path points at the real file instead. Leave `art` off and the
      filename is just the id, which is what every other item does. */
-  { id:'top-hugspurp', slot:'top', art:'shirt-hugspurp', name:'Free Hugs shirt, purple', price:600, unlock:1, fit:{
-      child: { x:50,   y:50,   w:79.5 },
-      teen:  { x:49.4, y:50.4, w:81.5, h:100 },
-      adult: { x:50.6, y:50.3, w:100 }
-    } },
-  { id:'top-teegray',  slot:'top', art:'shirt-teegray',  name:'Tee, grey',  price:600, unlock:1, fit:{
-      child: { x:50,   y:50,   w:79.5 },
-      teen:  { x:49.4, y:50.4, w:81.5, h:100 },
-      adult: { x:50.6, y:50.3, w:100 }
-    } },
-  { id:'top-teegren',  slot:'top', art:'shirt-teegren',  name:'Tee, green', price:600, unlock:1, fit:{
-      child: { x:50,   y:50,   w:79.5 },
-      teen:  { x:49.4, y:50.4, w:81.5, h:100 },
-      adult: { x:50.6, y:50.3, w:100 }
-    } },
+  { id:'top-hugspurp', slot:'top', art:'shirt-hugspurp', name:'Free Hugs shirt, purple', price:600, unlock:1 },
+  { id:'top-teegray',  slot:'top', art:'shirt-teegray',  name:'Tee, grey',  price:600, unlock:1 },
+  { id:'top-teegren',  slot:'top', art:'shirt-teegren',  name:'Tee, green', price:600, unlock:1 },
 
   /* --- plain-colour backgrounds, drawn from the canonical palette --- */
   { id:'bg-cream',     slot:'background', name:'Cream',      price:100,  unlock:1,  color:'#F7F1E4' },
@@ -124,14 +113,21 @@ const CATALOG = [
   { id:'bg-parchment', slot:'background', name:'Parchment',  price:220,  unlock:8,  color:'#EDE1C3' },
   { id:'bg-dusk',      slot:'background', name:'Dusk',       price:300,  unlock:11, color:'#6B4A78' },
   { id:'bg-burgundy',  slot:'background', name:'Burgundy',   price:300,  unlock:11, color:'#6E2430' },
-  { id:'bg-midnight',  slot:'background', name:'Midnight',   price:450,  unlock:20, color:'#2E241F' }
+  { id:'bg-midnight',  slot:'background', name:'Midnight',   price:450,  unlock:20, color:'#2E241F' },
+  { id:'bg-hamstg',    slot:'background', name:'The Stage',  price:0,    unlock:1,  questOnly:true }
 ];
 
 function catalogItem(id){ return CATALOG.find(i => i.id === id) || null; }
 
-/* Items a given pet can actually see in the shop right now. */
-function itemsForSlot(pet, slotKey){
-  return CATALOG.filter(i => i.slot === slotKey);
+/* Items a given pet can actually see in the shop right now.
+
+   `questOnly` items are never for sale — they arrive as a named drop from a
+   specific monster. Once one is in the wardrobe it shows up here like anything
+   else, so it can be taken off and put back on. `state` may be omitted, in
+   which case quest items are simply hidden. */
+function itemsForSlot(pet, slotKey, state){
+  const owned = (state && state.wardrobe) || {};
+  return CATALOG.filter(i => i.slot === slotKey && (!i.questOnly || owned[i.id] > 0));
 }
 
 const FOOD = [
@@ -516,11 +512,31 @@ function itemImageUrl(idOrItem){
   return `${ITEM_ART}${file}.png`;
 }
 
+/* Default placement per slot, per stage. Most garments in a slot hang the
+   same way, so a CATALOG entry can leave `fit` off entirely and pick these up.
+   An entry that needs tuning overrides only what differs — give a stage just
+   `{ w:88 }` and it keeps the default x and y. */
+const SLOT_FIT = {
+  hat: {
+    child: { x:50,   y:56.7, w:88.5 },
+    teen:  { x:50,   y:55.1, w:95   },
+    adult: { x:49.2, y:49.5, w:100  }
+  },
+  top: {
+    child: { x:50,   y:50,   w:79.5 },
+    teen:  { x:49.4, y:50.4, w:81.5, h:100 },
+    adult: { x:50.6, y:50.3, w:100  }
+  }
+};
+const FALLBACK_FIT = { x:50, y:50, w:60 };
+
 /* A garment's placement for a given stage, as percentages of the frame.
-   Produced by the fitting tool and pasted into CATALOG entries. */
+   Produced by the fitting tool and pasted into CATALOG entries — but only
+   where it differs from the slot default above. */
 function fitFor(item, stageKey){
-  const f = (item.fit || {})[stageKey];
-  return f || { x:50, y:50, w:60 };
+  const base = ((SLOT_FIT[item && item.slot] || {})[stageKey]) || FALLBACK_FIT;
+  const own  = (item && item.fit || {})[stageKey];
+  return own ? Object.assign({}, base, own) : Object.assign({}, base);
 }
 
 function layerStyle(fit){
@@ -866,8 +882,10 @@ function pickRewardItem(state, itemId){
     if(named) return named;
   }
   const owned = state.wardrobe || {};
-  const fresh = CATALOG.filter(i => !(owned[i.id] > 0));
-  const pool  = fresh.length ? fresh : CATALOG;
+  /* Quest items are only ever granted by naming them above — never rolled. */
+  const rollable = CATALOG.filter(i => !i.questOnly);
+  const fresh = rollable.filter(i => !(owned[i.id] > 0));
+  const pool  = fresh.length ? fresh : rollable;
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
