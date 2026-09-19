@@ -133,26 +133,6 @@
   }
 
   /* title words: the shared pool every monster feeds and every title draws from */
-  .frag-group{ margin-bottom:16px; }
-  .frag-group:last-child{ margin-bottom:0; }
-  .frag-group h3{ font-family:var(--font-serif); font-size:15px; font-weight:600; margin:0 0 8px; }
-  .frag-list{ display:flex; flex-wrap:wrap; gap:8px; }
-  .frag-chip{
-    display:flex; align-items:center; gap:6px;
-    background:var(--cream); border:1px solid rgba(74,59,65,0.15);
-    border-radius:14px; padding:5px 6px 5px 12px;
-  }
-  .frag-chip input{
-    border:0; background:none; font-family:var(--font-body); font-size:13px;
-    color:var(--ink); width:auto; min-width:2ch; padding:2px 0;
-  }
-  .frag-chip input:focus{ outline:1px solid var(--accent); border-radius:3px; }
-  .frag-chip button{
-    font-size:11px; color:var(--ink-soft); background:none; border:0;
-    cursor:pointer; padding:2px 4px; line-height:1;
-  }
-  .frag-chip button:hover{ color:var(--blade); }
-
   .modal-card{
     background:var(--cream); border-radius:var(--radius-lg);
     padding:30px 26px; max-width:380px; text-align:center;
@@ -463,17 +443,6 @@
   <h2 class="section-title">Defeated</h2>
   <div id="deadList"></div>
 
-  <h2 class="section-title">Title words</h2>
-  <div class="card">
-    <p class="hint" style="margin:0 0 14px;">
-      Every prefix and subject either of you has ever earned, in one place. Edit a
-      word to fix a typo, or remove one you don't want turning up in the title
-      builder on the pets page &mdash; it won't touch a title already in use, only
-      what's offered next time.
-    </p>
-    <div id="fragBox"></div>
-  </div>
-
 </div>
 
 <footer>where creativity and chaos meet organization and overthinking 🌷</footer>
@@ -776,9 +745,9 @@ function collect(m){
      be able to build the same title. */
   const r0 = m.reward || {};
   const subject = (r0.subject || m.name).replace(/^the\s+/i, '').trim();
-  PQ.addFragment(S(), 'subject', subject);
-  const prefix = r0.prefix || PQ.randomPrefix(S());
-  if(prefix) PQ.addFragment(S(), 'prefix', prefix);
+  PQ.addFragment(M(), 'subject', subject);
+  const prefix = r0.prefix || PQ.randomPrefix(M());
+  if(prefix) PQ.addFragment(M(), 'prefix', prefix);
 
   PQ.markCollected(M(), m.id, WHO);
   m.killed = m.killed || PQ.TODAY_KEY;
@@ -896,59 +865,6 @@ function render(){
   if(!fallen.length) dead.innerHTML = '<div class="card"><p class="empty-note">None yet.</p></div>';
   fallen.forEach(m => dead.appendChild(monsterCard(m)));
 
-  renderFragments();
-}
-
-/* ---------- title words ---------- */
-function fragGroup(kind, label){
-  const words = PQ.ensureFragments(S())[kind];
-  const wrap = document.createElement('div');
-  wrap.className = 'frag-group';
-  const list = document.createElement('div');
-  list.className = 'frag-list';
-  if(!words.length){
-    list.innerHTML = '<p class="empty-note" style="padding:4px 0;">None yet.</p>';
-  }
-  words.forEach((word, i) => {
-    const chip = document.createElement('span');
-    chip.className = 'frag-chip';
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.value = word;
-    input.size = Math.max(3, word.length);
-    input.onchange = () => {
-      const v = input.value.trim();
-      if(!v){ input.value = word; return; }
-      if(v !== word && words.some((w,j) => j !== i && w === v)){
-        input.value = word;
-        return;
-      }
-      words[i] = v;
-      input.size = Math.max(3, v.length);
-      save();
-    };
-    const del = document.createElement('button');
-    del.type = 'button';
-    del.textContent = '\u2715';
-    del.setAttribute('aria-label', `Remove "${word}"`);
-    del.onclick = () => {
-      words.splice(i, 1);
-      save();
-    };
-    chip.appendChild(input);
-    chip.appendChild(del);
-    list.appendChild(chip);
-  });
-  wrap.innerHTML = `<h3>${esc(label)}</h3>`;
-  wrap.appendChild(list);
-  return wrap;
-}
-function renderFragments(){
-  const box = document.getElementById('fragBox');
-  if(!box) return;
-  box.innerHTML = '';
-  box.appendChild(fragGroup('prefix', 'Prefixes'));
-  box.appendChild(fragGroup('subject', 'Subjects'));
 }
 
 document.querySelectorAll('a[href^="/dannelore/quest-log"]').forEach(a => {

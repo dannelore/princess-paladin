@@ -233,7 +233,38 @@
     border:1px solid rgba(74,59,65,0.18); border-radius:8px;
     padding:7px 9px; background:var(--cream); color:var(--ink);
   }
-  .title-editor{ display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+
+  /* title words (shared list) */
+  .frag-heading{
+    font-family:var(--font-serif); font-size:15px; font-weight:600;
+    margin:22px 0 4px; padding-top:16px;
+    border-top:1px solid rgba(74,59,65,0.10);
+  }
+  .frag-group{ margin-bottom:16px; }
+  .frag-group:last-child{ margin-bottom:0; }
+  .frag-group h4{ font-family:var(--font-serif); font-size:13.5px; font-weight:600; margin:0 0 8px; }
+  .frag-list{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
+  .frag-chip{
+    display:flex; align-items:center; gap:6px;
+    background:var(--cream); border:1px solid rgba(74,59,65,0.15);
+    border-radius:14px; padding:5px 6px 5px 12px;
+  }
+  .frag-chip input{
+    border:0; background:none; font-family:var(--font-body); font-size:13px;
+    color:var(--ink); width:auto; min-width:2ch; padding:2px 0;
+  }
+  .frag-chip input:focus{ outline:1px solid var(--accent); border-radius:3px; }
+  .frag-chip button{
+    font-size:11px; color:var(--ink-soft); background:none; border:0;
+    cursor:pointer; padding:2px 4px; line-height:1;
+  }
+  .frag-chip button:hover{ color:var(--blade); }
+  .frag-add{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .frag-add input{
+    font-family:var(--font-body); font-size:12.5px;
+    border:1px solid rgba(74,59,65,0.18); border-radius:8px;
+    padding:6px 9px; background:var(--cream); color:var(--ink); min-width:160px;
+  }
 
   /* shop rows */
   .shop-row{
@@ -556,39 +587,6 @@
           </div>
         </details>
 
-        <details class="fold card" id="titleFold">
-          <summary class="fold-head">
-            <span class="fold-title">Title</span>
-            <span class="fold-note" id="titleFoldNote"></span>
-          </summary>
-          <div class="fold-body">
-            <p class="hint" style="margin:0 0 10px;">Fragments arrive from monsters, streaks and stages. Assemble them however you like.</p>
-            <div class="title-builder">
-              <select id="titlePrefix"></select>
-              <select id="titleConnector"></select>
-              <select id="titleSubject"></select>
-              <button class="btn sm" id="titleApply">Set title</button>
-              <button class="btn quiet sm" id="titleClear">Clear</button>
-            </div>
-            <div class="title-editor">
-              <div class="title-builder">
-                <select id="titleEditKind">
-                  <option value="prefix">Prefix</option>
-                  <option value="connector">Joiner</option>
-                  <option value="subject">Subject</option>
-                </select>
-                <select id="titleEditWord"></select>
-                <input type="text" id="titleEditNew" placeholder="New wording">
-                <button class="btn quiet sm" id="titleEditApply">Rename</button>
-              </div>
-              <div class="title-builder">
-                <input type="text" id="newConnectorInput" placeholder="Add a joining word, like &quot;amid&quot;">
-                <button class="btn quiet sm" id="addConnectorBtn">+ Add joiner</button>
-              </div>
-            </div>
-          </div>
-        </details>
-
       </div>
 
       <!-- ===== RIGHT: shop, with both stables underneath it in the same wrapper ===== -->
@@ -624,6 +622,30 @@
               </section>
             </div>
 
+          </div>
+        </details>
+
+        <details class="fold card" id="titleFold">
+          <summary class="fold-head">
+            <span class="fold-title">Title</span>
+            <span class="fold-note" id="titleFoldNote"></span>
+          </summary>
+          <div class="fold-body">
+            <p class="hint" style="margin:0 0 10px;">Fragments arrive from monsters, streaks and stages. Assemble them however you like.</p>
+            <div class="title-builder">
+              <select id="titlePrefix"></select>
+              <select id="titleConnector"></select>
+              <select id="titleSubject"></select>
+              <button class="btn sm" id="titleApply">Set title</button>
+              <button class="btn quiet sm" id="titleClear">Clear</button>
+            </div>
+
+            <h3 class="frag-heading">Title words</h3>
+            <p class="hint" style="margin:0 0 12px;">
+              Every word either of you has earned, in one place &mdash; this list is
+              shared. Edit one to fix a typo and any pet wearing it updates too.
+            </p>
+            <div id="fragBox"></div>
           </div>
         </details>
 
@@ -699,6 +721,7 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const store = PQ.makeStore(firebase);
+const monsterStore = PQ.makeMonsterStore(firebase);
 
 const SWATCH = {
   black:'#2C2C2A', classic:'#3B3B38', white:'#F1EFE8', ginger:'#E08A3C',
@@ -716,7 +739,8 @@ let claimChoices = [];
 let claimPick = 0;
 
 const S = () => store.state;
-const save = () => { store.save(); render(); };
+const M = () => monsterStore.state;   /* shared doc — holds the title words */
+const save = () => { store.save(); monsterStore.save(); render(); };
 
 function esc(s){ const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
 function selected(){ return (S().pets || []).find(p => p.id === selectedId) || (S().pets || [])[0] || null; }
@@ -922,7 +946,10 @@ function renderSlots(){
     const have = ownedCount(item.id);
     const isWorn = (pet.outfit || {})[activeSlot] === item.id;
     const locked = !have && level < item.unlock;
-    const spare = have - wornCount(item.id) + (isWorn ? 1 : 0);
+    /* Backgrounds are bought once and every pet may use the same one, so a
+       copy is never "used up" by another pet. Garments still need a copy each. */
+    const shared = activeSlot === 'background';
+    const spare = shared ? have : have - wornCount(item.id) + (isWorn ? 1 : 0);
 
     /* A plain-colour background has no art to load — show the colour itself.
        Anything else falls back to its image. */
@@ -935,13 +962,17 @@ function renderSlots(){
     div.innerHTML = `
       ${preview}
       <div class="iname">${esc(item.name)}</div>
-      <div class="imeta">${have ? (isWorn ? 'worn' : `owned${have > 1 ? ' ×' + have : ''}`) : (locked ? `pet level ${item.unlock}` : 'in the shop')}</div>
+      <div class="imeta">${have ? (isWorn ? 'worn' : `owned${!shared && have > 1 ? ' ×' + have : ''}`) : (locked ? `pet level ${item.unlock}` : 'in the shop')}</div>
       ${have ? '' : `<div class="iprice">${item.price} MB</div>`}
     `;
     div.onclick = () => {
       if(locked) return;
       if(!have || spare <= 0){
         if(S().meowBucks < item.price) return;
+        /* Always confirm before Meow Bucks leave the account — clicking a
+           worn-elsewhere item used to buy a silent duplicate. */
+        const again = have ? ' another copy of' : '';
+        if(!confirm(`Buy${again} ${item.name} for ${item.price} Meow Bucks? You have ${S().meowBucks}.`)) return;
         S().meowBucks -= item.price;
         S().wardrobe[item.id] = have + 1;
       }
@@ -978,7 +1009,7 @@ function renderSlots(){
 /* ---------- titles ---------- */
 function renderTitle(){
   const pet = selected(); if(!pet) return;
-  const f = PQ.ensureFragments(S());
+  const f = PQ.ensureFragments(M());
   const enough = f.prefix.length && f.subject.length;
 
   const fill = (id, list, blank) => {
@@ -999,42 +1030,8 @@ function renderTitle(){
     document.getElementById('titleSubject').value = pet.title.subject || f.subject[0];
   }
   document.getElementById('titleApply').disabled = !enough;
-  fillTitleEditWord();
+  renderFragments();
 }
-
-/* Keeps the "rename word" dropdown in sync with whichever fragment kind is selected. */
-function fillTitleEditWord(){
-  const f = PQ.ensureFragments(S());
-  const kind = document.getElementById('titleEditKind').value;
-  const sel = document.getElementById('titleEditWord');
-  const cur = sel.value;
-  sel.innerHTML = '';
-  f[kind].forEach(w => { const o = document.createElement('option'); o.value = w; o.textContent = w; sel.appendChild(o); });
-  if(cur && f[kind].includes(cur)) sel.value = cur;
-}
-document.getElementById('titleEditKind').addEventListener('change', fillTitleEditWord);
-
-document.getElementById('titleEditApply').onclick = () => {
-  const kind = document.getElementById('titleEditKind').value;
-  const oldWord = document.getElementById('titleEditWord').value;
-  const newWord = document.getElementById('titleEditNew').value;
-  if(!oldWord || !newWord.trim()) return;
-  const ok = PQ.renameFragment(S(), kind, oldWord, newWord);
-  if(!ok){ alert('Could not rename — check the new wording isn\'t empty or already in use.'); return; }
-  document.getElementById('titleEditNew').value = '';
-  save();
-  renderTitle();
-};
-
-document.getElementById('addConnectorBtn').onclick = () => {
-  const input = document.getElementById('newConnectorInput');
-  const word = input.value.trim();
-  if(!word) return;
-  PQ.addFragment(S(), 'connector', word);
-  input.value = '';
-  save();
-  renderTitle();
-};
 
 document.getElementById('titleApply').onclick = () => {
   const pet = selected(); if(!pet) return;
@@ -1050,6 +1047,93 @@ document.getElementById('titleClear').onclick = () => {
   pet.title = null;
   save();
 };
+
+/* ---------- title words (shared, editable) ---------- */
+const FRAG_LABELS = { prefix:'Prefixes', subject:'Subjects', connector:'Joiners' };
+
+function fragGroup(kind){
+  const words = PQ.ensureFragments(M())[kind];
+  const wrap = document.createElement('div');
+  wrap.className = 'frag-group';
+  wrap.innerHTML = `<h4>${esc(FRAG_LABELS[kind])}</h4>`;
+
+  const list = document.createElement('div');
+  list.className = 'frag-list';
+  if(!words.length){
+    list.innerHTML = '<p class="empty-note" style="padding:4px 0;">None yet.</p>';
+  }
+  words.forEach(word => {
+    const chip = document.createElement('span');
+    chip.className = 'frag-chip';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = word;
+    input.size = Math.max(3, word.length);
+    /* Renaming updates any pet already wearing the word, so a typo fix
+       carries through instead of stranding the old spelling. */
+    input.onchange = () => {
+      const v = input.value.trim();
+      if(!v || v === word){ input.value = word; return; }
+      if(!PQ.renameFragment(M(), kind, word, v, S().pets)){
+        input.value = word;
+        alert(`"${v}" is already in that list.`);
+        return;
+      }
+      save();
+    };
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.textContent = '\u2715';
+    del.setAttribute('aria-label', `Remove "${word}"`);
+    del.onclick = () => {
+      const inUse = PQ.petsUsingFragment(S().pets, kind, word);
+      if(inUse.length){
+        const names = inUse.map(p => p.name).join(', ');
+        if(!confirm(`"${word}" is in ${names}'s title. Removing it from the list won't change that title, but the word won't be offered again. Remove it?`)) return;
+      }
+      PQ.removeFragment(M(), kind, word);
+      save();
+    };
+
+    chip.appendChild(input);
+    chip.appendChild(del);
+    list.appendChild(chip);
+  });
+  wrap.appendChild(list);
+
+  const addRow = document.createElement('div');
+  addRow.className = 'frag-add';
+  const addInput = document.createElement('input');
+  addInput.type = 'text';
+  addInput.placeholder = `Add a ${FRAG_LABELS[kind].toLowerCase().replace(/e?s$/,'')}`;
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'btn quiet sm';
+  addBtn.textContent = '+ Add';
+  const doAdd = () => {
+    const v = addInput.value.trim();
+    if(!v) return;
+    if(!PQ.addFragment(M(), kind, v)){ alert(`"${v}" is already in that list.`); return; }
+    addInput.value = '';
+    save();
+  };
+  addBtn.onclick = doAdd;
+  addInput.onkeydown = e => { if(e.key === 'Enter'){ e.preventDefault(); doAdd(); } };
+  addRow.appendChild(addInput);
+  addRow.appendChild(addBtn);
+  wrap.appendChild(addRow);
+
+  return wrap;
+}
+
+function renderFragments(){
+  const box = document.getElementById('fragBox');
+  if(!box) return;
+  box.innerHTML = '';
+  PQ.FRAGMENT_KINDS.forEach(kind => box.appendChild(fragGroup(kind)));
+}
 
 /* ---------- shop ---------- */
 document.getElementById('exchangeGold').oninput = e => {
@@ -1242,7 +1326,9 @@ function render(){
 /* Pull fresh state when returning to the tab — the three pages share one doc. */
 document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'visible'){
-    store.load().then(() => { PQ.settleHunger(S(), PQ.makeCtx(S())); render(); });
+    Promise.all([store.load(), monsterStore.load()]).then(() => {
+      PQ.settleHunger(S(), PQ.makeCtx(S())); render();
+    });
   }
 });
 
@@ -1250,10 +1336,12 @@ document.querySelectorAll('a[href^="/dannelore/quest-log"]').forEach(a => {
   a.href = PQ.personLink(a.getAttribute('href'));
 });
 
-store.load().then(() => {
+Promise.all([store.load(), monsterStore.load()]).then(() => {
   PQ.settleHunger(S(), PQ.makeCtx(S()));
-  PQ.ensureFragments(S());
+  /* One-time: this person's privately-earned words join the shared list. */
+  PQ.absorbFragments(M(), S());
   store.save();
+  monsterStore.save();
   render();
 });
 </script>
