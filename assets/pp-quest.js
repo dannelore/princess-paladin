@@ -309,9 +309,11 @@ function awardPetXP(state, amount){
 
 /* ---------- titles ---------- */
 function ensureFragments(state){
-  if(!state.fragments) state.fragments = { prefix:[], subject:[] };
+  if(!state.fragments) state.fragments = { prefix:[], subject:[], connector:[] };
+  if(!state.fragments.connector) state.fragments.connector = [];
   if(!state.fragments.prefix.length) state.fragments.prefix = STARTER_PREFIXES.slice();
   if(!state.fragments.subject.length) state.fragments.subject = STARTER_SUBJECTS.slice();
+  if(!state.fragments.connector.length) state.fragments.connector = CONNECTORS.slice();
   return state.fragments;
 }
 function addFragment(state, kind, word){
@@ -319,6 +321,20 @@ function addFragment(state, kind, word){
   if(!word) return false;
   if(f[kind].includes(word)) return false;
   f[kind].push(word);
+  return true;
+}
+/* Renames an existing prefix/connector/subject word in place, and keeps any
+   pet titles that reference it pointing at the new wording. */
+function renameFragment(state, kind, oldWord, newWord){
+  const f = ensureFragments(state);
+  newWord = (newWord || '').trim();
+  if(!newWord || !f[kind].includes(oldWord)) return false;
+  if(oldWord === newWord) return true;
+  if(f[kind].includes(newWord)) return false;
+  f[kind][f[kind].indexOf(oldWord)] = newWord;
+  (state.pets || []).forEach(p => {
+    if(p.title && p.title[kind] === oldWord) p.title[kind] = newWord;
+  });
   return true;
 }
 function randomPrefix(state){
@@ -1012,7 +1028,7 @@ return {
   stageOf, stageIndex, petLevel, nextStage, stageProgress, canWear, mood,
   legendBuffs, partySlots, nextSlotLevel, activePet, partyPets, stablePets,
   settleHunger, liveHunger, feed, awardPetXP,
-  ensureFragments, addFragment, randomPrefix, titleText,
+  ensureFragments, addFragment, renameFragment, randomPrefix, titleText,
   activeMonster, damageMonster, reviveMonster,
   rollPetOptions, makePet, placePet, petSvg,
   catalogItem, itemsForSlot
