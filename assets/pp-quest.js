@@ -307,41 +307,87 @@ function awardPetXP(state, amount){
   return gained;
 }
 
-/* ---------- titles ---------- */
-function ensureFragments(state){
-  if(!state.fragments) state.fragments = { prefix:[], subject:[], connector:[] };
-  if(!state.fragments.connector) state.fragments.connector = [];
-  if(!state.fragments.prefix.length) state.fragments.prefix = STARTER_PREFIXES.slice();
-  if(!state.fragments.subject.length) state.fragments.subject = STARTER_SUBJECTS.slice();
-  if(!state.fragments.connector.length) state.fragments.connector = CONNECTORS.slice();
-  return state.fragments;
+/* ---------- titles ----------
+   Title words live in the SHARED monster document, not in either person's
+   state, so a rename or a deletion is the same in both logs. Every function
+   here takes that shared state (`ms`). Each person's old private list is
+   folded in once by absorbFragments() and then left alone. */
+const FRAGMENT_KINDS = ['prefix','subject','connector'];
+
+function ensureFragments(ms){
+  if(!ms.fragments) ms.fragments = { prefix:[], subject:[], connector:[] };
+  FRAGMENT_KINDS.forEach(k => { if(!Array.isArray(ms.fragments[k])) ms.fragments[k] = []; });
+  if(!ms.fragments.prefix.length)    ms.fragments.prefix    = STARTER_PREFIXES.slice();
+  if(!ms.fragments.subject.length)   ms.fragments.subject   = STARTER_SUBJECTS.slice();
+  if(!ms.fragments.connector.length) ms.fragments.connector = CONNECTORS.slice();
+  return ms.fragments;
 }
-function addFragment(state, kind, word){
-  const f = ensureFragments(state);
+
+function addFragment(ms, kind, word){
+  const f = ensureFragments(ms);
+  word = (word || '').trim();
   if(!word) return false;
   if(f[kind].includes(word)) return false;
   f[kind].push(word);
   return true;
 }
-/* Renames an existing prefix/connector/subject word in place, and keeps any
-   pet titles that reference it pointing at the new wording. */
-function renameFragment(state, kind, oldWord, newWord){
-  const f = ensureFragments(state);
+
+/* One-time merge. Both people earned their own copy of every word, so both
+   lists are folded into the shared one and nothing is discarded. The person's
+   own copy is left in place (harmless) but is no longer read. */
+function absorbFragments(ms, personState){
+  if(!personState || personState.fragmentsMerged) return false;
+  const pf = personState.fragments;
+  const f = ensureFragments(ms);
+  let changed = false;
+  if(pf){
+    FRAGMENT_KINDS.forEach(kind => {
+      (Array.isArray(pf[kind]) ? pf[kind] : []).forEach(w => {
+        w = (w || '').trim();
+        if(w && !f[kind].includes(w)){ f[kind].push(w); changed = true; }
+      });
+    });
+  }
+  personState.fragmentsMerged = true;
+  return changed;
+}
+
+/* Renames a word everywhere. `pets` is the current log's pets, so a title
+   already set follows the new spelling. A pet in the OTHER log that was
+   wearing the old word keeps the old spelling until that title is re-set —
+   the word list is shared, but each log owns its own pets. */
+function renameFragment(ms, kind, oldWord, newWord, pets){
+  const f = ensureFragments(ms);
   newWord = (newWord || '').trim();
   if(!newWord || !f[kind].includes(oldWord)) return false;
   if(oldWord === newWord) return true;
   if(f[kind].includes(newWord)) return false;
   f[kind][f[kind].indexOf(oldWord)] = newWord;
-  (state.pets || []).forEach(p => {
+  (pets || []).forEach(p => {
     if(p.title && p.title[kind] === oldWord) p.title[kind] = newWord;
   });
   return true;
 }
-function randomPrefix(state){
-  const f = ensureFragments(state);
+
+function removeFragment(ms, kind, word){
+  const f = ensureFragments(ms);
+  const i = f[kind].indexOf(word);
+  if(i < 0) return false;
+  f[kind].splice(i, 1);
+  return true;
+}
+
+/* Which of these pets are wearing this word — so a delete can warn first. */
+function petsUsingFragment(pets, kind, word){
+  return (pets || []).filter(p => p.title && p.title[kind] === word);
+}
+
+function randomPrefix(ms){
+  const f = ensureFragments(ms);
   const unused = PREFIX_POOL.filter(w => !f.prefix.includes(w));
   return unused.length ? unused[Math.floor(Math.random()*unused.length)] : null;
 }
+
 function titleText(pet){
   const t = pet.title;
   if(!t || !t.prefix || !t.subject) return '';
@@ -742,13 +788,15 @@ function makeStore(firebase, who){
    share, so neither person can claim the other's half.
    ========================================================================== */
 function defaultMonsterState(){
-  return { version:1, monsters:[], activeMonster:null, damage:{}, collected:{} };
+  return { version:2, monsters:[], activeMonster:null, damage:{}, collected:{},
+           fragments:{ prefix:[], subject:[], connector:[] } };
 }
 
 function migrateMonsters(m){
   const d = defaultMonsterState();
   for(const k in d){ if(m[k] === undefined) m[k] = d[k]; }
   if(!Array.isArray(m.monsters)) m.monsters = [];
+  ensureFragments(m);   /* title words are shared state now */
   return m;
 }
 
@@ -1028,7 +1076,8 @@ return {
   stageOf, stageIndex, petLevel, nextStage, stageProgress, canWear, mood,
   legendBuffs, partySlots, nextSlotLevel, activePet, partyPets, stablePets,
   settleHunger, liveHunger, feed, awardPetXP,
-  ensureFragments, addFragment, renameFragment, randomPrefix, titleText,
+  ensureFragments, addFragment, absorbFragments, renameFragment, removeFragment,
+  petsUsingFragment, FRAGMENT_KINDS, randomPrefix, titleText,
   activeMonster, damageMonster, reviveMonster,
   rollPetOptions, makePet, placePet, petSvg,
   catalogItem, itemsForSlot
