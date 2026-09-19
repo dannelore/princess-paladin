@@ -1121,18 +1121,11 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-firebase.js"></script>
 <script src="/assets/pp-quest.js"></script>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyAdNZBoh1pH80-ZFBbOlcrlsLdMi3D62Wg",
-  authDomain: "princess-paladin.firebaseapp.com",
-  projectId: "princess-paladin",
-  storageBucket: "princess-paladin.firebasestorage.app",
-  messagingSenderId: "282931655557",
-  appId: "1:282931655557:web:cae6ccd23f32cb9be54aec",
-  measurementId: "G-E5K2NMCR3Y"
-};
+const firebaseConfig = window.PPFirebaseConfig;
 firebase.initializeApp(firebaseConfig);
 const store = PQ.makeStore(firebase);
 const monsterStore = PQ.makeMonsterStore(firebase);

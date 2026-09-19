@@ -231,17 +231,11 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-firebase.js"></script>
 <script>
 "use strict";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAdNZBoh1pH80-ZFBbOlcrlsLdMi3D62Wg",
-  authDomain: "princess-paladin.firebaseapp.com",
-  projectId: "princess-paladin",
-  storageBucket: "princess-paladin.appspot.com",
-  messagingSenderId: "282931655557",
-  appId: "1:282931655557:web:cae6ccd23f32cb9be54aec"
-};
+const firebaseConfig = window.PPFirebaseConfig;
 
 const DOC_PATH  = "sidequest/game-list";
 const CACHE_KEY = "pp_game_list";

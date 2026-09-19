@@ -28,14 +28,7 @@
 window.RP = (function(){
   "use strict";
 
-  var firebaseConfig = {
-    apiKey: "AIzaSyAdNZBoh1pH80-ZFBbOlcrlsLdMi3D62Wg",
-    authDomain: "princess-paladin.firebaseapp.com",
-    projectId: "princess-paladin",
-    storageBucket: "princess-paladin.appspot.com",
-    messagingSenderId: "282931655557",
-    appId: "1:282931655557:web:cae6ccd23f32cb9be54aec"
-  };
+  var firebaseConfig = window.PPFirebaseConfig;
 
   var COLLECTION = "writingroom";
   var CACHE_KEY  = "writingroom-v1";
