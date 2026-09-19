@@ -227,11 +227,13 @@
 
   /* title builder */
   .title-builder{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  .title-builder select{
+  .title-builder select,
+  .title-builder input[type="text"]{
     font-family:var(--font-body); font-size:13px;
     border:1px solid rgba(74,59,65,0.18); border-radius:8px;
     padding:7px 9px; background:var(--cream); color:var(--ink);
   }
+  .title-editor{ display:flex; flex-direction:column; gap:8px; margin-top:10px; }
 
   /* shop rows */
   .shop-row{
@@ -567,6 +569,22 @@
               <select id="titleSubject"></select>
               <button class="btn sm" id="titleApply">Set title</button>
               <button class="btn quiet sm" id="titleClear">Clear</button>
+            </div>
+            <div class="title-editor">
+              <div class="title-builder">
+                <select id="titleEditKind">
+                  <option value="prefix">Prefix</option>
+                  <option value="connector">Joiner</option>
+                  <option value="subject">Subject</option>
+                </select>
+                <select id="titleEditWord"></select>
+                <input type="text" id="titleEditNew" placeholder="New wording">
+                <button class="btn quiet sm" id="titleEditApply">Rename</button>
+              </div>
+              <div class="title-builder">
+                <input type="text" id="newConnectorInput" placeholder="Add a joining word, like &quot;amid&quot;">
+                <button class="btn quiet sm" id="addConnectorBtn">+ Add joiner</button>
+              </div>
             </div>
           </div>
         </details>
@@ -972,7 +990,7 @@ function renderTitle(){
     if(cur && list.includes(cur)) sel.value = cur;
   };
   fill('titlePrefix', f.prefix, null);
-  fill('titleConnector', PQ.CONNECTORS, '(no joining word)');
+  fill('titleConnector', f.connector, '(no joining word)');
   fill('titleSubject', f.subject, null);
 
   if(pet.title){
@@ -981,7 +999,42 @@ function renderTitle(){
     document.getElementById('titleSubject').value = pet.title.subject || f.subject[0];
   }
   document.getElementById('titleApply').disabled = !enough;
+  fillTitleEditWord();
 }
+
+/* Keeps the "rename word" dropdown in sync with whichever fragment kind is selected. */
+function fillTitleEditWord(){
+  const f = PQ.ensureFragments(S());
+  const kind = document.getElementById('titleEditKind').value;
+  const sel = document.getElementById('titleEditWord');
+  const cur = sel.value;
+  sel.innerHTML = '';
+  f[kind].forEach(w => { const o = document.createElement('option'); o.value = w; o.textContent = w; sel.appendChild(o); });
+  if(cur && f[kind].includes(cur)) sel.value = cur;
+}
+document.getElementById('titleEditKind').addEventListener('change', fillTitleEditWord);
+
+document.getElementById('titleEditApply').onclick = () => {
+  const kind = document.getElementById('titleEditKind').value;
+  const oldWord = document.getElementById('titleEditWord').value;
+  const newWord = document.getElementById('titleEditNew').value;
+  if(!oldWord || !newWord.trim()) return;
+  const ok = PQ.renameFragment(S(), kind, oldWord, newWord);
+  if(!ok){ alert('Could not rename — check the new wording isn\'t empty or already in use.'); return; }
+  document.getElementById('titleEditNew').value = '';
+  save();
+  renderTitle();
+};
+
+document.getElementById('addConnectorBtn').onclick = () => {
+  const input = document.getElementById('newConnectorInput');
+  const word = input.value.trim();
+  if(!word) return;
+  PQ.addFragment(S(), 'connector', word);
+  input.value = '';
+  save();
+  renderTitle();
+};
 
 document.getElementById('titleApply').onclick = () => {
   const pet = selected(); if(!pet) return;
