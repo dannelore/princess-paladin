@@ -25,7 +25,6 @@
 .day-row{ display:flex; align-items:center; gap:12px; padding:4px 0; flex-wrap:wrap; }
 .meal-label{ width:64px; font-size:.75rem; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); }
 .day-select, .lunch-select{ flex:1 1 220px; font-family:var(--font-body); font-size:.92rem; padding:8px 10px; border:1px solid var(--line); border-radius:var(--radius-sm); background:#fff; }
-.lunch-hint{ font-size:.76rem; color:var(--ink-soft); font-style:italic; padding-left:76px; margin:-2px 0 6px; }
 
 .two-col{ display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; }
 .two-col > .panel{ flex:1 1 320px; margin-bottom:0; }
@@ -449,27 +448,35 @@ function buildWeek(){
 }
 
 // Figures out, for each day, whether lunch is leftovers — and from which dinner.
-// A dinner's leftover portions = servings - household (what's eaten at dinner).
-// Each lunch day eats `household` portions from that leftover pool, starting the
-// day right after that dinner. A closer/more recent dinner's leftovers take
-// priority over an older one if their ranges overlap.
+// A dinner's leftover portions = servings - household (what's eaten at dinner)
+// become a "batch" available starting the day after it's cooked. Each lunch
+// day eats `household` portions from the OLDEST batch that still has stock —
+// oldest leftovers get eaten first, same as you'd actually clear a fridge —
+// so a batch's days never get silently skipped just because a fresher dinner
+// happened in the meantime. A batch's stock never carries into next week.
 function computeLunches(days){
   const household = getHousehold();
   const lunch = new Array(7).fill('—');
+  const batches = []; // { name, daysLeft }, oldest first
 
   DAY_KEYS.forEach((k, i) => {
+    // Today's lunch, from whichever batch (created on an earlier day) has
+    // stock left. Today's own dinner isn't cooked yet, so it can't feed it.
+    const batch = batches.find(b => b.daysLeft > 0);
+    if (batch){
+      lunch[i] = `Leftovers — ${batch.name}`;
+      batch.daysLeft--;
+    }
+
+    // Today's dinner starts a new batch, available from tomorrow.
     const val = days[k].dinner;
     if (!val || val === 'SKIP') return;
     const r = getRecipe(val);
     if (!r) return;
     const servings = Number(r.servings) || 0;
     const leftoverPortions = Math.max(0, servings - household);
-    const leftoverDays = Math.floor(leftoverPortions / household);
-    for (let offset = 1; offset <= leftoverDays; offset++){
-      const targetIndex = i + offset;
-      if (targetIndex > 6) break; // doesn't carry into next week
-      lunch[targetIndex] = `Leftovers — ${r.name}`;
-    }
+    const daysLeft = Math.floor(leftoverPortions / household);
+    if (daysLeft > 0) batches.push({ name: r.name, daysLeft });
   });
 
   return lunch;
@@ -486,10 +493,12 @@ function renderWeekPanel(){
 
   wrap.innerHTML = DAY_KEYS.map((k, idx) => {
     const day = days[k];
-    const lunchOptions = `<option value="">Auto (leftovers)</option><option value="SKIP" ${day.lunch==='SKIP'?'selected':''}>Not eating lunch / other</option>` + recipeOptions(day.lunch && day.lunch !== 'SKIP' ? day.lunch : null);
+    // The "Auto" option's own label shows what it resolves to, so you don't
+    // have to read a separate line to find out — the dropdown just says it.
+    const autoLabel = autoLunches[idx] === '—' ? 'Auto: nothing to carry over' : `Auto: ${autoLunches[idx]}`;
+    const lunchOptions = `<option value="">${autoLabel}</option><option value="SKIP" ${day.lunch==='SKIP'?'selected':''}>Not eating lunch / other</option>` + recipeOptions(day.lunch && day.lunch !== 'SKIP' ? day.lunch : null);
     const dinnerOptions = `<option value="">— empty —</option><option value="SKIP" ${day.dinner==='SKIP'?'selected':''}>Eating out / other</option>` + recipeOptions(day.dinner && day.dinner !== 'SKIP' ? day.dinner : null);
 
-    const showAutoHint = !day.lunch; // only when left on Auto
     return `
       <div class="day-block">
         <div class="day-heading">${DAY_LABELS[k]}<span class="day-date">${new Date(addDays(currentWeek, idx) + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span></div>
@@ -497,7 +506,6 @@ function renderWeekPanel(){
           <div class="meal-label">Lunch</div>
           <select class="lunch-select" data-day="${k}">${lunchOptions}</select>
         </div>
-        ${showAutoHint ? `<div class="lunch-hint">${autoLunches[idx]}</div>` : ''}
         <div class="day-row">
           <div class="meal-label">Dinner</div>
           <select class="day-select" data-day="${k}">${dinnerOptions}</select>
@@ -685,7 +693,6 @@ const DEFAULT_PANTRY_GROUPS = {
     'garlic powder',
     'honey',
     'Italian seasoning',
-    'onion soup mix',
     'red pepper flakes',
     'salt',
     'taco seasoning'
@@ -783,20 +790,26 @@ function getWeekRecipesForMatching(){
   return [...dinnerRecipes, ...manualLunchRecipes];
 }
 
+// Two grocery names are "the same item" only if they're the same words
+// once normalized for case/whitespace/plurals — sharing a word isn't
+// enough. A loose "does one contain the other" check used to make the
+// pantry item "honey" swallow any recipe's "honey mustard", hiding a
+// completely different product from the shopping list.
+function sameGroceryItem(a, b){ return mergeKey(a) === mergeKey(b); }
+
 // Matches this week's recipe ingredients against the pantry list by name.
 // A match means: don't add it to the shopping list — just flag it in the
 // Pantry sidebar so she can check her own stock instead.
 function computeNeededPantryItems(){
   const pantryItems = getPantryItems();
   const recipes = getWeekRecipesForMatching();
-  const needed = {}; // normalized pantry item -> { name, recipes: Set }
+  const needed = {}; // pantry item's mergeKey -> { name, recipes: Set }
   pantryItems.forEach(p => {
-    const pNorm = norm(p);
+    const pKey = mergeKey(p);
     recipes.forEach(r => (r.ingredients||[]).forEach(ing => {
-      const iNorm = norm(ing.name);
-      if (iNorm.includes(pNorm) || pNorm.includes(iNorm)){
-        if (!needed[pNorm]) needed[pNorm] = { name: p, recipes: new Set() };
-        needed[pNorm].recipes.add(r.name);
+      if (sameGroceryItem(ing.name, p)){
+        if (!needed[pKey]) needed[pKey] = { name: p, recipes: new Set() };
+        needed[pKey].recipes.add(r.name);
       }
     }));
   });
@@ -829,7 +842,7 @@ function renderPantryList(){
   const items = (groups[activePantryTab] || []).slice().sort((a,b) => a.localeCompare(b));
 
   const rows = items.map(item => {
-    const neededInfo = needed[norm(item)];
+    const neededInfo = needed[mergeKey(item)];
     return `
     <div class="pantry-item ${checked[item] ? 'checked' : ''} ${neededInfo ? 'needed' : ''}">
       <input type="checkbox" data-item="${item}" ${checked[item] ? 'checked' : ''}>
@@ -951,11 +964,8 @@ function addToMap(map, name, qty, unit, source, extra){
 
 function renderShopList(){
   const allRecipes = getWeekRecipesForMatching();
-  const pantryNorms = getPantryItems().map(norm);
-  const matchesPantry = (ingName) => {
-    const iNorm = norm(ingName);
-    return pantryNorms.some(pNorm => iNorm.includes(pNorm) || pNorm.includes(iNorm));
-  };
+  const pantryKeys = getPantryItems().map(mergeKey);
+  const matchesPantry = (ingName) => pantryKeys.includes(mergeKey(ingName));
 
   const map = {};
 
