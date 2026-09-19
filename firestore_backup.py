@@ -2,11 +2,18 @@ import base64
 import datetime
 import json
 import os
+import re
 from pathlib import Path
 
 import firebase_admin
 from firebase_admin import credentials, firestore
 from google.cloud.firestore_v1 import DocumentReference, GeoPoint
+
+# How many days of daily backups to keep. Backups are committed to the repo,
+# so keeping them forever grows git history without bound.
+RETENTION_DAYS = 30
+
+BACKUP_NAME_RE = re.compile(r"^firestore-(\d{4}-\d{2}-\d{2})\.json$")
 
 
 def make_json_safe(value):
@@ -49,10 +56,8 @@ def make_json_safe(value):
     return value
 
 
-def backup_document(document):
-    """Back up a document and any subcollections beneath it."""
-
-    snapshot = document.get()
+def backup_document(snapshot):
+    """Back up a document snapshot and any subcollections beneath it."""
 
     result = {
         "exists": snapshot.exists,
@@ -64,7 +69,7 @@ def backup_document(document):
         "subcollections": {},
     }
 
-    for subcollection in document.collections():
+    for subcollection in snapshot.reference.collections():
         result["subcollections"][subcollection.id] = (
             backup_collection(subcollection)
         )
@@ -78,9 +83,26 @@ def backup_collection(collection):
     documents = {}
 
     for snapshot in collection.stream():
-        documents[snapshot.id] = backup_document(snapshot.reference)
+        documents[snapshot.id] = backup_document(snapshot)
 
     return documents
+
+
+def prune_old_backups(backup_dir, today, retention_days=RETENTION_DAYS):
+    """Delete daily backups older than `retention_days`, keyed off each
+    file's date in its name rather than filesystem mtime — a fresh checkout
+    gives every file today's mtime, so mtime can't tell old backups from new."""
+
+    cutoff = today - datetime.timedelta(days=retention_days)
+
+    for path in backup_dir.glob("firestore-*.json"):
+        match = BACKUP_NAME_RE.match(path.name)
+        if not match:
+            continue
+        file_date = datetime.date.fromisoformat(match.group(1))
+        if file_date < cutoff:
+            print(f"Pruning old backup: {path}")
+            path.unlink()
 
 
 def main():
@@ -109,11 +131,9 @@ def main():
     backup_dir = Path("firestore_backups")
     backup_dir.mkdir(exist_ok=True)
 
-    today = datetime.datetime.now(
-        datetime.timezone.utc
-    ).strftime("%Y-%m-%d")
+    today = datetime.datetime.now(datetime.timezone.utc).date()
 
-    backup_file = backup_dir / f"firestore-{today}.json"
+    backup_file = backup_dir / f"firestore-{today.isoformat()}.json"
 
     with backup_file.open("w", encoding="utf-8") as file:
         json.dump(
@@ -124,6 +144,8 @@ def main():
         )
 
     print(f"Backup saved to {backup_file}")
+
+    prune_old_backups(backup_dir, today)
 
 
 if __name__ == "__main__":
