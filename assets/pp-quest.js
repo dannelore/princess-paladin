@@ -861,7 +861,6 @@ function makeMonsterStore(firebase){
 function splitReward(reward, isFirst){
   const half = n => isFirst ? Math.ceil((n||0)/2) : Math.floor((n||0)/2);
   return {
-    gold: half(reward.gold),
     meow: half(reward.meow),
     xp:   half(reward.xp),
     pet:  !!reward.pet,
@@ -1078,6 +1077,11 @@ function addAccountXP(state, amount){
   const buffs = legendBuffs(state);
   const scaled = Math.round(amount * buffs.xp);
   const levels = [];
+  /* Meow Bucks track XP 1:2 — every source of XP (tasks, monster kills,
+     future ones too) pays out through here, so hooking the bonus in at
+     this one spot keeps it applying everywhere without having to
+     remember it at each call site. */
+  state.meowBucks = (state.meowBucks || 0) + scaled * 2;
   state.xp += scaled;
   while(state.xp >= state.xpToNext){
     state.xp -= state.xpToNext;
