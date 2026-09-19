@@ -1,0 +1,30 @@
+name: Link Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lychee:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get repository
+        uses: actions/checkout@v4
+
+      - name: Check internal links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # --offline: only resolve links to files that exist in the
+          # checkout. This is a hand-authored, many-page HTML site with no
+          # build step, so a typo'd internal href is otherwise silent until
+          # someone clicks it. External links are skipped here to avoid
+          # flaky failures from rate limits or sites that block bots.
+          args: >-
+            --offline
+            --no-progress
+            --exclude-mail
+            '**/*.html'
+          fail: true
