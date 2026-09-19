@@ -939,7 +939,7 @@ function renderSlots(){
 
   const grid = document.getElementById('itemGrid');
   grid.innerHTML = '';
-  const items = PQ.itemsForSlot(pet, activeSlot);
+  const items = PQ.itemsForSlot(pet, activeSlot, S());
   const level = PQ.petLevel(pet);
 
   items.forEach(item => {
