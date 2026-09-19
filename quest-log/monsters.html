@@ -486,9 +486,13 @@ let editingId = null;
    Grouped by slot so a long catalog stays readable. "Something random" keeps
    the old behaviour: the collector rolls whatever they don't own yet. */
 const M_ITEM_SELECTS = ['mItemId','mItemId2','mItemId3'];
-(function buildItemPicker(){
+/* Rebuilt after the custom wardrobe finishes loading (it starts empty and
+   fills in async), so uploaded items show up here without a page reload.
+   Keeps whatever was already picked, in case that ever runs mid-edit. */
+function buildItemPicker(){
   M_ITEM_SELECTS.forEach((id, n) => {
     const sel = document.getElementById(id);
+    const prevValue = sel.value;
     sel.innerHTML = n === 0
       ? '<option value="">Something random they don\'t own</option>'
       : '<option value="">&mdash; nothing &mdash;</option>';
@@ -505,8 +509,10 @@ const M_ITEM_SELECTS = ['mItemId','mItemId2','mItemId3'];
       });
       sel.appendChild(g);
     });
+    if(prevValue) sel.value = prevValue;
   });
-})();
+}
+buildItemPicker();
 
 function syncItemPick(){
   document.getElementById('mItemPick').style.display =
@@ -955,7 +961,10 @@ document.addEventListener('visibilitychange', () => {
     Promise.all([store.load(), monsterStore.load()]).then(render);
 });
 
-Promise.all([store.load(), monsterStore.load()]).then(render);
+Promise.all([store.load(), monsterStore.load(), PQ.loadCustomWardrobe(firebase)]).then(() => {
+  buildItemPicker();
+  render();
+});
 </script>
 <script src="/assets/pp-nav.js" defer></script>
 </body>
