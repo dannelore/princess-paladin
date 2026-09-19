@@ -367,6 +367,10 @@
         </div>
         <img id="mImgPreview" class="m-thumb" alt="" style="display:none;">
       </div>
+      <div class="check-row" style="grid-column:1 / -1;margin:4px 0 0;">
+        <input type="checkbox" id="mImgCartoon">
+        <label for="mImgCartoon" style="font-size:12.5px;">Illustrations only &mdash; untick to search everything</label>
+      </div>
       <p class="hint" id="mImgHint" style="grid-column:1 / -1;margin:2px 0 0;"></p>
       <div class="m-results" id="mImgResults" style="grid-column:1 / -1;"></div>
 
@@ -411,8 +415,11 @@
     <!-- Which garment, specifically. The list is filled from PQ.CATALOG at
          load, so adding an item to the catalog puts it here too. -->
     <div id="mItemPick" style="margin-top:10px;display:none;">
-      <label class="f" for="mItemId">Which item</label>
+      <label class="f">Which items <span style="font-weight:400;opacity:.7;">&mdash; up to three</span></label>
       <select id="mItemId"></select>
+      <select id="mItemId2" style="margin-top:6px;"></select>
+      <select id="mItemId3" style="margin-top:6px;"></select>
+      <p class="hint" style="margin:6px 0 0;">Leave them all on &ldquo;random&rdquo; for a surprise garment.</p>
     </div>
 
     <p class="hint" style="margin:8px 0 0;">Companions and garments aren't split &mdash; you each get one, so neither of you is racing the other to the drop.</p>
@@ -427,8 +434,12 @@
         <label class="f" for="mSubject">Subject words</label>
         <input type="text" id="mSubject" placeholder="the Laundry Beast" maxlength="32">
       </div>
+      <div>
+        <label class="f" for="mJoiner">Joining word</label>
+        <input type="text" id="mJoiner" placeholder="against" maxlength="16">
+      </div>
     </div>
-    <p class="hint" style="margin:8px 0 0;">Both go into the shared pool, so any pet can wear them. Leave the subject blank and the monster's own name is used. Leave the prefix blank and one is rolled at random.</p>
+    <p class="hint" style="margin:8px 0 0;">Both go into the shared pool, so any pet can wear them. Leave the subject blank and the monster's own name is used. Leave the prefix blank and one is rolled at random. A joining word is optional &mdash; it just adds to the shared list.</p>
     <p class="hint" style="margin:10px 0 0;">Gold drops come out of the weekly budget, so a fat payout quietly lowers per-task rates that week. Meow Bucks and XP don't.</p>
 
     <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
@@ -485,21 +496,26 @@ let editingId = null;
 /* ---------- wardrobe drop picker ----------
    Grouped by slot so a long catalog stays readable. "Something random" keeps
    the old behaviour: the collector rolls whatever they don't own yet. */
+const M_ITEM_SELECTS = ['mItemId','mItemId2','mItemId3'];
 (function buildItemPicker(){
-  const sel = document.getElementById('mItemId');
-  sel.innerHTML = '<option value="">Something random they don\'t own</option>';
-  PQ.SLOTS.forEach(slot => {
-    const items = PQ.CATALOG.filter(i => i.slot === slot.key);
-    if(!items.length) return;
-    const g = document.createElement('optgroup');
-    g.label = slot.name;
-    items.forEach(i => {
-      const o = document.createElement('option');
-      o.value = i.id;
-      o.textContent = i.name;
-      g.appendChild(o);
+  M_ITEM_SELECTS.forEach((id, n) => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = n === 0
+      ? '<option value="">Something random they don\'t own</option>'
+      : '<option value="">&mdash; nothing &mdash;</option>';
+    PQ.SLOTS.forEach(slot => {
+      const items = PQ.CATALOG.filter(i => i.slot === slot.key);
+      if(!items.length) return;
+      const g = document.createElement('optgroup');
+      g.label = slot.name;
+      items.forEach(i => {
+        const o = document.createElement('option');
+        o.value = i.id;
+        o.textContent = i.name;
+        g.appendChild(o);
+      });
+      sel.appendChild(g);
     });
-    sel.appendChild(g);
   });
 })();
 
@@ -519,64 +535,105 @@ function syncImgPreview(){
 document.getElementById('mImage').addEventListener('input', syncImgPreview);
 
 /* ---------- monster picture lookup ----------
-   Same Wikimedia Commons search the rest of the site already uses for
-   book and bucket-list covers — no key, unauthenticated CORS works with
-   origin=* in the query string. The only difference here is the search
-   term itself gets "cartoon" appended, since a monster wants an
-   illustration, not a photo. Commons' own tagging decides what counts as
-   one, so results vary — paste an address by hand if nothing fits. */
-const M_COMMONS = 'https://commons.wikimedia.org/w/api.php';
+   Two sources, searched at once and merged: Wikimedia Commons and Openverse
+   (which aggregates Flickr, museum collections and other openly-licensed
+   libraries). Both are keyless and CORS-friendly. Commons alone was thin —
+   it is an encyclopedia's media library, not a picture library.
 
-function mIsPhoto(title){ return /\.(jpe?g|png|webp)$/i.test(title || ''); }
+   "Illustrations only" appends a style hint and, on Openverse, asks for
+   illustration-categorised work. Untick it to search everything. Either way
+   a source that fails is skipped rather than sinking the whole search. */
+const M_COMMONS   = 'https://commons.wikimedia.org/w/api.php';
+const M_OPENVERSE = 'https://api.openverse.org/v1/images/';
+const M_RESULT_MAX = 40;
 
-function lookupMonsterImage(q){
-  const hint = document.getElementById('mImgHint');
-  hint.textContent = 'Searching…';
+function mIsPhoto(title){ return /\.(jpe?g|png|webp|gif|svg)$/i.test(title || ''); }
+
+function searchCommons(q, cartoonOnly){
   const params = new URLSearchParams({
-    action: 'query', format: 'json', origin: '*',
-    generator: 'search', gsrsearch: q + ' cartoon filetype:bitmap',
-    gsrnamespace: '6', gsrlimit: '18',
-    prop: 'imageinfo', iiprop: 'url|extmetadata', iiurlwidth: '300'
+    action:'query', format:'json', origin:'*',
+    generator:'search',
+    gsrsearch: (cartoonOnly ? q + ' cartoon' : q) + ' filetype:bitmap|drawing',
+    gsrnamespace:'6', gsrlimit:'40',
+    prop:'imageinfo', iiprop:'url|extmetadata', iiurlwidth:'300'
   });
-  fetch(M_COMMONS + '?' + params.toString())
+  return fetch(M_COMMONS + '?' + params.toString())
     .then(r => r.json())
     .then(data => {
       const pages = (data.query && data.query.pages) ? Object.values(data.query.pages) : [];
-      const rows = pages
+      return pages
         .filter(pg => mIsPhoto(pg.title) && pg.imageinfo && pg.imageinfo[0])
-        .slice(0, 12)
         .map(pg => {
           const info = pg.imageinfo[0];
           return {
             thumb: info.thumburl || info.url,
             full:  info.thumburl || info.url,
-            caption: (pg.title || '').replace(/^File:/, '').replace(/\.[^.]+$/, '').replace(/_/g, ' ')
+            caption: (pg.title || '').replace(/^File:/, '').replace(/\.[^.]+$/, '').replace(/_/g, ' '),
+            source: 'Commons'
           };
         });
-      showMonsterImageResults(rows);
     })
-    .catch(e => {
-      console.error(e);
-      hint.textContent = 'Search failed — paste an image address instead.';
+    .catch(e => { console.error('Commons search failed:', e); return []; });
+}
+
+function searchOpenverse(q, cartoonOnly){
+  const params = new URLSearchParams({
+    q: q, page_size: '40', mature: 'false'
+  });
+  if(cartoonOnly) params.set('category', 'illustration');
+  return fetch(M_OPENVERSE + '?' + params.toString())
+    .then(r => r.json())
+    .then(data => (data.results || []).map(it => ({
+      thumb: it.thumbnail || it.url,
+      full:  it.url,
+      caption: it.title || 'Untitled',
+      source: 'Openverse'
+    })))
+    .catch(e => { console.error('Openverse search failed:', e); return []; });
+}
+
+function lookupMonsterImage(q){
+  const hint = document.getElementById('mImgHint');
+  const cartoonOnly = document.getElementById('mImgCartoon').checked;
+  hint.textContent = 'Searching…';
+
+  Promise.all([ searchCommons(q, cartoonOnly), searchOpenverse(q, cartoonOnly) ])
+    .then(([a, b]) => {
+      /* Interleave so neither source buries the other, then drop repeats. */
+      const merged = [], seen = {};
+      for(let i = 0; i < Math.max(a.length, b.length); i++){
+        [a[i], b[i]].forEach(row => {
+          if(!row || !row.full || seen[row.full]) return;
+          seen[row.full] = 1;
+          merged.push(row);
+        });
+      }
+      showMonsterImageResults(merged.slice(0, M_RESULT_MAX));
     });
 }
+
+function cartoonOnlyNow(){ return document.getElementById('mImgCartoon').checked; }
 
 function showMonsterImageResults(rows){
   const box = document.getElementById('mImgResults');
   const hint = document.getElementById('mImgHint');
   box.innerHTML = '';
   if(!rows.length){
-    hint.textContent = 'Nothing cartoonish turned up. Try a simpler word, or paste an address.';
+    hint.textContent = cartoonOnlyNow()
+      ? 'Nothing turned up. Try a simpler word, or untick "Illustrations only".'
+      : 'Nothing turned up. Try a simpler word, or paste an address.';
     box.classList.remove('open');
     return;
   }
-  hint.textContent = 'Pick one:';
+  hint.textContent = `${rows.length} found — pick one:`;
   rows.forEach(r => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'm-result';
-    b.innerHTML = `<img src="${esc(r.thumb)}" alt="" loading="lazy">` +
+    b.innerHTML = `<img src="${esc(r.thumb)}" alt="" loading="lazy" ` +
+      `onerror="this.closest('.m-result').style.display='none'">` +
       `<div class="m-rcap">${esc(r.caption)}</div>`;
+    b.title = `${r.caption} (${r.source})`;
     b.onclick = () => {
       document.getElementById('mImage').value = r.full;
       syncImgPreview();
@@ -609,9 +666,10 @@ function readForm(){
       xp:   Math.max(0, parseInt(document.getElementById('mXp').value) || 0),
       pet:  document.getElementById('mPet').checked,
       item: document.getElementById('mItem').checked,
-      itemId: document.getElementById('mItemId').value || '',
+      itemIds: M_ITEM_SELECTS.map(id => document.getElementById(id).value).filter(Boolean),
       prefix:  document.getElementById('mPrefix').value.trim(),
-      subject: document.getElementById('mSubject').value.trim()
+      subject: document.getElementById('mSubject').value.trim(),
+      connector: document.getElementById('mJoiner').value.trim()
     }
   };
 }
@@ -628,7 +686,8 @@ function resetForm(){
   document.getElementById('mXp').value = 200;
   document.getElementById('mPet').checked = false;
   document.getElementById('mItem').checked = false;
-  document.getElementById('mItemId').value = '';
+  M_ITEM_SELECTS.forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('mJoiner').value = '';
   syncItemPick();
   document.getElementById('mPrefix').value = '';
   document.getElementById('mSubject').value = '';
@@ -650,10 +709,12 @@ function loadForm(m){
   document.getElementById('mXp').value = m.reward.xp || 0;
   document.getElementById('mPet').checked = !!m.reward.pet;
   document.getElementById('mItem').checked = !!m.reward.item;
-  document.getElementById('mItemId').value = m.reward.itemId || '';
+  const ids = PQ.rewardItemIds(m.reward || {});
+  M_ITEM_SELECTS.forEach((id, n) => { document.getElementById(id).value = ids[n] || ''; });
   syncItemPick();
   document.getElementById('mPrefix').value = m.reward.prefix || '';
   document.getElementById('mSubject').value = m.reward.subject || '';
+  document.getElementById('mJoiner').value = m.reward.connector || '';
   document.getElementById('mSave').textContent = 'Save changes';
   document.getElementById('mCancel').style.display = 'inline-block';
   document.getElementById('mName').scrollIntoView({ behavior:'smooth', block:'center' });
@@ -698,11 +759,12 @@ function rewardText(m){
   if(r.xp)   bits.push(`<b>${r.xp}</b> XP`);
   if(r.pet)  bits.push('a <b>new companion</b>');
   if(r.item){
-    const named = r.itemId ? PQ.catalogItem(r.itemId) : null;
-    bits.push(named ? `a <b>${esc(named.name)}</b>` : 'a <b>wardrobe item</b>');
+    const named = PQ.rewardItemIds(r).map(id => PQ.catalogItem(id)).filter(Boolean);
+    if(named.length) bits.push(named.map(i => `a <b>${esc(i.name)}</b>`).join(', '));
+    else bits.push('a <b>wardrobe item</b>');
   }
   let out = bits.length ? 'Drops ' + bits.join(', ') : 'Drops nothing — this one is for the satisfaction';
-  const frag = [r.prefix, r.subject].filter(Boolean);
+  const frag = [r.prefix, r.connector, r.subject].filter(Boolean);
   if(frag.length) out += ` &nbsp;·&nbsp; title: <b>${frag.map(esc).join('</b> … <b>')}</b>`;
   return out;
 }
@@ -734,11 +796,15 @@ function collect(m){
      not — you each get your own, so collecting late costs you nothing. */
   if(r.pet){ S().petTokens = (S().petTokens || 0) + 1; lines.push('a companion waiting on the pets page'); }
   if(r.item){
-    const pick = PQ.pickRewardItem(S(), r.itemId);
-    if(pick){
+    /* No named garment means one random roll, as before. Named ones are all
+       granted — they aren't split, so collecting late costs nothing. */
+    const wanted = r.itemIds.length ? r.itemIds : [null];
+    wanted.forEach(id => {
+      const pick = PQ.pickRewardItem(S(), id);
+      if(!pick) return;
       S().wardrobe[pick.id] = (S().wardrobe[pick.id] || 0) + 1;
       lines.push(pick.name.toLowerCase());
-    }
+    });
   }
 
   /* Fragments aren't halved — a word can't be split, and both of you should
@@ -748,6 +814,8 @@ function collect(m){
   PQ.addFragment(M(), 'subject', subject);
   const prefix = r0.prefix || PQ.randomPrefix(M());
   if(prefix) PQ.addFragment(M(), 'prefix', prefix);
+  const joiner = (r0.connector || '').trim();
+  if(joiner) PQ.addFragment(M(), 'connector', joiner);
 
   PQ.markCollected(M(), m.id, WHO);
   m.killed = m.killed || PQ.TODAY_KEY;
@@ -759,7 +827,7 @@ function collect(m){
   document.getElementById('dropTitle').textContent = `${m.name} falls`;
   document.getElementById('dropBody').textContent =
     'Your share: ' + (lines.length ? lines.join(', ') + '.' : 'nothing, but it is done.') +
-    (prefix ? ` New title words: "${prefix}" and "${subject}".` : ` New title word: "${subject}".`);
+    ' New title words: ' + [prefix, joiner, subject].filter(Boolean).map(w => `"${w}"`).join(', ') + '.';
   document.getElementById('dropModal').classList.add('open');
   save();
 }
