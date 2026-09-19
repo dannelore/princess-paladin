@@ -22,9 +22,10 @@ jobs:
           # build step, so a typo'd internal href is otherwise silent until
           # someone clicks it. External links are skipped here to avoid
           # flaky failures from rate limits or sites that block bots.
+          # mailto: links are skipped by default (that's --include-mail's
+          # job to turn back on), so there's no separate flag to pass here.
           args: >-
             --offline
             --no-progress
-            --exclude-mail
             '**/*.html'
           fail: true
