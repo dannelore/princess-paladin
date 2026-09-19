@@ -442,7 +442,25 @@ function damageMonster(ms, amount, who){
   m.hp = Math.max(0, m.hp - dealt);
   if(!ms.damage[m.id]) ms.damage[m.id] = {};
   ms.damage[m.id][who] = (ms.damage[m.id][who] || 0) + dealt;
-  if(m.hp === 0){ m.dead = true; m.killed = m.killed || TODAY_KEY; return m; }
+  if(m.hp === 0){
+    m.dead = true;
+    m.killed = m.killed || TODAY_KEY;
+    /* Snapshot this fight into history right now, before a future revive
+       can wipe ms.damage/ms.collected for a fresh round — this is the
+       only moment this particular battle's numbers are ever visible
+       again. Fighting the same monster later adds another entry instead
+       of overwriting this one, so the record only ever grows. */
+    if(!ms.history) ms.history = [];
+    ms.history.push({
+      id: 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2,7),
+      monsterId: m.id,
+      name: m.name,
+      maxHp: m.maxHp,
+      killedDate: m.killed,
+      damage: Object.assign({}, ms.damage[m.id])
+    });
+    return m;
+  }
   return null;
 }
 
@@ -845,7 +863,7 @@ function makeStore(firebase, who){
    ========================================================================== */
 function defaultMonsterState(){
   return { version:2, monsters:[], activeMonster:null, damage:{}, collected:{},
-           fragments:{ prefix:[], subject:[], connector:[] } };
+           fragments:{ prefix:[], subject:[], connector:[] }, history:[] };
 }
 
 function migrateMonsters(m){

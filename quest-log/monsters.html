@@ -101,6 +101,18 @@
   .m-reward b{ color:var(--ink); font-weight:500; }
   .m-actions{ display:flex; gap:6px; margin-top:12px; flex-wrap:wrap; }
 
+  /* battle history — one slim row per past kill, not a full card */
+  .history-row{
+    display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
+    background:var(--white); border-radius:var(--radius-sm);
+    padding:10px 14px; margin-bottom:6px;
+    box-shadow:0 1px 4px rgba(180,90,120,0.06);
+    border-left:3px solid var(--sage);
+  }
+  .history-name{ font-family:var(--font-serif); font-size:15px; font-weight:600; }
+  .history-date{ font-size:12px; color:var(--ink-soft); }
+  .history-dmg{ font-size:12px; color:var(--ink-soft); margin-left:auto; }
+
   .m-head-row{ display:flex; gap:12px; align-items:flex-start; }
   .m-thumb{
     width:56px; height:56px; flex-shrink:0; border-radius:var(--radius-sm);
@@ -449,6 +461,10 @@
 
   <h2 class="section-title">Defeated</h2>
   <div id="deadList"></div>
+
+  <h2 class="section-title">Battle history</h2>
+  <p class="hint" style="margin:-6px 0 10px;">Every kill, permanently — fighting a monster again (or deleting it) never removes its past battles from here.</p>
+  <div id="historyList"></div>
 
 </div>
 
@@ -802,6 +818,34 @@ function damageText(m){
   return parts.join(' &nbsp;·&nbsp; ');
 }
 
+/* Same shape as damageText(), but reads a history entry's frozen damage
+   snapshot instead of the live (and revive-able) M().damage. */
+function historyDamageText(entry){
+  const d = entry.damage || {};
+  const parts = Object.keys(PQ.PEOPLE).map(w => {
+    const dealt = d[w] || 0;
+    const pct = entry.maxHp ? Math.round(dealt / entry.maxHp * 100) : 0;
+    return `${PQ.PEOPLE[w].name} ${pct}%`;
+  });
+  return parts.join(' &nbsp;·&nbsp; ');
+}
+
+function renderHistory(){
+  const wrap = document.getElementById('historyList');
+  const entries = (M().history || []).slice().sort((a, b) => b.killedDate.localeCompare(a.killedDate));
+  if(!entries.length){
+    wrap.innerHTML = '<div class="card"><p class="empty-note">No battles fought yet.</p></div>';
+    return;
+  }
+  wrap.innerHTML = entries.map(e => `
+    <div class="history-row">
+      <div class="history-name">${esc(e.name)}</div>
+      <div class="history-date">${esc(PQ.fromKey(e.killedDate).toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' }))}</div>
+      <div class="history-dmg">${historyDamageText(e)}</div>
+    </div>
+  `).join('');
+}
+
 /* Claiming happens here so the board never has to know about drop tables. */
 function collect(m){
   const isFirst = PQ.collectorCount(M(), m.id) === 0;
@@ -949,6 +993,8 @@ function render(){
 
   if(!fallen.length) dead.innerHTML = '<div class="card"><p class="empty-note">None yet.</p></div>';
   fallen.forEach(m => dead.appendChild(monsterCard(m)));
+
+  renderHistory();
 
 }
 
