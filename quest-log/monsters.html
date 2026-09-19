@@ -735,8 +735,11 @@ function resetForm(){
   document.getElementById('mSave').textContent = 'Add monster';
   document.getElementById('mCancel').style.display = 'none';
 }
-function loadForm(m){
-  editingId = m.id;
+/* Shared by editing an existing monster and starting a duplicate of one —
+   both just mean "fill the form from this monster's data." What differs
+   is whether editingId gets set afterward (edit) or left alone (duplicate,
+   which saves as a brand new monster). */
+function populateFormFields(m){
   document.getElementById('mName').value = m.name;
   document.getElementById('mImage').value = m.image || '';
   syncImgPreview();
@@ -754,9 +757,24 @@ function loadForm(m){
   document.getElementById('mPrefix').value = m.reward.prefix || '';
   document.getElementById('mSubject').value = m.reward.subject || '';
   document.getElementById('mJoiner').value = m.reward.connector || '';
+  document.getElementById('mName').scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+function loadForm(m){
+  editingId = m.id;
+  populateFormFields(m);
   document.getElementById('mSave').textContent = 'Save changes';
   document.getElementById('mCancel').style.display = 'inline-block';
-  document.getElementById('mName').scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+/* editingId stays null, so hitting Save creates a new monster instead of
+   overwriting the one this was copied from — everything else about it
+   (HP, rewards, title fragments, picture) comes along, ready to tweak. */
+function duplicateForm(m){
+  editingId = null;
+  populateFormFields(m);
+  document.getElementById('mSave').textContent = 'Add monster';
+  document.getElementById('mCancel').style.display = 'inline-block';
 }
 
 document.getElementById('mCancel').onclick = () => { resetForm(); render(); };
@@ -955,6 +973,11 @@ function monsterCard(m){
     e.onclick = () => loadForm(m);
     actions.appendChild(e);
   }
+  const dup = document.createElement('button');
+  dup.className = 'btn quiet sm';
+  dup.textContent = 'Duplicate';
+  dup.onclick = () => duplicateForm(m);
+  actions.appendChild(dup);
   const d = document.createElement('button');
   d.className = 'btn quiet sm';
   d.textContent = 'Delete';
