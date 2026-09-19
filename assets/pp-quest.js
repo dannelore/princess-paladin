@@ -866,8 +866,21 @@ function splitReward(reward, isFirst){
     xp:   half(reward.xp),
     pet:  !!reward.pet,
     item: !!reward.item,
-    itemId: reward.itemId || null
+    itemIds: rewardItemIds(reward)
   };
+}
+
+/* A monster may name up to REWARD_ITEM_MAX specific garments. Older monsters
+   stored a single `itemId`, so that's folded in and still works. An empty
+   list with `item` ticked means one random garment, as it always did. */
+const REWARD_ITEM_MAX = 3;
+function rewardItemIds(reward){
+  const raw = Array.isArray(reward.itemIds)
+    ? reward.itemIds
+    : (reward.itemId ? [reward.itemId] : []);
+  const out = [];
+  raw.forEach(id => { if(id && !out.includes(id)) out.push(id); });
+  return out.slice(0, REWARD_ITEM_MAX);
 }
 
 /* Which garment a drop actually hands over.
@@ -1086,6 +1099,7 @@ return {
   defaultState, migrate, makeStore,
   PEOPLE, currentPerson, personLink, MONSTER_DOC,
   defaultMonsterState, makeMonsterStore, splitReward, pickRewardItem,
+  rewardItemIds, REWARD_ITEM_MAX,
   hasCollected, collectorCount, markCollected,
   isScheduled, repeatSummary, makeCtx, isVacation, vacationActive,
   ageMultiplier, getStreak, taskValue, subtaskValue, bonusValue,
