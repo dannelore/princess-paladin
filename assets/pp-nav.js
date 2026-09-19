@@ -65,17 +65,22 @@ window.PPNav = (function(){
     },
 
     {
+      key: 'quest-log', label: 'Quest Log', href: '/quest-log/', nav: true,
+      sections: [
+        { name:'Quest Log', href:'/quest-log/', indexLabel:'Quest Board',
+          note:'Dailies, to-dos and projects', pages:[
+          { label:'Pets',         href:'/quest-log/pets.html',     note:'Companions, closet and shop' },
+          { label:'Monsters',     href:'/quest-log/monsters.html', note:'Shared HP bar and drop tables' },
+          { label:'Fitting Room', href:'/quest-log/fit.html',      note:'Tune garment fit per stage' }
+        ]}
+      ]
+    },
+
+    {
       key: 'dannelore', label: 'Princess', href: '/dannelore/', nav: true,
       sections: [
         { name:'Dannelore', href:'/dannelore/', indexLabel:'Dannelore',
           note:"Danni's landing page", pages:[] },
-
-        { name:'Quest Log', href:'/dannelore/quest-log/', indexLabel:'Quest Board',
-          note:'Dailies, to-dos and projects', pages:[
-          { label:'Pets',         href:'/dannelore/quest-log/pets.html',     note:'Companions, closet and shop' },
-          { label:'Monsters',     href:'/dannelore/quest-log/monsters.html', note:'Shared HP bar and drop tables' },
-          { label:'Fitting Room', href:'/dannelore/quest-log/fit.html',      note:'Tune garment fit per stage' }
-        ]},
 
         { name:'Self-Care', href:'/dannelore/self-care/', indexLabel:'Self-Care',
           note:'The three routines', pages:[
@@ -208,7 +213,7 @@ window.PPNav = (function(){
   }
 
   /* The section you're standing in. Longest matching href wins, so
-     /dannelore/quest-log/pets.html resolves to Quest Log, not Dannelore. */
+     /dannelore/rp/cast.html resolves to The Writing Room, not Dannelore. */
   function currentSection(folder){
     var path = here(), best = null;
     (folder.sections || []).forEach(function(sec){
@@ -223,7 +228,7 @@ window.PPNav = (function(){
   }
 
   /* Which folder are we standing in? Longest matching prefix wins, so
-     /dannelore/quest-log/pets.html lands on Princess, not Home. */
+     /dannelore/rp/cast.html lands on Princess, not Home. */
   function currentFolder(){
     var path = here(), best = null;
     DIRECTORY.forEach(function(f){
@@ -248,12 +253,12 @@ window.PPNav = (function(){
 
   /* Brendon's log is the same set of files with ?who=brendon on the end.
      Losing that on a nav click would drop him into Danni's board, so it
-     rides along on anything under /dannelore/quest-log/. */
+     rides along on anything under /quest-log/. */
   function withWho(href){
     var who = '';
     try{ who = new URLSearchParams(location.search).get('who') || ''; }catch(e){}
     if(!who || who.toLowerCase() !== 'brendon') return href;
-    if(normalize(href).indexOf('/dannelore/quest-log') !== 0) return href;
+    if(normalize(href).indexOf('/quest-log') !== 0) return href;
     return href + (href.indexOf('?') > -1 ? '&' : '?') + 'who=brendon';
   }
 
