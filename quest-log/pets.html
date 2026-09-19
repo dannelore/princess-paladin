@@ -877,6 +877,9 @@ function applyLook(pet, field, value){
   if(pet[field] === value) return;
   const cost = lookCost(pet);
   if(cost && S().meowBucks < cost) return;
+  /* Same rule as the wardrobe: never let Meow Bucks leave the account on a
+     single click without asking first. */
+  if(cost && !confirm(`Change ${pet.name || 'this pet'}'s look for ${cost} Meow Bucks? You have ${S().meowBucks}.`)) return;
   if(cost) S().meowBucks -= cost;
   pet[field] = value;
   save();

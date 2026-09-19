@@ -391,10 +391,6 @@
     <h3 style="font-family:var(--font-serif);font-size:15px;font-weight:600;margin:18px 0 8px;">Drops</h3>
     <div class="grid3">
       <div>
-        <label class="f" for="mGold">Gold</label>
-        <input type="number" id="mGold" min="0" value="0">
-      </div>
-      <div>
         <label class="f" for="mMeow">Meow Bucks</label>
         <input type="number" id="mMeow" min="0" value="500">
       </div>
@@ -431,16 +427,16 @@
         <input type="text" id="mPrefix" placeholder="Slayer" maxlength="24">
       </div>
       <div>
-        <label class="f" for="mSubject">Subject words</label>
-        <input type="text" id="mSubject" placeholder="the Laundry Beast" maxlength="32">
-      </div>
-      <div>
         <label class="f" for="mJoiner">Joining word</label>
         <input type="text" id="mJoiner" placeholder="against" maxlength="16">
       </div>
+      <div>
+        <label class="f" for="mSubject">Subject words</label>
+        <input type="text" id="mSubject" placeholder="the Laundry Beast" maxlength="32">
+      </div>
     </div>
     <p class="hint" style="margin:8px 0 0;">Both go into the shared pool, so any pet can wear them. Leave the subject blank and the monster's own name is used. Leave the prefix blank and one is rolled at random. A joining word is optional &mdash; it just adds to the shared list.</p>
-    <p class="hint" style="margin:10px 0 0;">Gold drops come out of the weekly budget, so a fat payout quietly lowers per-task rates that week. Meow Bucks and XP don't.</p>
+    <p class="hint" style="margin:10px 0 0;">Meow Bucks and XP don't touch the weekly task-rate budget. XP also pays out double in Meow Bucks on its own, on top of whatever's set here.</p>
 
     <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
       <button class="btn quiet" id="mCancel" style="display:none;">Cancel edit</button>
@@ -601,13 +597,42 @@ function lookupMonsterImage(q){
           merged.push(row);
         });
       }
-      showMonsterImageResults(merged.slice(0, M_RESULT_MAX));
+      const ranked = rankByRelevance(merged, q);
+      const isFallback = ranked === merged && merged.length > 0 && mQueryTokens(q).length > 0
+        && merged.every(r => mRelevanceScore(r.caption, mQueryTokens(q)) === 0);
+      showMonsterImageResults(ranked.slice(0, M_RESULT_MAX), isFallback);
     });
+}
+
+/* Commons and Openverse both do their own loose full-text matching, which
+   for a made-up query like "fuzzy monster" happily returns anything that
+   matches just ONE of those words in any context — astronomy photos of
+   "fuzzy" comets, a wiki page about "fuzzy" classification, and so on,
+   with no real connection to the other word. Score by how many distinct
+   query words actually show up in the caption, and drop zero-overlap
+   results rather than trusting the API's own ranking. */
+const M_STOPWORDS = new Set(['a','an','the','of','and','or','in','on','at','for','to','with']);
+function mQueryTokens(q){
+  return [...new Set(String(q).toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length > 2 && !M_STOPWORDS.has(t)))];
+}
+function mRelevanceScore(caption, queryTokens){
+  const cap = String(caption || '').toLowerCase();
+  return queryTokens.filter(t => cap.includes(t)).length;
+}
+function rankByRelevance(rows, q){
+  const tokens = mQueryTokens(q);
+  if(!tokens.length) return rows;
+  const scored = rows.map(r => ({ row: r, score: mRelevanceScore(r.caption, tokens) }));
+  const relevant = scored.filter(s => s.score > 0).sort((a, b) => b.score - a.score).map(s => s.row);
+  /* If literally nothing matched a query word, showing the unfiltered list
+     is more useful than showing nothing — but say so, so it doesn't read
+     as a confident answer. */
+  return relevant.length ? relevant : rows;
 }
 
 function cartoonOnlyNow(){ return document.getElementById('mImgCartoon').checked; }
 
-function showMonsterImageResults(rows){
+function showMonsterImageResults(rows, isFallback){
   const box = document.getElementById('mImgResults');
   const hint = document.getElementById('mImgHint');
   box.innerHTML = '';
@@ -618,7 +643,9 @@ function showMonsterImageResults(rows){
     box.classList.remove('open');
     return;
   }
-  hint.textContent = `${rows.length} found — pick one:`;
+  hint.textContent = isFallback
+    ? `Nothing matched closely, but here's what turned up:`
+    : `${rows.length} found — pick one:`;
   rows.forEach(r => {
     const b = document.createElement('button');
     b.type = 'button';
@@ -654,7 +681,6 @@ function readForm(){
     image: document.getElementById('mImage').value.trim(),
     maxHp: Math.max(10, parseInt(document.getElementById('mHp').value) || 10),
     reward: {
-      gold: Math.max(0, parseInt(document.getElementById('mGold').value) || 0),
       meow: Math.max(0, parseInt(document.getElementById('mMeow').value) || 0),
       xp:   Math.max(0, parseInt(document.getElementById('mXp').value) || 0),
       pet:  document.getElementById('mPet').checked,
@@ -674,7 +700,6 @@ function resetForm(){
   document.getElementById('mImgResults').innerHTML = '';
   document.getElementById('mImgResults').classList.remove('open');
   document.getElementById('mHp').value = 800;
-  document.getElementById('mGold').value = 0;
   document.getElementById('mMeow').value = 500;
   document.getElementById('mXp').value = 200;
   document.getElementById('mPet').checked = false;
@@ -697,7 +722,6 @@ function loadForm(m){
   document.getElementById('mImgResults').innerHTML = '';
   document.getElementById('mImgResults').classList.remove('open');
   document.getElementById('mHp').value = m.maxHp;
-  document.getElementById('mGold').value = m.reward.gold || 0;
   document.getElementById('mMeow').value = m.reward.meow || 0;
   document.getElementById('mXp').value = m.reward.xp || 0;
   document.getElementById('mPet').checked = !!m.reward.pet;
@@ -747,7 +771,6 @@ document.getElementById('mSave').onclick = () => {
 function rewardText(m){
   const r = m.reward || {};
   const bits = [];
-  if(r.gold) bits.push(`<b>${r.gold}g</b>`);
   if(r.meow) bits.push(`<b>${r.meow}</b> Meow Bucks`);
   if(r.xp)   bits.push(`<b>${r.xp}</b> XP`);
   if(r.pet)  bits.push('a <b>new companion</b>');
@@ -778,14 +801,9 @@ function collect(m){
   const isFirst = PQ.collectorCount(M(), m.id) === 0;
   const r = PQ.splitReward(m.reward || {}, isFirst);
   const lines = [];
-  if(r.gold){
-    S().gold += r.gold;
-    PQ.ledgerWeek(S()).monsters += r.gold * 100;
-    lines.push(`${r.gold} gold`);
-  }
   if(r.meow){ S().meowBucks = (S().meowBucks || 0) + r.meow; lines.push(`${r.meow} Meow Bucks`); }
   if(r.xp){ PQ.addAccountXP(S(), r.xp); PQ.awardPetXP(S(), r.xp); lines.push(`${r.xp} XP`); }
-  /* Gold, Meow Bucks and XP are halved. The companion and the garment are
+  /* Meow Bucks and XP are halved. The companion and the garment are
      not — you each get your own, so collecting late costs you nothing. */
   if(r.pet){ S().petTokens = (S().petTokens || 0) + 1; lines.push('a companion waiting on the pets page'); }
   if(r.item){
