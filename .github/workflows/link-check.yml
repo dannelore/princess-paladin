@@ -24,8 +24,13 @@ jobs:
           # flaky failures from rate limits or sites that block bots.
           # mailto: links are skipped by default (that's --include-mail's
           # job to turn back on), so there's no separate flag to pass here.
+          # --root-dir: every href on this site is root-relative
+          # (e.g. /assets/pp.css) rather than page-relative, so offline mode
+          # needs to be told what "/" maps to on disk — without it, lychee
+          # can't resolve ANY of them and fails the whole site at once.
           args: >-
             --offline
             --no-progress
+            --root-dir "$GITHUB_WORKSPACE"
             '**/*.html'
           fail: true
