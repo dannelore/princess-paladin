@@ -119,6 +119,41 @@ const CATALOG = [
 
 function catalogItem(id){ return CATALOG.find(i => i.id === id) || null; }
 
+/* ---------- custom wardrobe items ----------
+   Items added through the Fitting Room's upload flow live in Firestore
+   rather than in this file, so adding one never needs a code change or a
+   deploy. Loaded once per page and merged straight into CATALOG, so every
+   existing lookup (catalogItem, itemsForSlot, the shop, the closet) just
+   works without knowing the difference. */
+const WARDROBE_COLLECTION = 'wardrobeCatalog';
+let customWardrobeLoaded = false;
+
+async function loadCustomWardrobe(firebase){
+  if(customWardrobeLoaded) return;
+  customWardrobeLoaded = true;
+  try{
+    const db = firebase.firestore();
+    const snap = await db.collection(WARDROBE_COLLECTION).get();
+    snap.forEach(doc => {
+      const item = doc.data();
+      if(item && item.id && !catalogItem(item.id)) CATALOG.push(item);
+    });
+  }catch(err){
+    console.error('Custom wardrobe load failed:', err);
+  }
+}
+
+/* Adds a new item or updates an existing one — same call either way, since
+   Firestore's set() overwrites a document that's already there. Also
+   updates the in-memory CATALOG immediately so the page that just created
+   it doesn't need a reload to see it. */
+async function saveCustomWardrobeItem(firebase, item){
+  const db = firebase.firestore();
+  await db.collection(WARDROBE_COLLECTION).doc(item.id).set(item);
+  const i = CATALOG.findIndex(c => c.id === item.id);
+  if(i >= 0) CATALOG[i] = item; else CATALOG.push(item);
+}
+
 /* Items a given pet can actually see in the shop right now.
 
    `questOnly` items are never for sale — they arrive as a named drop from a
@@ -505,9 +540,14 @@ function eyeImageUrl(pet){
 /* Takes an item id or the item itself. An entry with `art` uses that as its
    filename; everything else falls back to the id, so nothing that already
    worked needs touching. Resolving it here means the four callers can't drift
-   apart, and renaming a file only ever changes the catalog. */
+   apart, and renaming a file only ever changes the catalog.
+
+   A custom item uploaded through the Fitting Room carries its image inline
+   as a data URI (there's no file on disk to point at), so that's returned
+   as-is instead of building a path. */
 function itemImageUrl(idOrItem){
   const item = (typeof idOrItem === 'string') ? catalogItem(idOrItem) : idOrItem;
+  if(item && item.image) return item.image;
   const file = (item && (item.art || item.id)) || idOrItem;
   return `${ITEM_ART}${file}.png`;
 }
@@ -1116,7 +1156,8 @@ return {
   petsUsingFragment, FRAGMENT_KINDS, randomPrefix, titleText,
   activeMonster, damageMonster, reviveMonster,
   rollPetOptions, makePet, placePet, petSvg,
-  catalogItem, itemsForSlot
+  catalogItem, itemsForSlot,
+  WARDROBE_COLLECTION, loadCustomWardrobe, saveCustomWardrobeItem
 };
 
 })();

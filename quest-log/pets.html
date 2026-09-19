@@ -1332,7 +1332,7 @@ document.querySelectorAll('a[href^="/quest-log"]').forEach(a => {
   a.href = PQ.personLink(a.getAttribute('href'));
 });
 
-Promise.all([store.load(), monsterStore.load()]).then(() => {
+Promise.all([store.load(), monsterStore.load(), PQ.loadCustomWardrobe(firebase)]).then(() => {
   PQ.settleHunger(S(), PQ.makeCtx(S()));
   /* One-time: this person's privately-earned words join the shared list. */
   PQ.absorbFragments(M(), S());

@@ -285,7 +285,7 @@
 
 <div class="wrap">
   <h1>Fitting room</h1>
-  <p class="lede">Drag a garment onto the body until it sits right, then copy the numbers at the bottom and send them to me. Nothing here is saved and nothing touches your quest log — it only prints coordinates.</p>
+  <p class="lede">Upload a wardrobe item, name it, and drag it onto the body until it sits right — it saves straight to the shop, no code or deploy needed. Existing built-in items can still be repositioned here too; those print coordinates to paste into the code instead, since they don't live in Firestore.</p>
 
   <div class="cols">
     <div>
@@ -313,20 +313,22 @@
         <select id="itemSel"></select>
 
         <div id="newItemFields" style="display:none;">
-          <label class="f" for="newId">File name</label>
-          <input type="text" id="newId" placeholder="hat-pumpkin" autocomplete="off">
-          <p class="hint" style="margin:4px 0 0;">Becomes <code>/assets/wardrobe/&lt;name&gt;.png</code>. Lowercase, hyphens, slot prefix first — <code>hat-</code>, <code>top-</code>, <code>bot-</code>, <code>shoe-</code>, <code>held-</code>, <code>bg-</code>.</p>
-
           <label class="f" for="newName">Display name</label>
           <input type="text" id="newName" placeholder="Pumpkin hat" autocomplete="off">
 
           <label class="f" for="newSlot">Slot</label>
           <select id="newSlot"></select>
+
+          <label class="f" for="newPrice">Price (Meow Bucks)</label>
+          <input type="number" id="newPrice" min="0" value="600">
+
+          <label class="f" for="newUnlock">Unlocks at pet level</label>
+          <input type="number" id="newUnlock" min="1" value="1">
         </div>
 
         <label class="f" for="fileIn">Garment image</label>
         <input type="file" id="fileIn" accept="image/png,image/webp">
-        <p class="hint" style="margin:6px 0 0;">Pick the file off your computer — you don't have to upload it to the repo first.</p>
+        <p class="hint" id="fileHint" style="margin:6px 0 0;">Transparent PNG, same 2:3 frame as the body. Resized and compressed automatically before saving.</p>
 
         <label class="f">Width <span id="sizeOut" class="hint"></span></label>
         <input type="range" id="sizeRange" min="5" max="160" step="0.5" value="60">
@@ -345,25 +347,42 @@
         <p class="hint" style="margin:10px 0 0;">Arrow keys nudge. Hold shift for bigger steps.</p>
       </div>
 
-      <div class="card" style="margin-top:14px;">
+      <div class="card" style="margin-top:14px;" id="saveCard">
+        <label class="f" style="margin-top:0;">Save to the shop</label>
+        <p class="hint" id="saveHint" style="margin:0 0 10px;">Position isn't required — leave a stage unset and it falls back to a sensible default. Save any time.</p>
+        <div class="btnrow">
+          <button class="btn" id="saveBtn">Save wardrobe item</button>
+          <button class="btn quiet" id="clearBtn">Clear positions</button>
+        </div>
+        <p class="hint" id="saveStatus" style="margin:10px 0 0;"></p>
+      </div>
+
+      <div class="card" style="margin-top:14px;display:none;" id="codeCard">
         <label class="f" style="margin-top:0;">Numbers to send me</label>
         <pre id="out">Nothing recorded yet.</pre>
         <div class="btnrow">
           <button class="btn quiet" id="copyBtn">Copy</button>
-          <button class="btn quiet" id="clearBtn">Clear all</button>
+          <button class="btn quiet" id="clearBtnCode">Clear all</button>
         </div>
       </div>
     </div>
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-firebase.js"></script>
 <script src="/assets/pp-quest.js"></script>
 <script>
+const firebaseConfig = window.PPFirebaseConfig;
+firebase.initializeApp(firebaseConfig);
+
 const STAGES = ['child','teen','adult'];   /* only the standing stages wear things */
 let stage = 'child';
 let species = 'cat';
 let itemId = null;
 let objectUrl = null;
+let pendingImageData = null;   /* data URI for a new/replacement upload, set once the file is read+compressed */
 const recorded = {};        /* itemId -> { stage -> {x,y,w,r,behind} } */
 
 const stageEl   = document.getElementById('stage');
@@ -373,21 +392,25 @@ const bodyImg   = document.getElementById('bodyImg');
 
 let pos = { x:50, y:50, w:60, h:0, r:0 };
 
-/* ---------- setup ---------- */
-/* Items already in the catalog are listed for convenience, but the whole
-   point of this page is fitting garments that AREN'T in the catalog yet —
-   you fit first, then paste the numbers into CATALOG. So there's always a
-   "new item" option with a free-text id. */
+/* ---------- setup ----------
+   Built-in items (from pp-quest.js's hardcoded CATALOG) print a fit
+   snippet to paste into code, same as always — there's no Firestore doc
+   to save them to. Custom items (uploaded here, or on a previous visit)
+   are told apart by having an `image` data URI instead of a static file,
+   and can be renamed/repriced/repositioned and saved directly. */
 const NEW_ITEM = '__new__';
-const customNames = {};     /* id -> display name, for anything not in CATALOG */
 
-function currentName(id){
-  const c = PQ.CATALOG.find(i => i.id === id);
-  return c ? c.name : (customNames[id] || '?');
+function isCustomItem(id){
+  const item = PQ.catalogItem(id);
+  return !!(item && item.image);
 }
 
-(function(){
+function uid(){ return 'x_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function populateItemSelect(){
   const sel = document.getElementById('itemSel');
+  const prevValue = sel.value;
+  sel.innerHTML = '';
 
   const neu = document.createElement('option');
   neu.value = NEW_ITEM;
@@ -395,13 +418,20 @@ function currentName(id){
   sel.appendChild(neu);
 
   /* Plain-colour backgrounds have no art and nothing to position, so they
-     don't belong in a fitting list. */
+     don't belong in this list. */
   PQ.CATALOG.filter(i => !i.color).forEach(i => {
     const o = document.createElement('option');
     o.value = i.id;
-    o.textContent = `${i.name} (${i.slot})`;
+    o.textContent = `${i.name} (${i.slot})` + (i.image ? ' · yours' : '');
     sel.appendChild(o);
   });
+
+  if(prevValue && [...sel.options].some(o => o.value === prevValue)) sel.value = prevValue;
+}
+
+(function(){
+  const sel = document.getElementById('itemSel');
+  populateItemSelect();
 
   const slotSel = document.getElementById('newSlot');
   PQ.SLOTS.forEach(s => {
@@ -411,31 +441,44 @@ function currentName(id){
     slotSel.appendChild(o);
   });
 
-  const fields = document.getElementById('newItemFields');
-  const idIn   = document.getElementById('newId');
-  const nameIn = document.getElementById('newName');
+  const fields    = document.getElementById('newItemFields');
+  const nameIn    = document.getElementById('newName');
+  const priceIn   = document.getElementById('newPrice');
+  const unlockIn  = document.getElementById('newUnlock');
+  const saveCard  = document.getElementById('saveCard');
+  const codeCard  = document.getElementById('codeCard');
 
-  /* Keep the typed id tidy on the way in — this becomes a filename. */
-  function readNew(){
-    const clean = idIn.value.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
-    if(clean !== idIn.value) idIn.value = clean;
-    itemId = clean || null;
-    if(itemId) customNames[itemId] = nameIn.value.trim() || clean;
+  function selectItem(){
+    const val = sel.value;
+    pendingImageData = null;
+    document.getElementById('fileIn').value = '';
+
+    if(val === NEW_ITEM){
+      itemId = uid();
+      nameIn.value = ''; priceIn.value = 600; unlockIn.value = 1; slotSel.value = 'hat';
+      fields.style.display = '';
+      saveCard.style.display = ''; codeCard.style.display = 'none';
+      document.getElementById('saveStatus').textContent = '';
+    } else if(isCustomItem(val)){
+      const item = PQ.catalogItem(val);
+      itemId = val;
+      nameIn.value = item.name; priceIn.value = item.price; unlockIn.value = item.unlock; slotSel.value = item.slot;
+      pendingImageData = item.image;
+      fields.style.display = '';
+      saveCard.style.display = ''; codeCard.style.display = 'none';
+      document.getElementById('saveStatus').textContent = '';
+    } else {
+      itemId = val;
+      fields.style.display = 'none';
+      saveCard.style.display = 'none'; codeCard.style.display = '';
+    }
     renderOut(); loadRecorded();
   }
-  idIn.oninput = readNew;
-  nameIn.oninput = readNew;
-
-  function apply(){
-    const isNew = sel.value === NEW_ITEM;
-    fields.style.display = isNew ? '' : 'none';
-    if(isNew) readNew();
-    else { itemId = sel.value; renderOut(); loadRecorded(); }
-  }
-  sel.onchange = apply;
+  sel.onchange = selectItem;
+  window.selectItem = selectItem;   /* re-run after custom items finish loading */
 
   sel.value = NEW_ITEM;
-  apply();
+  selectItem();
 })();
 
 function renderChips(){
@@ -464,7 +507,29 @@ function loadBody(){
 
 document.getElementById('speciesSel').onchange = e => { species = e.target.value; loadBody(); };
 
-document.getElementById('fileIn').onchange = e => {
+/* Resize to a sane max dimension and re-encode as WebP (keeps transparency,
+   compresses far better than PNG) so an upload from a phone camera or a
+   big source file doesn't balloon the Firestore document it lands in. */
+const MAX_ITEM_DIM = 600;
+function compressImage(file){
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, MAX_ITEM_DIM / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/webp', 0.85));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read that image')); };
+    img.src = url;
+  });
+}
+
+document.getElementById('fileIn').onchange = async e => {
   const f = e.target.files[0];
   if(!f) return;
   if(objectUrl) URL.revokeObjectURL(objectUrl);
@@ -472,6 +537,16 @@ document.getElementById('fileIn').onchange = e => {
   garmentImg.src = objectUrl;
   garmentEl.style.display = 'block';
   apply();
+
+  const hint = document.getElementById('fileHint');
+  hint.textContent = 'Compressing…';
+  try{
+    pendingImageData = await compressImage(f);
+    hint.textContent = `Ready — about ${Math.round(pendingImageData.length/1024)} KB once saved.`;
+  }catch(err){
+    hint.textContent = 'Could not read that image — try a different file.';
+    pendingImageData = null;
+  }
 };
 
 /* ---------- positioning ---------- */
@@ -553,32 +628,25 @@ function loadRecorded(){
   renderChips();
 }
 
+/* Built-in items only — custom items save their fit directly instead of
+   printing it. Scoped to whichever item is currently selected, since
+   that's the only one the code card can be showing. */
 function renderOut(){
-  const keys = Object.keys(recorded);
-  if(!keys.length){ document.getElementById('out').textContent = 'Nothing recorded yet.'; return; }
-  const lines = keys.map(id => {
-    const item = PQ.CATALOG.find(i => i.id === id);
-    const per = recorded[id];
-    const inner = Object.keys(per).map(s => {
-      const f = per[s];
-      const bits = [`x:${f.x}`, `y:${f.y}`, `w:${f.w}`];
-      if(f.h) bits.push(`h:${f.h}`);
-      if(f.r) bits.push(`r:${f.r}`);
-      if(f.behind) bits.push('behind:true');
-      return `    ${s}:{ ${bits.join(', ')} }`;
-    }).join(',\n');
-
-    /* Already in the catalog → just the fit block to paste over the old one.
-       Not in the catalog → the whole line, ready to drop into CATALOG.
-       Price and unlock are placeholders; set them to whatever you want. */
-    if(item) return `${id}  (${item.name})\n  fit:{\n${inner}\n  }`;
-
-    const slot = document.getElementById('newSlot').value;
-    return `${id}  (${currentName(id)}) — NEW, add to CATALOG in pp-quest.js:\n`
-         + `{ id:'${id}', slot:'${slot}', name:'${currentName(id)}', price:600, unlock:1, fit:{\n`
-         + inner.replace(/^ {4}/gm, '    ') + `\n} },`;
-  });
-  document.getElementById('out').textContent = lines.join('\n\n');
+  const item = PQ.catalogItem(itemId);
+  const per = recorded[itemId];
+  if(!item || !per || !Object.keys(per).length){
+    document.getElementById('out').textContent = 'Nothing recorded yet.';
+    return;
+  }
+  const inner = Object.keys(per).map(s => {
+    const f = per[s];
+    const bits = [`x:${f.x}`, `y:${f.y}`, `w:${f.w}`];
+    if(f.h) bits.push(`h:${f.h}`);
+    if(f.r) bits.push(`r:${f.r}`);
+    if(f.behind) bits.push('behind:true');
+    return `    ${s}:{ ${bits.join(', ')} }`;
+  }).join(',\n');
+  document.getElementById('out').textContent = `${itemId}  (${item.name})\n  fit:{\n${inner}\n  }`;
 }
 
 document.getElementById('copyBtn').onclick = () => {
@@ -587,10 +655,58 @@ document.getElementById('copyBtn').onclick = () => {
   b.textContent = 'Copied';
   setTimeout(() => b.textContent = 'Copy', 1400);
 };
+/* Scoped to the item on screen, not every item touched this session —
+   the save card is about "this thing I'm making," not a global reset. */
 document.getElementById('clearBtn').onclick = () => {
+  if(!recorded[itemId]) return;
+  if(!confirm('Clear recorded positions for this item?')) return;
+  delete recorded[itemId];
+  renderChips(); renderOut();
+};
+document.getElementById('clearBtnCode').onclick = () => {
   if(!confirm('Clear every recorded position?')) return;
   Object.keys(recorded).forEach(k => delete recorded[k]);
   renderChips(); renderOut();
+};
+
+/* ---------- save ---------- */
+document.getElementById('saveBtn').onclick = async () => {
+  const name   = document.getElementById('newName').value.trim();
+  const slot   = document.getElementById('newSlot').value;
+  const price  = Math.max(0, parseInt(document.getElementById('newPrice').value) || 0);
+  const unlock = Math.max(1, parseInt(document.getElementById('newUnlock').value) || 1);
+  const status = document.getElementById('saveStatus');
+  const btn    = document.getElementById('saveBtn');
+
+  if(!name){ status.textContent = 'Give it a name first.'; return; }
+  if(!pendingImageData){ status.textContent = 'Pick an image first.'; return; }
+
+  const fit = {};
+  const per = recorded[itemId] || {};
+  STAGES.forEach(s => {
+    if(!per[s]) return;
+    const f = { x: per[s].x, y: per[s].y, w: per[s].w };
+    if(per[s].h) f.h = per[s].h;
+    if(per[s].r) f.r = per[s].r;
+    if(per[s].behind) f.behind = true;
+    fit[s] = f;
+  });
+
+  const item = { id: itemId, slot, name, price, unlock, image: pendingImageData };
+  if(Object.keys(fit).length) item.fit = fit;
+
+  status.textContent = 'Saving…';
+  btn.disabled = true;
+  try{
+    await PQ.saveCustomWardrobeItem(firebase, item);
+    status.textContent = `Saved — "${name}" is in the shop now.`;
+    populateItemSelect();
+    document.getElementById('itemSel').value = itemId;
+  }catch(err){
+    console.error('Wardrobe save failed:', err);
+    status.textContent = 'Save failed — check your connection and try again.';
+  }
+  btn.disabled = false;
 };
 
 document.querySelectorAll('a[href^="/quest-log"]').forEach(a => {
@@ -600,6 +716,14 @@ document.querySelectorAll('a[href^="/quest-log"]').forEach(a => {
 loadBody();
 renderChips();
 apply();
+
+/* Custom items aren't in CATALOG until this resolves, so the dropdown and
+   fields are re-synced afterward — otherwise anything uploaded on a
+   previous visit wouldn't show up here to be re-edited. */
+PQ.loadCustomWardrobe(firebase).then(() => {
+  populateItemSelect();
+  if(window.selectItem) window.selectItem();
+});
 </script>
 <script src="/assets/pp-nav.js" defer></script>
 </body>
