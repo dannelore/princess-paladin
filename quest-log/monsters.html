@@ -39,6 +39,21 @@
   .hint{ font-size:12px; color:var(--ink-soft); font-style:italic; }
   .empty-note{ font-size:12.5px; color:var(--ink-soft); font-style:italic; padding:14px 0; text-align:center; }
 
+  /* ---------- collapsible sections ----------
+     Only this page's section headings get the toggle — .section-title
+     itself is shared across the whole quest log, so the click behaviour is
+     opt-in via this modifier rather than changed globally. */
+  .section-title.collapsible{
+    display:flex; align-items:center; gap:8px;
+    cursor:pointer; user-select:none;
+  }
+  .section-chevron{
+    display:inline-block; font-size:13px; color:var(--ink-soft);
+    transition:transform .15s ease;
+  }
+  .section-title.collapsible[aria-expanded="false"] .section-chevron{ transform:rotate(-90deg); }
+  .section-body.collapsed{ display:none; }
+
   .btn{
     font-family:var(--font-body); font-size:13px; font-weight:500;
     background:var(--accent); color:var(--white); border:none;
@@ -362,7 +377,8 @@
 
 <div class="wrap">
 
-  <h2 class="section-title">Build one</h2>
+  <h2 class="section-title collapsible" data-section="build"><span class="section-chevron">▾</span> Build one</h2>
+  <div class="section-body" id="buildBody">
   <div class="card">
     <div class="grid2">
       <div>
@@ -455,16 +471,23 @@
       <button class="btn" id="mSave">Add monster</button>
     </div>
   </div>
+  </div>
 
-  <h2 class="section-title">In the field</h2>
+  <h2 class="section-title collapsible" data-section="live"><span class="section-chevron">▾</span> In the field</h2>
+  <div class="section-body" id="liveBody">
   <div id="liveList"></div>
+  </div>
 
-  <h2 class="section-title">Defeated</h2>
+  <h2 class="section-title collapsible" data-section="dead"><span class="section-chevron">▾</span> Defeated</h2>
+  <div class="section-body" id="deadBody">
   <div id="deadList"></div>
+  </div>
 
-  <h2 class="section-title">Battle history</h2>
+  <h2 class="section-title collapsible" data-section="history"><span class="section-chevron">▾</span> Battle history</h2>
+  <div class="section-body" id="historyBody">
   <p class="hint" style="margin:-6px 0 10px;">Every kill, permanently — fighting a monster again (or deleting it) never removes its past battles from here.</p>
   <div id="historyList"></div>
+  </div>
 
 </div>
 
@@ -497,6 +520,39 @@ const save = () => { store.save(); monsterStore.save(); render(); };
 function esc(s){ const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
 
 let editingId = null;
+
+/* ---------- collapsible sections ----------
+   Every section can be folded away — handy once "Defeated" or "Battle
+   history" gets long. Which sections are open is remembered per browser,
+   so it doesn't re-expand everything on the next visit. */
+const SECTION_STATE_KEY = 'pp_monsters_sections';
+function loadSectionState(){
+  try{ return JSON.parse(localStorage.getItem(SECTION_STATE_KEY)) || {}; }catch(e){ return {}; }
+}
+function setSectionOpen(key, open){
+  const header = document.querySelector(`.section-title[data-section="${key}"]`);
+  const body = document.getElementById(key + 'Body');
+  if(!header || !body) return;
+  body.classList.toggle('collapsed', !open);
+  header.setAttribute('aria-expanded', open ? 'true' : 'false');
+  const st = loadSectionState();
+  st[key] = open;
+  try{ localStorage.setItem(SECTION_STATE_KEY, JSON.stringify(st)); }catch(e){}
+}
+function expandSection(key){ setSectionOpen(key, true); }
+
+document.querySelectorAll('.section-title.collapsible').forEach(header => {
+  const key = header.dataset.section;
+  header.setAttribute('role', 'button');
+  header.setAttribute('tabindex', '0');
+  setSectionOpen(key, loadSectionState()[key] !== false);
+  header.addEventListener('click', () => {
+    setSectionOpen(key, header.getAttribute('aria-expanded') === 'false');
+  });
+  header.addEventListener('keydown', e => {
+    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); header.click(); }
+  });
+});
 
 /* ---------- wardrobe drop picker ----------
    Grouped by slot so a long catalog stays readable. "Something random" keeps
@@ -762,6 +818,7 @@ function populateFormFields(m){
 
 function loadForm(m){
   editingId = m.id;
+  expandSection('build');
   populateFormFields(m);
   document.getElementById('mSave').textContent = 'Save changes';
   document.getElementById('mCancel').style.display = 'inline-block';
@@ -772,6 +829,7 @@ function loadForm(m){
    (HP, rewards, title fragments, picture) comes along, ready to tweak. */
 function duplicateForm(m){
   editingId = null;
+  expandSection('build');
   populateFormFields(m);
   document.getElementById('mSave').textContent = 'Add monster';
   document.getElementById('mCancel').style.display = 'inline-block';
