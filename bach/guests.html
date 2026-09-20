@@ -83,6 +83,8 @@
 
   .room-night{margin-bottom:1.2rem;}
   .room-night h3{font-family:'IM Fell English SC',serif;color:var(--ink);font-size:.95rem;margin:0 0 .5rem;}
+  .bunk-count{font-family:'EB Garamond',serif;font-weight:400;font-size:.85rem;color:rgba(42,32,19,.6);}
+  .guest-check-disabled{opacity:.4;}
   .room-row{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;padding:.5rem 0;border-bottom:1px solid rgba(42,32,19,.1);}
   .room-row:last-child{border-bottom:none;}
   .room-label{width:9rem;flex-shrink:0;font-weight:600;}
@@ -147,6 +149,10 @@
   // editing the line below.
   const ADMIN_PASSWORD = "byraven25";
   const GATE_KEY = "pp_bach_admin_ok";
+
+  // Long Rest headcounts aren't tracked here — they're derived from who's
+  // assigned to a room each night, down in the Bedroom Assignments section.
+  const TABLE_EVENTS = EVENTS.filter(ev => ev.kind !== "rooms");
 
   function unlock(){
     document.getElementById("gate").style.display = "none";
@@ -227,7 +233,7 @@
     const table = document.getElementById("eventsTable");
     const guests = sortedGuests();
 
-    const headCells = EVENTS.map(ev => {
+    const headCells = TABLE_EVENTS.map(ev => {
       if(ev.kind === "simple"){
         return `<th>${esc(ev.label)}<br><input type="text" class="cap-input" data-capacity="${ev.key}" value="${esc(state.capacity[ev.key] || "")}" placeholder="cap"></th>`;
       }
@@ -235,12 +241,12 @@
     }).join("");
 
     if(!guests.length){
-      table.innerHTML = `<thead><tr><th>Guest</th>${headCells}</tr></thead><tbody><tr><td colspan="${EVENTS.length + 1}" class="empty-hint">Add guests above first.</td></tr></tbody>`;
+      table.innerHTML = `<thead><tr><th>Guest</th>${headCells}</tr></thead><tbody><tr><td colspan="${TABLE_EVENTS.length + 1}" class="empty-hint">Add guests above first.</td></tr></tbody>`;
       return;
     }
 
     const rows = guests.map(g => {
-      const cells = EVENTS.map(ev => {
+      const cells = TABLE_EVENTS.map(ev => {
         if(ev.kind === "simple"){
           const checked = isAttending(ev.key, g.id) ? "checked" : "";
           return `<td><input type="checkbox" data-simple="${ev.key}" data-guest="${g.id}" ${checked}></td>`;
@@ -283,17 +289,22 @@
 
     wrap.innerHTML = NIGHTS.map(n => `
       <div class="room-night">
-        <h3>${esc(n.label)}</h3>
+        <h3>${esc(n.label)} <span class="bunk-count">${nightBunkCount(n.key)}/${TOTAL_BUNKS} bunks</span></h3>
         ${ROOMS.map(r => {
           const slot = state.rooms[n.key][r.key];
-          const guestChecks = guests.map(g => `
-            <label>
-              <input type="checkbox" data-room-guest="${n.key}|${r.key}|${g.id}" ${slot.guestIds.includes(g.id) ? "checked" : ""}>
+          const full = slot.guestIds.length >= r.sleeps;
+          const guestChecks = guests.map(g => {
+            const checked = slot.guestIds.includes(g.id);
+            const disabled = !checked && full;
+            return `
+            <label class="${disabled ? "guest-check-disabled" : ""}">
+              <input type="checkbox" data-room-guest="${n.key}|${r.key}|${g.id}" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""}>
               ${esc(g.name)}
-            </label>`).join("");
+            </label>`;
+          }).join("");
           return `
           <div class="room-row">
-            <div class="room-label">${esc(r.label)}<small>${esc(r.note)}</small></div>
+            <div class="room-label">${esc(r.label)}<small>${esc(r.note)} · sleeps ${r.sleeps}</small></div>
             <div class="room-guests">${guestChecks || '<span class="empty-hint">Add guests above first.</span>'}</div>
             <input type="text" class="room-note" placeholder="Note (e.g. TBD, if needed)" value="${esc(slot.note)}" data-room-note="${n.key}|${r.key}">
           </div>`;
