@@ -1,0 +1,1377 @@
+/* ==========================================================================
+   Shared engine for Couch Quest and Spooky Quest — TMDB/TVmaze lookups,
+   provider matching, progress maths, storage/sync, and rendering.
+
+   Loaded as a plain <script src> before each page's own inline <script>, so
+   everything here is declared with top-level `let`/`const`/`function` and
+   picked up by the later inline script via the shared global scope (classic
+   scripts on one page share one lexical environment — no bundler needed).
+
+   A handful of extension points let each page bend the shared behavior
+   without forking the whole file. Each hook below defaults to a no-op; a
+   page opts in by assigning (not re-declaring) it in its own <script>,
+   before calling boot():
+     onMarkWatched(item)          — called whenever an item's status becomes "watched"
+     extraMigrateItem(it) -> bool — extra per-item migration; return true if it changed something
+     extraVisibleFilter(item) -> bool — extra visibleItems() predicate
+     extraCardParts(item) -> {metaExtra, belowMeta} — extra HTML injected into a card
+     extraNewItemDefaults         — extra fields merged into a freshly-created item
+     extraRenderSteps             — array of no-arg render functions run alongside the shared ones
+     extraReset()                 — extra work for the "Clear filters" button
+
+   Season fetching/merging (fetchSeasons, mergeSeasons, pickSeries) stays
+   page-specific — Couch Quest counts only aired episodes and can scope a
+   lookup to one season, Spooky Quest tracks the full episode order — so each
+   page defines its own, plus two small adapters the shared save handler
+   calls: seasonsForEdit(oldSeasons, pendingLookup, seasonScope) and
+   seasonsForNew(pendingLookup, seasonScope).
+   ========================================================================== */
+
+const TMDB_KEY  = "2baed187c3455a853cc94ca735fe024d";
+const TVMAZE    = "https://api.tvmaze.com";
+const TMDB      = "https://api.themoviedb.org/3";
+const TMDB_IMG  = "https://image.tmdb.org/t/p/w500";
+
+/* Each service carries its own colour. `light: true` means the swatch is pale
+   enough to need dark text. Subscription state is stored separately, in
+   state.subs — see the Services panel. */
+const STREAMING_SERVICES = [
+  { name:"Netflix",     short:"Netflix",   color:"#B23A3A" },
+  { name:"HBO Max",     short:"HBO",       color:"#5A3B8C" },
+  { name:"Hulu",        short:"Hulu",      color:"#4E8C63" },
+  { name:"Disney+",     short:"Disney+",   color:"#2D3E68" },
+  { name:"Apple TV+",   short:"Apple",     color:"#3A3A3C" },
+  { name:"Prime Video", short:"Prime",     color:"#2E6E8C" },
+  { name:"Peacock",     short:"Peacock",   color:"#C96A2E" },
+  { name:"Paramount+",  short:"Para+",     color:"#2F5EA8" },
+  { name:"DropOut",     short:"DropOut",   color:"#E0B33A", light:true },
+  { name:"YouTube",     short:"YouTube",   color:"#8C2F2F" },
+  /* `never:true` — a title marked this way is never something we have,
+     so it stays out of the subscriptions panel and always draws a sash. */
+  { name:"Unavailable", short:"Unavail.",  color:"#6B5E54", never:true }
+];
+
+const SERVICE_BY_NAME = {};
+STREAMING_SERVICES.forEach(s => { SERVICE_BY_NAME[s.name] = s; });
+
+const HINT_SERIES = "Searches TV shows and pulls in the poster and every season.";
+const HINT_MOVIE  = "Searches films and pulls in the poster and the runtime.";
+const HINT_NOKEY  = "Film lookup needs a TMDB key — see assets/pp-watchlist.js. You can still type the title, runtime and poster link in by hand.";
+
+const hasTmdb = () => TMDB_KEY && TMDB_KEY.indexOf("PASTE") !== 0;
+
+let state  = { items: [], subs: null };   // subs: array of subscribed service names
+let editId = null, openId = null, pickedStreams = [];
+let filter = "unfinished", fltKind = "all", fltWho = "all", fltPri = "all", fltStream = "all";
+let sortBy = "priority-desc";
+let pendingLookup = null;
+let saving = false, docRef = null, saveTimer = null;
+
+/* ---------------- extension hooks (see file header) ---------------- */
+let onMarkWatched      = null;
+let extraMigrateItem   = null;
+let extraVisibleFilter = null;
+let extraCardParts     = null;
+let extraNewItemDefaults = {};
+let extraRenderSteps   = [];
+let extraReset         = null;
+
+const $ = id => document.getElementById(id);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const toHttps = u => (u || "").replace(/^http:\/\//, "https://");
+
+function setSync(s, t){ const e = $("sync"); e.dataset.state = s; e.textContent = t; }
+
+function esc(s){
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+}
+
+function hm(min){
+  min = Math.max(0, Math.round(min || 0));
+  const h = Math.floor(min / 60), m = min % 60;
+  if(!h) return m + "m";
+  return h + "h" + (m ? " " + m + "m" : "");
+}
+
+/* ---------------- dates ----------------
+   Stored as plain "YYYY-MM-DD" strings, so they sort as text and never
+   pick up a timezone. Films carry their own pair; series carry a pair
+   per season, and the item-level dates are derived from those. */
+function fmtDate(d){
+  if(!d) return "";
+  const parts = String(d).split("-");
+  if(parts.length !== 3) return "";
+  const dt = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+  if(isNaN(dt)) return "";
+  return dt.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+}
+
+function itemStart(item){
+  if(item.type === "movie") return item.startDate || "";
+  const all = (item.seasons || []).map(s => s.startDate).filter(Boolean).sort();
+  return all.length ? all[0] : "";
+}
+
+function itemEnd(item){
+  if(item.type === "movie") return item.endDate || "";
+  const all = (item.seasons || []).map(s => s.endDate).filter(Boolean).sort();
+  return all.length ? all[all.length - 1] : "";
+}
+
+function dateLine(item){
+  const a = itemStart(item), b = itemEnd(item);
+  if(a && b) return fmtDate(a) + " – " + fmtDate(b);
+  if(b)      return "Finished " + fmtDate(b);
+  if(a)      return "Started " + fmtDate(a);
+  return "";
+}
+
+/* ---------------- rewatch dates ----------------
+   Newest first, so the most recent viewing is the one you see first. */
+function rewatchDates(item){
+  return (item.rewatches || []).filter(Boolean).slice().sort().reverse();
+}
+
+function rewatchLines(item){
+  return rewatchDates(item)
+    .map(d => `<div class="cq-dateline cq-rewatchline">Rewatched ${esc(fmtDate(d))}</div>`)
+    .join("");
+}
+
+/* ---------------- who ---------------- */
+const WHO_LABEL = { together:"Together", danni:"D only", brendon:"B only", family:"Family" };
+const WHO_KEYS  = ["together","danni","brendon","family"];
+const whoOf = it => WHO_KEYS.includes(it.who) ? it.who : "together";
+
+/* ---------------- priority ----------------
+   Two raters, three levels each, so the average only ever lands on
+   1, 1.5, 2, 2.5 or 3. Five clean labels, no decimals on screen. */
+function priAvg(item){
+  const vals = [item.priD || 0, item.priB || 0].filter(v => v > 0);
+  if(!vals.length) return 0;
+  return vals.reduce((a,b) => a + b, 0) / vals.length;
+}
+
+function priLabel(avg){
+  if(!avg) return "";
+  if(avg >= 3)   return "High";
+  if(avg >= 2.5) return "Med–High";
+  if(avg >= 2)   return "Medium";
+  if(avg >= 1.5) return "Low–Med";
+  return "Low";
+}
+
+function priTier(avg){
+  if(!avg) return "none";
+  if(avg >= 2.5) return "high";
+  if(avg >= 1.5) return "mid";
+  return "low";
+}
+
+/* ---------------- progress maths ---------------- */
+/* watchedCount: how many distinct episodes watched in a season,
+   from the watchedEps array if it exists, otherwise s.watched */
+function watchedCount(s){
+  if(Array.isArray(s.watchedEps)) return s.watchedEps.length;
+  return s.watched || 0;
+}
+
+function totals(item){
+  if(item.type === "movie"){
+    const total = item.runtime || 0;
+    return { done: Math.min(item.watchedMin || 0, total), total: total, kind: total ? "movie" : "none" };
+  }
+  if(Array.isArray(item.seasons) && item.seasons.length){
+    let done = 0, total = 0;
+    item.seasons.forEach(s => { done += watchedCount(s); total += (s.episodes || 0); });
+    return { done: done, total: total, kind: total ? "series" : "none" };
+  }
+  return { done: 0, total: 0, kind: "none" };
+}
+
+function pctOf(item){
+  const t = totals(item);
+  if(t.kind === "none") return item.status === "watched" ? 1 : 0;
+  return t.total ? t.done / t.total : 0;
+}
+
+function position(item){
+  const t = totals(item);
+  if(t.kind === "none") return "";
+  if(t.done >= t.total) return "Finished";
+  if(t.kind === "movie"){
+    if(!t.done) return hm(t.total);
+    return "Up to " + hm(t.done) + " of " + hm(t.total);
+  }
+  for(const s of item.seasons){
+    const eps = Array.isArray(s.watchedEps) ? s.watchedEps : [];
+    const wc  = watchedCount(s);
+    if(wc < (s.episodes || 0)){
+      /* find first unwatched episode index */
+      let next = 1;
+      if(eps.length){
+        const set = {};
+        eps.forEach(i => { set[i] = true; });
+        while(set[next] && next <= s.episodes) next++;
+      }else{
+        next = wc + 1;
+      }
+      return "Up next: S" + s.number + " E" + next;
+    }
+  }
+  return "";
+}
+
+function syncStatus(item){
+  const t = totals(item);
+  if(t.kind === "none" || !t.total) return;
+  if(t.done === 0)          item.status = "want";
+  else if(t.done < t.total) item.status = "watching";
+  else                      item.status = "watched";
+  if(item.status === "watched" && onMarkWatched) onMarkWatched(item);
+}
+
+/* ---------------- migration ---------------- */
+function migrate(){
+  let touched = false;
+  state.items.forEach(it => {
+    if(!WHO_KEYS.includes(it.who)){ it.who = "together"; touched = true; }
+    if(Array.isArray(it.tags) && it.tags.includes("Together")){
+      it.tags = it.tags.filter(t => t !== "Together");
+      it.who = "together";
+      touched = true;
+    }
+    if(it.priD == null){ it.priD = 0; touched = true; }
+    if(it.priB == null){ it.priB = 0; touched = true; }
+    if(!Array.isArray(it.streams)){ it.streams = []; touched = true; }
+    if(it.rewatch == null){ it.rewatch = false; touched = true; }
+    /* Every viewing after the first, as YYYY-MM-DD. The original finish date
+       stays on endDate / the seasons, so nothing here rewrites old records. */
+    if(!Array.isArray(it.rewatches)){ it.rewatches = []; touched = true; }
+    /* "Max" was renamed to "HBO Max" */
+    if(it.streams.includes("Max")){
+      it.streams = it.streams.map(s => s === "Max" ? "HBO Max" : s);
+      touched = true;
+    }
+    /* "Other" was renamed to "Unavailable" */
+    if(it.streams.includes("Other")){
+      it.streams = Array.from(new Set(it.streams.map(s => s === "Other" ? "Unavailable" : s)));
+      touched = true;
+    }
+    /* services we no longer list fall back to Unavailable */
+    const known = it.streams.filter(s => SERVICE_BY_NAME[s]);
+    const dropped = it.streams.length !== known.length;
+    if(dropped){
+      it.streams = Array.from(new Set(known.concat("Unavailable")));
+      touched = true;
+    }
+    if(extraMigrateItem && extraMigrateItem(it)) touched = true;
+  });
+  if(!Array.isArray(state.subs)){
+    /* first run — assume you have everything, you can untick from the panel */
+    state.subs = STREAMING_SERVICES.filter(s => !s.never).map(s => s.name);
+    touched = true;
+  }else if(state.subs.includes("Other")){
+    state.subs = state.subs.filter(s => s !== "Other");
+    touched = true;
+  }
+  return touched;
+}
+
+/* Services flagged `never` can't be subscribed to — "Unavailable" means
+   exactly that, so it always reads as something we don't have. */
+const NEVER_HAVE = new Set(STREAMING_SERVICES.filter(s => s.never).map(s => s.name));
+const isSubbed = name => !NEVER_HAVE.has(name)
+  && (!Array.isArray(state.subs) || state.subs.includes(name));
+
+/* ---------------- storage ---------------- */
+function loadCache(){
+  try{
+    const raw = localStorage.getItem(CACHE_KEY);
+    if(raw){
+      const p = JSON.parse(raw);
+      if(p && Array.isArray(p.items)) state = { items: p.items, subs: p.subs || null };
+    }
+  }catch(e){}
+  migrate();
+}
+function writeCache(){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(state)); }catch(e){} }
+
+function startFirebase(){
+  try{
+    firebase.initializeApp(firebaseConfig);
+    docRef = firebase.firestore().doc(DOC_PATH);
+    docRef.onSnapshot(snap => {
+      if(saving) return;
+      if(!snap.exists){ save(); return; }
+      const d = snap.data();
+      state = {
+        items: Array.isArray(d.items) ? d.items : [],
+        subs:  Array.isArray(d.subs)  ? d.subs  : null
+      };
+      const changed = migrate();
+      writeCache();
+      renderStreamFilter();
+      extraRenderSteps.forEach(fn => fn());
+      renderSubsPicker();
+      render();
+      if(openId) openDetail(openId);
+      setSync("idle","Synced");
+      if(changed) save();
+    }, err => { console.error(err); setSync("error","Offline — this device only"); });
+  }catch(e){ console.error(e); setSync("error","Offline — this device only"); }
+}
+
+function save(){
+  writeCache();
+  renderStreamFilter();
+  extraRenderSteps.forEach(fn => fn());
+  renderSubsPicker();
+  render();
+  if(openId) openDetail(openId);
+  if(!docRef) return;
+  setSync("saving","Saving");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saving = true;
+    docRef.set({ items: state.items, subs: state.subs, updated: Date.now() })
+      .then(() => setSync("idle","Synced"))
+      .catch(e => { console.error(e); setSync("error","Couldn't save"); })
+      .finally(() => { saving = false; });
+  }, 500);
+}
+
+function boot(){
+  loadCache();
+  renderStreamFilter();
+  extraRenderSteps.forEach(fn => fn());
+  renderSubsPicker();
+  render();
+  startFirebase();
+}
+
+/* ---------------- lookup ---------------- */
+function lookup(q){
+  return ($("fType").value === "movie") ? lookupMovie(q) : lookupSeries(q);
+}
+
+function showResults(rows, onPick){
+  const box = $("results");
+  box.innerHTML = "";
+  if(!rows.length){
+    $("lookupHint").textContent = "Nothing found. Check the spelling, or fill it in by hand.";
+    box.classList.remove("open");
+    return;
+  }
+  $("lookupHint").textContent = "Pick the right one:";
+  rows.forEach(r => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cq-result";
+    b.innerHTML =
+      (r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy">`
+               : `<div class="cq-poster-none" style="font-size:.8rem;">${esc(r.name)}</div>`) +
+      `<div class="cq-rname">${esc(r.name)}</div>` +
+      `<div class="cq-rmeta">${esc(r.meta)}</div>`;
+    b.onclick = () => onPick(r);
+    box.appendChild(b);
+  });
+  box.classList.add("open");
+}
+
+/* ==========================================================================
+   WHERE IS IT STREAMING
+   TMDB's watch/providers endpoint, same key the film lookup already uses.
+
+   Only `flatrate` is read for the service chips — things included with a
+   subscription. Rent and buy are otherwise ignored, because "on Netflix" and
+   "£3.99 on Apple" are not the same fact and the sash under a title is meant
+   to answer "can we just put this on tonight". The one exception is Amazon:
+   when nothing we have carries a title, `rent`/`buy` are checked for an
+   Amazon listing so the unavailable sash can say "rentable" instead of just
+   "no". TMDB doesn't return prices, only which stores carry it.
+
+   Providers are regional, so REGION picks the country. TMDB names don't match
+   ours ("Amazon Prime Video", "Disney Plus"), hence the alias table.
+   ========================================================================== */
+const REGION = "US";
+
+/* Matched loosely, in order — TMDB ships variants like "Netflix Standard with
+   Ads" and "Peacock Premium Plus" and they should all land on one chip. */
+const PROVIDER_ALIASES = [
+  { match:"netflix",       name:"Netflix" },
+  { match:"hbo max",       name:"HBO Max" },
+  { match:"max",           name:"HBO Max" },
+  { match:"hulu",          name:"Hulu" },
+  { match:"disney",        name:"Disney+" },
+  { match:"apple tv+",     name:"Apple TV+" },
+  { match:"apple tv plus", name:"Apple TV+" },
+  { match:"prime video",   name:"Prime Video" },
+  { match:"peacock",       name:"Peacock" },
+  { match:"paramount",     name:"Paramount+" },
+  { match:"dropout",       name:"DropOut" },
+  { match:"youtube",       name:"YouTube" }
+];
+
+function mapProvider(tmdbName){
+  const n = String(tmdbName || "").toLowerCase();
+  const hit = PROVIDER_ALIASES.find(a => n.indexOf(a.match) > -1);
+  return hit ? hit.name : null;
+}
+
+/* Returns { services:[names], unknown:[names], amazonRentBuy:bool }. `unknown`
+   is everything TMDB listed that we have no chip for — surfaced in the hint
+   rather than dropped, so it's obvious when something is streaming somewhere
+   unexpected. `amazonRentBuy` is true when Amazon shows up in `rent` or `buy`
+   for this title, regardless of what's in `flatrate`. */
+function providersFor(kind, tmdbId){
+  return fetch(TMDB + "/" + kind + "/" + tmdbId + "/watch/providers?api_key=" +
+               encodeURIComponent(TMDB_KEY))
+    .then(r => r.json())
+    .then(data => {
+      const region = (data.results || {})[REGION] || {};
+      const flat = region.flatrate || [];
+      const services = [], unknown = [];
+      flat.forEach(p => {
+        const mapped = mapProvider(p.provider_name);
+        if(mapped){ if(services.indexOf(mapped) === -1) services.push(mapped); }
+        else if(unknown.indexOf(p.provider_name) === -1) unknown.push(p.provider_name);
+      });
+      const rentBuy = (region.rent || []).concat(region.buy || []);
+      const amazonRentBuy = rentBuy.some(p => /amazon/i.test(p.provider_name || ""));
+      return { services, unknown, amazonRentBuy };
+    });
+}
+
+/* TVmaze has no TMDB id, so a series has to be found on TMDB by name first.
+   The year narrows it, because remakes are everywhere. */
+function findTmdbSeries(title, year){
+  return fetch(TMDB + "/search/tv?api_key=" + encodeURIComponent(TMDB_KEY) +
+               "&query=" + encodeURIComponent(title) +
+               (year ? "&first_air_date_year=" + encodeURIComponent(year) : ""))
+    .then(r => r.json())
+    .then(data => {
+      const hit = (data.results || [])[0];
+      return hit ? hit.id : null;
+    });
+}
+
+function providerSummary(found){
+  if(found.services.length){
+    let msg = "On " + found.services.join(", ") + ".";
+    if(found.unknown.length) msg += " Also on " + found.unknown.join(", ") + " — no chip for those.";
+    return msg;
+  }
+  const amazonNote = found.amazonRentBuy ? " Amazon has it to rent or buy." : "";
+  if(found.unknown.length){
+    return "Only on " + found.unknown.join(", ") + ", which we don't have a chip for. Marked unavailable." + amazonNote;
+  }
+  return "Not included with any subscription right now — marked unavailable." + amazonNote;
+}
+
+/* Writes the result onto the chip picker in the add/edit form. Nothing is
+   removed that you ticked by hand except Unavailable, which is recalculated. */
+function applyProvidersToForm(found){
+  found.services.forEach(name => {
+    if(pickedStreams.indexOf(name) === -1) pickedStreams.push(name);
+  });
+  pickedStreams = pickedStreams.filter(s => s !== "Unavailable");
+  if(!pickedStreams.length) pickedStreams = ["Unavailable"];
+  if(pendingLookup) pendingLookup.amazonRentBuy = !!found.amazonRentBuy;
+  renderStreamPicker();
+}
+
+/* Re-checks a title already on the list. Services move constantly, so this is
+   the button you press when something has quietly left Netflix. */
+function refreshServices(id){
+  const item = state.items.find(x => x.id === id);
+  if(!item) return;
+  if(!hasTmdb()){ alert(HINT_NOKEY); return; }
+
+  const note = document.getElementById("svcState");
+  if(note) note.textContent = "Checking…";
+
+  const idPromise = item.tmdbId
+    ? Promise.resolve(item.tmdbId)
+    : (item.type === "movie"
+        ? Promise.resolve(null)          /* films need a real lookup to get an id */
+        : findTmdbSeries(item.title, item.year));
+
+  idPromise
+    .then(tmdbId => {
+      if(!tmdbId) throw new Error("no id");
+      item.tmdbId = tmdbId;
+      return providersFor(item.type === "movie" ? "movie" : "tv", tmdbId);
+    })
+    .then(found => {
+      /* A re-check REPLACES the list rather than adding to it. The whole point
+         is catching a title that has left a service, and merging would keep
+         the stale chip forever. Anything you'd ticked by hand and TMDB doesn't
+         list gets named in the message so the loss is never silent. */
+      const before = (item.streams || []).filter(s => s !== "Unavailable");
+      const lost   = before.filter(s => found.services.indexOf(s) === -1);
+
+      item.streams = found.services.length ? found.services.slice() : ["Unavailable"];
+      item.amazonRentBuy = !!found.amazonRentBuy;
+      save();
+      openDetail(id);
+
+      const n2 = document.getElementById("svcState");
+      if(n2){
+        let msg = providerSummary(found);
+        if(lost.length) msg += " Dropped " + lost.join(", ") + " — re-tick by hand if that's wrong.";
+        n2.textContent = msg;
+      }
+    })
+    .catch(err => {
+      console.error("Provider lookup failed:", err);
+      const n2 = document.getElementById("svcState");
+      if(n2) n2.textContent = (err.message === "no id")
+        ? "Couldn't match this to a TMDB entry. Tick the services by hand."
+        : "Couldn't reach TMDB just now.";
+    });
+}
+
+function lookupSeries(q){
+  $("lookupHint").textContent = "Searching…";
+  fetch(TVMAZE + "/search/shows?q=" + encodeURIComponent(q))
+    .then(r => r.json())
+    .then(rows => {
+      showResults(rows.slice(0,8).map(row => {
+        const s = row.show;
+        const year = s.premiered ? s.premiered.slice(0,4) : "";
+        const net  = (s.network && s.network.name) || (s.webChannel && s.webChannel.name) || "";
+        return {
+          raw: s,
+          name: s.name,
+          image: s.image ? toHttps(s.image.medium) : "",
+          full:  s.image ? toHttps(s.image.original || s.image.medium) : "",
+          meta: [year, net].filter(Boolean).join(" · ")
+        };
+      }), pickSeries);
+    })
+    .catch(e => { console.error(e); $("lookupHint").textContent = "Lookup failed — fill it in by hand."; });
+}
+
+/* Series come from TVmaze, which knows nothing about streaming rights, so the
+   show is matched to TMDB by name and year and the providers read from there.
+   A miss is quiet — you still get the show, just without the chips. */
+function lookupSeriesProviders(r, prefix){
+  if(!hasTmdb()) return;
+  const year = r.raw.premiered ? r.raw.premiered.slice(0,4) : "";
+  $("lookupHint").textContent = prefix + " Checking services…";
+
+  findTmdbSeries(r.name, year)
+    .then(tmdbId => {
+      if(!tmdbId) throw new Error("no id");
+      pendingLookup.tmdbId = tmdbId;
+      return providersFor("tv", tmdbId);
+    })
+    .then(found => {
+      applyProvidersToForm(found);
+      $("lookupHint").textContent = prefix + " " + providerSummary(found);
+    })
+    .catch(e => {
+      console.error(e);
+      $("lookupHint").textContent = prefix +
+        (e.message === "no id"
+          ? " Couldn't match it on TMDB — tick the services by hand."
+          : " Couldn't check services — tick them by hand.");
+    });
+}
+
+function lookupMovie(q){
+  if(!hasTmdb()){ $("lookupHint").textContent = HINT_NOKEY; return; }
+  $("lookupHint").textContent = "Searching…";
+  fetch(TMDB + "/search/movie?api_key=" + encodeURIComponent(TMDB_KEY) +
+        "&include_adult=false&query=" + encodeURIComponent(q))
+    .then(r => { if(r.status === 401) throw new Error("bad key"); return r.json(); })
+    .then(data => {
+      showResults((data.results || []).slice(0,8).map(m => ({
+        raw: m,
+        name: m.title,
+        image: m.poster_path ? (TMDB_IMG + m.poster_path) : "",
+        full:  m.poster_path ? (TMDB_IMG + m.poster_path) : "",
+        meta: m.release_date ? m.release_date.slice(0,4) : ""
+      })), pickMovie);
+    })
+    .catch(e => {
+      console.error(e);
+      $("lookupHint").textContent = (e.message === "bad key")
+        ? "TMDB rejected that key. Check it was copied whole."
+        : "Film lookup failed — fill it in by hand.";
+    });
+}
+
+function pickMovie(r){
+  $("fTitle").value = r.name;
+  $("fImage").value = r.full;
+  $("results").classList.remove("open");
+  $("lookupHint").textContent = "Fetching runtime…";
+
+  fetch(TMDB + "/movie/" + r.raw.id + "?api_key=" + encodeURIComponent(TMDB_KEY))
+    .then(res => res.json())
+    .then(d => {
+      const mins = d.runtime || 0;
+      $("fRuntime").value = mins || "";
+      pendingLookup = { type:"movie", runtime: mins, tmdbId: r.raw.id };
+      const runtimeMsg = mins ? ("Runtime " + hm(mins) + ".") : "No runtime listed — type it in.";
+      $("lookupHint").textContent = runtimeMsg + " Checking services…";
+
+      /* Same id, one more call — so adding a film also answers "where is it". */
+      providersFor("movie", r.raw.id)
+        .then(found => {
+          applyProvidersToForm(found);
+          $("lookupHint").textContent = runtimeMsg + " " + providerSummary(found);
+        })
+        .catch(e => {
+          console.error(e);
+          $("lookupHint").textContent = runtimeMsg + " Couldn't check services — tick them by hand.";
+        });
+    })
+    .catch(e => { console.error(e); $("lookupHint").textContent = "Got the film, but no runtime came back. Type it in."; });
+}
+
+/* ---------------- filter + sort ---------------- */
+const LABEL = { want:"TBW", watching:"Watching", watched:"Watched" };
+const NEXT  = { want:"watching", watching:"watched", watched:"want" };
+
+function byTitle(a, b){
+  return a.title.localeCompare(b.title, undefined, { sensitivity:"base" });
+}
+
+function visibleItems(){
+  let rows = state.items.filter(i => {
+    if(filter === "rewatch"    && !i.rewatch) return false;
+    /* Watched titles are archived rather than listed: they drop out of the
+       default view so the page stays a list of what's still to watch. The
+       Watched tab and Everything both still show the complete set, so nothing
+       is actually hidden.
+
+       Rewatches go too. A thing you've seen and mean to see again isn't
+       unfinished — it's finished, more than once. Each viewing is logged as
+       its own date instead, and the Rewatches tab collects them. */
+    if(filter === "unfinished" && i.status === "watched") return false;
+    const statusFilters = ["want","watching","watched"];
+    if(statusFilters.includes(filter) && i.status !== filter) return false;
+    if(fltKind !== "all" && (i.type || "series") !== fltKind) return false;
+    if(fltWho !== "all"  && whoOf(i) !== fltWho) return false;
+    if(fltStream === "__subbed"){
+      const st = i.streams || [];
+      if(!st.length || !st.some(isSubbed)) return false;
+    }else if(fltStream !== "all" && !(i.streams || []).includes(fltStream)) return false;
+    if(fltPri !== "all"){
+      const tier = priTier(priAvg(i));
+      if(fltPri === "none" && tier !== "none") return false;
+      if(fltPri !== "none" && tier !== fltPri) return false;
+    }
+    if(extraVisibleFilter && !extraVisibleFilter(i)) return false;
+    return true;
+  });
+
+  const [key, dir] = sortBy.split("-");
+  const flip = dir === "asc" ? -1 : 1;
+
+  rows.sort((a, b) => {
+    if(key === "title") return byTitle(a, b) * (dir === "asc" ? 1 : -1);
+    if(key === "added") return ((b.added || 0) - (a.added || 0)) * flip;
+    if(key === "progress"){
+      const d = (pctOf(b) - pctOf(a)) * flip;
+      return d !== 0 ? d : byTitle(a, b);
+    }
+    if(key === "started" || key === "finished"){
+      /* undated items sit at the bottom whichever way you sort */
+      const get = key === "started" ? itemStart : itemEnd;
+      const da = get(a), db = get(b);
+      if(!da && !db) return byTitle(a, b);
+      if(!da) return 1;
+      if(!db) return -1;
+      if(da === db) return byTitle(a, b);
+      return (db > da ? 1 : -1) * flip;
+    }
+    const pa = priAvg(a), pb = priAvg(b);
+    if(!pa && !pb) return byTitle(a, b);
+    if(!pa) return 1;
+    if(!pb) return -1;
+    const d = (pb - pa) * flip;
+    return d !== 0 ? d : byTitle(a, b);
+  });
+
+  return rows;
+}
+
+function renderStreamFilter(){
+  const sel = $("fltStream");
+  const keep = sel.value;
+  sel.innerHTML = '<option value="all">All</option>' +
+                  '<option value="__subbed">Free to me</option>';
+  const used = new Set();
+  state.items.forEach(i => (i.streams || []).forEach(s => used.add(s)));
+  const inUse = STREAMING_SERVICES.filter(s => used.has(s.name));
+
+  /* The ones we pay for sit at the top. Everything else drops to the bottom
+     in italics, marked with the same ✦ the add form uses. */
+  const addOption = (s, have) => {
+    const o = document.createElement("option");
+    o.value = s.name;
+    o.textContent = s.name + (have ? "" : " ✦");
+    if(!have) o.style.fontStyle = "italic";
+    sel.appendChild(o);
+  };
+  inUse.filter(s =>  isSubbed(s.name)).forEach(s => addOption(s, true));
+  inUse.filter(s => !isSubbed(s.name)).forEach(s => addOption(s, false));
+  sel.value = (keep === "__subbed" || used.has(keep)) ? keep : "all";
+  fltStream = sel.value;
+}
+
+function renderSubsPicker(){
+  const box = $("subsPick");
+  if(!box) return;
+  box.innerHTML = "";
+  STREAMING_SERVICES.filter(svc => !svc.never).forEach(svc => {
+    const on = isSubbed(svc.name);
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = svc.name;
+    b.style.background = svc.color;
+    if(svc.light) b.setAttribute("data-light","true");
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.onclick = () => {
+      const cur = Array.isArray(state.subs) ? state.subs.slice() : STREAMING_SERVICES.map(s => s.name);
+      state.subs = cur.includes(svc.name) ? cur.filter(s => s !== svc.name) : cur.concat(svc.name);
+      save();
+    };
+    box.appendChild(b);
+  });
+}
+
+/* ---------------- render ---------------- */
+function render(){
+  const grid  = $("grid");
+  const shown = visibleItems();
+  grid.innerHTML = "";
+  $("empty").style.display = shown.length ? "none" : "block";
+  /* An empty Current list usually means you've watched the lot, not that the
+     filters are wrong — so say the useful thing and point at the archive. */
+  $("empty").textContent = !state.items.length
+    ? "Nothing here yet. Add the first one."
+    : (filter === "unfinished"
+        ? "Nothing left to watch. The Watched tab has everything you've finished."
+        : "Nothing matches those filters.");
+
+  shown.forEach(item => {
+    const t = totals(item);
+    const card = document.createElement("div");
+    card.className = "cq-card" + (item.status === "watched" ? " is-done" : "");
+
+    const art = item.image
+      ? `<img class="cq-poster" src="${esc(item.image)}" alt="" loading="lazy"
+           onerror="this.outerHTML='<div class=&quot;cq-poster-none&quot;>${esc(item.title)}</div>'">`
+      : `<div class="cq-poster-none">${esc(item.title)}</div>`;
+
+    const ring = (t.kind !== "none")
+      ? `<div class="cq-ring"><div class="pp-progress-ring" data-color="pink"
+           data-current="${t.done}" data-total="${t.total}" data-size="38"></div></div>`
+      : "";
+
+    const who = whoOf(item);
+    const whoBadge = `<span class="cq-who" data-who="${who}">${esc(WHO_LABEL[who])}</span>`;
+
+    const avg = priAvg(item);
+    const pri = avg ? `<span class="cq-pri" data-tier="${priTier(avg)}">${esc(priLabel(avg))}</span>` : "";
+
+    const where = position(item);
+    const streams = (item.streams || []).map(x => {
+      const svc = SERVICE_BY_NAME[x];
+      const col = svc ? svc.color : "#6B5E54";
+      const lbl = svc && svc.short ? svc.short : x;
+      const sub = isSubbed(x);
+      return `<span class="cq-stream" data-sub="${sub}" ${svc && svc.light ? 'data-light="true"' : ""}
+        style="background:${col};${sub ? "" : `color:${col};border-color:${col};`}"
+        title="${esc(x)}${sub ? "" : " — not subscribed"}">${esc(lbl)}</span>`;
+    }).join("");
+    const rewatch = item.rewatch ? `<span class="cq-rewatch">Rewatch</span>` : "";
+
+    /* Nothing it's on is anything we have. An item with no service listed at
+       all is unknown rather than unavailable, so it stays clean. */
+    const onNothing = (item.streams || []).length > 0 && !(item.streams || []).some(isSubbed);
+    const unavail = onNothing
+      ? `<span class="cq-unavail" title="Not on anything we have">Unavailable</span>` : "";
+    if(onNothing) card.classList.add("is-unavail");
+
+    const amazonPill = (onNothing && item.amazonRentBuy)
+      ? `<span class="cq-amazon" title="Not included with a subscription, but Amazon has it">Rent/buy on Amazon</span>` : "";
+
+    const extra = extraCardParts ? (extraCardParts(item) || {}) : {};
+
+    card.innerHTML = `
+      <div class="cq-posterwrap" data-open="${item.id}">${art}${unavail}${whoBadge}${ring}</div>
+      <div class="cq-tools">
+        <button data-edit="${item.id}" aria-label="Edit ${esc(item.title)}">✎</button>
+        <button data-del="${item.id}" aria-label="Remove ${esc(item.title)}">✕</button>
+      </div>
+      <div class="cq-body">
+        <h3 class="cq-name">${esc(item.title)}</h3>
+        ${amazonPill}
+        ${where ? `<div class="cq-where">${esc(where)}</div>` : ""}
+        ${dateLine(item) ? `<div class="cq-dateline">${esc(dateLine(item))}</div>` : ""}
+        ${rewatchLines(item)}
+        <div class="cq-meta">
+          <button class="cq-status" data-status="${item.status}" data-cycle="${item.id}">${LABEL[item.status]}</button>
+          ${pri}${rewatch}${extra.metaExtra || ""}
+        </div>
+        ${extra.belowMeta || ""}
+        ${streams ? `<div class="cq-streams">${streams}</div>` : ""}
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  PPProgress.draw(grid);
+
+  const done = state.items.filter(i => i.status === "watched").length;
+  const base = state.items.length ? `${done} watched of ${state.items.length}` : "";
+  $("count").textContent = (shown.length !== state.items.length)
+    ? `Showing ${shown.length} of ${state.items.length} · ${base}`
+    : base;
+}
+
+function openDetail(id){
+  const item = state.items.find(x => x.id === id);
+  if(!item){ closeDetail(); return; }
+  openId = id;
+
+  const t = totals(item);
+  const avg = priAvg(item);
+  $("dTitle").textContent = item.title;
+  $("dImg").src = item.image || "";
+  $("dImg").style.display = item.image ? "" : "none";
+
+  const bits = [position(item) || LABEL[item.status], WHO_LABEL[whoOf(item)]];
+  if(avg){
+    const words = ["","low","med","high"];
+    const pieces = [];
+    if(item.priD) pieces.push("D " + words[item.priD]);
+    if(item.priB) pieces.push("B " + words[item.priB]);
+    bits.push(priLabel(avg) + " priority (" + pieces.join(", ") + ")");
+  }
+  $("dMeta").textContent = bits.join(" · ");
+
+  const overall = $("dOverall");
+  overall.setAttribute("data-current", t.done);
+  overall.setAttribute("data-total", t.total || 0);
+  overall.setAttribute("data-label", t.kind === "movie" ? "Runtime" : "Overall");
+  overall.setAttribute("data-text",
+    t.kind === "movie" ? (hm(t.done) + " of " + hm(t.total)) : (t.done + " of " + t.total));
+  overall.style.display = (t.kind !== "none") ? "" : "none";
+
+  const body = $("detailBody");
+  body.innerHTML = "";
+  $("refetchBtn").style.display = (item.type === "series") ? "" : "none";
+
+  if(item.type === "movie"){
+    const row = document.createElement("div");
+    row.className = "cq-block";
+    const controls = item.runtime ? `
+        <div class="cq-block-head">
+          <span class="cq-block-name">Where we are</span>
+          <span class="cq-block-count">${hm(item.watchedMin || 0)} of ${hm(item.runtime)}</span>
+        </div>
+        <div class="cq-step">
+          <button data-min="-15">−15</button>
+          <button data-min="-5">−5</button>
+          <button data-min="5">+5</button>
+          <button data-min="15">+15</button>
+          <span class="cq-steplabel">or jump to</span>
+          <input id="minInput" type="number" min="0" max="${item.runtime}" step="1" value="${item.watchedMin || 0}">
+          <span class="cq-steplabel">min</span>
+          <button data-min="finish">Finished</button>
+          <button data-min="restart">Start over</button>
+        </div>`
+      : `<p class="pp-empty" style="padding:12px;">No runtime set. Edit this one and add it.</p>`;
+
+    row.innerHTML = controls + `
+        <div class="cq-dates">
+          <label for="mStart">Started</label>
+          <input id="mStart" type="date" data-date="start" value="${item.startDate || ""}">
+          <label for="mEnd">Finished</label>
+          <input id="mEnd" type="date" data-date="end" value="${item.endDate || ""}">
+          ${(item.startDate || item.endDate)
+            ? `<button class="cq-dateclear" data-date-clear="movie">Clear dates</button>` : ""}
+        </div>`;
+    body.appendChild(row);
+  }else{
+    if(t.kind === "none"){
+      body.innerHTML = `<p class="pp-empty">No seasons yet. Use Refresh seasons to pull them in.</p>`;
+    }else{
+      item.seasons.forEach(s => {
+        const row = document.createElement("div");
+        row.className = "cq-block";
+        const wc      = watchedCount(s);
+        const wepsStr = Array.isArray(s.watchedEps) ? s.watchedEps.join(",") : "";
+        row.innerHTML = `
+          <div class="cq-block-head">
+            <span class="cq-block-name">Season ${s.number}</span>
+            <span class="cq-block-count">${wc} of <input
+              class="cq-ep-count" type="number" min="0" step="1"
+              data-season-total="${s.number}" value="${s.episodes}"
+              title="Total episodes — edit when a new one drops"> ep</span>
+          </div>
+          <div class="pp-chips" data-color="pink" data-clickable="true" data-chip-label="EP"
+               data-season="${s.number}"
+               data-current="${wc}"
+               data-total="${s.episodes}"
+               ${wepsStr ? `data-watched="${wepsStr}"` : ""}></div>
+          <div class="cq-step">
+            <button data-season-all="${s.number}">All</button>
+            <button data-season-none="${s.number}">Clear</button>
+          </div>
+          <div class="cq-dates">
+            <label for="sStart${s.number}">Started</label>
+            <input id="sStart${s.number}" type="date"
+                   data-date="start" data-date-season="${s.number}" value="${s.startDate || ""}">
+            <label for="sEnd${s.number}">Finished</label>
+            <input id="sEnd${s.number}" type="date"
+                   data-date="end" data-date-season="${s.number}" value="${s.endDate || ""}">
+            ${(s.startDate || s.endDate)
+              ? `<button class="cq-dateclear" data-date-clear="${s.number}">Clear dates</button>` : ""}
+          </div>`;
+        body.appendChild(row);
+      });
+    }
+  }
+
+  $("detail").classList.add("open");
+  /* ---- where to watch ----
+     Services move constantly, so the answer stored on a title goes stale. This
+     is the button for when something has quietly left Netflix. */
+  const svc = document.createElement("div");
+  svc.className = "cq-block";
+  const on = (item.streams || []).filter(s => s !== "Unavailable");
+  const onNothingDetail = (item.streams || []).length > 0 && !(item.streams || []).some(isSubbed);
+  const amazonNote = (onNothingDetail && item.amazonRentBuy)
+    ? ` <span class="cq-amazon" title="Not included with a subscription, but Amazon has it">Rent/buy on Amazon</span>` : "";
+  svc.innerHTML = `
+    <div class="cq-block-head">
+      <span class="cq-block-name">Where to watch</span>
+      <span class="cq-block-count">${on.length ? esc(on.join(", ")) : "nowhere we have"}${amazonNote}</span>
+    </div>
+    <div class="cq-step">
+      <button id="svcCheck">Check again</button>
+      <span class="cq-steplabel" id="svcState">Asks TMDB what it's included with today.</span>
+    </div>`;
+  body.appendChild(svc);
+
+  /* ---- rewatch log ----
+     Appended after whatever the film / season blocks produced, so it reads as
+     the tail of the record rather than competing with it. */
+  const log = document.createElement("div");
+  log.className = "cq-block";
+  const dates = rewatchDates(item);
+  log.innerHTML = `
+    <div class="cq-block-head">
+      <span class="cq-block-name">Rewatches</span>
+      <span class="cq-block-count">${dates.length || "none yet"}</span>
+    </div>
+    ${dates.map(d => `
+      <div class="cq-rewatch-row">
+        <span>Rewatched ${esc(fmtDate(d))}</span>
+        <button data-rewatch-drop="${esc(d)}" aria-label="Remove this rewatch">&times;</button>
+      </div>`).join("")}
+    <div class="cq-dates" style="margin-top:10px;">
+      <label for="rwDate">Watched again</label>
+      <input id="rwDate" type="date">
+      <button class="pp-btn pp-btn-quiet pp-btn-sm" id="rwAdd">Log it</button>
+    </div>
+    <p class="cq-hint" style="margin:6px 0 0;">Each viewing after the first. The original finish date above stays as it is.</p>`;
+  body.appendChild(log);
+
+  PPProgress.draw($("detail"));
+}
+
+function closeDetail(){ openId = null; $("detail").classList.remove("open"); }
+
+/* Save a set of watched episode indices for a season */
+function setSeasonEps(itemId, seasonNo, watchedEps){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item) return;
+  const s = (item.seasons || []).find(x => x.number === seasonNo);
+  if(!s) return;
+  s.watchedEps = watchedEps.filter(i => i >= 1 && i <= s.episodes);
+  s.watched    = s.watchedEps.length;
+  syncStatus(item);
+  save();
+}
+
+function setSeasonTotal(itemId, seasonNo, total){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item) return;
+  const s = (item.seasons || []).find(x => x.number === seasonNo);
+  if(!s) return;
+  s.episodes   = Math.max(0, total);
+  s.watchedEps = Array.isArray(s.watchedEps) ? s.watchedEps.filter(i => i <= s.episodes) : null;
+  s.watched    = s.watchedEps ? s.watchedEps.length : Math.min(s.watched || 0, s.episodes);
+  syncStatus(item);
+  save();
+}
+
+/* seasonNo null → the film's own dates */
+function setDate(itemId, seasonNo, which, value){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item) return;
+  const target = seasonNo == null
+    ? item
+    : (item.seasons || []).find(x => x.number === seasonNo);
+  if(!target) return;
+  const key = which === "start" ? "startDate" : "endDate";
+  if(value) target[key] = value;
+  else      delete target[key];
+  save();
+}
+
+/* Logging a viewing also raises the rewatch flag, so the Rewatches tab picks
+   it up without you having to tick the box separately. */
+function addRewatch(itemId, date){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item || !date) return;
+  if(!Array.isArray(item.rewatches)) item.rewatches = [];
+  if(item.rewatches.indexOf(date) > -1) return;   /* same day twice is a slip */
+  item.rewatches.push(date);
+  item.rewatches.sort();
+  item.rewatch = true;
+  save();
+  openDetail(itemId);
+}
+
+function removeRewatch(itemId, date){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item || !Array.isArray(item.rewatches)) return;
+  item.rewatches = item.rewatches.filter(d => d !== date);
+  save();
+  openDetail(itemId);
+}
+
+function clearDates(itemId, seasonNo){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item) return;
+  const target = seasonNo == null
+    ? item
+    : (item.seasons || []).find(x => x.number === seasonNo);
+  if(!target) return;
+  delete target.startDate;
+  delete target.endDate;
+  save();
+}
+
+function setMinutes(itemId, mins){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item || !item.runtime) return;
+  item.watchedMin = Math.max(0, Math.min(Math.round(mins), item.runtime));
+  syncStatus(item);
+  save();
+}
+
+function renderStreamPicker(){
+  const box = $("streamPick");
+  box.innerHTML = "";
+  STREAMING_SERVICES.forEach(svc => {
+    const on = pickedStreams.includes(svc.name);
+    const sub = isSubbed(svc.name);
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = svc.name + (sub ? "" : " ✦");
+    b.title = sub ? svc.name : svc.name + " — not subscribed";
+    if(svc.light) b.setAttribute("data-light","true");
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    if(on){
+      b.style.background  = svc.color;
+      b.style.borderColor = svc.color;
+      b.style.color       = svc.light ? "var(--ink)" : "#fff";
+    }
+    b.onclick = () => {
+      pickedStreams = on ? pickedStreams.filter(s => s !== svc.name) : pickedStreams.concat(svc.name);
+      renderStreamPicker();
+    };
+    box.appendChild(b);
+  });
+}
+
+/* ---------------- form ---------------- */
+function syncTypeUI(){
+  const isMovie = $("fType").value === "movie";
+  $("runtimeField").classList.toggle("hidden", !isMovie);
+  $("lookupHint").textContent = isMovie ? (hasTmdb() ? HINT_MOVIE : HINT_NOKEY) : HINT_SERIES;
+  $("lookupBtn").style.display = (isMovie && !hasTmdb()) ? "none" : "";
+  $("fTitle").placeholder = isMovie ? "Practical Magic" : "Over the Garden Wall";
+  $("results").classList.remove("open");
+  if(typeof renderSeasonScope === "function") renderSeasonScope();
+}
+
+function openForm(item){
+  closeDetail();
+  $("subs").classList.remove("open");
+  editId = item ? item.id : null;
+  pendingLookup = null;
+  pickedStreams = item ? (item.streams || []).slice() : [];
+  $("formTitle").textContent = item ? "Edit" : "Add something";
+  $("fTitle").value    = item ? item.title : "";
+  $("fImage").value    = item ? (item.image || "") : "";
+  $("fStatus").value   = item ? item.status : "want";
+  $("fType").value     = item ? (item.type || "series") : "series";
+  $("fWho").value      = item ? whoOf(item) : "together";
+  $("fPriD").value     = item ? String(item.priD || 0) : "0";
+  $("fPriB").value     = item ? String(item.priB || 0) : "0";
+  $("fRuntime").value  = item && item.runtime ? item.runtime : "";
+  $("fRewatch").checked = !!(item && item.rewatch);
+  const traditionEl = $("fTradition");
+  if(traditionEl) traditionEl.checked = !!(item && item.tradition);
+  syncTypeUI();
+  $("deleteBtn").style.display = item ? "inline-block" : "none";
+  renderStreamPicker();
+  $("form").classList.add("open");
+  $("fTitle").focus();
+}
+function closeForm(){ $("form").classList.remove("open"); editId = null; pickedStreams = []; pendingLookup = null; }
+
+/* ---------------- events ---------------- */
+$("addBtn").onclick      = () => openForm(null);
+$("cancelBtn").onclick   = closeForm;
+$("detailClose").onclick = closeDetail;
+$("fType").onchange      = syncTypeUI;
+
+$("lookupBtn").onclick = () => { const q = $("fTitle").value.trim(); if(q) lookup(q); };
+$("fTitle").onkeydown  = e => { if(e.key === "Enter"){ e.preventDefault(); $("lookupBtn").click(); } };
+
+$("saveBtn").onclick = () => {
+  const title = $("fTitle").value.trim();
+  if(!title){ $("fTitle").focus(); return; }
+
+  const isMovie = $("fType").value === "movie";
+  const seasonScopeEl = $("fSeasonScope");
+  const seasonScope = seasonScopeEl ? seasonScopeEl.value : "all";
+  const payload = {
+    title: title,
+    image: $("fImage").value.trim(),
+    status: $("fStatus").value,
+    type: $("fType").value,
+    who: $("fWho").value,
+    priD: parseInt($("fPriD").value, 10) || 0,
+    priB: parseInt($("fPriB").value, 10) || 0,
+    streams: pickedStreams.slice(),
+    rewatch: $("fRewatch").checked,
+    runtime: isMovie ? (parseInt($("fRuntime").value, 10) || 0) : 0
+  };
+  const traditionEl = $("fTradition");
+  if(traditionEl) payload.tradition = traditionEl.checked;
+
+  if(editId){
+    const i = state.items.findIndex(x => x.id === editId);
+    if(i > -1){
+      const merged = Object.assign({}, state.items[i], payload);
+      if(pendingLookup && pendingLookup.type === "series"){
+        merged.tvmazeId = pendingLookup.tvmazeId;
+        merged.seasons  = seasonsForEdit(state.items[i].seasons, pendingLookup, seasonScope);
+      }
+      /* Kept so "Check again" later doesn't have to re-search TMDB by name. */
+      if(pendingLookup && pendingLookup.tmdbId) merged.tmdbId = pendingLookup.tmdbId;
+      if(pendingLookup && pendingLookup.hasOwnProperty("amazonRentBuy")) merged.amazonRentBuy = pendingLookup.amazonRentBuy;
+      if(isMovie) merged.watchedMin = Math.min(merged.watchedMin || 0, merged.runtime);
+      state.items[i] = merged;
+    }
+  }else{
+    const item = Object.assign({ id: uid(), added: Date.now(), seasons: [], watchedMin: 0 }, extraNewItemDefaults, payload);
+    if(pendingLookup && pendingLookup.type === "series"){
+      item.tvmazeId = pendingLookup.tvmazeId;
+      item.seasons  = seasonsForNew(pendingLookup, seasonScope);
+    }
+    if(pendingLookup && pendingLookup.tmdbId) item.tmdbId = pendingLookup.tmdbId;
+    if(pendingLookup && pendingLookup.hasOwnProperty("amazonRentBuy")) item.amazonRentBuy = pendingLookup.amazonRentBuy;
+    if(item.status === "watched"){
+      if(onMarkWatched) onMarkWatched(item);
+      if(isMovie) item.watchedMin = item.runtime;
+      else item.seasons.forEach(s => {
+        s.watchedEps = Array.from({length: s.episodes}, (_,i) => i + 1);
+        s.watched    = s.episodes;
+      });
+    }
+    state.items.unshift(item);
+  }
+  closeForm();
+  save();
+};
+
+$("deleteBtn").onclick = () => {
+  if(!editId) return;
+  const item = state.items.find(x => x.id === editId);
+  if(!confirm(`Remove "${item ? item.title : "this"}" from the list?`)) return;
+  state.items = state.items.filter(x => x.id !== editId);
+  closeForm();
+  save();
+};
+
+$("refetchBtn").onclick = () => {
+  const item = state.items.find(x => x.id === openId);
+  if(!item) return;
+  if(!item.tvmazeId){ alert("This one wasn't added by lookup. Edit it and use Look it up first."); return; }
+  $("dMeta").textContent = "Refreshing…";
+  fetchSeasons(item.tvmazeId)
+    .then(fresh => { item.seasons = mergeSeasons(item.seasons, fresh); syncStatus(item); save(); })
+    .catch(e => { console.error(e); $("dMeta").textContent = "Refresh failed."; });
+};
+
+
+$("grid").onclick = e => {
+  const cycle = e.target.closest("[data-cycle]");
+  if(cycle){
+    const item = state.items.find(x => x.id === cycle.dataset.cycle);
+    if(item){
+      item.status = NEXT[item.status];
+      if(item.status === "watched" && onMarkWatched) onMarkWatched(item);
+      const t = totals(item);
+      if(t.kind === "movie"){
+        if(item.status === "watched") item.watchedMin = item.runtime;
+        if(item.status === "want")    item.watchedMin = 0;
+      }else if(t.kind === "series"){
+        if(item.status === "watched") item.seasons.forEach(s => {
+          s.watchedEps = Array.from({length: s.episodes}, (_,i) => i + 1);
+          s.watched    = s.episodes;
+        });
+        if(item.status === "want") item.seasons.forEach(s => { s.watchedEps = []; s.watched = 0; });
+      }
+      save();
+    }
+    return;
+  }
+  const edit = e.target.closest("[data-edit]");
+  if(edit){ const i = state.items.find(x => x.id === edit.dataset.edit); if(i) openForm(i); return; }
+
+  const del = e.target.closest("[data-del]");
+  if(del){
+    const i = state.items.find(x => x.id === del.dataset.del);
+    if(i && confirm(`Remove "${i.title}" from the list?`)){
+      if(openId === i.id) closeDetail();
+      state.items = state.items.filter(x => x.id !== i.id);
+      save();
+    }
+    return;
+  }
+  const open = e.target.closest("[data-open]");
+  if(open) openDetail(open.dataset.open);
+};
+
+/* chips fire this with e.detail.watched (the new set object) */
+$("detailBody").addEventListener("pp-progress-change", e => {
+  const box = e.target.closest("[data-season]");
+  if(!box || !openId) return;
+  const no = parseInt(box.getAttribute("data-season"), 10);
+  if(e.detail.watched != null){
+    /* per-chip toggle — convert the set object to a sorted array */
+    const eps = Object.keys(e.detail.watched).map(Number).sort((a,b) => a - b);
+    setSeasonEps(openId, no, eps);
+  }
+});
+
+$("detailBody").onclick = e => {
+  if(!openId) return;
+  const item = state.items.find(x => x.id === openId);
+  if(!item) return;
+
+  const minBtn = e.target.closest("[data-min]");
+  if(minBtn){
+    const v = minBtn.getAttribute("data-min");
+    if(v === "finish")       setMinutes(openId, item.runtime);
+    else if(v === "restart") setMinutes(openId, 0);
+    else                     setMinutes(openId, (item.watchedMin || 0) + parseInt(v, 10));
+    return;
+  }
+
+  const allBtn  = e.target.closest("[data-season-all]");
+  const noneBtn = e.target.closest("[data-season-none]");
+  if(allBtn){
+    const no = parseInt(allBtn.getAttribute("data-season-all"), 10);
+    const s  = (item.seasons || []).find(x => x.number === no);
+    if(s) setSeasonEps(openId, no, Array.from({length: s.episodes}, (_,i) => i + 1));
+    return;
+  }
+  if(noneBtn){
+    const no = parseInt(noneBtn.getAttribute("data-season-none"), 10);
+    if(no) setSeasonEps(openId, no, []);
+    return;
+  }
+
+  if(e.target.id === "svcCheck"){ refreshServices(openId); return; }
+
+  if(e.target.id === "rwAdd"){
+    const box = $("rwDate");
+    if(box && box.value) addRewatch(openId, box.value);
+    return;
+  }
+
+  const dropRw = e.target.closest("[data-rewatch-drop]");
+  if(dropRw){
+    removeRewatch(openId, dropRw.getAttribute("data-rewatch-drop"));
+    return;
+  }
+
+  const clearBtn = e.target.closest("[data-date-clear]");
+  if(clearBtn){
+    const v = clearBtn.getAttribute("data-date-clear");
+    clearDates(openId, v === "movie" ? null : parseInt(v, 10));
+  }
+};
+
+$("detailBody").onchange = e => {
+  if(!openId) return;
+
+  if(e.target.id === "minInput") setMinutes(openId, parseInt(e.target.value, 10) || 0);
+
+  const totalInput = e.target.closest("[data-season-total]");
+  if(totalInput){
+    const no = parseInt(totalInput.getAttribute("data-season-total"), 10);
+    const val = parseInt(totalInput.value, 10);
+    if(!isNaN(val)) setSeasonTotal(openId, no, val);
+    return;
+  }
+
+  const dateInput = e.target.closest("[data-date]");
+  if(dateInput){
+    const which  = dateInput.getAttribute("data-date");
+    const seasNo = dateInput.getAttribute("data-date-season");
+    setDate(openId, seasNo == null ? null : parseInt(seasNo, 10), which, dateInput.value);
+  }
+};
+
+/* filters */
+document.querySelectorAll(".cq-filter").forEach(btn => {
+  btn.onclick = () => {
+    filter = btn.dataset.filter;
+    document.querySelectorAll(".cq-filter").forEach(b => b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+    render();
+  };
+});
+
+$("fltKind").onchange = e => { fltKind = e.target.value; render(); };
+$("fltWho").onchange  = e => { fltWho  = e.target.value; render(); };
+$("fltPri").onchange  = e => { fltPri  = e.target.value; render(); };
+$("fltStream").onchange = e => { fltStream = e.target.value; render(); };
+$("sortBy").onchange  = e => { sortBy  = e.target.value; render(); };
+
+$("resetBtn").onclick = () => {
+  fltKind = fltWho = fltPri = fltStream = "all";
+  filter = "unfinished";
+  $("fltKind").value = $("fltWho").value = $("fltPri").value = $("fltStream").value = "all";
+  document.querySelectorAll(".cq-filter").forEach(b =>
+    b.setAttribute("aria-pressed", b.dataset.filter === "unfinished" ? "true" : "false"));
+  if(extraReset) extraReset();
+  render();
+};
+
+$("subsBtn").onclick = () => {
+  const panel = $("subs");
+  const opening = !panel.classList.contains("open");
+  closeForm();
+  closeDetail();
+  panel.classList.toggle("open", opening);
+  if(opening) renderSubsPicker();
+};
+$("subsClose").onclick = () => $("subs").classList.remove("open");
