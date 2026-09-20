@@ -98,6 +98,25 @@
           <h2 class="rp-head">Mentioned here</h2>
           <div class="rp-chiplinks" id="mentions"></div>
         </section>
+        <section class="pp-panel" id="wikiQuickPanel">
+          <h2 class="rp-head">Add to the wiki</h2>
+          <p class="pp-hint" style="margin:-4px 0 10px;">Jot it down without leaving the scene &mdash; matches an entry by name, or starts a new one.</p>
+          <label class="pp-sr-only" for="wqName">Entry name</label>
+          <div class="pp-field" style="margin-bottom:8px;">
+            <input id="wqName" list="wqNames" placeholder="Entry name" maxlength="100" autocomplete="off">
+            <datalist id="wqNames"></datalist>
+          </div>
+          <label class="pp-sr-only" for="wqKind">Kind, if this is a new entry</label>
+          <div class="pp-field" style="margin-bottom:8px;">
+            <select id="wqKind"></select>
+          </div>
+          <label class="pp-sr-only" for="wqNote">What&rsquo;s true now</label>
+          <textarea class="rp-leftnote" id="wqNote" placeholder="What&rsquo;s true now?" rows="3" style="min-height:64px;"></textarea>
+          <div class="rp-actions" style="margin-top:10px;">
+            <button class="pp-btn pp-btn-sm" type="button" id="wqSave">Save to wiki</button>
+            <span class="rp-count" id="wqStatus"></span>
+          </div>
+        </section>
       </aside>
     </div>
   </div>
@@ -271,6 +290,51 @@ function renderRail(){
   $("mentionsPanel").hidden = !chips.length;
   $("mentions").innerHTML = chips.join("");
 }
+
+/* ---------------- quick wiki note ----------------
+   Adding or updating a wiki entry without leaving the scene: type a name,
+   type what's true now, save. Matches an existing entry by title/alias the
+   same way [[links]] do; anything that doesn't match starts a new one. */
+
+$("wqKind").innerHTML = RP.KIND_KEYS.map(k => `<option value="${k}">${esc(RP.KINDS[k].label)}</option>`).join("");
+
+function renderWikiQuick(){
+  $("wqNames").innerHTML = RP.wikiSorted().map(w => `<option value="${esc(w.title)}">`).join("");
+}
+
+function saveWikiQuick(){
+  const name = $("wqName").value.trim();
+  const note = $("wqNote").value.trim();
+  if(!name){ $("wqName").focus(); return; }
+  if(!note){ $("wqNote").focus(); return; }
+
+  const hit = RP.resolve(name);
+  if(hit && hit.kind === "cast"){
+    alert(`${RP.displayName(hit.rec)} is a character, not a wiki entry — edit them from the Cast page.`);
+    return;
+  }
+
+  let rec;
+  if(hit){
+    rec = Object.assign({}, hit.rec);
+    rec.md = (rec.md ? rec.md.trim() + "\n\n" : "") + note;
+  } else {
+    rec = { id: RP.uid(), title: name, kind: $("wqKind").value, aka:[], summary:"", md: note, when:{}, created: RP.todayISO() };
+  }
+  RP.save("wiki", rec);
+
+  $("wqName").value = "";
+  $("wqNote").value = "";
+  $("wqStatus").innerHTML = (hit ? "Added to " : "Created ") +
+    `<a href="${esc(RP.wikiUrl(rec.id))}" target="_blank" rel="noopener">${esc(rec.title)}</a>`;
+  renderWikiQuick();
+  $("wqName").focus();
+}
+
+$("wqSave").addEventListener("click", saveWikiQuick);
+$("wqNote").addEventListener("keydown", e => {
+  if(e.key === "Enter" && (e.ctrlKey || e.metaKey)){ e.preventDefault(); saveWikiQuick(); }
+});
 
 /* ---------------- speaker picker ---------------- */
 
@@ -493,6 +557,7 @@ function render(){
   renderTop();
   renderPosts();
   renderRail();
+  renderWikiQuick();
   paintSpeaker();
 }
 
