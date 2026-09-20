@@ -303,3 +303,15 @@
 
   .cq-card.is-unavail .cq-where,
   .cq-card.is-unavail .cq-dateline{ color:var(--unavail); }
+
+  /* --- rentable on Amazon ---
+     Sits under the Unavailable sash, only when a title we don't have on any
+     subscribed service can still be rented or bought on Amazon. */
+  .cq-amazon{
+    display:inline-block;
+    font-family:var(--font-body); font-size:.64rem; font-weight:600;
+    letter-spacing:.06em; text-transform:uppercase;
+    color:#fff; background:var(--gold-deep);
+    border-radius:999px; padding:3px 9px;
+    margin:0 0 2px;
+  }

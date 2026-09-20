@@ -898,10 +898,13 @@ function showResults(rows, onPick){
    WHERE IS IT STREAMING
    TMDB's watch/providers endpoint, same key the film lookup already uses.
 
-   Only `flatrate` is read — things included with a subscription. Rent and buy
-   are deliberately ignored, because "on Netflix" and "£3.99 on Apple" are not
-   the same fact and the sash under a title is meant to answer "can we just put
-   this on tonight".
+   Only `flatrate` is read for the service chips — things included with a
+   subscription. Rent and buy are otherwise ignored, because "on Netflix" and
+   "£3.99 on Apple" are not the same fact and the sash under a title is meant
+   to answer "can we just put this on tonight". The one exception is Amazon:
+   when nothing we have carries a title, `rent`/`buy` are checked for an
+   Amazon listing so the unavailable sash can say "rentable" instead of just
+   "no". TMDB doesn't return prices, only which stores carry it.
 
    Providers are regional, so REGION picks the country. TMDB names don't match
    ours ("Amazon Prime Video", "Disney Plus"), hence the alias table.
@@ -931,22 +934,27 @@ function mapProvider(tmdbName){
   return hit ? hit.name : null;
 }
 
-/* Returns { services:[names], unknown:[names] }. `unknown` is everything TMDB
-   listed that we have no chip for — surfaced in the hint rather than dropped,
-   so it's obvious when something is streaming somewhere unexpected. */
+/* Returns { services:[names], unknown:[names], amazonRentBuy:bool }. `unknown`
+   is everything TMDB listed that we have no chip for — surfaced in the hint
+   rather than dropped, so it's obvious when something is streaming somewhere
+   unexpected. `amazonRentBuy` is true when Amazon shows up in `rent` or `buy`
+   for this title, regardless of what's in `flatrate`. */
 function providersFor(kind, tmdbId){
   return fetch(TMDB + "/" + kind + "/" + tmdbId + "/watch/providers?api_key=" +
                encodeURIComponent(TMDB_KEY))
     .then(r => r.json())
     .then(data => {
-      const flat = (((data.results || {})[REGION] || {}).flatrate) || [];
+      const region = (data.results || {})[REGION] || {};
+      const flat = region.flatrate || [];
       const services = [], unknown = [];
       flat.forEach(p => {
         const mapped = mapProvider(p.provider_name);
         if(mapped){ if(services.indexOf(mapped) === -1) services.push(mapped); }
         else if(unknown.indexOf(p.provider_name) === -1) unknown.push(p.provider_name);
       });
-      return { services, unknown };
+      const rentBuy = (region.rent || []).concat(region.buy || []);
+      const amazonRentBuy = rentBuy.some(p => /amazon/i.test(p.provider_name || ""));
+      return { services, unknown, amazonRentBuy };
     });
 }
 
@@ -969,10 +977,11 @@ function providerSummary(found){
     if(found.unknown.length) msg += " Also on " + found.unknown.join(", ") + " — no chip for those.";
     return msg;
   }
+  const amazonNote = found.amazonRentBuy ? " Amazon has it to rent or buy." : "";
   if(found.unknown.length){
-    return "Only on " + found.unknown.join(", ") + ", which we don't have a chip for. Marked unavailable.";
+    return "Only on " + found.unknown.join(", ") + ", which we don't have a chip for. Marked unavailable." + amazonNote;
   }
-  return "Not included with any subscription right now — marked unavailable.";
+  return "Not included with any subscription right now — marked unavailable." + amazonNote;
 }
 
 /* Writes the result onto the chip picker in the add/edit form. Nothing is
@@ -983,6 +992,7 @@ function applyProvidersToForm(found){
   });
   pickedStreams = pickedStreams.filter(s => s !== "Unavailable");
   if(!pickedStreams.length) pickedStreams = ["Unavailable"];
+  if(pendingLookup) pendingLookup.amazonRentBuy = !!found.amazonRentBuy;
   renderStreamPicker();
 }
 
@@ -1017,6 +1027,7 @@ function refreshServices(id){
       const lost   = before.filter(s => found.services.indexOf(s) === -1);
 
       item.streams = found.services.length ? found.services.slice() : ["Unavailable"];
+      item.amazonRentBuy = !!found.amazonRentBuy;
       save();
       openDetail(id);
 
@@ -1397,6 +1408,9 @@ function render(){
     if(onNothing) card.classList.add("is-unavail");
     const tradition = item.tradition ? `<span class="sp-tradition">Annual</span>` : "";
 
+    const amazonPill = (onNothing && item.amazonRentBuy)
+      ? `<span class="cq-amazon" title="Not included with a subscription, but Amazon has it">Rent/buy on Amazon</span>` : "";
+
     const yrs = (item.years || []).slice().sort((a,b) => b - a);
     let yearLine = "";
     if(yrs.length){
@@ -1415,6 +1429,7 @@ function render(){
       </div>
       <div class="cq-body">
         <h3 class="cq-name">${esc(item.title)}</h3>
+        ${amazonPill}
         ${where ? `<div class="cq-where">${esc(where)}</div>` : ""}
         ${dateLine(item) ? `<div class="cq-dateline">${esc(dateLine(item))}</div>` : ""}
         ${rewatchLines(item)}
@@ -1549,10 +1564,13 @@ function openDetail(id){
   const svc = document.createElement("div");
   svc.className = "cq-block";
   const on = (item.streams || []).filter(s => s !== "Unavailable");
+  const onNothingDetail = (item.streams || []).length > 0 && !(item.streams || []).some(isSubbed);
+  const amazonNote = (onNothingDetail && item.amazonRentBuy)
+    ? ` <span class="cq-amazon" title="Not included with a subscription, but Amazon has it">Rent/buy on Amazon</span>` : "";
   svc.innerHTML = `
     <div class="cq-block-head">
       <span class="cq-block-name">Where to watch</span>
-      <span class="cq-block-count">${on.length ? esc(on.join(", ")) : "nowhere we have"}</span>
+      <span class="cq-block-count">${on.length ? esc(on.join(", ")) : "nowhere we have"}${amazonNote}</span>
     </div>
     <div class="cq-step">
       <button id="svcCheck">Check again</button>
@@ -1767,6 +1785,7 @@ $("saveBtn").onclick = () => {
       }
       /* Kept so "Check again" later doesn't have to re-search TMDB by name. */
       if(pendingLookup && pendingLookup.tmdbId) merged.tmdbId = pendingLookup.tmdbId;
+      if(pendingLookup && pendingLookup.hasOwnProperty("amazonRentBuy")) merged.amazonRentBuy = pendingLookup.amazonRentBuy;
       if(isMovie) merged.watchedMin = Math.min(merged.watchedMin || 0, merged.runtime);
       state.items[i] = merged;
     }
@@ -1777,6 +1796,7 @@ $("saveBtn").onclick = () => {
       item.seasons  = pendingLookup.seasons;
     }
     if(pendingLookup && pendingLookup.tmdbId) item.tmdbId = pendingLookup.tmdbId;
+    if(pendingLookup && pendingLookup.hasOwnProperty("amazonRentBuy")) item.amazonRentBuy = pendingLookup.amazonRentBuy;
     if(item.status === "watched"){
       markYear(item);
       if(isMovie) item.watchedMin = item.runtime;
