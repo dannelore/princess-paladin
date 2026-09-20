@@ -325,17 +325,33 @@ function feed(state, pet, amount, ctx){
 function awardPetXP(state, amount){
   const buffs = legendBuffs(state);
   const scaled = Math.round(amount * buffs.xp);
-  const gained = [];
+  const grants = [];
+  const leveled = [];
   (state.pets || []).forEach(p => {
     if(p.tier === 'stable') return;
     const share = p.tier === 'active' ? scaled : Math.round(scaled * 0.35);
     if(share <= 0) return;
     const before = stageOf(p).key;
     p.xp = (p.xp || 0) + share;
+    grants.push({ petId: p.id, share });
     const after = stageOf(p).key;
-    if(before !== after) gained.push({ pet:p, stage: stageOf(p) });
+    if(before !== after) leveled.push({ pet:p, stage: stageOf(p) });
   });
-  return gained;
+  return { grants, leveled };
+}
+/* Reverses exactly the per-pet shares awardPetXP granted (its `grants`
+   list), rather than recomputing shares from scratch — the party roster
+   can change between granting and undoing (a pet moved to the stable,
+   swapped out), and recomputing against the roster as it is now would
+   undo the wrong pets or the wrong amounts. */
+function undoPetXP(state, grants){
+  if(!grants || !grants.length) return;
+  const byId = {};
+  (state.pets || []).forEach(p => { byId[p.id] = p; });
+  grants.forEach(g => {
+    const p = byId[g.petId];
+    if(p) p.xp = Math.max(0, (p.xp || 0) - g.share);
+  });
 }
 
 /* ---------- titles ----------
@@ -435,13 +451,19 @@ function activeMonster(ms){
    only changes how hard that gold hits a monster. */
 const MONSTER_DAMAGE_MULTIPLIER = 2;
 
+/* Returns an undo receipt (not just the killed monster) so a task can be
+   unchecked without leaving the hit permanently on the monster — hpBefore
+   and historyId are exactly what undoMonsterDamage needs to put the fight
+   back the way it was, even when the hit was a kill. */
 function damageMonster(ms, amount, who){
   const m = activeMonster(ms);
   if(!m || amount <= 0) return null;
   const dealt = amount * MONSTER_DAMAGE_MULTIPLIER;
+  const hpBefore = m.hp;
   m.hp = Math.max(0, m.hp - dealt);
   if(!ms.damage[m.id]) ms.damage[m.id] = {};
   ms.damage[m.id][who] = (ms.damage[m.id][who] || 0) + dealt;
+  const receipt = { monsterId: m.id, who, dealt, hpBefore, killedName: null, historyId: null };
   if(m.hp === 0){
     m.dead = true;
     m.killed = m.killed || TODAY_KEY;
@@ -451,17 +473,33 @@ function damageMonster(ms, amount, who){
        again. Fighting the same monster later adds another entry instead
        of overwriting this one, so the record only ever grows. */
     if(!ms.history) ms.history = [];
-    ms.history.push({
+    const entry = {
       id: 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2,7),
       monsterId: m.id,
       name: m.name,
       maxHp: m.maxHp,
       killedDate: m.killed,
       damage: Object.assign({}, ms.damage[m.id])
-    });
-    return m;
+    };
+    ms.history.push(entry);
+    receipt.killedName = m.name;
+    receipt.historyId = entry.id;
   }
-  return null;
+  return receipt;
+}
+/* Puts a hit back the way it was: restores the pre-hit HP, subtracts the
+   exact damage credited to `who`, and — if that hit was the kill — revives
+   the monster and removes the one history entry it created. */
+function undoMonsterDamage(ms, receipt){
+  if(!receipt) return;
+  const m = (ms.monsters || []).find(x => x.id === receipt.monsterId);
+  if(!m) return;
+  if(receipt.historyId && ms.history) ms.history = ms.history.filter(h => h.id !== receipt.historyId);
+  if(receipt.killedName){ m.dead = false; m.killed = null; }
+  m.hp = Math.min(m.maxHp, receipt.hpBefore);
+  if(ms.damage[m.id]){
+    ms.damage[m.id][receipt.who] = Math.max(0, (ms.damage[m.id][receipt.who] || 0) - receipt.dealt);
+  }
 }
 
 /* Bring a defeated monster back for another round: same name, HP ceiling
@@ -1131,6 +1169,24 @@ function recalibrate(state){
 /* ==========================================================================
    ACCOUNT XP
    ========================================================================== */
+/* xpToNext at any level is a pure function of that level alone — always
+   100 at level 1, x1.25 (rounded) per level after — so cumulative XP earned
+   can be reconstructed from {level, xp} and rebuilt back into {level, xp,
+   xpToNext} without needing a separate history log. That's what makes
+   undoAccountXP below possible. */
+function totalXpEarned(state){
+  let total = 0, x = 100;
+  for(let l = 1; l < state.level; l++){ total += x; x = Math.round(x * 1.25); }
+  return total + state.xp;
+}
+function applyTotalXp(state, total){
+  total = Math.max(0, total);
+  let level = 1, x = 100;
+  while(total >= x){ total -= x; level += 1; x = Math.round(x * 1.25); }
+  state.level = level;
+  state.xp = total;
+  state.xpToNext = x;
+}
 function addAccountXP(state, amount){
   const buffs = legendBuffs(state);
   const scaled = Math.round(amount * buffs.xp);
@@ -1147,7 +1203,16 @@ function addAccountXP(state, amount){
     state.xpToNext = Math.round(state.xpToNext * 1.25);
     levels.push(state.level);
   }
-  return levels;
+  return { scaled, levels };
+}
+/* Reverses exactly what addAccountXP granted. Takes the already-scaled
+   amount addAccountXP returned (not a raw task value) so it can't drift if
+   buffs — e.g. a legend pet's XP bonus — change between granting and
+   undoing, such as when a task is checked then unchecked. */
+function undoAccountXP(state, scaledAmount){
+  if(!scaledAmount) return;
+  state.meowBucks = Math.max(0, (state.meowBucks || 0) - scaledAmount * 2);
+  applyTotalXp(state, totalXpEarned(state) - scaledAmount);
 }
 
 /* ---------- exports ---------- */
@@ -1166,13 +1231,13 @@ return {
   isScheduled, repeatSummary, makeCtx, isVacation, vacationActive,
   ageMultiplier, getStreak, taskValue, subtaskValue, bonusValue,
   addCurrency, removeCurrency, spendCurrency, ledgerWeek, recalibrate,
-  addAccountXP,
+  addAccountXP, undoAccountXP,
   stageOf, stageIndex, petLevel, nextStage, stageProgress, canWear, mood,
   legendBuffs, partySlots, nextSlotLevel, activePet, partyPets, stablePets,
-  settleHunger, liveHunger, feed, awardPetXP,
+  settleHunger, liveHunger, feed, awardPetXP, undoPetXP,
   ensureFragments, addFragment, absorbFragments, renameFragment, removeFragment,
   petsUsingFragment, FRAGMENT_KINDS, randomPrefix, titleText,
-  activeMonster, damageMonster, reviveMonster,
+  activeMonster, damageMonster, undoMonsterDamage, reviveMonster,
   rollPetOptions, makePet, placePet, petSvg,
   catalogItem, itemsForSlot,
   WARDROBE_COLLECTION, loadCustomWardrobe, saveCustomWardrobeItem
