@@ -1223,28 +1223,43 @@ function checkStreakMilestone(task){
     `"${task.title}" has held for ${streak} days straight.` + (streak >= 30 ? ' A new companion is waiting.' : ''));
 }
 
-/* Called after every completion. Handles XP, pet growth and monster damage. */
+/* Called after every completion. Handles XP, pet growth and monster damage,
+   and returns exactly what it granted (a "grant" receipt) so unchecking the
+   task later can undo precisely that — not a recomputed guess at what it
+   was worth now, which would drift if rates or buffs changed in between,
+   and not nothing, which is what let a task be checked and unchecked
+   over and over for free XP/pet growth/monster damage. */
 function reward(task, column, copper, xpAmount){
   PQ.addCurrency(S(), copper, column);
-  PQ.addAccountXP(S(), xpAmount).forEach(lvl =>
+
+  const xpResult = PQ.addAccountXP(S(), xpAmount);
+  xpResult.levels.forEach(lvl =>
     queueCelebration('levelup-' + lvl, '✨', `Level ${lvl}`,
       PQ.SLOT_LEVELS.includes(lvl) ? 'A new party slot has opened.' : 'You have grown stronger.'));
 
-  PQ.awardPetXP(S(), xpAmount).forEach(({ pet, stage }) =>
+  const petResult = PQ.awardPetXP(S(), xpAmount);
+  petResult.leveled.forEach(({ pet, stage }) =>
     queueCelebration(`stage-${pet.id}-${stage.key}`, '🌱', `${pet.name} is a ${stage.name}`,
       stage.key === 'legend'
         ? 'Move them to the stable and they will buff everyone still working.'
         : 'New things unlock in the closet.'));
 
-  const killed = PQ.damageMonster(M(), copper, WHO);
+  const monsterReceipt = PQ.damageMonster(M(), copper, WHO);
   monsterStore.save();
-  if(killed){
-    queueCelebration('kill-' + killed.id, '⚔️', `${killed.name} falls`,
+  if(monsterReceipt && monsterReceipt.killedName){
+    queueCelebration('kill-' + monsterReceipt.monsterId, '⚔️', `${monsterReceipt.killedName} falls`,
       'Collect your share on the monsters page.');
   }
+
+  return { column, copper, xp: xpResult.scaled, petGrants: petResult.grants, monsterReceipt };
 }
-function unreward(column, copper){
-  PQ.removeCurrency(S(), copper, column);
+function unreward(grant){
+  if(!grant) return;
+  PQ.removeCurrency(S(), grant.copper, grant.column);
+  PQ.undoAccountXP(S(), grant.xp);
+  PQ.undoPetXP(S(), grant.petGrants);
+  PQ.undoMonsterDamage(M(), grant.monsterReceipt);
+  monsterStore.save();
 }
 
 /* ============ FILTERS ============ */
@@ -1620,12 +1635,14 @@ function buildCard(task, column, opts){
 /* ============ DAILIES ============ */
 function toggleDailySub(task, subId){
   const rec = taskRecord(PQ.dateKey(viewDate), task.id);
+  if(!rec.subGrants) rec.subGrants = {};
   if(rec.subs[subId]){
     delete rec.subs[subId];
-    unreward('dailies', subValue(task, 'dailies'));
+    unreward(rec.subGrants[subId]);
+    delete rec.subGrants[subId];
   } else {
     rec.subs[subId] = true;
-    reward(task, 'dailies', subValue(task, 'dailies'), Math.max(1, Math.round((task.difficulty || 3) * 1.5)));
+    rec.subGrants[subId] = reward(task, 'dailies', subValue(task, 'dailies'), Math.max(1, Math.round((task.difficulty || 3) * 1.5)));
   }
   saveAndRender();
 }
@@ -1634,11 +1651,12 @@ function toggleDaily(task){
   const subs = task.subs || [];
   if(rec.done){
     rec.done = false;
-    unreward('dailies', bonusOf(task, 'dailies'));
+    unreward(rec.grant);
+    delete rec.grant;
   } else {
     const allSubs = !subs.length || subs.every(s => rec.subs[s.id]);
     rec.done = true;
-    reward(task, 'dailies', allSubs ? bonusOf(task, 'dailies') : 0, (task.difficulty || 3) * 8);
+    rec.grant = reward(task, 'dailies', allSubs ? bonusOf(task, 'dailies') : 0, (task.difficulty || 3) * 8);
     checkStreakMilestone(task);
     setTimeout(() => { checkPerfectDay(viewDate); flushCelebrations(); }, 0);
   }
@@ -1707,12 +1725,14 @@ function renderDailies(){
 /* ============ TODOS + PROJECTS ============ */
 function toggleSimpleSub(task, column, subId){
   if(!task.subDone) task.subDone = {};
+  if(!task.subGrants) task.subGrants = {};
   if(task.subDone[subId]){
     delete task.subDone[subId];
-    unreward(column, subValue(task, column));
+    unreward(task.subGrants[subId]);
+    delete task.subGrants[subId];
   } else {
     task.subDone[subId] = true;
-    reward(task, column, subValue(task, column), Math.max(1, Math.round((task.difficulty || 3) * 1.5)));
+    task.subGrants[subId] = reward(task, column, subValue(task, column), Math.max(1, Math.round((task.difficulty || 3) * 1.5)));
   }
   saveAndRender();
 }
@@ -1720,12 +1740,13 @@ function toggleSimple(task, column){
   const subs = task.subs || [];
   if(task.done){
     task.done = false; task.doneDate = null;
-    unreward(column, bonusOf(task, column));
+    unreward(task.grant);
+    delete task.grant;
   } else {
     const allSubs = !subs.length || subs.every(s => (task.subDone || {})[s.id]);
     task.done = true;
     task.doneDate = PQ.dateKey(viewDate);
-    reward(task, column, allSubs ? bonusOf(task, column) : 0, (task.difficulty || 3) * 8);
+    task.grant = reward(task, column, allSubs ? bonusOf(task, column) : 0, (task.difficulty || 3) * 8);
   }
   saveAndRender();
 }
