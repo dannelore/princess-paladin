@@ -119,9 +119,14 @@ function migrate(){
         if(!Array.isArray(a.audience)) a.audience = [];
       }
     }
-    // "rooms"-kind events (the three Long Rests) have no attendance of
-    // their own — their headcount is derived from that night's room
-    // assignments instead, see nightBunkCount().
+    // "rooms"-kind events (the three Long Rests) have no attendance or
+    // capacity of their own — their headcount is derived from that
+    // night's room assignments instead, see nightBunkCount(). Drop any
+    // stale entries a doc saved before that change might still have.
+    else{
+      delete state.attendance[ev.key];
+      delete state.capacity[ev.key];
+    }
   });
 
   NIGHTS.forEach(n => {
