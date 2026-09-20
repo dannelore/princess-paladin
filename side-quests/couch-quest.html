@@ -294,6 +294,11 @@
         <div class="cq-results" id="results"></div>
       </div>
 
+      <div class="cq-field wide hidden" id="seasonScopeField">
+        <label for="fSeasonScope">Seasons to add</label>
+        <select id="fSeasonScope"></select>
+      </div>
+
       <div class="cq-field">
         <label for="fWho">Who's watching</label>
         <select id="fWho">
@@ -460,6 +465,11 @@ function hm(min){
    Stored as plain "YYYY-MM-DD" strings, so they sort as text and never
    pick up a timezone. Films carry their own pair; series carry a pair
    per season, and the item-level dates are derived from those. */
+function todayKey(){
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
 function fmtDate(d){
   if(!d) return "";
   const parts = String(d).split("-");
@@ -901,15 +911,17 @@ function pickSeries(r){
   fetchSeasons(r.raw.id)
     .then(seasons => {
       pendingLookup = { type:"series", tvmazeId: r.raw.id, seasons: seasons };
+      renderSeasonScope();
       const eps = seasons.reduce((n,s) => n + s.episodes, 0);
       const seasonMsg =
-        seasons.length + (seasons.length === 1 ? " season, " : " seasons, ") + eps + " episodes found.";
+        seasons.length + (seasons.length === 1 ? " season, " : " seasons, ") + eps + " episodes aired so far.";
       $("lookupHint").textContent = seasonMsg;
       lookupSeriesProviders(r, seasonMsg);
     })
     .catch(e => {
       console.error(e);
       pendingLookup = { type:"series", tvmazeId: r.raw.id, seasons: [] };
+      renderSeasonScope();
       $("lookupHint").textContent = "Got the show, but the seasons didn't load. Try Refresh seasons after saving.";
     });
 }
@@ -993,21 +1005,24 @@ function pickMovie(r){
     .catch(e => { console.error(e); $("lookupHint").textContent = "Got the film, but no runtime came back. Type it in."; });
 }
 
-/* One request: the seasons endpoint gives us episodeOrder (total ordered
-   episodes including unaired). We store just that number — the user manually
-   updates it if they want to track a mid-season airing show. */
+/* Counts only episodes that have actually aired (airdate on or before today)
+   — never TVmaze's full planned order, which a currently-airing season often
+   already has set well before the last episode airs. A season with nothing
+   aired yet is dropped entirely rather than listed as empty, so a renewed-
+   but-unstarted season doesn't show up early. */
 function fetchSeasons(showId){
   return fetch(TVMAZE + "/shows/" + showId + "/seasons")
     .then(r => r.json())
     .then(seasonData => {
-      /* also fetch aired episodes as a fallback for episodeOrder */
       return fetch(TVMAZE + "/shows/" + showId + "?embed=episodes")
         .then(r => r.json())
         .then(showData => {
           const eps = (showData._embedded && showData._embedded.episodes) || [];
+          const today = todayKey();
           const aired = {};
           eps.forEach(ep => {
             if(!ep.season || ep.number == null) return;
+            if(!ep.airdate || ep.airdate > today) return;
             aired[ep.season] = (aired[ep.season] || 0) + 1;
           });
           return seasonData
@@ -1015,7 +1030,7 @@ function fetchSeasons(showId){
             .sort((a, b) => a.number - b.number)
             .map(s => ({
               number:   s.number,
-              episodes: s.episodeOrder || aired[s.number] || 0,
+              episodes: aired[s.number] || 0,
               watched:  0
             }))
             .filter(s => s.episodes > 0);
@@ -1043,6 +1058,35 @@ function mergeSeasons(oldSeasons, fresh){
     if(p && p.endDate)   out.endDate   = p.endDate;
     return out;
   });
+}
+
+/* Adds or updates only the given seasons — the additive counterpart to
+   mergeSeasons above, which replaces the whole array. Used when a lookup was
+   deliberately scoped to one season, so picking up that one season doesn't
+   silently drop every other season already being tracked. */
+function unionSeasons(oldSeasons, fresh){
+  const list = (oldSeasons || []).map(s => Object.assign({}, s));
+  fresh.forEach(s => {
+    const idx = list.findIndex(x => x.number === s.number);
+    if(idx > -1){
+      const p = list[idx];
+      const weps = Array.isArray(p.watchedEps) ? p.watchedEps.filter(i => i <= s.episodes) : null;
+      const wc   = weps ? weps.length : Math.min(p.watched || 0, s.episodes);
+      list[idx] = Object.assign({}, p, { episodes: s.episodes, watchedEps: weps, watched: wc });
+    }else{
+      list.push(Object.assign({}, s));
+    }
+  });
+  list.sort((a, b) => a.number - b.number);
+  return list;
+}
+
+/* Narrows a freshly-fetched season list down to just the one the "Seasons to
+   add" picker chose, or leaves it alone for "all". */
+function scopedSeasons(seasons, scope){
+  if(!scope || scope === "all") return seasons;
+  const n = parseInt(scope, 10);
+  return seasons.filter(s => s.number === n);
 }
 
 /* ---------------- filter + sort ---------------- */
@@ -1498,6 +1542,29 @@ function renderStreamPicker(){
 }
 
 /* ---------------- form ---------------- */
+/* Lets a lookup be scoped to one season instead of the whole show — so
+   tracking just the season that's currently airing doesn't also import
+   every season already watched some other way. Only shown once a series
+   lookup has actually returned seasons. */
+function renderSeasonScope(){
+  const field = $("seasonScopeField");
+  const sel = $("fSeasonScope");
+  const seasons = ($("fType").value === "series" && pendingLookup && pendingLookup.type === "series")
+    ? pendingLookup.seasons : [];
+  if(!seasons.length){
+    field.classList.add("hidden");
+    sel.innerHTML = "";
+    return;
+  }
+  const totalEps = seasons.reduce((n, s) => n + s.episodes, 0);
+  sel.innerHTML =
+    `<option value="all">All ${seasons.length} season${seasons.length === 1 ? "" : "s"} (${totalEps} episode${totalEps === 1 ? "" : "s"})</option>` +
+    seasons.map(s =>
+      `<option value="${s.number}">Season ${s.number} only — ${s.episodes} episode${s.episodes === 1 ? "" : "s"} aired so far</option>`
+    ).join("");
+  field.classList.remove("hidden");
+}
+
 function syncTypeUI(){
   const isMovie = $("fType").value === "movie";
   $("runtimeField").classList.toggle("hidden", !isMovie);
@@ -1505,6 +1572,7 @@ function syncTypeUI(){
   $("lookupBtn").style.display = (isMovie && !hasTmdb()) ? "none" : "";
   $("fTitle").placeholder = isMovie ? "Practical Magic" : "Over the Garden Wall";
   $("results").classList.remove("open");
+  renderSeasonScope();
 }
 
 function openForm(item){
@@ -1545,6 +1613,7 @@ $("saveBtn").onclick = () => {
   if(!title){ $("fTitle").focus(); return; }
 
   const isMovie = $("fType").value === "movie";
+  const seasonScope = $("fSeasonScope").value;
   const payload = {
     title: title,
     image: $("fImage").value.trim(),
@@ -1564,7 +1633,7 @@ $("saveBtn").onclick = () => {
       const merged = Object.assign({}, state.items[i], payload);
       if(pendingLookup && pendingLookup.type === "series"){
         merged.tvmazeId = pendingLookup.tvmazeId;
-        merged.seasons  = mergeSeasons(state.items[i].seasons, pendingLookup.seasons);
+        merged.seasons  = unionSeasons(state.items[i].seasons, scopedSeasons(pendingLookup.seasons, seasonScope));
       }
       /* Kept so "Check again" later doesn't have to re-search TMDB by name. */
       if(pendingLookup && pendingLookup.tmdbId) merged.tmdbId = pendingLookup.tmdbId;
@@ -1575,7 +1644,7 @@ $("saveBtn").onclick = () => {
     const item = Object.assign({ id: uid(), added: Date.now(), seasons: [], watchedMin: 0 }, payload);
     if(pendingLookup && pendingLookup.type === "series"){
       item.tvmazeId = pendingLookup.tvmazeId;
-      item.seasons  = pendingLookup.seasons;
+      item.seasons  = scopedSeasons(pendingLookup.seasons, seasonScope);
     }
     if(pendingLookup && pendingLookup.tmdbId) item.tmdbId = pendingLookup.tmdbId;
     if(item.status === "watched"){
