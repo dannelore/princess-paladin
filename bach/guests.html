@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Bach Quest — Guest Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --parchment:#EFE1BD;
+    --parchment-dark:#DEC993;
+    --ink:#2A2013;
+    --wax:#7C1F2A;
+    --gold:#A8762A;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'EB Garamond',serif;background:var(--parchment);color:var(--ink);min-height:100vh;}
+  h1,h2{font-family:'Cinzel',serif;color:var(--wax);}
+  h1{font-size:1.5rem;margin:0 0 .3rem;}
+  h2{font-size:1.05rem;margin:0 0 .8rem;letter-spacing:.02em;}
+  .sub{color:rgba(42,32,19,.7);margin:0 0 1.6rem;font-size:.95rem;}
+  a{color:var(--wax);}
+
+  /* ---- password gate ---- */
+  #gate{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:1.5rem;
+  }
+  .gate-card{
+    background:var(--parchment-dark);border:1px solid rgba(42,32,19,.25);
+    border-radius:6px;padding:2rem 1.75rem;max-width:340px;width:100%;
+    text-align:center;
+  }
+  .gate-card input{
+    width:100%;padding:.6rem .7rem;margin:1rem 0 .6rem;font-size:1rem;
+    border:1px solid rgba(42,32,19,.35);border-radius:4px;background:var(--parchment);
+    color:var(--ink);font-family:'JetBrains Mono',monospace;
+  }
+  .gate-card button{
+    width:100%;padding:.6rem;font-size:.95rem;font-family:'IM Fell English SC',serif;
+    background:var(--wax);color:var(--parchment);border:none;border-radius:4px;cursor:pointer;
+  }
+  .gate-card button:hover{opacity:.9;}
+  .gate-error{color:var(--wax);font-size:.85rem;min-height:1.2em;margin:.3rem 0 0;}
+
+  /* ---- admin shell ---- */
+  #admin{display:none;max-width:1100px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+  section{
+    background:var(--parchment-dark);border:1px solid rgba(42,32,19,.2);
+    border-radius:6px;padding:1.3rem 1.4rem;margin-bottom:1.8rem;
+  }
+  table{border-collapse:collapse;width:100%;font-size:.88rem;}
+  th,td{padding:.4rem .5rem;border-bottom:1px solid rgba(42,32,19,.12);text-align:left;vertical-align:middle;}
+  th{font-family:'IM Fell English SC',serif;font-weight:400;color:var(--wax);white-space:nowrap;}
+  .scroll-x{overflow-x:auto;}
+  .guest-row-name{white-space:nowrap;font-weight:600;}
+  input[type=text]{
+    font-family:'EB Garamond',serif;font-size:.9rem;padding:.3rem .45rem;
+    border:1px solid rgba(42,32,19,.3);border-radius:4px;background:var(--parchment);color:var(--ink);
+  }
+  select{
+    font-family:'EB Garamond',serif;font-size:.85rem;padding:.25rem .35rem;
+    border:1px solid rgba(42,32,19,.3);border-radius:4px;background:var(--parchment);color:var(--ink);
+  }
+  .cap-input{width:4.5rem;}
+  .add-guest{display:flex;gap:.6rem;margin-bottom:1rem;}
+  .add-guest input{flex:1;}
+  .btn{
+    font-family:'IM Fell English SC',serif;font-size:.85rem;padding:.45rem 1rem;
+    background:var(--wax);color:var(--parchment);border:none;border-radius:4px;cursor:pointer;
+  }
+  .btn:hover{opacity:.9;}
+  .btn.remove{background:transparent;color:var(--wax);border:1px solid var(--wax);padding:.15rem .5rem;font-size:.75rem;}
+  .guest-list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:.5rem;}
+  .guest-chip{
+    display:flex;align-items:center;gap:.5rem;background:var(--parchment);
+    border:1px solid rgba(42,32,19,.25);border-radius:20px;padding:.3rem .5rem .3rem .8rem;font-size:.88rem;
+  }
+  .guest-chip input[type=text]{border:none;background:transparent;padding:0;width:8em;}
+
+  .room-night{margin-bottom:1.2rem;}
+  .room-night h3{font-family:'IM Fell English SC',serif;color:var(--ink);font-size:.95rem;margin:0 0 .5rem;}
+  .room-row{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;padding:.5rem 0;border-bottom:1px solid rgba(42,32,19,.1);}
+  .room-row:last-child{border-bottom:none;}
+  .room-label{width:9rem;flex-shrink:0;font-weight:600;}
+  .room-label small{display:block;font-weight:400;color:rgba(42,32,19,.6);}
+  .room-guests{display:flex;flex-wrap:wrap;gap:.5rem .9rem;flex:1;min-width:200px;}
+  .room-guests label{display:flex;align-items:center;gap:.3rem;font-size:.85rem;white-space:nowrap;}
+  .room-note{width:9rem;}
+  .save-note{font-size:.8rem;color:rgba(42,32,19,.6);margin-top:.4rem;}
+  .empty-hint{color:rgba(42,32,19,.6);font-size:.9rem;}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="gate-card">
+    <h1>Bach Quest</h1>
+    <p class="sub">Guest manager — this page is just for us.</p>
+    <input type="password" id="gatePassword" placeholder="Password" autocomplete="off">
+    <button id="gateSubmit">Enter</button>
+    <p class="gate-error" id="gateError"></p>
+  </div>
+</div>
+
+<div id="admin">
+  <h1>Bach Quest — Guest Manager</h1>
+  <p class="sub">Changes here sync live to <a href="index.html">the itinerary page</a> — no more hand-editing HTML.</p>
+
+  <section id="guestsSection">
+    <h2>Guests</h2>
+    <div class="add-guest">
+      <input type="text" id="newGuestName" placeholder="Add a guest by name…">
+      <button class="btn" id="addGuestBtn">Add</button>
+    </div>
+    <ul class="guest-list" id="guestList"></ul>
+  </section>
+
+  <section id="eventsSection">
+    <h2>Event Attendance</h2>
+    <div class="scroll-x">
+      <table id="eventsTable"></table>
+    </div>
+    <p class="save-note">Simple events: tick who's going, and set the capacity (the "/12" part of the badge). Smarty Pants and D&amp;D&amp;D track Presenter/Player vs. Audience separately.</p>
+  </section>
+
+  <section id="roomsSection">
+    <h2>Bedroom Assignments</h2>
+    <div id="roomsWrap"></div>
+    <p class="save-note">Tick guests to assign them to a room for that night, or leave it empty and use the note field for things like "AVAILABLE" or "if needed".</p>
+  </section>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-firebase.js"></script>
+<script src="/assets/pp-bach.js"></script>
+
+<script>
+  firebase.initializeApp(window.PPFirebaseConfig);
+
+  // Soft gate only — this is a private family site nobody else knows the
+  // address of, not a security boundary. Change the password any time by
+  // editing the line below.
+  const ADMIN_PASSWORD = "byraven25";
+  const GATE_KEY = "pp_bach_admin_ok";
+
+  function unlock(){
+    document.getElementById("gate").style.display = "none";
+    document.getElementById("admin").style.display = "block";
+    onStateChange = renderAdmin;
+    boot();
+  }
+  function tryPassword(){
+    const val = document.getElementById("gatePassword").value;
+    if(val === ADMIN_PASSWORD){
+      try{ sessionStorage.setItem(GATE_KEY, "1"); }catch(e){}
+      unlock();
+    }else{
+      document.getElementById("gateError").textContent = "Wrong password.";
+    }
+  }
+  document.getElementById("gateSubmit").addEventListener("click", tryPassword);
+  document.getElementById("gatePassword").addEventListener("keydown", e => {
+    if(e.key === "Enter") tryPassword();
+  });
+
+  let alreadyUnlocked = false;
+  try{ alreadyUnlocked = sessionStorage.getItem(GATE_KEY) === "1"; }catch(e){}
+  if(alreadyUnlocked) unlock();
+
+  /* ---------- rendering ---------- */
+  function esc(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  }
+
+  function renderAdmin(){
+    renderGuestList();
+    renderEventsTable();
+    renderRooms();
+  }
+
+  function renderGuestList(){
+    const wrap = document.getElementById("guestList");
+    const guests = sortedGuests();
+    if(!guests.length){
+      wrap.innerHTML = '<li class="empty-hint">No guests yet — add the first one above.</li>';
+      return;
+    }
+    wrap.innerHTML = guests.map(g => `
+      <li class="guest-chip" data-id="${g.id}">
+        <input type="text" value="${esc(g.name)}" data-rename="${g.id}">
+        <button class="btn remove" data-remove="${g.id}" title="Remove guest">&times;</button>
+      </li>`).join("");
+
+    wrap.querySelectorAll('[data-rename]').forEach(input => {
+      input.addEventListener("change", () => {
+        renameGuest(input.dataset.rename, input.value);
+        save();
+      });
+    });
+    wrap.querySelectorAll('[data-remove]').forEach(btn => {
+      btn.addEventListener("click", () => {
+        const name = guestName(btn.dataset.remove);
+        if(!confirm(`Remove ${name} from the guest list? This also clears their event and room assignments.`)) return;
+        removeGuest(btn.dataset.remove);
+        save();
+      });
+    });
+  }
+
+  document.getElementById("addGuestBtn").addEventListener("click", () => {
+    const input = document.getElementById("newGuestName");
+    if(addGuest(input.value)){
+      input.value = "";
+      save();
+    }
+  });
+  document.getElementById("newGuestName").addEventListener("keydown", e => {
+    if(e.key === "Enter") document.getElementById("addGuestBtn").click();
+  });
+
+  function renderEventsTable(){
+    const table = document.getElementById("eventsTable");
+    const guests = sortedGuests();
+
+    const headCells = EVENTS.map(ev => {
+      if(ev.kind === "simple"){
+        return `<th>${esc(ev.label)}<br><input type="text" class="cap-input" data-capacity="${ev.key}" value="${esc(state.capacity[ev.key] || "")}" placeholder="cap"></th>`;
+      }
+      return `<th>${esc(ev.label)}</th>`;
+    }).join("");
+
+    if(!guests.length){
+      table.innerHTML = `<thead><tr><th>Guest</th>${headCells}</tr></thead><tbody><tr><td colspan="${EVENTS.length + 1}" class="empty-hint">Add guests above first.</td></tr></tbody>`;
+      return;
+    }
+
+    const rows = guests.map(g => {
+      const cells = EVENTS.map(ev => {
+        if(ev.kind === "simple"){
+          const checked = isAttending(ev.key, g.id) ? "checked" : "";
+          return `<td><input type="checkbox" data-simple="${ev.key}" data-guest="${g.id}" ${checked}></td>`;
+        }
+        const role = roleOf(ev.key, g.id);
+        return `<td><select data-role="${ev.key}" data-guest="${g.id}">
+          <option value="" ${role === "" ? "selected" : ""}>—</option>
+          <option value="players" ${role === "players" ? "selected" : ""}>${esc(ev.roleLabels[0])}</option>
+          <option value="audience" ${role === "audience" ? "selected" : ""}>${esc(ev.roleLabels[1])}</option>
+        </select></td>`;
+      }).join("");
+      return `<tr><td class="guest-row-name">${esc(g.name)}</td>${cells}</tr>`;
+    }).join("");
+
+    table.innerHTML = `<thead><tr><th>Guest</th>${headCells}</tr></thead><tbody>${rows}</tbody>`;
+
+    table.querySelectorAll('[data-capacity]').forEach(input => {
+      input.addEventListener("change", () => {
+        setCapacity(input.dataset.capacity, input.value);
+        save();
+      });
+    });
+    table.querySelectorAll('[data-simple]').forEach(cb => {
+      cb.addEventListener("change", () => {
+        setSimpleAttendance(cb.dataset.simple, cb.dataset.guest, cb.checked);
+        save();
+      });
+    });
+    table.querySelectorAll('[data-role]').forEach(sel => {
+      sel.addEventListener("change", () => {
+        setRole(sel.dataset.role, sel.dataset.guest, sel.value);
+        save();
+      });
+    });
+  }
+
+  function renderRooms(){
+    const wrap = document.getElementById("roomsWrap");
+    const guests = sortedGuests();
+
+    wrap.innerHTML = NIGHTS.map(n => `
+      <div class="room-night">
+        <h3>${esc(n.label)}</h3>
+        ${ROOMS.map(r => {
+          const slot = state.rooms[n.key][r.key];
+          const guestChecks = guests.map(g => `
+            <label>
+              <input type="checkbox" data-room-guest="${n.key}|${r.key}|${g.id}" ${slot.guestIds.includes(g.id) ? "checked" : ""}>
+              ${esc(g.name)}
+            </label>`).join("");
+          return `
+          <div class="room-row">
+            <div class="room-label">${esc(r.label)}<small>${esc(r.note)}</small></div>
+            <div class="room-guests">${guestChecks || '<span class="empty-hint">Add guests above first.</span>'}</div>
+            <input type="text" class="room-note" placeholder="Note (e.g. TBD, if needed)" value="${esc(slot.note)}" data-room-note="${n.key}|${r.key}">
+          </div>`;
+        }).join("")}
+      </div>`).join("");
+
+    wrap.querySelectorAll('[data-room-guest]').forEach(cb => {
+      cb.addEventListener("change", () => {
+        const [night, room, guestId] = cb.dataset.roomGuest.split("|");
+        toggleRoomGuest(night, room, guestId, cb.checked);
+        save();
+      });
+    });
+    wrap.querySelectorAll('[data-room-note]').forEach(input => {
+      input.addEventListener("change", () => {
+        const [night, room] = input.dataset.roomNote.split("|");
+        setRoomNote(night, room, input.value);
+        save();
+      });
+    });
+  }
+</script>
+</body>
+</html>

@@ -893,63 +893,29 @@
     </div>
   </aside>
 
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="/assets/pp-firebase.js"></script>
+  <script src="/assets/pp-bach.js"></script>
+
   <script>
-    // ---- EDIT EVENT COUNTS HERE ----
-    // Just change the "value" below and re-save; that event's badge updates itself.
-    // "label" shows on hover, so people can tell a headcount from a presenter count.
-    const EVENT_STATS = {
-      longRest0:     { label: "Bunks",      value: "2/7" },       // Long Rest, Friday night
-      longRest1:     { label: "Bunks",      value: "4/7" },       // Long Rest, Saturday night
-      longRest2:     { label: "Bunks",      value: "3/7" },       // Long Rest, Sunday night
-      dragBrunch:    { label: "Headcount",  value: "9/15+" },      // Drag Brunch
-      smartyPants1:  { label: "Presenters", value: "5+ Audience" },      // Smarty Pants, Session One
-      danddd:        { label: "Players",    value: "Audience Only" }, // D&D&D
-      roomEscapers:  { label: "Headcount",  value: "7/12" },      // Room Escapers
-    };
+    firebase.initializeApp(window.PPFirebaseConfig);
 
-    document.querySelectorAll('[data-event]').forEach(el => {
-      const stat = EVENT_STATS[el.dataset.event];
-      if (stat) {
-        el.textContent = stat.value;
-        el.title = stat.label;
-      }
-    });
-
-    // ---- EDIT BEDROOM ASSIGNMENTS HERE ----
-    // Each night has its own list, since who sleeps where can change night to night.
-    // Change a name below and only that night's tracker updates.
-    const ROOM_ASSIGNMENTS = {
-      friday: {
-        bedroom1: "Danni & Brendon",  // Double bed
-        bedroom2: "Jess",  // Double bed
-        bedroom3: "TBD",  // Double bed
-        bedroom4: "AVAILABLE",  // Bunk beds
-        couch:    "TBD",  // Backup
-        floor:    "TBD",  // Backup
-      },
-      saturday: {
-        bedroom1: "Danni & Brendon",  // Double bed
-        bedroom2: "Jess",  // Double bed
-        bedroom3: "AVAILABLE+",  // Double bed
-        bedroom4: "Brian & Benji",  // Bunk beds
-        couch:    "if needed",  // Backup
-        floor:    "if needed",  // Backup
-      },
-      sunday: {
-        bedroom1: "Danni & Brendon",  // Double bed
-        bedroom2: "Jess",  // Double bed
-        bedroom3: "Garrett",  // Double bed
-        bedroom4: "AVAILABLE",  // Bunk beds
-        couch:    "if needed",  // Backup
-        floor:    "if needed",  // Backup
-      },
-    };
-
-    document.querySelectorAll('[data-room]').forEach(el => {
-      const night = ROOM_ASSIGNMENTS[el.dataset.night];
-      const occupant = night && night[el.dataset.room];
-      if (occupant) el.textContent = occupant;
-    });
+    // Event badges and bedroom assignments are edited on the guest-list
+    // admin page and synced here live via Firestore — nothing to hand-edit
+    // in this file anymore.
+    function renderBachData(){
+      document.querySelectorAll('[data-event]').forEach(el => {
+        const badge = badgeFor(el.dataset.event);
+        el.textContent = badge.value;
+        el.title = badge.title;
+      });
+      document.querySelectorAll('[data-room]').forEach(el => {
+        el.textContent = roomOccupantText(el.dataset.night, el.dataset.room);
+      });
+    }
+    onStateChange = renderBachData;
+    boot();
 
     // ---- INVENTORY PANEL TOGGLE ----
     const invToggle = document.getElementById('invToggle');
