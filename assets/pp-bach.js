@@ -17,13 +17,13 @@
 const CACHE_KEY = "pp_bach_guests";
 
 const EVENTS = [
-  { key: "longRest0",    label: "Long Rest — Friday",              kind: "simple", capLabel: "Bunks" },
+  { key: "longRest0",    label: "Long Rest — Friday",              kind: "rooms",  night: "friday",   capLabel: "Bunks" },
   { key: "dragBrunch",   label: "Drag Brunch",                     kind: "simple", capLabel: "Headcount" },
   { key: "smartyPants1", label: "Smarty Pants Presentations",      kind: "dual",   roleLabels: ["Presenters", "Audience"] },
   { key: "danddd",       label: "D&D&D",                           kind: "dual",   roleLabels: ["Players", "Audience"] },
-  { key: "longRest1",    label: "Long Rest — Saturday",            kind: "simple", capLabel: "Bunks" },
+  { key: "longRest1",    label: "Long Rest — Saturday",            kind: "rooms",  night: "saturday", capLabel: "Bunks" },
   { key: "roomEscapers", label: "Room Escapers",                   kind: "simple", capLabel: "Headcount" },
-  { key: "longRest2",    label: "Long Rest — Sunday",              kind: "simple", capLabel: "Bunks" },
+  { key: "longRest2",    label: "Long Rest — Sunday",              kind: "rooms",  night: "sunday",   capLabel: "Bunks" },
 ];
 const EVENT_BY_KEY = Object.fromEntries(EVENTS.map(e => [e.key, e]));
 
@@ -32,14 +32,22 @@ const NIGHTS = [
   { key: "saturday", label: "Saturday" },
   { key: "sunday",   label: "Sunday" },
 ];
+
+/* Bedrooms 1-3 are double beds: they sleep up to 2, but the room reads as
+   "taken" the moment 1 person is in it (bunks: 1) rather than counting
+   toward capacity per-person. Bedroom 4's two individual beds are
+   independent, so each occupant counts on their own (bunks: 2). The
+   couch/floor are single spots. `shared` drives that "1 fills it"
+   behavior; `sleeps` caps how many guests can be checked into the room. */
 const ROOMS = [
-  { key: "bedroom1", label: "Bedroom 1",          note: "double" },
-  { key: "bedroom2", label: "Bedroom 2",           note: "double" },
-  { key: "bedroom3", label: "Bedroom 3",           note: "double" },
-  { key: "bedroom4", label: "Bedroom 4",           note: "bunk beds" },
-  { key: "couch",    label: "Couch",               note: "backup" },
-  { key: "floor",    label: "Living room floor",   note: "backup" },
+  { key: "bedroom1", label: "Bedroom 1",          note: "double",    sleeps: 2, bunks: 1, shared: true },
+  { key: "bedroom2", label: "Bedroom 2",          note: "double",    sleeps: 2, bunks: 1, shared: true },
+  { key: "bedroom3", label: "Bedroom 3",          note: "double",    sleeps: 2, bunks: 1, shared: true },
+  { key: "bedroom4", label: "Bedroom 4",          note: "individual beds", sleeps: 2, bunks: 2, shared: false },
+  { key: "couch",    label: "Couch",              note: "backup",    sleeps: 1, bunks: 1, shared: false },
+  { key: "floor",    label: "Living room floor",  note: "backup",    sleeps: 1, bunks: 1, shared: false },
 ];
+const TOTAL_BUNKS = ROOMS.reduce((sum, r) => sum + r.bunks, 0);
 
 let state = null;
 let docRef = null;
@@ -61,8 +69,11 @@ function seedState(){
   const danni = mk("Danni"), brendon = mk("Brendon"), jess = mk("Jess"),
         brian = mk("Brian"), benji = mk("Benji"), garrett = mk("Garrett");
 
-  EVENTS.forEach(ev => { s.attendance[ev.key] = ev.kind === "simple" ? [] : { players: [], audience: [] }; });
-  s.capacity = { longRest0: "7", longRest1: "7", longRest2: "7", dragBrunch: "15+", roomEscapers: "12" };
+  EVENTS.forEach(ev => {
+    if(ev.kind === "simple") s.attendance[ev.key] = [];
+    else if(ev.kind === "dual") s.attendance[ev.key] = { players: [], audience: [] };
+  });
+  s.capacity = { dragBrunch: "15+", roomEscapers: "12" };
 
   NIGHTS.forEach(n => { s.rooms[n.key] = {}; ROOMS.forEach(r => { s.rooms[n.key][r.key] = { guestIds: [], note: "" }; }); });
   const room = (night, key, guestIds, note) => { s.rooms[night][key] = { guestIds: guestIds || [], note: note || "" }; };
@@ -100,7 +111,7 @@ function migrate(){
   EVENTS.forEach(ev => {
     if(ev.kind === "simple"){
       if(!Array.isArray(state.attendance[ev.key])) state.attendance[ev.key] = [];
-    }else{
+    }else if(ev.kind === "dual"){
       const a = state.attendance[ev.key];
       if(!a || typeof a !== "object" || Array.isArray(a)) state.attendance[ev.key] = { players: [], audience: [] };
       else{
@@ -108,6 +119,9 @@ function migrate(){
         if(!Array.isArray(a.audience)) a.audience = [];
       }
     }
+    // "rooms"-kind events (the three Long Rests) have no attendance of
+    // their own — their headcount is derived from that night's room
+    // assignments instead, see nightBunkCount().
   });
 
   NIGHTS.forEach(n => {
@@ -190,7 +204,7 @@ function removeGuest(id){
   EVENTS.forEach(ev => {
     if(ev.kind === "simple"){
       state.attendance[ev.key] = state.attendance[ev.key].filter(x => x !== id);
-    }else{
+    }else if(ev.kind === "dual"){
       const a = state.attendance[ev.key];
       a.players = a.players.filter(x => x !== id);
       a.audience = a.audience.filter(x => x !== id);
@@ -235,6 +249,9 @@ function setCapacity(eventKey, value){
 function badgeFor(eventKey){
   const ev = EVENT_BY_KEY[eventKey];
   if(!ev) return { value: "", title: "" };
+  if(ev.kind === "rooms"){
+    return { value: `${nightBunkCount(ev.night)}/${TOTAL_BUNKS}`, title: ev.capLabel };
+  }
   if(ev.kind === "simple"){
     const count = state.attendance[eventKey].length;
     const cap = state.capacity[eventKey];
@@ -251,6 +268,19 @@ function roomOccupantText(night, roomKey){
   if(!slot) return "TBD";
   if(slot.guestIds.length) return slot.guestIds.map(guestName).filter(Boolean).join(" & ");
   return slot.note || "TBD";
+}
+
+/* A shared double-bed room counts as 1 bunk the moment anyone's in it,
+   however many people that ends up being. Bedroom 4's individual beds
+   (and the couch/floor) count each occupant separately, up to capacity. */
+function bunksUsedForRoom(slot, room){
+  if(!slot || !slot.guestIds.length) return 0;
+  return room.shared ? room.bunks : Math.min(slot.guestIds.length, room.bunks);
+}
+function nightBunkCount(night){
+  const rooms = state.rooms[night];
+  if(!rooms) return 0;
+  return ROOMS.reduce((sum, r) => sum + bunksUsedForRoom(rooms[r.key], r), 0);
 }
 function toggleRoomGuest(night, roomKey, guestId, on){
   const slot = state.rooms[night][roomKey];
