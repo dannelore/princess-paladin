@@ -61,6 +61,15 @@
     font-family: var(--font-serif); font-style: italic; font-size: .78rem;
     color: var(--ink-soft); margin: 6px 0 0;
   }
+
+  /* pp-tracker.css only colors the couch-quest status vocabulary
+     (want/watching/watched) — "want" happens to line up, but "playing"
+     and "played" were rendering white-on-transparent with no color rule
+     of their own. Same fix pattern as the four rules above: define this
+     page's own status vocabulary here instead of in the shared file. */
+  .cq-status[data-status="wishlist"]{ background:var(--burgundy); }
+  .cq-status[data-status="playing"]{ background:var(--pink); }
+  .cq-status[data-status="played"]{ background:var(--sage-deep); }
 </style>
 </head>
 <body class="pp-sidequest" data-nav-eyebrow="Side Quests" data-nav-title="Game Quest">
@@ -77,6 +86,7 @@
 
   <div class="cq-bar">
     <button class="cq-filter" data-filter="all"      aria-pressed="true">Everything</button>
+    <button class="cq-filter" data-filter="wishlist" aria-pressed="false">Wishlist</button>
     <button class="cq-filter" data-filter="want"     aria-pressed="false">Backlog</button>
     <button class="cq-filter" data-filter="playing"  aria-pressed="false">Playing</button>
     <button class="cq-filter" data-filter="played"   aria-pressed="false">Played</button>
@@ -130,6 +140,7 @@
       <div class="cq-field">
         <label for="fStatus">Status</label>
         <select id="fStatus">
+          <option value="wishlist">Wishlist</option>
           <option value="want">Backlog</option>
           <option value="playing">Playing</option>
           <option value="played">Played</option>
@@ -249,7 +260,7 @@ const RAWG = "https://api.rawg.io/api/games";
 const hasRawg = () => RAWG_KEY && RAWG_KEY.indexOf("PASTE") !== 0;
 const HINT_NOKEY = "Lookup needs a free RAWG.io key \u2014 ask Claude to help you add one, or fill this in by hand.";
 
-const LABEL     = { want:"Backlog", playing:"Playing", played:"Played" };
+const LABEL     = { wishlist:"Wishlist", want:"Backlog", playing:"Playing", played:"Played" };
 const WHO_LABEL = { together:"Together", danni:"D only", brendon:"B only" };
 const WHO_KEYS  = ["together","danni","brendon"];
 
