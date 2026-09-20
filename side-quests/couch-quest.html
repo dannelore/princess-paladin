@@ -220,6 +220,10 @@
           <option value="progress-desc">Furthest along</option>
           <option value="progress-asc">Least started</option>
         </optgroup>
+        <optgroup label="Length">
+          <option value="length-desc">Longest first</option>
+          <option value="length-asc">Shortest first</option>
+        </optgroup>
         <optgroup label="Title">
           <option value="title-asc">A–Z</option>
           <option value="title-desc">Z–A</option>
@@ -534,7 +538,7 @@ function pickSeries(r){
 
   fetchSeasons(r.raw.id)
     .then(seasons => {
-      pendingLookup = { type:"series", tvmazeId: r.raw.id, seasons: seasons };
+      pendingLookup = { type:"series", tvmazeId: r.raw.id, seasons: seasons, episodeRuntime: r.episodeRuntime || 0 };
       renderSeasonScope();
       const eps = seasons.reduce((n,s) => n + s.episodes, 0);
       const seasonMsg =
@@ -544,7 +548,7 @@ function pickSeries(r){
     })
     .catch(e => {
       console.error(e);
-      pendingLookup = { type:"series", tvmazeId: r.raw.id, seasons: [] };
+      pendingLookup = { type:"series", tvmazeId: r.raw.id, seasons: [], episodeRuntime: r.episodeRuntime || 0 };
       renderSeasonScope();
       $("lookupHint").textContent = "Got the show, but the seasons didn't load. Try Refresh seasons after saving.";
     });

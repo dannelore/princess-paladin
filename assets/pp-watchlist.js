@@ -190,6 +190,17 @@ function totals(item){
   return { done: 0, total: 0, kind: "none" };
 }
 
+/* Total watch time in minutes, for the length sort. Movies have runtime
+   straight from TMDB; series multiply their tracked episode count by the
+   average episode runtime TVmaze reports at lookup time. Either can come
+   back 0 (untyped runtime, or a series added before this existed) — that
+   reads as "unknown", not "shortest", see the length sort below. */
+function lengthMinutes(item){
+  if(item.type === "movie") return item.runtime || 0;
+  const eps = totals(item).total;
+  return (eps && item.episodeRuntime) ? eps * item.episodeRuntime : 0;
+}
+
 function pctOf(item){
   const t = totals(item);
   if(t.kind === "none") return item.status === "watched" ? 1 : 0;
@@ -547,7 +558,8 @@ function lookupSeries(q){
           name: s.name,
           image: s.image ? toHttps(s.image.medium) : "",
           full:  s.image ? toHttps(s.image.original || s.image.medium) : "",
-          meta: [year, net].filter(Boolean).join(" · ")
+          meta: [year, net].filter(Boolean).join(" · "),
+          episodeRuntime: s.averageRuntime || s.runtime || 0
         };
       }), pickSeries);
     })
@@ -689,6 +701,15 @@ function visibleItems(){
       if(!db) return -1;
       if(da === db) return byTitle(a, b);
       return (db > da ? 1 : -1) * flip;
+    }
+    if(key === "length"){
+      /* items with no known length sit at the bottom whichever way you sort */
+      const la = lengthMinutes(a), lb = lengthMinutes(b);
+      if(!la && !lb) return byTitle(a, b);
+      if(!la) return 1;
+      if(!lb) return -1;
+      if(la === lb) return byTitle(a, b);
+      return (lb - la) * flip;
     }
     const pa = priAvg(a), pb = priAvg(b);
     if(!pa && !pb) return byTitle(a, b);
@@ -1171,6 +1192,7 @@ $("saveBtn").onclick = () => {
       if(pendingLookup && pendingLookup.type === "series"){
         merged.tvmazeId = pendingLookup.tvmazeId;
         merged.seasons  = seasonsForEdit(state.items[i].seasons, pendingLookup, seasonScope);
+        merged.episodeRuntime = pendingLookup.episodeRuntime || 0;
       }
       /* Kept so "Check again" later doesn't have to re-search TMDB by name. */
       if(pendingLookup && pendingLookup.tmdbId) merged.tmdbId = pendingLookup.tmdbId;
@@ -1183,6 +1205,7 @@ $("saveBtn").onclick = () => {
     if(pendingLookup && pendingLookup.type === "series"){
       item.tvmazeId = pendingLookup.tvmazeId;
       item.seasons  = seasonsForNew(pendingLookup, seasonScope);
+      item.episodeRuntime = pendingLookup.episodeRuntime || 0;
     }
     if(pendingLookup && pendingLookup.tmdbId) item.tmdbId = pendingLookup.tmdbId;
     if(pendingLookup && pendingLookup.hasOwnProperty("amazonRentBuy")) item.amazonRentBuy = pendingLookup.amazonRentBuy;
