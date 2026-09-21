@@ -497,6 +497,52 @@
     display:block; height:100%; border-radius:4px;
     background:var(--sage); transition:width .35s ease;
   }
+  /* ===== PAGE PROGRESS =====
+     Ticking 26 chapters off a novel tells you how many chapters you have read,
+     not how far through the book you are — chapter 25 is four times chapter 5.
+     Anything measured in units rather than steps can carry a count instead:
+     one number you update, and a bar that is never wrong.
+
+     It sits alongside the subtask list rather than replacing it — the
+     chapters are still there to tick — and when a task has both, the page bar
+     is the one shown on the collapsed card, because it is the truer answer to
+     "how far along is this".
+
+     It deliberately has no effect on payout. Coins and XP are per task and per
+     subtask; this is there to be looked at, not earned from. */
+  .page-progress{
+    height:5px; border-radius:4px; background:rgba(74,59,65,0.1);
+    overflow:hidden; margin-bottom:8px;
+  }
+  .page-progress i{
+    display:block; height:100%; border-radius:4px;
+    background:var(--quest-copper); transition:width .35s ease;
+  }
+  .page-row{
+    display:flex; align-items:center; gap:6px; margin-bottom:8px;
+    font-size:11.5px; color:var(--ink-soft);
+  }
+  .page-row input{
+    width:62px; font-family:var(--font-body); font-size:12.5px;
+    border:1px solid rgba(74,59,65,0.15); border-radius:7px;
+    padding:4px 7px; background:var(--cream); color:var(--ink);
+    font-variant-numeric:tabular-nums;
+  }
+  .page-row .page-pct{
+    margin-left:auto; font-size:11px; color:var(--quest-copper);
+    font-variant-numeric:tabular-nums; font-weight:500;
+  }
+  .page-row .page-clear{
+    background:none; border:none; color:var(--ink-soft);
+    cursor:pointer; font-size:11px; padding:0 2px;
+  }
+  .page-track{
+    font-family:var(--font-body); font-size:11px; color:var(--ink-soft);
+    background:none; border:none; padding:6px 0 0; cursor:pointer;
+    text-decoration:underline; align-self:flex-start;
+  }
+  .page-track:hover{ color:var(--quest-copper); }
+
   .sub-row{
     display:flex; align-items:center; gap:8px;
     padding:2px 0; border-bottom:1px solid rgba(74,59,65,0.07);
@@ -1794,6 +1840,14 @@ function buildCard(task, column, opts){
   const subState = opts.subState || {};
   const doneSubs = subs.filter(s => subState[s.id]).length;
 
+  /* `pages` present at all — even as 0 — means this task is being tracked by
+     count, and the row is shown so the total can be filled in. The bar waits
+     for a total worth dividing by. */
+  const tracking = task.pages !== undefined && task.pages !== null;
+  const pageTotal = Math.max(0, parseInt(task.pages, 10) || 0);
+  const pageNow = Math.min(Math.max(0, parseInt(task.page, 10) || 0), pageTotal);
+  const pagePct = pageTotal ? Math.round(pageNow / pageTotal * 100) : 0;
+
   card.dataset.id = task.id;
 
   /* A tagged card takes its stripe from the tag. Untagged falls through to
@@ -1818,14 +1872,29 @@ function buildCard(task, column, opts){
   `;
 
   const isOpen = expanded.has(task.id);
-  if(subs.length || isOpen){
+  if(subs.length || isOpen || tracking){
     const wrap = document.createElement('div');
     wrap.className = 'sub-wrap';
     const bar = subs.length ? `<div class="sub-progress"><i style="width:${doneSubs/subs.length*100}%"></i></div>` : '';
-    if(!isOpen && subs.length){
-      wrap.innerHTML = bar;
+    const pageBar = pageTotal
+      ? `<div class="page-progress" title="page ${pageNow} of ${pageTotal}"><i style="width:${pagePct}%"></i></div>`
+      : '';
+    const pageRow = tracking
+      ? `<div class="page-row">
+           <span>page</span>
+           <input type="number" class="page-now" min="0" max="${pageTotal || ''}" value="${pageNow || ''}" placeholder="0">
+           <span>of</span>
+           <input type="number" class="page-total" min="0" value="${pageTotal || ''}" placeholder="total">
+           ${pageTotal ? `<span class="page-pct">${pagePct}%</span>` : ''}
+           <button class="page-clear" title="Stop counting pages">✕</button>
+         </div>`
+      : '';
+    /* Collapsed, one bar is enough, and pages beat chapters at saying how far
+       along a book is. */
+    if(!isOpen && (subs.length || pageTotal)){
+      wrap.innerHTML = pageTotal ? pageBar : bar;
     } else {
-      let inner = bar;
+      let inner = pageBar + pageRow + bar;
       subs.forEach(s => {
         const on = !!subState[s.id];
         inner += `
@@ -1838,6 +1907,7 @@ function buildCard(task, column, opts){
       });
       if(subs.length) inner += `<div class="bonus-note">All-clear bonus: ${bonusOf(task, column)}c</div>`;
       inner += `<div class="sub-add"><input type="text" placeholder="Add a subtask"><button type="button">Add</button></div>`;
+      if(!tracking) inner += `<button type="button" class="page-track">count pages instead</button>`;
       wrap.innerHTML = inner;
     }
     card.appendChild(wrap);
@@ -1845,9 +1915,12 @@ function buildCard(task, column, opts){
 
   const toggle = document.createElement('button');
   toggle.className = 'expand-btn';
-  toggle.textContent = subs.length
-    ? (isOpen ? 'hide subtasks' : `${doneSubs}/${subs.length} subtasks`)
-    : (isOpen ? 'hide subtasks' : '+ subtasks');
+  /* Collapsed, the label has to say the same thing the bar is showing, or a
+     copper page bar over "2/26 subtasks" reads as a contradiction. */
+  toggle.textContent = isOpen
+    ? 'hide subtasks'
+    : (pageTotal ? `page ${pageNow} of ${pageTotal}`
+      : (subs.length ? `${doneSubs}/${subs.length} subtasks` : '+ subtasks'));
   toggle.onclick = () => {
     if(expanded.has(task.id)) expanded.delete(task.id); else expanded.add(task.id);
     renderAll();
@@ -1871,6 +1944,36 @@ function buildCard(task, column, opts){
       saveAndRender();
     };
   });
+
+  const pageRowEl = card.querySelector('.page-row');
+  if(pageRowEl){
+    const nowEl = pageRowEl.querySelector('.page-now');
+    const totalEl = pageRowEl.querySelector('.page-total');
+    /* A page past the end is a typo, not a milestone, so it clamps. Clearing
+       the total leaves the row up rather than silently switching tracking
+       off — that's what the ✕ is for. */
+    const commit = () => {
+      const total = Math.max(0, parseInt(totalEl.value, 10) || 0);
+      const now = Math.max(0, parseInt(nowEl.value, 10) || 0);
+      task.pages = total;
+      task.page = total ? Math.min(now, total) : now;
+      saveAndRender();
+    };
+    nowEl.onchange = commit;
+    totalEl.onchange = commit;
+    pageRowEl.querySelector('.page-clear').onclick = () => {
+      delete task.pages;
+      delete task.page;
+      saveAndRender();
+    };
+  }
+  const trackBtn = card.querySelector('.page-track');
+  if(trackBtn) trackBtn.onclick = () => {
+    task.pages = 0;
+    task.page = 0;
+    expanded.add(task.id);
+    saveAndRender();
+  };
 
   const addWrap = card.querySelector('.sub-add');
   if(addWrap){
