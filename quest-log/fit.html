@@ -61,6 +61,11 @@
     padding:8px 10px; background:var(--cream); color:var(--ink);
   }
   input[type="range"]{ width:100%; }
+  input[type="color"]{
+    width:44px; height:34px; padding:2px;
+    border:1px solid rgba(74,59,65,0.18); border-radius:8px;
+    background:var(--cream); cursor:pointer;
+  }
   .rowlabel{ display:flex; justify-content:space-between; font-size:11.5px; color:var(--ink-soft); }
 
   .btn{
@@ -330,6 +335,20 @@
         <input type="file" id="fileIn" accept="image/png,image/webp">
         <p class="hint" id="fileHint" style="margin:6px 0 0;">Transparent PNG, same 2:3 frame as the body. Resized and compressed automatically before saving.</p>
 
+        <div id="designSection" style="display:none;">
+          <label class="f">Or design a colourway</label>
+          <p class="hint" id="baseHint" style="margin:0 0 8px;">Upload a gray, shaded silhouette for this slot &mdash; save it once, then pick a colour any time to recolour it, shading and all.</p>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <img id="baseThumb" alt="" style="width:38px;height:38px;object-fit:contain;border-radius:6px;background:#EFEDE6;display:none;flex:0 0 auto;">
+            <input type="file" id="baseIn" accept="image/png,image/webp" style="flex:1 1 auto;">
+          </div>
+          <div id="colorRow" style="display:none;margin-top:10px;align-items:center;gap:10px;">
+            <input type="color" id="designColor" value="#C85D87">
+            <span class="hint" id="designStatus"></span>
+          </div>
+          <canvas id="designCanvas" style="display:none;"></canvas>
+        </div>
+
         <label class="f">Width <span id="sizeOut" class="hint"></span></label>
         <input type="range" id="sizeRange" min="5" max="160" step="0.5" value="60">
 
@@ -472,6 +491,8 @@ function populateItemSelect(){
       fields.style.display = 'none';
       saveCard.style.display = 'none'; codeCard.style.display = '';
     }
+    document.getElementById('designSection').style.display = fields.style.display;
+    refreshDesignBox();
     renderOut(); loadRecorded();
   }
   sel.onchange = selectItem;
@@ -548,6 +569,102 @@ document.getElementById('fileIn').onchange = async e => {
     pendingImageData = null;
   }
 };
+
+/* ---------- design from a gray base ----------
+   One shaded, transparent silhouette per slot, uploaded once and reused for
+   every colourway. Canvas's 'color' blend mode takes the hue and saturation
+   from the flat colour and keeps the base's own luminosity, so the shading
+   survives the recolour — then 'destination-in' restores the base's own
+   transparency, which the flat fill would otherwise have painted over. */
+const BASE_COLLECTION = 'wardrobeBases';
+const bases = {};
+let basesLoaded = false;
+const baseImgEl = new Image();
+const designCanvas = document.getElementById('designCanvas');
+
+function currentDesignSlot(){ return document.getElementById('newSlot').value; }
+
+async function loadBases(){
+  if(basesLoaded) return;
+  basesLoaded = true;
+  try{
+    const snap = await firebase.firestore().collection(BASE_COLLECTION).get();
+    snap.forEach(doc => { const d = doc.data(); if(d && d.slot) bases[d.slot] = d.image; });
+  }catch(err){ console.error('Could not load wardrobe bases:', err); }
+  refreshDesignBox();
+}
+
+function refreshDesignBox(){
+  const slot = currentDesignSlot();
+  const src = bases[slot];
+  const thumb = document.getElementById('baseThumb');
+  const colorRow = document.getElementById('colorRow');
+  const baseHint = document.getElementById('baseHint');
+
+  if(!src){
+    thumb.style.display = 'none';
+    colorRow.style.display = 'none';
+    baseHint.textContent = `Upload a gray, shaded silhouette for the ${slot} slot to start designing colours from it.`;
+    return;
+  }
+  thumb.src = src;
+  thumb.style.display = '';
+  colorRow.style.display = 'flex';
+  baseHint.textContent = `Using your saved ${slot} base — upload a new file to replace it.`;
+  baseImgEl.onload = updateDesign;
+  baseImgEl.src = src;
+}
+
+function updateDesign(){
+  const slot = currentDesignSlot();
+  /* Guards against a slower, now-stale image load landing after a faster
+     switch to a different slot. Data URIs come back from `.src` unchanged,
+     so this is an exact match against what's actually loaded. */
+  if(bases[slot] !== baseImgEl.src || !baseImgEl.naturalWidth) return;
+
+  designCanvas.width = baseImgEl.naturalWidth;
+  designCanvas.height = baseImgEl.naturalHeight;
+  const ctx = designCanvas.getContext('2d');
+  ctx.clearRect(0, 0, designCanvas.width, designCanvas.height);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.drawImage(baseImgEl, 0, 0);
+  ctx.globalCompositeOperation = 'color';
+  ctx.fillStyle = document.getElementById('designColor').value;
+  ctx.fillRect(0, 0, designCanvas.width, designCanvas.height);
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.drawImage(baseImgEl, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+
+  const dataUrl = designCanvas.toDataURL('image/webp', 0.92);
+  pendingImageData = dataUrl;
+  garmentImg.src = dataUrl;
+  garmentEl.style.display = 'block';
+  apply();
+  document.getElementById('fileIn').value = '';
+  document.getElementById('designStatus').textContent = `Designed from the ${slot} base.`;
+}
+
+document.getElementById('newSlot').addEventListener('change', refreshDesignBox);
+document.getElementById('designColor').addEventListener('input', updateDesign);
+
+document.getElementById('baseIn').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  if(!f) return;
+  const slot = currentDesignSlot();
+  const hint = document.getElementById('baseHint');
+  hint.textContent = 'Compressing…';
+  try{
+    const dataUrl = await compressImage(f);
+    hint.textContent = 'Saving the base…';
+    await firebase.firestore().collection(BASE_COLLECTION).doc(slot).set({ slot, image: dataUrl, updated: new Date().toISOString() });
+    bases[slot] = dataUrl;
+    e.target.value = '';
+    refreshDesignBox();
+  }catch(err){
+    console.error('Wardrobe base save failed:', err);
+    hint.textContent = 'Could not save that base — try a different file.';
+  }
+});
 
 /* ---------- positioning ---------- */
 function apply(){
@@ -724,6 +841,7 @@ PQ.loadCustomWardrobe(firebase).then(() => {
   populateItemSelect();
   if(window.selectItem) window.selectItem();
 });
+loadBases();
 </script>
 <script src="/assets/pp-nav.js" defer></script>
 </body>
