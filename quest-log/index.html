@@ -1224,6 +1224,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="/assets/pp-firebase.js"></script>
 <script src="/assets/pp-quest.js"></script>
+<script src="/assets/pp-shorthand.js"></script>
 
 <script>
 const firebaseConfig = window.PPFirebaseConfig;
@@ -1609,94 +1610,13 @@ function exitEdit(col){
    swallowed. Pasting several lines adds several to-dos, and an indented or
    dashed line hangs off the one above as a subtask, exactly as in the long
    form. */
-const QUICK_PRIORITY = {
-  low:'low', l:'low', med:'medium', medium:'medium', m:'medium',
-  high:'high', h:'high', urgent:'urgent', u:'urgent', now:'urgent'
-};
-const QUICK_DIFFICULTY = { trivial:1, easy:2, medium:3, med:3, hard:4, gruelling:5, grueling:5 };
-const QUICK_DOW = { sun:0, mon:1, tue:2, tues:2, wed:3, thu:4, thur:4, thurs:4, fri:5, sat:6 };
-const QUICK_MONTH = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, sept:8, oct:9, nov:10, dec:11 };
-
-/* A month/day with no year means the next one that hasn't happened yet. */
-function quickMonthDay(month, day){
-  if(!(day >= 1 && day <= 31)) return null;
-  let d = new Date(TODAY.getFullYear(), month, day);
-  if(PQ.dateKey(d) < PQ.TODAY_KEY) d = new Date(TODAY.getFullYear() + 1, month, day);
-  return PQ.dateKey(d);
-}
-function quickDue(word){
-  const w = word.toLowerCase();
-  if(w === 'today' || w === 'tod') return PQ.TODAY_KEY;
-  if(w === 'tomorrow' || w === 'tom' || w === 'tmr') return PQ.dateKey(PQ.addDays(TODAY, 1));
-  if(QUICK_DOW[w] !== undefined){
-    const ahead = (QUICK_DOW[w] - TODAY.getDay() + 7) % 7;
-    return PQ.dateKey(PQ.addDays(TODAY, ahead || 7));
-  }
-  if(/^\d{4}-\d{1,2}-\d{1,2}$/.test(w)){
-    const [y, m, d] = w.split('-').map(Number);
-    return PQ.dateKey(new Date(y, m - 1, d));
-  }
-  let m = w.match(/^(\d{1,3})([dw])$/);
-  if(m) return PQ.dateKey(PQ.addDays(TODAY, parseInt(m[1]) * (m[2] === 'w' ? 7 : 1)));
-  m = w.match(/^([a-z]{3,4})-?(\d{1,2})$/);
-  if(m && QUICK_MONTH[m[1]] !== undefined) return quickMonthDay(QUICK_MONTH[m[1]], parseInt(m[2]));
-  m = w.match(/^(\d{1,2})-?([a-z]{3,4})$/);
-  if(m && QUICK_MONTH[m[2]] !== undefined) return quickMonthDay(QUICK_MONTH[m[2]], parseInt(m[1]));
-  if(/^\d{1,2}$/.test(w)){
-    const day = parseInt(w);
-    if(!(day >= 1 && day <= 31)) return null;
-    let d = new Date(TODAY.getFullYear(), TODAY.getMonth(), day);
-    if(PQ.dateKey(d) < PQ.TODAY_KEY) d = new Date(TODAY.getFullYear(), TODAY.getMonth() + 1, day);
-    return PQ.dateKey(d);
-  }
-  return null;
-}
-function quickDifficulty(word){
-  const w = word.toLowerCase();
-  if(/^[1-5]$/.test(w)) return parseInt(w);
-  return QUICK_DIFFICULTY[w] || null;
-}
-/* Tags are matched on the name you'd say out loud: exact first, then
-   ignoring spaces (#deepclean → Deep Clean), then as a prefix (#wed → Wedding). */
-function quickTag(word){
-  const w = word.toLowerCase().replace(/[-_]/g, ' ');
-  const flat = w.replace(/\s+/g, '');
-  const tags = S().tags;
-  return tags.find(t => t.name.toLowerCase() === w)
-      || tags.find(t => t.name.toLowerCase().replace(/\s+/g, '') === flat)
-      || tags.find(t => t.name.toLowerCase().startsWith(w))
-      || null;
-}
-function parseQuick(line){
-  const meta = { title:'', priority:null, difficulty:null, tag:null, due:null };
-  const kept = [];
-  line.trim().split(/\s+/).forEach(word => {
-    const body = word.slice(1);
-    if(body){
-      if(word[0] === '!' && QUICK_PRIORITY[body.toLowerCase()]){ meta.priority = QUICK_PRIORITY[body.toLowerCase()]; return; }
-      if(word[0] === '*'){ const d = quickDifficulty(body); if(d){ meta.difficulty = d; return; } }
-      if(word[0] === '#'){ const t = quickTag(body); if(t){ meta.tag = t.id; return; } }
-      if(word[0] === '@'){ const due = quickDue(body); if(due){ meta.due = due; return; } }
-    }
-    kept.push(word);
-  });
-  meta.title = kept.join(' ').trim();
-  return meta;
-}
-/* Same subtask rule as the long form, but the bullet is only stripped when a
-   space follows it — otherwise "*3 write vows" would lose its difficulty. */
-function quickLines(text){
-  const out = [];
-  text.split('\n').forEach(line => {
-    if(!line.trim()) return;
-    const isSub = /^(\s{2,}|\t|\s*[-•*]\s)/.test(line);
-    const meta = parseQuick(line.replace(/^[ \t]*(?:[-•*][ \t]+)?/, ''));
-    if(!meta.title) return;
-    if(isSub && out.length) out[out.length - 1].subs.push({ id: uid(), title: meta.title });
-    else out.push({ meta, subs: [] });
-  });
-  return out;
-}
+/* The grammar itself lives in /assets/pp-shorthand.js, because
+   tools/quest-add.js speaks it too — that's how a list pasted into a Claude
+   session arrives here already tagged and rated. One definition, two doors;
+   a change to the tokens can't leave one of them behind. */
+const quickCtx = () => ({ today: TODAY, tags: S().tags });
+const parseQuick = line => PPShorthand.parse(line, quickCtx());
+const quickLines = text => PPShorthand.parseLines(text, quickCtx(), uid);
 
 const quickLayer   = document.getElementById('quickLayer');
 const quickInput   = document.getElementById('quickInput');
