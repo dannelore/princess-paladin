@@ -129,6 +129,7 @@ window.PPNav = (function(){
           { label:'Couch Quest',  href:'/side-quests/couch-quest.html',  note:'Watch list' },
           { label:'Spooky Quest', href:'/side-quests/spooky-quest.html', note:'1 September – 31 October' },
           { label:'Classics Quest', href:'/side-quests/classics-quest.html', note:'A classic for every letter of the alphabet' },
+          { label:'Reading Quest', href:'/side-quests/reading-quest.html', note:'The to-be-read pile, and everything read' },
           { label:'Watch History', href:'/side-quests/watch-history.html', note:'Both watch lists, in the order you finished them' }
         ]}
       ]

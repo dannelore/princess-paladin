@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reading Quest &middot; Side Quests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/themes/side-quests.css">
+<link rel="stylesheet" href="/assets/pp-progress.css">
+<link rel="stylesheet" href="/assets/pp-tracker.css">
+
+<style>
+  /* ======================================================================
+     THE QUEST TO READ EVERYTHING ELSE
+
+     A general reading tracker, and Danni's alone — the same shape as the
+     Classics Quest shelf, minus the alphabet. No seeded list, no shelf
+     letters, no house rules: the pile is whatever you add to it. Each book
+     carries one status, a started date, a finished date and a verdict.
+
+     Firestore: sidequest/reading-list
+     Nothing is seeded, so the shelf starts empty and grows from the form.
+     ====================================================================== */
+
+  .rq-intro{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.02rem;
+    color: var(--ink-soft);
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto 22px;
+    line-height: 1.5;
+  }
+
+  /* ---- progress ---- */
+  .rq-progress{ margin-bottom: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .rq-track{ padding: 18px 22px; }
+  .rq-track h3{
+    font-family: var(--font-body);
+    font-size: .66rem;
+    font-weight: 600;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--dusk-deep);
+    margin: 0 0 10px;
+  }
+
+  /* The year ledger: one chip per year with something finished in it, so
+     "how much did I read in 2025" is a glance rather than a count. */
+  .rq-years{ display: flex; flex-wrap: wrap; gap: 6px; }
+  .rq-year{
+    display: inline-flex; align-items: baseline; gap: 6px;
+    padding: 4px 10px;
+    font-family: var(--font-body); font-size: .74rem; font-weight: 600;
+    color: var(--ink-soft);
+    background: var(--parchment); border: 1px solid var(--parchment-border);
+    border-radius: 999px;
+  }
+  .rq-year.is-now{ color: #fff; background: var(--sage); border-color: var(--sage-deep); }
+  .rq-year b{ font-weight: 700; }
+  .rq-year small{ font-weight: 500; font-size: .66rem; opacity: .85; }
+  .rq-note{
+    font-family: var(--font-serif); font-style: italic; font-size: .85rem;
+    color: var(--ink-soft); margin: 10px 0 0;
+  }
+
+  /* ---- controls ---- */
+  .cq-form{ display: none; margin-bottom: 22px; }
+
+  .rq-bar{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .rq-bar .spacer{ flex: 1 1 auto; }
+  .rq-count{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .95rem;
+    color: var(--ink-soft);
+  }
+  .rq-sync{
+    font-family: var(--font-body);
+    font-size: .7rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .rq-sync[data-state="saving"]{ color: var(--gold); }
+  .rq-sync[data-state="error"]{ color: var(--blade); }
+
+  /* ---- the shelf ----
+     Cover-forward, same as the classics shelf. No cover means a drop-cap
+     tile of the title's first letter, so the grid never has a hole. */
+  .rq-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+  }
+
+  .rq-card{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    text-align: left;
+    cursor: pointer;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--lift);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+  .rq-card:hover,
+  .rq-card:focus-visible{
+    transform: translateY(-3px);
+    box-shadow: var(--lift-lg);
+    border-color: var(--dusk);
+  }
+  .rq-card.is-read{ border-color: var(--sage); }
+  .rq-card.is-dnf{ border-color: var(--line-strong); }
+
+  .rq-coverwrap{ position: relative; }
+  .rq-cover{
+    display: block;
+    width: 100%;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    background: var(--parchment);
+  }
+  /* Finished and abandoned books dim, so the pile still to read is what
+     catches the eye. */
+  .rq-card.is-read .rq-cover{ opacity: .72; }
+  .rq-card.is-dnf  .rq-cover{ opacity: .5; filter: grayscale(.5); }
+
+  .rq-nocover{
+    aspect-ratio: 2/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 30% 25%, rgba(107,74,120,.16), transparent 62%), var(--parchment);
+    font-family: var(--font-display);
+    font-size: 3.4rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--dusk);
+  }
+
+  .rq-body{ padding: 10px 11px 12px; display: flex; flex-direction: column; gap: 2px; }
+  .rq-title{
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: .95rem;
+    line-height: 1.2;
+    margin: 0;
+    color: var(--ink);
+    word-break: break-word;
+  }
+  .rq-author{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .82rem;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  /* One status pill, sitting on the cover's foot. */
+  .rq-status{
+    position: absolute;
+    bottom: 6px; left: 6px; right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-body);
+    font-size: .56rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    border-radius: 999px;
+    padding: 3px 8px;
+    color: var(--ink-soft);
+    background: rgba(255,253,248,.92);
+    border: 1px solid var(--line-strong);
+  }
+  .rq-status[data-state="reading"]{
+    border-style: dashed;
+    color: var(--gold-deep);
+    border-color: var(--gold);
+  }
+  .rq-status[data-state="read"]{
+    color: #fff;
+    background: var(--sage-deep);
+    border-color: var(--sage-deep);
+  }
+  .rq-status[data-state="dnf"]{
+    color: #fff;
+    background: var(--unavail);
+    border-color: var(--unavail);
+  }
+
+  .rq-when{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .78rem;
+    color: var(--ink-soft);
+    margin: 7px 0 0;
+  }
+
+  /* The verdict, as a row of small stars. Empty stars stay faint so an
+     unrated read doesn't look like a zero. */
+  .rq-stars{
+    display: inline-flex;
+    gap: 1px;
+    font-size: .8rem;
+    line-height: 1;
+    color: var(--gold-deep);
+    margin-top: 6px;
+  }
+  .rq-stars .off{ color: var(--line-strong); }
+
+  .rq-cardprogress{
+    display: block;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--line);
+    overflow: hidden;
+    margin: 7px 0 3px;
+  }
+  .rq-cardprogress-fill{ display: block; height: 100%; background: var(--sage); }
+  .rq-progresstext{
+    display: block;
+    font-family: var(--font-body);
+    font-size: .68rem;
+    color: var(--ink-soft);
+  }
+
+  /* ---- detail ---- */
+  .rq-detail{
+    display: none;
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 120;
+    max-height: 88vh;
+    overflow-y: auto;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: 0 -8px 40px rgba(46,36,31,.28);
+  }
+  .rq-detail.open{ display: block; }
+  @media (min-width: 720px){
+    .rq-detail{
+      inset: 50% auto auto 50%;
+      transform: translate(-50%,-50%);
+      width: min(560px, 92vw);
+      border-radius: var(--radius-lg);
+    }
+  }
+  .rq-detail-head{ display: flex; gap: 16px; align-items: flex-start; margin-bottom: 4px; }
+  .rq-detail-head h2{ margin: 0 0 2px; font-size: 1.4rem; }
+
+  .rq-detail-cover{
+    flex: 0 0 auto;
+    width: 92px;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    background: var(--parchment);
+    border: 1px solid var(--line);
+  }
+  .rq-detail-nocover{
+    flex: 0 0 auto;
+    width: 92px;
+    aspect-ratio: 2/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    background: var(--parchment);
+    border: 1px solid var(--line);
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    font-weight: 600;
+    color: var(--dusk);
+  }
+  .rq-coverrow{ display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .rq-coverrow input{ flex: 1 1 200px; min-width: 0; }
+  .rq-coverstate{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .85rem;
+    color: var(--ink-soft);
+  }
+
+  .rq-progressrow{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .rq-progressrow label{
+    font-family: var(--font-body);
+    font-size: .64rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    flex: 1 1 100%;
+  }
+  .rq-progressrow input{
+    width: 64px;
+    flex: 0 0 auto;
+  }
+  .rq-progressrow span{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .85rem;
+    color: var(--ink-soft);
+  }
+
+  .rq-block{ padding: 14px 0; border-top: 1px solid var(--line); }
+  .rq-block-name{
+    font-family: var(--font-body);
+    font-size: .68rem;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+
+  .rq-states{ display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .rq-states button{
+    font-family: var(--font-body);
+    font-size: .72rem;
+    font-weight: 500;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 13px;
+    cursor: pointer;
+  }
+  .rq-states button[aria-pressed="true"]{
+    color: #fff;
+    background: var(--dusk);
+    border-color: var(--dusk);
+  }
+
+  /* Started / finished dates, side by side where there's room. */
+  .rq-dates{ display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; }
+  .rq-date{ display: flex; align-items: center; gap: 8px; }
+  .rq-date label{
+    font-family: var(--font-body);
+    font-size: .64rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .rq-date input[type="date"]{
+    font-family: var(--font-body);
+    font-size: .84rem;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 5px 9px;
+  }
+
+  /* The verdict picker: five big stars, tap to rate, tap the same one to
+     clear. */
+  .rq-rate{ display: flex; align-items: center; gap: 4px; }
+  .rq-rate button{
+    font-size: 1.5rem;
+    line-height: 1;
+    padding: 2px 3px;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    color: var(--line-strong);
+    transition: color .12s ease, transform .12s ease;
+  }
+  .rq-rate button.on{ color: var(--gold-deep); }
+  .rq-rate button:hover{ transform: scale(1.15); }
+  .rq-rate span{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .85rem;
+    color: var(--ink-soft);
+    margin-left: 6px;
+  }
+
+  .rq-empty{
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 36px;
+    font-family: var(--font-serif);
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 420px){
+    .rq-grid{ grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+
+<body class="pp-sidequest" data-nav-eyebrow="Side Quests" data-nav-title="Reading Quest">
+
+<div class="pp-wrap">
+
+  <div class="pp-page-title">
+    <h2>The Quest to Read Everything Else</h2>
+  </div>
+
+  <p class="rq-intro">
+    Everything that isn&rsquo;t a classic. The to-be-read pile, whatever&rsquo;s
+    on the go right now, and the ones already finished, with a verdict on each.
+  </p>
+
+  <div class="rq-progress" id="progress"></div>
+
+  <div class="rq-bar">
+    <button class="pp-pill" data-filter="all" aria-pressed="true">All</button>
+    <button class="pp-pill" data-filter="tbr" aria-pressed="false">To read</button>
+    <button class="pp-pill" data-filter="reading" aria-pressed="false">Reading</button>
+    <button class="pp-pill" data-filter="read" aria-pressed="false">Read</button>
+    <button class="pp-pill" data-filter="dnf" aria-pressed="false">Abandoned</button>
+    <span class="spacer"></span>
+    <button class="pp-btn" id="addBtn">+ Add a book</button>
+    <span class="rq-count" id="count"></span>
+    <span class="rq-sync" id="sync"></span>
+  </div>
+
+  <div class="cq-selects">
+    <div class="cq-pick">
+      <label for="sortBy">Sort</label>
+      <select id="sortBy">
+        <option value="added-desc">Recently added</option>
+        <option value="title-asc">Title (A–Z)</option>
+        <option value="title-desc">Title (Z–A)</option>
+        <option value="author-asc">Author last name (A–Z)</option>
+        <option value="author-desc">Author last name (Z–A)</option>
+        <option value="finished-desc">Finished (newest first)</option>
+        <option value="finished-asc">Finished (oldest first)</option>
+        <option value="rating-desc">Rating (best first)</option>
+        <option value="progress-desc">% complete (high to low)</option>
+        <option value="progress-asc">% complete (low to high)</option>
+        <option value="year-asc">Year published (oldest first)</option>
+        <option value="year-desc">Year published (newest first)</option>
+        <option value="pages-asc">Pages (shortest first)</option>
+        <option value="pages-desc">Pages (longest first)</option>
+      </select>
+    </div>
+  </div>
+
+  <section class="pp-panel cq-form" id="form">
+    <h2 class="pp-panel-title" id="formTitle">Add a book</h2>
+
+    <div class="cq-fields">
+      <div class="cq-field wide">
+        <label for="fTitle">Title</label>
+        <div class="cq-inline">
+          <input id="fTitle" type="text" placeholder="Piranesi" autocomplete="off">
+          <button class="pp-btn pp-btn-quiet" id="lookupBtn" style="white-space:nowrap;">Look it up</button>
+        </div>
+        <span class="cq-hint" id="lookupHint"></span>
+        <div class="cq-results" id="results"></div>
+      </div>
+
+      <div class="cq-field">
+        <label for="fAuthor">Author</label>
+        <input id="fAuthor" type="text" placeholder="Susanna Clarke" autocomplete="off">
+      </div>
+
+      <div class="cq-field">
+        <label for="fYear">Year published</label>
+        <input id="fYear" type="number" placeholder="2020" autocomplete="off">
+      </div>
+
+      <div class="cq-field">
+        <label for="fEstPages">Pages</label>
+        <input id="fEstPages" type="number" min="0" placeholder="Looked up when known, or type your own" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="cq-actions">
+      <button class="pp-btn" id="saveBookBtn">Save</button>
+      <button class="pp-btn pp-btn-quiet" id="cancelBookBtn">Cancel</button>
+      <span class="cq-spacer"></span>
+      <button class="pp-btn pp-btn-quiet" id="deleteBookBtn" style="display:none;">Delete</button>
+    </div>
+  </section>
+
+  <div class="rq-grid" id="grid"></div>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+
+</div>
+
+<div class="pp-overlay" id="overlay"></div>
+<div class="pp-panel pp-panel-lg rq-detail" id="detail"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-firebase.js"></script>
+<script src="/assets/pp-progress.js" defer></script>
+<script>
+"use strict";
+
+const firebaseConfig = window.PPFirebaseConfig;
+
+const DOC_PATH  = "sidequest/reading-list";
+const CACHE_KEY = "pp_reading_list";
+
+const STATES = [
+  { key:"tbr",     label:"To read" },
+  { key:"reading", label:"Reading" },
+  { key:"read",    label:"Read" },
+  { key:"dnf",     label:"Abandoned" }
+];
+
+/* Format decides how progress is tracked on a current read: e-book by
+   percent, physical by page number, audiobook by time listened. */
+const FORMATS = [
+  { key:"ebook",    label:"E-book" },
+  { key:"physical", label:"Physical" },
+  { key:"audio",    label:"Audiobook" }
+];
+const OWNERSHIP = [
+  { key:"owned",    label:"Owned" },
+  { key:"borrowed", label:"Borrowed" },
+  { key:"rented",   label:"Rented" }
+];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+let state = { items: [] };
+let docRef = null, openId = null, filter = "all", sortBy = "added-desc";
+let editId = null, pendingCover = "";
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+/* ---------------- dates ----------------
+   Plain YYYY-MM-DD, split by hand so a UTC parse can't shift the day. */
+function today(){
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
+}
+function fmtDate(d){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || ""));
+  if(!m) return "";
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${+m[3]} ${MONTHS[+m[2]-1]} ${m[1]}`;
+}
+const yearOf = d => { const m = /^(\d{4})-/.exec(String(d || "")); return m ? +m[1] : null; };
+
+/* ---------------- shape ----------------
+   status is one of STATES; started is the day you began, date is the day
+   you finished (kept as `date` to match the classics shelf). rating is 0
+   for unrated, else 1–5. added is the day the book joined the pile. */
+function normalize(item){
+  if(!STATES.some(st => st.key === item.status)) item.status = "tbr";
+  if(typeof item.started !== "string") item.started = "";
+  if(typeof item.date !== "string") item.date = "";
+  if(typeof item.added !== "string") item.added = "";
+  if(typeof item.notes !== "string") item.notes = "";
+  if(typeof item.cover !== "string") item.cover = "";
+  if(typeof item.author !== "string") item.author = "";
+  /* Set once a lookup has been attempted, hit or miss, so a book Open Library
+     has no cover for isn't re-queried on every single page load. */
+  if(typeof item.coverTried !== "boolean") item.coverTried = false;
+
+  if(!FORMATS.some(f => f.key === item.format)) item.format = "";
+  if(!OWNERSHIP.some(o => o.key === item.ownership)) item.ownership = "";
+  if(typeof item.pct !== "number" || !isFinite(item.pct)) item.pct = 0;
+  if(typeof item.page !== "number" || !isFinite(item.page)) item.page = 0;
+  if(typeof item.pages !== "number" || !isFinite(item.pages)) item.pages = 0;
+  if(typeof item.mins !== "number" || !isFinite(item.mins)) item.mins = 0;
+  if(typeof item.totalMins !== "number" || !isFinite(item.totalMins)) item.totalMins = 0;
+  if(typeof item.year !== "number" || !isFinite(item.year)) item.year = null;
+  if(typeof item.estPages !== "number" || !isFinite(item.estPages)) item.estPages = null;
+  if(typeof item.rating !== "number" || !isFinite(item.rating)) item.rating = 0;
+  item.rating = Math.max(0, Math.min(5, Math.round(item.rating)));
+  return item;
+}
+
+const stateLabel = key => (STATES.find(st => st.key === key) || STATES[0]).label;
+const initial = title => (String(title || "").trim().replace(/^(the|an?)\s+/i, "").slice(0,1) || "?").toUpperCase();
+
+/* 0–1 fraction complete, by format. Unset totals read as 0 rather than
+   dividing by zero. */
+function progressFrac(item){
+  if(item.format === "ebook")    return Math.max(0, Math.min(100, item.pct)) / 100;
+  if(item.format === "physical") return item.pages > 0 ? Math.max(0, Math.min(item.page, item.pages)) / item.pages : 0;
+  if(item.format === "audio")    return item.totalMins > 0 ? Math.max(0, Math.min(item.mins, item.totalMins)) / item.totalMins : 0;
+  return 0;
+}
+
+function hm(mins){ return `${Math.floor(mins / 60)}h ${mins % 60}m`; }
+
+function progressText(item){
+  if(item.format === "ebook")    return Math.round(Math.max(0, Math.min(100, item.pct))) + "%";
+  if(item.format === "physical") return `page ${item.page || 0} of ${item.pages || 0}`;
+  if(item.format === "audio")    return `${hm(item.mins || 0)} of ${hm(item.totalMins || 0)}`;
+  return "";
+}
+
+function stars(n, cls){
+  let out = "";
+  for(let i = 1; i <= 5; i++) out += `<span class="${i <= n ? "" : "off"}">★</span>`;
+  return `<span class="${cls}" aria-label="${n} of 5 stars">${out}</span>`;
+}
+
+/* ---------------- covers ----------------
+   Open Library, which needs no key and no account. The search endpoint gives
+   back a cover id; the covers endpoint serves the image. Whatever is found
+   gets stored on the book, so this runs once per title and never again. */
+const OL_SEARCH = "https://openlibrary.org/search.json";
+const OL_COVER  = "https://covers.openlibrary.org/b/id/";
+
+async function findCover(item){
+  const url = OL_SEARCH +
+    "?title="  + encodeURIComponent(item.title) +
+    (item.author ? "&author=" + encodeURIComponent(item.author) : "") +
+    "&limit=5&fields=cover_i,title,author_name";
+  const res  = await fetch(url);
+  if(!res.ok) throw new Error("Open Library said " + res.status);
+  const data = await res.json();
+  const hit  = (data.docs || []).find(doc => doc.cover_i);
+  return hit ? OL_COVER + hit.cover_i + "-M.jpg" : "";
+}
+
+/* Walks the shelf one book at a time, spaced out — it's a free public API
+   and there's no hurry. Cards fill in as they arrive. */
+async function fillCovers(){
+  const todo = state.items.filter(i => !i.cover && !i.coverTried);
+  if(!todo.length) return;
+
+  setSync("Finding covers…", "saving");
+  let found = 0;
+
+  for(const item of todo){
+    try{
+      item.cover = await findCover(item);
+      if(item.cover) found++;
+    }catch(err){
+      console.error("Cover lookup failed for " + item.title + ":", err);
+      continue;
+    }
+    item.coverTried = true;
+    render();
+    await new Promise(r => setTimeout(r, 120));
+  }
+
+  save();
+  setSync(found ? "Found " + found + " covers" : "No new covers");
+}
+
+/* ---------------- add / edit ---------------- */
+function searchBooks(q){
+  $("lookupHint").textContent = "Searching…";
+  const url = OL_SEARCH + "?q=" + encodeURIComponent(q) +
+    "&fields=title,author_name,first_publish_year,number_of_pages_median,cover_i&limit=8";
+  fetch(url)
+    .then(res => { if(!res.ok) throw new Error("bad status"); return res.json(); })
+    .then(data => showBookResults((data.docs || []).map(d => ({
+      raw: d,
+      name: d.title,
+      image: d.cover_i ? (OL_COVER + d.cover_i + "-M.jpg") : "",
+      meta: [(d.author_name || [])[0] || "", d.first_publish_year || ""].filter(Boolean).join(" · ")
+    }))))
+    .catch(err => {
+      console.error("Book lookup failed:", err);
+      $("lookupHint").textContent = "Couldn't reach Open Library — fill it in by hand.";
+    });
+}
+
+function showBookResults(rows){
+  const box = $("results");
+  box.innerHTML = "";
+  if(!rows.length){
+    $("lookupHint").textContent = "Nothing found. Check the spelling, or fill it in by hand.";
+    box.classList.remove("open");
+    return;
+  }
+  $("lookupHint").textContent = "Pick the right one:";
+  rows.forEach(r => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cq-result";
+    b.innerHTML =
+      (r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy">`
+               : `<div class="rq-nocover" style="aspect-ratio:2/3;">${esc(initial(r.name))}</div>`) +
+      `<div class="cq-rname">${esc(r.name)}</div>` +
+      `<div class="cq-rmeta">${esc(r.meta)}</div>`;
+    b.onclick = () => pickBook(r);
+    box.appendChild(b);
+  });
+  box.classList.add("open");
+}
+
+function pickBook(r){
+  $("fTitle").value  = r.name;
+  $("fAuthor").value = (r.raw.author_name || [])[0] || "";
+  if(r.raw.first_publish_year) $("fYear").value = r.raw.first_publish_year;
+  if(r.raw.number_of_pages_median) $("fEstPages").value = r.raw.number_of_pages_median;
+  pendingCover = r.image || "";
+  $("results").classList.remove("open");
+  $("lookupHint").textContent = pendingCover
+    ? "Cover found."
+    : "No cover on file for that edition — you can add one after saving.";
+}
+
+function openForm(item){
+  closeDetail();
+  editId = item ? item.id : null;
+  pendingCover = "";
+  $("formTitle").textContent = item ? "Edit book" : "Add a book";
+  $("fTitle").value  = item ? item.title  : "";
+  $("fAuthor").value = item ? item.author : "";
+  $("fYear").value = item && item.year != null ? item.year : "";
+  $("fEstPages").value = item && item.estPages != null ? item.estPages : "";
+  $("results").innerHTML = "";
+  $("results").classList.remove("open");
+  $("lookupHint").textContent = "";
+  $("deleteBookBtn").style.display = item ? "inline-block" : "none";
+  $("form").classList.add("open");
+  $("fTitle").focus();
+}
+
+function closeForm(){
+  $("form").classList.remove("open");
+  editId = null;
+  pendingCover = "";
+}
+
+function saveBook(){
+  const title = $("fTitle").value.trim();
+  if(!title){ $("fTitle").focus(); return; }
+  const author = $("fAuthor").value.trim();
+  const yearInput = $("fYear").value.trim();
+  const year = yearInput ? parseInt(yearInput, 10) : null;
+  const pagesInput = $("fEstPages").value.trim();
+  const estPages = pagesInput ? parseInt(pagesInput, 10) : null;
+
+  if(editId){
+    const item = state.items.find(i => i.id === editId);
+    if(item){
+      item.title    = title;
+      item.author   = author;
+      item.year     = (year != null && isFinite(year)) ? year : null;
+      item.estPages = (estPages != null && isFinite(estPages)) ? estPages : null;
+      if(pendingCover){ item.cover = pendingCover; item.coverTried = true; }
+    }
+  }else{
+    state.items.push(normalize({
+      id: uid(), title, author,
+      year: (year != null && isFinite(year)) ? year : null,
+      estPages: (estPages != null && isFinite(estPages)) ? estPages : null,
+      status: "tbr", started: "", date: "", added: today(), notes: "",
+      cover: pendingCover, coverTried: !!pendingCover
+    }));
+  }
+
+  closeForm();
+  save();
+  /* A book added by hand with no cover gets one looked up straight away. */
+  fillCovers();
+}
+
+function deleteBook(){
+  if(!editId) return;
+  if(!confirm("Remove this book from the pile?")) return;
+  state.items = state.items.filter(i => i.id !== editId);
+  closeForm();
+  save();
+}
+
+/* ---------------- storage ---------------- */
+function setSync(text, stateName){
+  $("sync").textContent = text;
+  if(stateName) $("sync").setAttribute("data-state", stateName);
+  else $("sync").removeAttribute("data-state");
+}
+
+function save(){
+  localStorage.setItem(CACHE_KEY, JSON.stringify(state));
+  render();
+  if(!docRef) return;
+  setSync("Saving…", "saving");
+  docRef.set(state)
+    .then(() => setSync("Saved"))
+    .catch(err => { console.error("Sync failed:", err); setSync("Offline — saved here", "error"); });
+}
+
+async function load(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+    if(raw && Array.isArray(raw.items)) state = raw;
+  }catch(e){}
+
+  try{
+    firebase.initializeApp(firebaseConfig);
+    docRef = firebase.firestore().doc(DOC_PATH);
+    const snap = await docRef.get();
+    if(snap.exists){
+      const data = snap.data();
+      if(Array.isArray(data.items)) state = data;
+    }
+  }catch(err){
+    console.error("Firestore unavailable, working from the local copy:", err);
+    setSync("Offline", "error");
+  }
+
+  if(!Array.isArray(state.items)) state.items = [];
+  state.items.forEach(normalize);
+  render();
+  setSync(docRef ? "Synced" : "Offline");
+
+  fillCovers();
+}
+
+/* ---------------- rendering ---------------- */
+function visible(){
+  return state.items.filter(i => filter === "all" || i.status === filter);
+}
+
+/* ---------------- sorting ----------------
+   Titles alphabetise library-style, ignoring a leading "The" / "A" / "An". */
+function sortTitle(title){
+  return String(title || "").trim().replace(/^(the|an?)\s+/i, "");
+}
+function authorLastName(author){
+  const parts = String(author || "").trim().split(/\s+/).filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : "";
+}
+const byTitle = (a, b) => sortTitle(a.title).localeCompare(sortTitle(b.title));
+
+/* A book marked Read counts as fully complete even if its page/percent
+   tracking was never filled in — the status is the more trustworthy signal. */
+function completionFrac(item){
+  if(item.status === "read") return 1;
+  if(item.status === "tbr") return 0;
+  return progressFrac(item);
+}
+
+/* Null-last comparisons: a book with no year, pages or finish date sits at
+   the end of the list whichever direction is picked, rather than sorting as
+   if it were zero. */
+function nullLast(get, a, b, ascending){
+  const av = get(a), bv = get(b);
+  if(av == null && bv == null) return byTitle(a, b);
+  if(av == null) return 1;
+  if(bv == null) return -1;
+  if(av === bv) return byTitle(a, b);
+  if(typeof av === "string") return ascending ? av.localeCompare(bv) : bv.localeCompare(av);
+  return ascending ? (av - bv) : (bv - av);
+}
+const orNull = s => s ? s : null;
+
+function sorted(rows){
+  const out = rows.slice();
+  if(sortBy === "title-asc"){
+    out.sort(byTitle);
+  }else if(sortBy === "title-desc"){
+    out.sort((a,b) => byTitle(b, a));
+  }else if(sortBy === "author-asc"){
+    out.sort((a,b) => authorLastName(a.author).localeCompare(authorLastName(b.author)) || byTitle(a, b));
+  }else if(sortBy === "author-desc"){
+    out.sort((a,b) => authorLastName(b.author).localeCompare(authorLastName(a.author)) || byTitle(b, a));
+  }else if(sortBy === "finished-desc"){
+    out.sort((a,b) => nullLast(i => orNull(i.date), a, b, false));
+  }else if(sortBy === "finished-asc"){
+    out.sort((a,b) => nullLast(i => orNull(i.date), a, b, true));
+  }else if(sortBy === "rating-desc"){
+    out.sort((a,b) => nullLast(i => i.rating || null, a, b, false));
+  }else if(sortBy === "progress-desc"){
+    out.sort((a,b) => completionFrac(b) - completionFrac(a) || byTitle(a, b));
+  }else if(sortBy === "progress-asc"){
+    out.sort((a,b) => completionFrac(a) - completionFrac(b) || byTitle(a, b));
+  }else if(sortBy === "year-asc"){
+    out.sort((a,b) => nullLast(i => i.year, a, b, true));
+  }else if(sortBy === "year-desc"){
+    out.sort((a,b) => nullLast(i => i.year, a, b, false));
+  }else if(sortBy === "pages-asc"){
+    out.sort((a,b) => nullLast(i => i.estPages, a, b, true));
+  }else if(sortBy === "pages-desc"){
+    out.sort((a,b) => nullLast(i => i.estPages, a, b, false));
+  }else{
+    /* Recently added. Books saved before `added` existed sort last. */
+    out.sort((a,b) => nullLast(i => orNull(i.added), a, b, false));
+  }
+  return out;
+}
+
+/* ---------------- progress ----------------
+   Books read overall, plus a ledger of finished books by year with a page
+   tally, so the current year's count is always the first thing you see. */
+function renderYears(){
+  const now = new Date().getFullYear();
+  const byYear = {};
+  state.items.forEach(i => {
+    if(i.status !== "read") return;
+    const y = yearOf(i.date);
+    if(y == null) return;
+    byYear[y] = byYear[y] || { books:0, pages:0 };
+    byYear[y].books++;
+    byYear[y].pages += i.estPages || 0;
+  });
+  if(!byYear[now]) byYear[now] = { books:0, pages:0 };
+
+  const years = Object.keys(byYear).map(Number).sort((a,b) => b - a);
+  const chips = years.map(y => {
+    const r = byYear[y];
+    return `<span class="rq-year${y === now ? " is-now" : ""}">` +
+      `<b>${y}</b> ${r.books} ${r.books === 1 ? "book" : "books"}` +
+      (r.pages ? ` <small>~${r.pages.toLocaleString()}pp</small>` : "") +
+      `</span>`;
+  }).join("");
+
+  const reading = state.items.filter(i => i.status === "reading").length;
+  const tbr = state.items.filter(i => i.status === "tbr").length;
+  const note = [
+    reading ? `${reading} on the go` : "Nothing on the go",
+    `${tbr} waiting in the pile`
+  ].join(" · ") + ".";
+
+  return `
+    <div class="pp-panel pp-panel-tight rq-track">
+      <h3>By year</h3>
+      <div class="rq-years">${chips}</div>
+      <p class="rq-note">${note}</p>
+    </div>`;
+}
+
+function renderProgress(){
+  const total = state.items.filter(i => i.status !== "dnf").length;
+  const done  = state.items.filter(i => i.status === "read").length;
+
+  $("progress").innerHTML = `
+    <div class="pp-panel pp-panel-tight rq-track">
+      <h3>Books read</h3>
+      <div class="pp-progress" data-color="sage"
+           data-current="${done}" data-total="${total}" data-format="both"></div>
+    </div>
+    ${renderYears()}`;
+
+  if(window.PPProgress) PPProgress.draw($("progress"));
+}
+
+function render(){
+  renderProgress();
+
+  const rows = sorted(visible());
+  const total = state.items.length;
+  $("count").textContent = rows.length === total
+    ? `${total} ${total === 1 ? "book" : "books"}`
+    : `Showing ${rows.length} of ${total}`;
+
+  if(!rows.length){
+    $("grid").innerHTML = total
+      ? `<p class="rq-empty">Nothing in that shelf yet.</p>`
+      : `<p class="rq-empty">The pile is empty. Add a book to start it.</p>`;
+    return;
+  }
+
+  $("grid").innerHTML = rows.map(item => {
+    const letter = initial(item.title);
+
+    let when = "";
+    if(item.status === "read" && item.date)         when = `<p class="rq-when">Finished ${esc(fmtDate(item.date))}</p>`;
+    else if(item.status === "reading" && item.started) when = `<p class="rq-when">Started ${esc(fmtDate(item.started))}</p>`;
+    else if(item.status === "dnf" && item.date)     when = `<p class="rq-when">Put down ${esc(fmtDate(item.date))}</p>`;
+
+    const verdict = item.status === "read" && item.rating ? stars(item.rating, "rq-stars") : "";
+
+    const prog = item.status === "reading" && item.format
+      ? `<span class="rq-cardprogress" aria-hidden="true"><span class="rq-cardprogress-fill" style="width:${Math.round(progressFrac(item) * 100)}%"></span></span>
+         <span class="rq-progresstext">${esc(progressText(item))}</span>`
+      : "";
+
+    /* If the stored cover URL 404s later, swap the tile for the letter rather
+       than leaving a broken-image box on the shelf. */
+    const art = item.cover
+      ? `<img class="rq-cover" src="${esc(item.cover)}" alt="" loading="lazy"
+              onerror="this.outerHTML='<div class=\'rq-nocover\'>${esc(letter)}</div>'">`
+      : `<div class="rq-nocover">${esc(letter)}</div>`;
+
+    const cls = item.status === "read" ? " is-read" : item.status === "dnf" ? " is-dnf" : "";
+
+    return `<button class="rq-card${cls}" data-open="${esc(item.id)}">
+      <span class="rq-coverwrap">
+        ${art}
+        <span class="rq-status" data-state="${item.status}">${esc(stateLabel(item.status))}</span>
+      </span>
+      <span class="rq-body">
+        <span class="rq-title">${esc(item.title)}</span>
+        <span class="rq-author">${esc(item.author)}</span>
+        ${item.estPages != null ? `<span class="rq-when">~${item.estPages}pp</span>` : ""}
+        ${when}
+        ${verdict}
+        ${prog}
+      </span>
+    </button>`;
+  }).join("");
+}
+
+/* ---------------- detail ---------------- */
+function openDetail(id){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+  openId = id;
+  const letter = initial(item.title);
+  const showDates = item.status !== "tbr";
+  const showFinished = item.status === "read" || item.status === "dnf";
+
+  $("detail").innerHTML = `
+    <div class="rq-detail-head">
+      ${item.cover
+        ? `<img class="rq-detail-cover" src="${esc(item.cover)}" alt=""
+                onerror="this.outerHTML='<div class=\'rq-detail-nocover\'>${esc(letter)}</div>'">`
+        : `<div class="rq-detail-nocover">${esc(letter)}</div>`}
+      <div style="flex:1 1 auto;min-width:0;">
+        <h2>${esc(item.title)}</h2>
+        <p class="rq-author">${esc(item.author)}${item.year != null ? ` &middot; ${item.year}` : ""}${item.estPages != null ? ` &middot; ~${item.estPages}pp` : ""}</p>
+        ${item.added ? `<p class="rq-when">Added ${esc(fmtDate(item.added))}</p>` : ""}
+      </div>
+      <button class="pp-btn pp-btn-quiet pp-btn-sm" id="editBook">Edit</button>
+      <button class="pp-btn pp-btn-quiet pp-btn-sm" id="closeDetail">Close</button>
+    </div>
+
+    <div class="rq-block">
+      <div class="rq-block-name">Where you are</div>
+      <div class="rq-states">
+        ${STATES.map(st => `<button data-set="${st.key}"
+            aria-pressed="${item.status === st.key}">${esc(st.label)}</button>`).join("")}
+      </div>
+      <div class="rq-dates" ${showDates ? "" : 'style="display:none;"'}>
+        <div class="rq-date">
+          <label for="startedOn">Started</label>
+          <input id="startedOn" type="date" value="${esc(item.started)}">
+        </div>
+        <div class="rq-date" ${showFinished ? "" : 'style="display:none;"'}>
+          <label for="finishedOn">${item.status === "dnf" ? "Put down" : "Finished"}</label>
+          <input id="finishedOn" type="date" value="${esc(item.date)}">
+        </div>
+      </div>
+    </div>
+
+    ${item.status === "read" || item.status === "dnf" ? `<div class="rq-block">
+      <div class="rq-block-name">Verdict</div>
+      <div class="rq-rate">
+        ${[1,2,3,4,5].map(n => `<button type="button" data-rate="${n}" class="${n <= item.rating ? "on" : ""}"
+            aria-label="${n} of 5 stars" aria-pressed="${n === item.rating}">★</button>`).join("")}
+        <span>${item.rating ? `${item.rating} of 5` : "Unrated"}</span>
+      </div>
+    </div>` : ""}
+
+    <div class="rq-block">
+      <div class="rq-block-name">Format</div>
+      <div class="rq-states">
+        ${FORMATS.map(f => `<button data-set-format="${f.key}"
+            aria-pressed="${item.format === f.key}">${esc(f.label)}</button>`).join("")}
+      </div>
+    </div>
+
+    <div class="rq-block">
+      <div class="rq-block-name">Ownership</div>
+      <div class="rq-states">
+        ${OWNERSHIP.map(o => `<button data-set-owner="${o.key}"
+            aria-pressed="${item.ownership === o.key}">${esc(o.label)}</button>`).join("")}
+      </div>
+    </div>
+
+    ${item.status === "reading" && item.format ? `<div class="rq-block">
+      <div class="rq-block-name">Progress</div>
+      <div class="pp-progress" data-color="sage" id="progressBar"
+           data-current="${Math.round(progressFrac(item) * 1000)}" data-total="1000"
+           data-format="none" data-text="${esc(progressText(item))}"></div>
+      <div class="rq-progressrow">
+        ${item.format === "ebook" ? `
+          <label for="pgPct">Percent complete</label>
+          <input id="pgPct" class="pp-input" type="number" min="0" max="100" value="${item.pct}"> %
+        ` : ""}
+        ${item.format === "physical" ? `
+          <label for="pgPage">Page</label>
+          <input id="pgPage" class="pp-input" type="number" min="0" value="${item.page}">
+          <span>of</span>
+          <input id="pgPages" class="pp-input" type="number" min="0" value="${item.pages || item.estPages || 0}">
+        ` : ""}
+        ${item.format === "audio" ? `
+          <label for="pgMinsH">Time listened</label>
+          <input id="pgMinsH" class="pp-input" type="number" min="0" value="${Math.floor(item.mins / 60)}">h
+          <input id="pgMinsM" class="pp-input" type="number" min="0" max="59" value="${item.mins % 60}">m
+          <span>of</span>
+          <input id="pgTotalH" class="pp-input" type="number" min="0" value="${Math.floor(item.totalMins / 60)}">h
+          <input id="pgTotalM" class="pp-input" type="number" min="0" max="59" value="${item.totalMins % 60}">m
+        ` : ""}
+      </div>
+    </div>` : ""}
+
+    <div class="rq-block">
+      <div class="rq-block-name">Cover</div>
+      <div class="rq-coverrow">
+        <input class="pp-input" id="coverUrl" type="url" placeholder="Paste an image URL"
+               value="${esc(item.cover)}">
+        <button class="pp-btn pp-btn-quiet pp-btn-sm" id="coverFind">Find one</button>
+        ${item.cover ? `<button class="pp-btn pp-btn-quiet pp-btn-sm" id="coverClear">Clear</button>` : ""}
+      </div>
+      <p class="rq-coverstate" id="coverState">${item.cover
+        ? "Found automatically. Paste your own if you'd rather have a different edition."
+        : "No cover yet. Try a lookup, or paste an image URL."}</p>
+    </div>
+
+    <div class="rq-block">
+      <div class="rq-block-name">Notes</div>
+      <div class="pp-field">
+        <textarea id="notes" placeholder="What it was like. Whether it was worth it.">${esc(item.notes)}</textarea>
+      </div>
+    </div>`;
+
+  $("detail").classList.add("open");
+  $("overlay").classList.add("open");
+  if(window.PPProgress) PPProgress.draw($("detail"));
+}
+
+function closeDetail(){
+  if(openId){
+    const item = state.items.find(i => i.id === openId);
+    const box = $("notes");
+    if(item && box && box.value !== item.notes){ item.notes = box.value; save(); }
+  }
+  openId = null;
+  $("detail").classList.remove("open");
+  $("overlay").classList.remove("open");
+}
+
+/* Starting a book stamps today as the start date if there isn't one, and
+   marking it read (or putting it down) stamps today as the finish, because
+   the day you tick it is almost always the day it happened. Moving back off
+   a state keeps its dates, so a mis-tap doesn't lose the record. */
+function setStatus(id, status){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+
+  item.status = status;
+  if(status !== "tbr" && !item.started) item.started = today();
+  if((status === "read" || status === "dnf") && !item.date) item.date = today();
+  save();
+  openDetail(id);
+}
+
+function setRating(id, n){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+  item.rating = item.rating === n ? 0 : n;
+  save();
+  openDetail(id);
+}
+
+function setFormat(id, format){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+  item.format = item.format === format ? "" : format;
+  /* A physical book with a known page count starts its tracker at that
+     total, rather than making you type it twice. */
+  if(item.format === "physical" && !item.pages && item.estPages) item.pages = item.estPages;
+  save();
+  openDetail(id);
+}
+
+function setOwnership(id, ownership){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+  item.ownership = item.ownership === ownership ? "" : ownership;
+  save();
+  openDetail(id);
+}
+
+/* Reads whichever progress inputs are on screen for the item's current
+   format, clamps them, and saves. Called on change of any progress field. */
+function updateProgress(id){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+  if(item.format === "ebook" && $("pgPct")){
+    item.pct = Math.max(0, Math.min(100, parseFloat($("pgPct").value) || 0));
+  } else if(item.format === "physical" && $("pgPage")){
+    item.page  = Math.max(0, parseInt($("pgPage").value, 10)  || 0);
+    item.pages = Math.max(0, parseInt($("pgPages").value, 10) || 0);
+  } else if(item.format === "audio" && $("pgMinsH")){
+    const h  = Math.max(0, parseInt($("pgMinsH").value, 10)  || 0);
+    const m  = Math.max(0, Math.min(59, parseInt($("pgMinsM").value, 10) || 0));
+    const th = Math.max(0, parseInt($("pgTotalH").value, 10) || 0);
+    const tm = Math.max(0, Math.min(59, parseInt($("pgTotalM").value, 10) || 0));
+    item.mins = h * 60 + m;
+    item.totalMins = th * 60 + tm;
+  } else {
+    return;
+  }
+  save();
+  openDetail(id);
+}
+
+/* ---------------- events ---------------- */
+document.addEventListener("click", e => {
+  const card = e.target.closest("[data-open]");
+  if(card){ openDetail(card.getAttribute("data-open")); return; }
+
+  if(e.target.id === "closeDetail" || e.target.id === "overlay"){ closeDetail(); return; }
+
+  if(e.target.id === "coverFind"){ lookupOne(openId); return; }
+  if(e.target.id === "coverClear"){ setCover(openId, ""); return; }
+
+  if(e.target.id === "addBtn"){ openForm(null); return; }
+  if(e.target.id === "editBook" && openId){ openForm(state.items.find(i => i.id === openId)); return; }
+  if(e.target.id === "lookupBtn"){
+    const q = $("fTitle").value.trim();
+    if(q) searchBooks(q);
+    return;
+  }
+  if(e.target.id === "saveBookBtn"){ saveBook(); return; }
+  if(e.target.id === "cancelBookBtn"){ closeForm(); return; }
+  if(e.target.id === "deleteBookBtn"){ deleteBook(); return; }
+
+  const set = e.target.closest("[data-set]");
+  if(set && openId){
+    setStatus(openId, set.getAttribute("data-set"));
+    return;
+  }
+
+  const rate = e.target.closest("[data-rate]");
+  if(rate && openId){
+    setRating(openId, parseInt(rate.getAttribute("data-rate"), 10));
+    return;
+  }
+
+  const setFmt = e.target.closest("[data-set-format]");
+  if(setFmt && openId){
+    setFormat(openId, setFmt.getAttribute("data-set-format"));
+    return;
+  }
+
+  const setOwn = e.target.closest("[data-set-owner]");
+  if(setOwn && openId){
+    setOwnership(openId, setOwn.getAttribute("data-set-owner"));
+    return;
+  }
+
+  const pill = e.target.closest(".rq-bar [data-filter]");
+  if(pill){
+    filter = pill.getAttribute("data-filter");
+    document.querySelectorAll(".rq-bar [data-filter]").forEach(b =>
+      b.setAttribute("aria-pressed", b === pill ? "true" : "false"));
+    render();
+  }
+});
+
+document.addEventListener("change", e => {
+  if(!openId) return;
+
+  if(e.target.id === "coverUrl"){ setCover(openId, e.target.value.trim()); return; }
+
+  if(["pgPct","pgPage","pgPages","pgMinsH","pgMinsM","pgTotalH","pgTotalM"].indexOf(e.target.id) > -1){
+    updateProgress(openId);
+    return;
+  }
+
+  const item = state.items.find(i => i.id === openId);
+  if(!item) return;
+  if(e.target.id === "startedOn"){ item.started = e.target.value; save(); return; }
+  if(e.target.id === "finishedOn"){ item.date = e.target.value; save(); return; }
+});
+
+/* A cover you set by hand counts as tried, so the automatic pass leaves it
+   alone from then on. */
+function setCover(id, url){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+  item.cover = url;
+  item.coverTried = true;
+  save();
+  openDetail(id);
+}
+
+async function lookupOne(id){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+  const note = $("coverState");
+  if(note) note.textContent = "Looking…";
+  try{
+    const url = await findCover(item);
+    if(url){ setCover(id, url); }
+    else if(note){ note.textContent = "Open Library has no cover for this one. Paste a URL instead."; }
+  }catch(err){
+    console.error("Cover lookup failed:", err);
+    if(note) note.textContent = "Couldn't reach Open Library just now.";
+  }
+}
+
+document.addEventListener("keydown", e => { if(e.key === "Escape" && openId) closeDetail(); });
+
+$("sortBy").onchange = e => { sortBy = e.target.value; render(); };
+
+load();
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>
