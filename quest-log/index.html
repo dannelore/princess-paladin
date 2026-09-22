@@ -305,6 +305,89 @@
     text-decoration:underline; cursor:pointer; align-self:flex-end;
   }
 
+  /* ===== QUICK ADD =====
+     The to-do column's add form is deliberately thorough — difficulty,
+     priority, tag, due date, subtasks. Most to-dos don't need any of that;
+     they need to be written down before they're forgotten. Quick Add is the
+     fast path: press "n" anywhere (or tap the button in the corner), type,
+     Enter. Shorthand in the line covers the fields on the days you do want
+     them, so nothing is lost by taking the short route. */
+  .quick-fab{
+    position:fixed; right:20px; bottom:20px; z-index:80;
+    width:54px; height:54px; border-radius:50%;
+    border:2px solid var(--white); background:var(--accent); color:var(--white);
+    font-size:26px; line-height:1; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 18px rgba(180,90,120,0.35);
+  }
+  .quick-fab:hover{ background:var(--accent-dark); }
+
+  .quick-layer{ position:fixed; inset:0; z-index:150; display:none; }
+  .quick-layer.open{ display:block; }
+  .quick-scrim{ position:absolute; inset:0; background:rgba(74,59,65,0.45); }
+  .quick-card{
+    position:absolute; top:11vh; left:50%; transform:translateX(-50%);
+    width:min(560px, calc(100% - 28px));
+    background:var(--cream); color:var(--ink);
+    border-radius:var(--radius-lg);
+    box-shadow:0 16px 44px rgba(74,59,65,0.32);
+    padding:16px 18px 14px;
+    display:flex; flex-direction:column; gap:9px;
+  }
+  .quick-card h3{
+    font-family:var(--font-serif); font-size:17px; margin:0;
+    color:var(--accent-dark); display:flex; justify-content:space-between; align-items:baseline;
+  }
+  .quick-card h3 .quick-esc{ font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); }
+  #quickInput{
+    font-family:var(--font-body); font-size:15px; line-height:1.5;
+    border:1px solid rgba(74,59,65,0.15); border-radius:8px;
+    padding:10px 12px; background:var(--white); color:var(--ink);
+    width:100%; resize:none; min-height:46px; max-height:32vh;
+  }
+  #quickInput:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+  #quickInput::placeholder{ color:var(--ink-soft); }
+  .quick-preview{
+    display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+    font-size:10px; min-height:18px;
+  }
+  .quick-preview .quick-title{
+    font-family:var(--font-body); font-size:11.5px; color:var(--ink-soft);
+    max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .quick-legend{
+    font-size:10.5px; color:var(--ink-soft); line-height:1.7;
+    border-top:1px solid rgba(74,59,65,0.1); padding-top:8px; margin:0;
+  }
+  .quick-legend code{
+    font-family:var(--font-body); font-size:10.5px;
+    background:rgba(74,59,65,0.06); border-radius:6px; padding:1px 5px;
+    color:var(--accent-dark);
+  }
+  .quick-foot{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .tidy-btn{
+    font-family:var(--font-body); font-size:11.5px; font-weight:500;
+    color:var(--accent-dark); background:var(--pink-bg);
+    border:1px solid rgba(232,124,166,0.5); border-radius:14px;
+    padding:5px 11px; cursor:pointer; flex-shrink:0; white-space:nowrap;
+  }
+  .tidy-btn:hover{ background:var(--pink-bg-alt); }
+  .tidy-btn[disabled]{ opacity:.6; cursor:default; }
+  .quick-status{ font-size:11.5px; color:var(--sage-dark); flex:1; min-width:0; }
+  .quick-status .undo{
+    background:none; border:none; padding:0 0 0 6px; cursor:pointer;
+    font-family:var(--font-body); font-size:11.5px; color:var(--ink-soft);
+    text-decoration:underline;
+  }
+
+  /* On a phone the card docks to the bottom, within thumb reach, and rides
+     above the on-screen keyboard — --quick-keyboard is the height the
+     keyboard is currently covering (see quickTrackViewport). */
+  @media (max-width:720px){
+    .quick-card{ top:auto; bottom:calc(12px + var(--quick-keyboard, 0px)); }
+    .quick-fab{ right:14px; bottom:14px; }
+  }
+
   /* ===== TASK CARDS ===== */
   .drag-grip{
     width:16px; align-self:stretch; flex-shrink:0;
@@ -422,6 +505,52 @@
     display:block; height:100%; border-radius:4px;
     background:var(--sage); transition:width .35s ease;
   }
+  /* ===== PAGE PROGRESS =====
+     Ticking 26 chapters off a novel tells you how many chapters you have read,
+     not how far through the book you are — chapter 25 is four times chapter 5.
+     Anything measured in units rather than steps can carry a count instead:
+     one number you update, and a bar that is never wrong.
+
+     It sits alongside the subtask list rather than replacing it — the
+     chapters are still there to tick — and when a task has both, the page bar
+     is the one shown on the collapsed card, because it is the truer answer to
+     "how far along is this".
+
+     It deliberately has no effect on payout. Coins and XP are per task and per
+     subtask; this is there to be looked at, not earned from. */
+  .page-progress{
+    height:5px; border-radius:4px; background:rgba(74,59,65,0.1);
+    overflow:hidden; margin-bottom:8px;
+  }
+  .page-progress i{
+    display:block; height:100%; border-radius:4px;
+    background:var(--quest-copper); transition:width .35s ease;
+  }
+  .page-row{
+    display:flex; align-items:center; gap:6px; margin-bottom:8px;
+    font-size:11.5px; color:var(--ink-soft);
+  }
+  .page-row input{
+    width:62px; font-family:var(--font-body); font-size:12.5px;
+    border:1px solid rgba(74,59,65,0.15); border-radius:7px;
+    padding:4px 7px; background:var(--cream); color:var(--ink);
+    font-variant-numeric:tabular-nums;
+  }
+  .page-row .page-pct{
+    margin-left:auto; font-size:11px; color:var(--quest-copper);
+    font-variant-numeric:tabular-nums; font-weight:500;
+  }
+  .page-row .page-clear{
+    background:none; border:none; color:var(--ink-soft);
+    cursor:pointer; font-size:11px; padding:0 2px;
+  }
+  .page-track{
+    font-family:var(--font-body); font-size:11px; color:var(--ink-soft);
+    background:none; border:none; padding:6px 0 0; cursor:pointer;
+    text-decoration:underline; align-self:flex-start;
+  }
+  .page-track:hover{ color:var(--quest-copper); }
+
   .sub-row{
     display:flex; align-items:center; gap:8px;
     padding:2px 0; border-bottom:1px solid rgba(74,59,65,0.07);
@@ -687,6 +816,12 @@
   html.pp-paladin .col-todos .check.checked{ background:#9C7440; }
 
   html.pp-paladin .btn,
+  html.pp-paladin .quick-fab{ background:#9C7440; border-color:#F7F1E4; }
+  html.pp-paladin .quick-fab:hover{ background:#7C5B30; }
+  html.pp-paladin .quick-status{ color:#5C7A4A; }
+  html.pp-paladin .tidy-btn{ color:#7C5B30; background:#F7F1E4; border-color:rgba(156,116,64,0.5); }
+  html.pp-paladin .tidy-btn:hover{ background:#EFE4CE; }
+
   html.pp-paladin .add-btn{ background:#9C7440; }
   html.pp-paladin .btn:hover,
   html.pp-paladin .add-btn:hover{ background:#7C5B30; }
@@ -740,6 +875,7 @@
   html.pp-paladin .panel,
   html.pp-paladin .side-panel,
   html.pp-paladin .modal-card,
+  html.pp-paladin .quick-card,
   html.pp-paladin .shop-item,
   html.pp-paladin .roster-card,
   html.pp-paladin .item,
@@ -1095,6 +1231,24 @@
     </div>
 
     <div class="panel-section">
+      <h3 class="panel-section-title">Paste helper</h3>
+      <p class="rate-readout" style="margin-top:0;">
+        Lets the quick-add box take a messy pasted list and come back with tidy
+        to-dos, tagged and rated. It needs the little worker deployed — see
+        <code>worker/README.md</code>. These live in this browser only, never in
+        the quest log.
+      </p>
+      <div class="add-row" style="margin-bottom:0;">
+        <input type="text" id="helperUrl" placeholder="https://pp-paste-helper.…workers.dev">
+        <input type="password" id="helperToken" placeholder="Shared token">
+        <div class="add-row-controls">
+          <span class="field-label" id="helperState"></span>
+          <button class="add-btn" id="saveHelper">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-section">
       <h3 class="panel-section-title">Reset progress</h3>
       <p class="rate-readout">Back to Level 1 and 0 XP. Tasks, tags, pets, wardrobe, rewards and coins all stay exactly as they are — only the level and XP go. Party members move to the stable, since party slots unlock by level.</p>
       <button class="danger-btn" id="resetProgress">Reset to Level 1</button>
@@ -1106,6 +1260,28 @@
       <button class="danger-btn" id="wipeAll">Erase everything</button>
     </div>
 
+  </div>
+</div>
+
+<!-- ===== QUICK ADD ===== -->
+<button class="quick-fab" id="quickFab" title="Quick add a to-do (press N)" aria-label="Quick add a to-do">✚</button>
+
+<div class="quick-layer" id="quickLayer" role="dialog" aria-modal="true" aria-label="Quick add a to-do">
+  <div class="quick-scrim" id="quickScrim"></div>
+  <div class="quick-card">
+    <h3>Quick add <span class="quick-esc">enter to add · esc to close</span></h3>
+    <textarea id="quickInput" rows="1" placeholder="What needs doing?"></textarea>
+    <div class="quick-preview" id="quickPreview"></div>
+    <div class="quick-foot">
+      <span class="quick-status" id="quickStatus"></span>
+      <button type="button" class="tidy-btn" id="quickTidy" title="Send this to Claude to be tidied into to-dos">✨ tidy with Claude</button>
+    </div>
+    <p class="quick-legend">
+      <code>!urgent</code> <code>!high</code> <code>!low</code> priority ·
+      <code>*1</code>–<code>*5</code> or <code>*hard</code> difficulty ·
+      <code>#home</code> tag ·
+      <code>@today</code> <code>@fri</code> <code>@3d</code> <code>@sep25</code> due
+    </p>
   </div>
 </div>
 
@@ -1123,6 +1299,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="/assets/pp-firebase.js"></script>
 <script src="/assets/pp-quest.js"></script>
+<script src="/assets/pp-shorthand.js"></script>
 
 <script>
 const firebaseConfig = window.PPFirebaseConfig;
@@ -1450,6 +1627,12 @@ COLUMNS.forEach(col => {
     saveAndRender();
   };
   cancelBtn.onclick = () => { exitEdit(col); resetForm(col); setAddOpen(col, false); };
+
+  /* Enter is a newline in these boxes — a line per task is the whole point —
+     so ⌘/Ctrl+Enter is the way to submit without reaching for the mouse. */
+  input.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && (e.metaKey || e.ctrlKey)){ e.preventDefault(); addBtn.click(); }
+  });
 });
 
 function resetForm(col){
@@ -1483,6 +1666,252 @@ function exitEdit(col){
   addBtn.classList.remove('editing');
   document.getElementById(col + 'CancelEdit').style.display = 'none';
 }
+
+/* ============ QUICK ADD ============
+   A to-do you have to stop and fill a form for is a to-do you forget. This
+   is the two-second path: press N anywhere on the board (or tap the ✚), type
+   the thing, press Enter. It lands in To Dos with the usual defaults and the
+   panel stays open so a brain-dump of five of them is five Enters.
+
+   Everything the long form offers can still be said inline, as tokens
+   anywhere in the line:
+     !urgent !high !med !low     priority
+     *1 … *5, or *easy *hard     difficulty
+     #home                       an existing tag, matched on its name
+     @today @fri @3d @2w
+     @sep25 @2026-09-25 @25      due date
+   A token only disappears from the title when it is understood — an
+   unrecognised #hashtag or @handle is left in the text rather than silently
+   swallowed. Pasting several lines adds several to-dos, and an indented or
+   dashed line hangs off the one above as a subtask, exactly as in the long
+   form. */
+/* The grammar itself lives in /assets/pp-shorthand.js, because
+   tools/quest-add.js speaks it too — that's how a list pasted into a Claude
+   session arrives here already tagged and rated. One definition, two doors;
+   a change to the tokens can't leave one of them behind. */
+const quickCtx = () => ({ today: TODAY, tags: S().tags });
+const parseQuick = line => PPShorthand.parse(line, quickCtx());
+const quickLines = text => PPShorthand.parseLines(text, quickCtx(), uid);
+
+const quickLayer   = document.getElementById('quickLayer');
+const quickInput   = document.getElementById('quickInput');
+const quickStatus  = document.getElementById('quickStatus');
+const quickPreview = document.getElementById('quickPreview');
+let lastQuickAdd = null;
+
+/* A to-do added while a tag filter is on inherits that tag — otherwise it
+   would be filed and vanish from the board in the same breath. */
+function quickDefaults(meta){
+  return {
+    difficulty: meta.difficulty || 3,
+    priority: meta.priority || 'medium',
+    tag: meta.tag || activeTag || null,
+    due: meta.due || null
+  };
+}
+/* The visual viewport shrinks when the keyboard opens; the gap it leaves is
+   handed to the stylesheet so the card can sit on top of it. */
+function quickTrackViewport(){
+  const vv = window.visualViewport;
+  if(!vv) return;
+  const covered = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
+  quickLayer.style.setProperty('--quick-keyboard', Math.round(covered) + 'px');
+}
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', () => { if(quickLayer.classList.contains('open')) quickTrackViewport(); });
+  window.visualViewport.addEventListener('scroll', () => { if(quickLayer.classList.contains('open')) quickTrackViewport(); });
+}
+function quickGrow(){
+  quickInput.style.height = 'auto';
+  quickInput.style.height = quickInput.scrollHeight + 'px';
+}
+function renderQuickPreview(){
+  const lines = quickLines(quickInput.value);
+  if(!lines.length){ quickPreview.innerHTML = ''; return; }
+  const first = lines[0];
+  const base = quickDefaults(first.meta);
+  const tag = tagById(base.tag);
+  let html = `<span class="quick-title">${escapeHtml(first.meta.title)}</span>`;
+  html += difficultyChip(base.difficulty);
+  html += `<span class="priority-chip ${base.priority}">${PRIORITY_LABEL[base.priority]}</span>`;
+  if(tag) html += `<span class="tag-chip" style="background:${tag.color}">${escapeHtml(tag.name)}</span>`;
+  if(base.due) html += `<span class="due-chip">due ${PQ.fromKey(base.due).toLocaleDateString('en-US', { month:'short', day:'numeric' })}</span>`;
+  const subs = lines.reduce((n, l) => n + l.subs.length, 0);
+  const rest = [];
+  if(lines.length > 1) rest.push(`+${lines.length - 1} more to-do${lines.length > 2 ? 's' : ''}`);
+  if(subs) rest.push(`${subs} subtask${subs === 1 ? '' : 's'}`);
+  if(rest.length) html += `<span class="quick-title">${rest.join(' · ')}</span>`;
+  quickPreview.innerHTML = html;
+}
+function quickCommit(){
+  const lines = quickLines(quickInput.value);
+  if(!lines.length) return;
+  const ids = [];
+  lines.forEach(line => {
+    const task = Object.assign({
+      id: uid(), title: line.meta.title, subs: line.subs,
+      created: PQ.TODAY_KEY, done:false, doneDate:null
+    }, quickDefaults(line.meta));
+    S().todos.push(task);
+    ids.push(task.id);
+  });
+  lastQuickAdd = ids;
+  quickInput.value = '';
+  quickGrow();
+  renderQuickPreview();
+  quickStatus.innerHTML = lines.length === 1
+    ? `Added “${escapeHtml(lines[0].meta.title)}”<button type="button" class="undo">undo</button>`
+    : `Added ${lines.length} to-dos<button type="button" class="undo">undo</button>`;
+  quickStatus.querySelector('.undo').onclick = quickUndo;
+  saveAndRender();
+  quickInput.focus();
+}
+function quickUndo(){
+  if(!lastQuickAdd) return;
+  const ids = new Set(lastQuickAdd);
+  S().todos = S().todos.filter(t => !ids.has(t.id));
+  lastQuickAdd = null;
+  quickStatus.textContent = 'Undone.';
+  saveAndRender();
+  quickInput.focus();
+}
+function quickOpen(){
+  if(quickLayer.classList.contains('open')) return;
+  quickLayer.classList.add('open');
+  quickInput.value = '';
+  lastQuickAdd = null;
+  quickStatus.textContent = '';
+  renderQuickPreview();
+  quickGrow();
+  quickTrackViewport();
+  quickInput.focus();
+}
+function quickClose(){
+  quickLayer.classList.remove('open');
+  quickInput.blur();
+}
+
+document.getElementById('quickFab').onclick = quickOpen;
+document.getElementById('quickScrim').onclick = quickClose;
+quickInput.addEventListener('input', () => { quickGrow(); renderQuickPreview(); });
+quickInput.addEventListener('keydown', e => {
+  if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); quickCommit(); }
+});
+
+/* N opens it from anywhere on the board — unless you're typing, in which
+   case an N is just an N. */
+document.addEventListener('keydown', e => {
+  if(quickLayer.classList.contains('open')){
+    if(e.key === 'Escape'){ e.preventDefault(); quickClose(); }
+    return;
+  }
+  if(e.key !== 'n' && e.key !== 'N') return;
+  if(e.metaKey || e.ctrlKey || e.altKey) return;
+  const el = document.activeElement;
+  if(el && (el.isContentEditable || ['INPUT','TEXTAREA','SELECT'].includes(el.tagName))) return;
+  if(document.getElementById('celebrateModal').classList.contains('open')) return;
+  if(document.querySelector('.side-panel.open')) return;
+  e.preventDefault();
+  quickOpen();
+});
+
+/* ============ PASTE HELPER ============
+   The quick-add box takes shorthand. This takes everything else: a rambling
+   note, a forwarded email, the text off a screenshot. It posts the paste to
+   a small Cloudflare Worker (worker/), which is the only piece holding an
+   API key, and gets back the same shorthand you would have typed — which
+   then goes through the ordinary preview-and-add path. Nothing is written to
+   the quest log by the helper; it hands you lines and you press Enter.
+
+   The worker URL and token live in localStorage rather than the quest log,
+   because they belong to this browser, not to the person. */
+const HELPER_KEY = 'pp-paste-helper';
+function helperConfig(){
+  try { return JSON.parse(localStorage.getItem(HELPER_KEY)) || {}; }
+  catch(e){ return {}; }
+}
+function renderHelperSettings(){
+  const cfg = helperConfig();
+  const url = document.getElementById('helperUrl');
+  const token = document.getElementById('helperToken');
+  if(document.activeElement !== url) url.value = cfg.url || '';
+  if(document.activeElement !== token) token.value = cfg.token || '';
+  document.getElementById('helperState').textContent =
+    (cfg.url && cfg.token) ? 'ready' : 'not set up';
+}
+document.getElementById('saveHelper').onclick = () => {
+  const url = document.getElementById('helperUrl').value.trim().replace(/\/+$/, '');
+  const token = document.getElementById('helperToken').value.trim();
+  try {
+    if(url && token) localStorage.setItem(HELPER_KEY, JSON.stringify({ url, token }));
+    else localStorage.removeItem(HELPER_KEY);
+  } catch(e){}
+  renderHelperSettings();
+};
+
+/* What the helper is told: the tag names, how this person has rated things
+   before, and what is already open so it can skip repeats. Titles and
+   difficulties only — the rest of the log is none of its business. */
+function helperContext(){
+  const tagName = id => (S().tags.find(t => t.id === id) || {}).name || null;
+  const rated = [];
+  COLUMNS.forEach(col => S()[col].forEach(t => {
+    rated.push({ title: t.title, difficulty: t.difficulty || 3, tag: tagName(t.tag) });
+  }));
+  return {
+    today: PQ.TODAY_KEY,
+    tags: S().tags.map(t => ({ id: t.id, name: t.name })),
+    samples: rated.slice(-60),
+    open: S().todos.filter(t => !t.done).map(t => t.title).slice(-60)
+  };
+}
+
+const tidyBtn = document.getElementById('quickTidy');
+tidyBtn.onclick = async () => {
+  const cfg = helperConfig();
+  if(!cfg.url || !cfg.token){
+    quickStatus.textContent = 'Set the paste helper up in Settings first.';
+    return;
+  }
+  const text = quickInput.value.trim();
+  if(!text){ quickStatus.textContent = 'Paste something first.'; return; }
+
+  tidyBtn.disabled = true;
+  tidyBtn.textContent = 'tidying…';
+  quickStatus.textContent = '';
+  try {
+    const res = await fetch(cfg.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-PP-Token': cfg.token },
+      body: JSON.stringify(Object.assign({ text }, helperContext()))
+    });
+    const data = await res.json().catch(() => ({}));
+    if(!res.ok || !Array.isArray(data.lines)){
+      quickStatus.textContent = data.error || `The helper answered ${res.status}.`;
+      return;
+    }
+    if(!data.lines.length){
+      quickStatus.textContent = 'Nothing came back that looked like a to-do.';
+      return;
+    }
+    /* Straight into the box, not straight onto the board — you still read it
+       and press Enter, exactly as if you had typed it. */
+    quickInput.value = data.lines.join('\n');
+    quickGrow();
+    renderQuickPreview();
+    quickInput.focus();
+
+    const bits = [`${data.lines.length} ready — read them, then Enter`];
+    (data.skipped || []).forEach(s => bits.push(`left out "${s.text}" (${s.reason})`));
+    (data.notes || []).forEach(n => bits.push(n));
+    quickStatus.textContent = bits.join(' · ');
+  } catch(err){
+    quickStatus.textContent = 'Could not reach the paste helper.';
+  } finally {
+    tidyBtn.disabled = false;
+    tidyBtn.textContent = '✨ tidy with Claude';
+  }
+};
 
 /* ============ CARDS ============ */
 const expanded = new Set();
@@ -1538,6 +1967,14 @@ function buildCard(task, column, opts){
   const subState = opts.subState || {};
   const doneSubs = subs.filter(s => subState[s.id]).length;
 
+  /* `pages` present at all — even as 0 — means this task is being tracked by
+     count, and the row is shown so the total can be filled in. The bar waits
+     for a total worth dividing by. */
+  const tracking = task.pages !== undefined && task.pages !== null;
+  const pageTotal = Math.max(0, parseInt(task.pages, 10) || 0);
+  const pageNow = Math.min(Math.max(0, parseInt(task.page, 10) || 0), pageTotal);
+  const pagePct = pageTotal ? Math.round(pageNow / pageTotal * 100) : 0;
+
   card.dataset.id = task.id;
 
   /* A tagged card takes its stripe from the tag. Untagged falls through to
@@ -1562,14 +1999,29 @@ function buildCard(task, column, opts){
   `;
 
   const isOpen = expanded.has(task.id);
-  if(subs.length || isOpen){
+  if(subs.length || isOpen || tracking){
     const wrap = document.createElement('div');
     wrap.className = 'sub-wrap';
     const bar = subs.length ? `<div class="sub-progress"><i style="width:${doneSubs/subs.length*100}%"></i></div>` : '';
-    if(!isOpen && subs.length){
-      wrap.innerHTML = bar;
+    const pageBar = pageTotal
+      ? `<div class="page-progress" title="page ${pageNow} of ${pageTotal}"><i style="width:${pagePct}%"></i></div>`
+      : '';
+    const pageRow = tracking
+      ? `<div class="page-row">
+           <span>page</span>
+           <input type="number" class="page-now" min="0" max="${pageTotal || ''}" value="${pageNow || ''}" placeholder="0">
+           <span>of</span>
+           <input type="number" class="page-total" min="0" value="${pageTotal || ''}" placeholder="total">
+           ${pageTotal ? `<span class="page-pct">${pagePct}%</span>` : ''}
+           <button class="page-clear" title="Stop counting pages">✕</button>
+         </div>`
+      : '';
+    /* Collapsed, one bar is enough, and pages beat chapters at saying how far
+       along a book is. */
+    if(!isOpen && (subs.length || pageTotal)){
+      wrap.innerHTML = pageTotal ? pageBar : bar;
     } else {
-      let inner = bar;
+      let inner = pageBar + pageRow + bar;
       subs.forEach(s => {
         const on = !!subState[s.id];
         inner += `
@@ -1582,6 +2034,7 @@ function buildCard(task, column, opts){
       });
       if(subs.length) inner += `<div class="bonus-note">All-clear bonus: ${bonusOf(task, column)}c</div>`;
       inner += `<div class="sub-add"><input type="text" placeholder="Add a subtask"><button type="button">Add</button></div>`;
+      if(!tracking) inner += `<button type="button" class="page-track">count pages instead</button>`;
       wrap.innerHTML = inner;
     }
     card.appendChild(wrap);
@@ -1589,9 +2042,12 @@ function buildCard(task, column, opts){
 
   const toggle = document.createElement('button');
   toggle.className = 'expand-btn';
-  toggle.textContent = subs.length
-    ? (isOpen ? 'hide subtasks' : `${doneSubs}/${subs.length} subtasks`)
-    : (isOpen ? 'hide subtasks' : '+ subtasks');
+  /* Collapsed, the label has to say the same thing the bar is showing, or a
+     copper page bar over "2/26 subtasks" reads as a contradiction. */
+  toggle.textContent = isOpen
+    ? 'hide subtasks'
+    : (pageTotal ? `page ${pageNow} of ${pageTotal}`
+      : (subs.length ? `${doneSubs}/${subs.length} subtasks` : '+ subtasks'));
   toggle.onclick = () => {
     if(expanded.has(task.id)) expanded.delete(task.id); else expanded.add(task.id);
     renderAll();
@@ -1615,6 +2071,36 @@ function buildCard(task, column, opts){
       saveAndRender();
     };
   });
+
+  const pageRowEl = card.querySelector('.page-row');
+  if(pageRowEl){
+    const nowEl = pageRowEl.querySelector('.page-now');
+    const totalEl = pageRowEl.querySelector('.page-total');
+    /* A page past the end is a typo, not a milestone, so it clamps. Clearing
+       the total leaves the row up rather than silently switching tracking
+       off — that's what the ✕ is for. */
+    const commit = () => {
+      const total = Math.max(0, parseInt(totalEl.value, 10) || 0);
+      const now = Math.max(0, parseInt(nowEl.value, 10) || 0);
+      task.pages = total;
+      task.page = total ? Math.min(now, total) : now;
+      saveAndRender();
+    };
+    nowEl.onchange = commit;
+    totalEl.onchange = commit;
+    pageRowEl.querySelector('.page-clear').onclick = () => {
+      delete task.pages;
+      delete task.page;
+      saveAndRender();
+    };
+  }
+  const trackBtn = card.querySelector('.page-track');
+  if(trackBtn) trackBtn.onclick = () => {
+    task.pages = 0;
+    task.page = 0;
+    expanded.add(task.id);
+    saveAndRender();
+  };
 
   const addWrap = card.querySelector('.sub-add');
   if(addWrap){
@@ -2039,6 +2525,7 @@ function renderSettings(){
   if(buffs.payout > 1) html += `<br>Legend bonus: +${Math.round((buffs.payout-1)*100)}% payout`;
   document.getElementById('rateReadout').innerHTML = html;
   renderTagEditor();
+  renderHelperSettings();
 }
 
 /* ============ PANELS + DATE NAV ============ */
