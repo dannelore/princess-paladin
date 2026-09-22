@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wedding Quest &middot; Side Quests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/themes/side-quests.css">
+<link rel="stylesheet" href="/assets/pp-progress.css">
+
+<style>
+  /* ======================================================================
+     WEDDING QUEST
+
+     The traditional wedding-planning checklist, seeded once from SEED
+     below and grouped by how far out each task usually happens. Nothing
+     about the seed is precious — every row (seeded or added later) can be
+     edited or deleted, so anything that doesn't apply just goes away and
+     stays gone. Re-seeding only ever happens on the very first load, when
+     neither this device nor the shared doc has anything saved yet.
+
+     Firestore: sidequest/wedding-list
+     ====================================================================== */
+
+  .wq-intro{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.02rem;
+    color: var(--ink-soft);
+    text-align: center;
+    max-width: 660px;
+    margin: 0 auto 22px;
+    line-height: 1.5;
+  }
+
+  /* ---- banner ---- */
+  .wq-banner{
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 22px;
+    margin-bottom: 20px;
+    background:
+      radial-gradient(ellipse at 12% 30%, rgba(107,74,120,.14), transparent 60%),
+      var(--parchment);
+    border: 1px solid var(--parchment-border);
+    border-radius: var(--radius-md);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.4), var(--lift);
+  }
+  .wq-banner svg{ width: 44px; height: 44px; flex-shrink: 0; }
+  .wq-banner-title{
+    font-family: var(--font-serif); font-weight: 600; font-size: 1.15rem;
+    color: var(--burgundy); margin: 0;
+  }
+  .wq-banner-sub{
+    font-family: var(--font-serif); font-style: italic; font-size: .92rem;
+    color: var(--ink-soft); margin: 2px 0 0;
+  }
+  .wq-banner .pp-progress{ margin-top: 8px; max-width: 360px; }
+
+  /* ---- controls ---- */
+  .wq-bar{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .wq-bar .wq-spacer{ flex: 1 1 auto; }
+
+  .wq-filter{
+    font-family: var(--font-body); font-size: .74rem; font-weight: 500;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--gold);
+    background: var(--panel); border: 1px solid var(--line-gold);
+    border-radius: 999px; padding: 7px 15px; cursor: pointer;
+    transition: color .15s ease, background .15s ease, border-color .15s ease;
+  }
+  .wq-filter:hover{ color: #fff; background: var(--pink); border-color: var(--pink); }
+  .wq-filter[aria-pressed="true"]{ color: #fff; background: var(--sage); border-color: var(--sage); }
+
+  .wq-selects{ display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+  .wq-pick{ display: flex; align-items: center; gap: 6px; }
+  .wq-pick label{
+    font-family: var(--font-body); font-size: .66rem; font-weight: 600;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--gold);
+  }
+  .wq-pick select{
+    font-family: var(--font-body); font-size: .84rem; color: var(--ink);
+    background: var(--panel); border: 1px solid var(--line-gold);
+    border-radius: 999px; padding: 6px 12px; cursor: pointer;
+  }
+  .wq-pick select:focus{ outline: 2px solid var(--pink); outline-offset: 1px; }
+
+  .wq-count{ font-family: var(--font-serif); font-style: italic; font-size: .95rem; color: var(--ink-soft); }
+  .wq-sync{ font-family: var(--font-body); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .wq-sync[data-state="saving"]{ color: var(--gold); }
+  .wq-sync[data-state="error"]{ color: var(--blade); }
+
+  /* ---- form ---- */
+  .wq-form{ display: none; margin-bottom: 22px; }
+  .wq-form.open{ display: block; }
+
+  .wq-fields{ display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .wq-field{ display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .wq-field.wide{ grid-column: 1 / -1; }
+  .wq-field label{
+    font-family: var(--font-body); font-size: .72rem; font-weight: 600;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--gold);
+  }
+  .wq-field input, .wq-field select, .wq-field textarea{
+    font-family: var(--font-body); font-size: .95rem; color: var(--ink);
+    background: #fff; border: 1px solid var(--line);
+    border-radius: var(--radius-sm); padding: 9px 12px; width: 100%;
+  }
+  .wq-field textarea{ resize: vertical; min-height: 64px; line-height: 1.5; }
+  .wq-field input:focus, .wq-field select:focus, .wq-field textarea:focus{
+    outline: 2px solid var(--pink); outline-offset: 1px;
+  }
+  .wq-actions{ display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+
+  /* ---- groups ---- */
+  .wq-group{ margin-bottom: 26px; }
+  .wq-group-head{
+    display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px;
+  }
+  .wq-group-head h3{
+    font-family: var(--font-serif); font-weight: 600; font-size: 1.18rem;
+    color: var(--burgundy); margin: 0;
+  }
+  .wq-group-head .rule{ flex: 1 1 auto; height: 1px; background: var(--line-gold); }
+  .wq-group-count{
+    font-family: var(--font-body); font-size: .68rem; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); white-space: nowrap;
+  }
+
+  .wq-rows{ display: flex; flex-direction: column; gap: 8px; }
+
+  .wq-row{
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 11px 14px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--lift);
+    cursor: pointer;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .wq-row:hover{ border-color: var(--dusk); box-shadow: var(--lift-lg); }
+  .wq-row.is-done{ opacity: .62; }
+
+  .wq-status{
+    flex: 0 0 auto;
+    font-family: var(--font-body); font-size: .64rem; font-weight: 600;
+    letter-spacing: .08em; text-transform: uppercase; color: #fff; border: none;
+    border-radius: 999px; padding: 5px 11px; cursor: pointer; white-space: nowrap;
+  }
+  .wq-status[data-status="todo"]{  background: var(--gold); }
+  .wq-status[data-status="doing"]{ background: var(--pink); }
+  .wq-status[data-status="done"]{  background: var(--sage-deep); }
+
+  .wq-rowbody{ flex: 1 1 auto; min-width: 0; }
+  .wq-title{
+    font-family: var(--font-serif); font-weight: 600; font-size: 1rem;
+    line-height: 1.3; margin: 0 0 4px; color: var(--ink); word-break: break-word;
+  }
+  .wq-row.is-done .wq-title{ text-decoration: line-through; color: var(--ink-soft); }
+
+  .wq-tags{ display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  .wq-cat{
+    font-family: var(--font-body); font-size: .62rem; font-weight: 600; letter-spacing: .02em;
+    color: #fff; border-radius: 999px; padding: 2px 8px; white-space: nowrap;
+  }
+  .wq-cat[data-light="true"]{ color: var(--ink); }
+  .wq-who{
+    font-family: var(--font-body); font-size: .62rem; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    border-radius: 999px; padding: 2px 8px; border: 1px solid transparent;
+  }
+  .wq-who[data-who="together"]{ color: var(--ink); background: #F7F1E4; border-color: var(--gold); }
+  .wq-who[data-who="danni"]{    color: #fff; background: var(--pink); }
+  .wq-who[data-who="brendon"]{  color: #fff; background: var(--blade); }
+  .wq-due{
+    font-family: var(--font-serif); font-style: italic; font-size: .76rem; color: var(--gold-deep);
+  }
+  .wq-notes-preview{
+    font-family: var(--font-serif); font-style: italic; font-size: .82rem;
+    color: var(--ink-soft); margin: 6px 0 0; line-height: 1.4;
+  }
+
+  .wq-tools{
+    flex: 0 0 auto; display: flex; gap: 5px; opacity: 0; transition: opacity .15s ease;
+  }
+  .wq-row:hover .wq-tools, .wq-row:focus-within .wq-tools{ opacity: 1; }
+  .wq-tools button{
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    font-size: .8rem; color: var(--ink); background: rgba(255,253,248,.94);
+    border: 1px solid var(--line); border-radius: 999px; cursor: pointer; line-height: 1;
+  }
+  .wq-tools button:hover{ color: #fff; background: var(--burgundy); border-color: var(--burgundy); }
+  @media (hover: none){ .wq-tools{ opacity: 1; } }
+
+  .wq-empty{
+    text-align: center;
+    padding: 30px;
+    font-family: var(--font-serif);
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 560px){
+    .wq-fields{ grid-template-columns: 1fr; }
+    .wq-selects{ gap: 8px; }
+    .wq-row{ flex-wrap: wrap; }
+    .wq-tools{ opacity: 1; }
+  }
+</style>
+</head>
+
+<body class="pp-sidequest" data-nav-eyebrow="Side Quests" data-nav-title="Wedding Quest">
+
+<div class="pp-wrap">
+
+  <div class="pp-page-title">
+    <h2>Wedding Quest</h2>
+  </div>
+
+  <p class="wq-intro">
+    The traditional planning checklist, roughly in the order it usually
+    happens. It&rsquo;s seeded to start &mdash; edit or delete anything
+    that doesn&rsquo;t apply to the two of you, and add whatever&rsquo;s
+    missing. Nothing here is precious except what you decide to keep.
+  </p>
+
+  <div class="wq-banner">
+    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="18" cy="27" r="11" fill="none" stroke="#9C7440" stroke-width="3"/>
+      <circle cx="30" cy="27" r="11" fill="none" stroke="#E87CA6" stroke-width="3"/>
+      <path d="M24 12 L26.5 17 L32 17.5 L28 21.3 L29.2 26.7 L24 24 L18.8 26.7 L20 21.3 L16 17.5 L21.5 17 Z" fill="#E0B33A" stroke="#9C7440" stroke-width="1"/>
+    </svg>
+    <div style="flex:1 1 auto; min-width:0;">
+      <p class="wq-banner-title" id="bannerTitle">Nothing on the checklist yet</p>
+      <p class="wq-banner-sub" id="bannerSub">Add the first thing that needs doing.</p>
+      <div class="pp-progress" id="bannerBar" data-color="sage" data-format="both" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div class="wq-bar">
+    <button class="wq-filter" data-filter="all" aria-pressed="true">All</button>
+    <button class="wq-filter" data-filter="todo" aria-pressed="false">To do</button>
+    <button class="wq-filter" data-filter="doing" aria-pressed="false">In progress</button>
+    <button class="wq-filter" data-filter="done" aria-pressed="false">Done</button>
+    <span class="wq-spacer"></span>
+    <button class="pp-btn" id="addBtn">Add a task</button>
+  </div>
+
+  <div class="wq-selects">
+    <div class="wq-pick">
+      <label for="groupBy">Group by</label>
+      <select id="groupBy">
+        <option value="stage">Timeline</option>
+        <option value="category">Category</option>
+      </select>
+    </div>
+
+    <div class="wq-pick">
+      <label for="fltCat">Category</label>
+      <select id="fltCat"><option value="all">All</option></select>
+    </div>
+
+    <div class="wq-pick">
+      <label for="fltWho">Who</label>
+      <select id="fltWho">
+        <option value="all">All</option>
+        <option value="together">Together</option>
+        <option value="danni">Danni</option>
+        <option value="brendon">Brendon</option>
+      </select>
+    </div>
+
+    <span class="wq-spacer"></span>
+    <span class="wq-count" id="count"></span>
+    <span class="wq-sync" id="sync" data-state="idle">Connecting</span>
+  </div>
+
+  <!-- ---------------- add / edit ---------------- -->
+  <section class="pp-panel wq-form" id="form">
+    <h2 class="pp-panel-title" id="formTitle">Add a task</h2>
+
+    <div class="wq-fields">
+      <div class="wq-field wide">
+        <label for="fTitle">Task</label>
+        <input id="fTitle" type="text" placeholder="Book the florist" autocomplete="off">
+      </div>
+
+      <div class="wq-field">
+        <label for="fCategory">Category</label>
+        <select id="fCategory"></select>
+      </div>
+
+      <div class="wq-field">
+        <label for="fStage">When</label>
+        <select id="fStage"></select>
+      </div>
+
+      <div class="wq-field">
+        <label for="fStatus">Status</label>
+        <select id="fStatus">
+          <option value="todo">To do</option>
+          <option value="doing">In progress</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+
+      <div class="wq-field">
+        <label for="fWho">Who&rsquo;s doing it</label>
+        <select id="fWho">
+          <option value="together">Together</option>
+          <option value="danni">Danni</option>
+          <option value="brendon">Brendon</option>
+        </select>
+      </div>
+
+      <div class="wq-field">
+        <label for="fDue">Target date <span style="text-transform:none;letter-spacing:0;font-weight:400;">(optional)</span></label>
+        <input id="fDue" type="date">
+      </div>
+
+      <div class="wq-field wide">
+        <label for="fNotes">Notes</label>
+        <textarea id="fNotes" placeholder="Budget, contacts, what's already decided…"></textarea>
+      </div>
+    </div>
+
+    <div class="wq-actions">
+      <button class="pp-btn" id="saveBtn">Save</button>
+      <button class="pp-btn pp-btn-quiet" id="cancelBtn">Cancel</button>
+      <span class="wq-spacer"></span>
+      <button class="pp-btn pp-btn-quiet" id="deleteBtn" style="display:none;">Delete</button>
+    </div>
+  </section>
+
+  <div id="list"></div>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-firebase.js"></script>
+<script src="/assets/pp-progress.js" defer></script>
+<script>
+"use strict";
+
+const firebaseConfig = window.PPFirebaseConfig;
+
+const DOC_PATH  = "sidequest/wedding-list";
+const CACHE_KEY = "pp_wedding_list";
+
+const CATEGORIES = [
+  { name:"Budget & Planning", color:"#9C7440" },
+  { name:"Venue & Date",      color:"#2E6E8C" },
+  { name:"Ceremony",          color:"#6E2430" },
+  { name:"Reception",         color:"#C96A2E" },
+  { name:"Attire & Beauty",   color:"#A05C86" },
+  { name:"Vendors",           color:"#5A3B8C" },
+  { name:"Stationery",        color:"#4E8C63" },
+  { name:"Paperwork & Legal", color:"#6B5E54" },
+  { name:"Guests & Party",    color:"#B23A3A" },
+  { name:"Gifts & Registry",  color:"#E0B33A", light:true },
+  { name:"Honeymoon",         color:"#2E8C7A" },
+  { name:"Day-Of Details",    color:"#7C1F2A" }
+];
+const CAT_BY_NAME = {};
+CATEGORIES.forEach(c => { CAT_BY_NAME[c.name] = c; });
+
+/* The order things traditionally get done in. "someday" catches anything
+   without a natural slot — the default for a task you add yourself. */
+const STAGES = [
+  { key:"engaged", label:"As soon as you're engaged" },
+  { key:"m9to12",  label:"9–12 months before" },
+  { key:"m6to8",   label:"6–8 months before" },
+  { key:"m4to5",   label:"4–5 months before" },
+  { key:"m2to3",   label:"2–3 months before" },
+  { key:"w4to6",   label:"4–6 weeks before" },
+  { key:"w1to2",   label:"1–2 weeks before" },
+  { key:"dayof",   label:"Wedding day" },
+  { key:"someday", label:"Someday / not scheduled" }
+];
+const STAGE_BY_KEY = {};
+STAGES.forEach((s, i) => { STAGE_BY_KEY[s.key] = s; s.order = i; });
+
+const STATUSES = [
+  { key:"todo",  label:"To do" },
+  { key:"doing", label:"In progress" },
+  { key:"done",  label:"Done" }
+];
+const STATUS_LABEL = { todo:"To do", doing:"In progress", done:"Done" };
+const STATUS_NEXT  = { todo:"doing", doing:"done", done:"todo" };
+
+const WHO_LABEL = { together:"Together", danni:"Danni", brendon:"Brendon" };
+
+/* ---------------- the starting checklist ----------------
+   Every row here is just a normal task once it's saved — editing or
+   deleting one is exactly like editing or deleting one you added by hand.
+   This only ever runs once, on the very first load, when nothing has been
+   saved anywhere yet. */
+const SEED = [
+  { id:"s01", title:"Set the overall budget",                         category:"Budget & Planning", stage:"engaged" },
+  { id:"s02", title:"Decide who's contributing financially",          category:"Budget & Planning", stage:"engaged" },
+  { id:"s03", title:"Pick a rough date or season",                    category:"Venue & Date",       stage:"engaged" },
+  { id:"s04", title:"Draft the guest list headcount",                 category:"Guests & Party",     stage:"engaged" },
+  { id:"s05", title:"Choose the wedding party",                       category:"Guests & Party",     stage:"engaged" },
+  { id:"s06", title:"Start a shared planning folder or spreadsheet",  category:"Budget & Planning",  stage:"engaged" },
+  { id:"s07", title:"Get engagement photos taken",                    category:"Vendors",            stage:"engaged" },
+
+  { id:"s08", title:"Book the ceremony venue",                        category:"Venue & Date",       stage:"m9to12" },
+  { id:"s09", title:"Book the reception venue",                       category:"Venue & Date",       stage:"m9to12" },
+  { id:"s10", title:"Hire a wedding planner or coordinator",          category:"Vendors",            stage:"m9to12" },
+  { id:"s11", title:"Book the officiant",                             category:"Ceremony",           stage:"m9to12" },
+  { id:"s12", title:"Start researching photographers",                category:"Vendors",            stage:"m9to12" },
+  { id:"s13", title:"Start researching videographers",                category:"Vendors",            stage:"m9to12" },
+  { id:"s14", title:"Book the caterer, if not included with the venue", category:"Reception",         stage:"m9to12" },
+  { id:"s15", title:"Set up a wedding website",                       category:"Stationery",         stage:"m9to12" },
+  { id:"s16", title:"Start wedding dress shopping",                   category:"Attire & Beauty",    stage:"m9to12", who:"danni" },
+  { id:"s17", title:"Research honeymoon destinations",                category:"Honeymoon",          stage:"m9to12" },
+
+  { id:"s18", title:"Book the photographer",                          category:"Vendors",            stage:"m6to8" },
+  { id:"s19", title:"Book the videographer",                          category:"Vendors",            stage:"m6to8" },
+  { id:"s20", title:"Book the florist",                                category:"Vendors",            stage:"m6to8" },
+  { id:"s21", title:"Book the DJ or band",                            category:"Reception",          stage:"m6to8" },
+  { id:"s22", title:"Order the wedding dress",                        category:"Attire & Beauty",    stage:"m6to8", who:"danni" },
+  { id:"s23", title:"Order suits or tuxedos for the party",           category:"Attire & Beauty",    stage:"m6to8", who:"brendon" },
+  { id:"s24", title:"Book a hair and makeup trial",                   category:"Attire & Beauty",    stage:"m6to8", who:"danni" },
+  { id:"s25", title:"Register for gifts",                             category:"Gifts & Registry",   stage:"m6to8" },
+  { id:"s26", title:"Reserve room blocks for out-of-town guests",     category:"Guests & Party",      stage:"m6to8" },
+  { id:"s27", title:"Book the honeymoon",                             category:"Honeymoon",          stage:"m6to8" },
+  { id:"s28", title:"Apply for a passport, if needed",                category:"Paperwork & Legal",  stage:"m6to8" },
+
+  { id:"s29", title:"Send save-the-dates and order invitations",      category:"Stationery",         stage:"m4to5" },
+  { id:"s30", title:"Do a menu and cake tasting",                     category:"Reception",          stage:"m4to5" },
+  { id:"s31", title:"Order the wedding cake",                         category:"Reception",          stage:"m4to5" },
+  { id:"s32", title:"Arrange transportation for the wedding day",     category:"Day-Of Details",     stage:"m4to5" },
+  { id:"s33", title:"Buy the wedding rings",                          category:"Ceremony",           stage:"m4to5" },
+  { id:"s34", title:"Plan the rehearsal dinner",                      category:"Reception",          stage:"m4to5" },
+
+  { id:"s35", title:"Mail the invitations",                           category:"Stationery",         stage:"m2to3" },
+  { id:"s36", title:"Finalize readings, vows and ceremony music",     category:"Ceremony",           stage:"m2to3" },
+  { id:"s37", title:"Schedule dress and suit fittings",               category:"Attire & Beauty",    stage:"m2to3" },
+  { id:"s38", title:"Look into the marriage license requirements",    category:"Paperwork & Legal",  stage:"m2to3" },
+  { id:"s39", title:"Plan the seating chart",                         category:"Guests & Party",      stage:"m2to3" },
+  { id:"s40", title:"Write thank-you notes as gifts arrive",          category:"Gifts & Registry",   stage:"m2to3" },
+
+  { id:"s41", title:"Follow up on missing RSVPs",                     category:"Guests & Party",      stage:"w4to6" },
+  { id:"s42", title:"Confirm the final headcount with caterer and venue", category:"Reception",       stage:"w4to6" },
+  { id:"s43", title:"Finalize the day-of timeline",                   category:"Day-Of Details",     stage:"w4to6" },
+  { id:"s44", title:"Confirm details with every vendor",              category:"Vendors",            stage:"w4to6" },
+  { id:"s45", title:"Pick up the wedding rings",                      category:"Ceremony",           stage:"w4to6" },
+  { id:"s46", title:"Break in wedding shoes",                         category:"Attire & Beauty",    stage:"w4to6" },
+
+  { id:"s47", title:"Get the marriage license",                       category:"Paperwork & Legal",  stage:"w1to2" },
+  { id:"s48", title:"Final dress and suit fitting and pickup",        category:"Attire & Beauty",    stage:"w1to2" },
+  { id:"s49", title:"Pack for the honeymoon",                         category:"Honeymoon",          stage:"w1to2" },
+  { id:"s50", title:"Prepare vendor tip and payment envelopes",       category:"Budget & Planning",  stage:"w1to2" },
+  { id:"s51", title:"Delegate day-of tasks to the wedding party",     category:"Day-Of Details",     stage:"w1to2" },
+
+  { id:"s52", title:"Eat breakfast",                                  category:"Day-Of Details",     stage:"dayof" },
+  { id:"s53", title:"Give the rings to the best man or maid of honor", category:"Ceremony",           stage:"dayof" },
+  { id:"s54", title:"Sign the marriage license",                      category:"Paperwork & Legal",  stage:"dayof" },
+  { id:"s55", title:"Enjoy it",                                       category:"Day-Of Details",     stage:"dayof" }
+];
+
+let state  = { items: [] };
+let editId = null;
+let filter = "all", fltCat = "all", fltWho = "all", groupBy = "stage";
+let saving = false, docRef = null, saveTimer = null;
+
+const $ = id => document.getElementById(id);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const esc = s => String(s == null ? "" : s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+function setSync(s, t){ const e = $("sync"); e.dataset.state = s; e.textContent = t; }
+
+/* ---------------- dates ----------------
+   Plain YYYY-MM-DD, split by hand so a UTC parse can't shift the day. */
+function today(){
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
+}
+function fmtDate(d){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || ""));
+  if(!m) return "";
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${+m[3]} ${MONTHS[+m[2]-1]} ${m[1]}`;
+}
+
+/* ---------------- shape ---------------- */
+function normalize(item){
+  if(!CAT_BY_NAME[item.category]) item.category = CATEGORIES[0].name;
+  if(!STAGE_BY_KEY[item.stage]) item.stage = "someday";
+  if(!STATUS_LABEL[item.status]) item.status = "todo";
+  if(!WHO_LABEL[item.who]) item.who = "together";
+  if(typeof item.dueDate !== "string") item.dueDate = "";
+  if(typeof item.notes !== "string") item.notes = "";
+  if(typeof item.added !== "string") item.added = "";
+  return item;
+}
+
+function seedItems(){
+  return SEED.map(t => normalize(Object.assign({}, t, {
+    status: "todo", dueDate: "", notes: "", added: today()
+  })));
+}
+
+/* ---------------- storage ---------------- */
+function loadCache(){
+  try{
+    const raw = localStorage.getItem(CACHE_KEY);
+    if(raw){
+      const p = JSON.parse(raw);
+      if(p && Array.isArray(p.items)) state = { items: p.items };
+    }
+  }catch(e){}
+}
+function writeCache(){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(state)); }catch(e){} }
+
+async function load(){
+  loadCache();
+  const hadLocal = state.items.length > 0;
+  let cameFromCloud = false;
+
+  try{
+    firebase.initializeApp(firebaseConfig);
+    docRef = firebase.firestore().doc(DOC_PATH);
+    const snap = await docRef.get();
+    if(snap.exists){
+      const data = snap.data();
+      if(Array.isArray(data.items)){ state = { items: data.items }; cameFromCloud = true; }
+    }
+  }catch(err){
+    console.error("Firestore unavailable, working from the local copy:", err);
+    setSync("error", "Offline");
+  }
+
+  if(!Array.isArray(state.items)) state.items = [];
+
+  /* Seed only on a true first run: no cloud doc, and nothing saved on this
+     device either. Once either exists, whatever's there — even an empty
+     list you cleared on purpose — is the real state from then on. */
+  if(!cameFromCloud && !hadLocal && !state.items.length){
+    state.items = seedItems();
+  }
+
+  state.items.forEach(normalize);
+  renderCatFilter();
+  renderBanner();
+  render();
+  setSync(docRef ? "idle" : "error", docRef ? "Synced" : "Offline — this device only");
+  save();
+}
+
+function save(){
+  writeCache();
+  renderCatFilter();
+  renderBanner();
+  render();
+  if(!docRef) return;
+  setSync("saving", "Saving");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saving = true;
+    docRef.set({ items: state.items, updated: Date.now() })
+      .then(() => setSync("idle", "Synced"))
+      .catch(e => { console.error(e); setSync("error", "Couldn't save"); })
+      .finally(() => { saving = false; });
+  }, 400);
+}
+
+/* ---------------- filter + group ---------------- */
+function byTitle(a, b){ return a.title.localeCompare(b.title, undefined, { sensitivity:"base" }); }
+
+function visibleItems(){
+  return state.items.filter(i => {
+    if(filter !== "all" && i.status !== filter) return false;
+    if(fltCat !== "all" && i.category !== fltCat) return false;
+    if(fltWho !== "all" && i.who !== fltWho) return false;
+    return true;
+  });
+}
+
+function renderCatFilter(){
+  const sel = $("fltCat");
+  const keep = sel.value || "all";
+  sel.innerHTML = '<option value="all">All</option>';
+  const used = new Set();
+  state.items.forEach(i => used.add(i.category));
+  CATEGORIES.filter(c => used.has(c.name)).forEach(c => {
+    const o = document.createElement("option");
+    o.value = c.name; o.textContent = c.name;
+    sel.appendChild(o);
+  });
+  sel.value = used.has(keep) ? keep : "all";
+  fltCat = sel.value;
+}
+
+function renderBanner(){
+  const total = state.items.length;
+  const done  = state.items.filter(i => i.status === "done").length;
+  const bar   = $("bannerBar");
+
+  if(!total){
+    $("bannerTitle").textContent = "Nothing on the checklist yet";
+    $("bannerSub").textContent   = "Add the first thing that needs doing.";
+    bar.style.display = "none";
+    return;
+  }
+
+  $("bannerTitle").textContent = `${done} of ${total} done`;
+  const doing = state.items.filter(i => i.status === "doing").length;
+  $("bannerSub").textContent = doing
+    ? `${doing} thing${doing === 1 ? "" : "s"} in progress right now`
+    : "Nothing in progress — pick something to start.";
+
+  bar.style.display = "";
+  bar.setAttribute("data-current", done);
+  bar.setAttribute("data-total", total);
+  bar.setAttribute("data-label", "The checklist");
+  if(window.PPProgress) PPProgress.draw(bar.parentElement);
+}
+
+/* ---------------- render ---------------- */
+function catTag(name){
+  const cat = CAT_BY_NAME[name];
+  const col = cat ? cat.color : "#6B5E54";
+  return `<span class="wq-cat" ${cat && cat.light ? 'data-light="true"' : ""} style="background:${col};">${esc(name)}</span>`;
+}
+
+function rowHTML(item){
+  const due = item.dueDate ? `<span class="wq-due">Target ${esc(fmtDate(item.dueDate))}</span>` : "";
+  return `
+    <div class="wq-row${item.status === "done" ? " is-done" : ""}" data-open="${item.id}">
+      <button class="wq-status" data-status="${item.status}" data-cycle="${item.id}">${STATUS_LABEL[item.status]}</button>
+      <div class="wq-rowbody">
+        <p class="wq-title">${esc(item.title)}</p>
+        <div class="wq-tags">
+          ${catTag(item.category)}
+          <span class="wq-who" data-who="${item.who}">${esc(WHO_LABEL[item.who])}</span>
+          ${due}
+        </div>
+        ${item.notes ? `<p class="wq-notes-preview">${esc(item.notes)}</p>` : ""}
+      </div>
+      <div class="wq-tools">
+        <button data-edit="${item.id}" aria-label="Edit ${esc(item.title)}">&#9998;</button>
+        <button data-del="${item.id}" aria-label="Delete ${esc(item.title)}">&#10005;</button>
+      </div>
+    </div>`;
+}
+
+function render(){
+  const list = $("list");
+  const rows = visibleItems();
+
+  const base = state.items.length ? `${state.items.filter(i => i.status === "done").length} done of ${state.items.length}` : "";
+  $("count").textContent = (rows.length !== state.items.length)
+    ? `Showing ${rows.length} of ${state.items.length}${base ? " · " + base : ""}`
+    : base;
+
+  if(!rows.length){
+    list.innerHTML = `<p class="wq-empty">${state.items.length ? "Nothing matches those filters." : "Nothing here yet. Add the first task."}</p>`;
+    return;
+  }
+
+  let groups;
+  if(groupBy === "category"){
+    groups = CATEGORIES
+      .map(c => ({ key: c.name, label: c.name, items: rows.filter(i => i.category === c.name) }))
+      .filter(g => g.items.length);
+  } else {
+    groups = STAGES
+      .map(s => ({ key: s.key, label: s.label, items: rows.filter(i => i.stage === s.key) }))
+      .filter(g => g.items.length);
+  }
+
+  list.innerHTML = groups.map(g => {
+    const sorted = g.items.slice().sort((a, b) => {
+      if((a.status === "done") !== (b.status === "done")) return a.status === "done" ? 1 : -1;
+      return byTitle(a, b);
+    });
+    const done = g.items.filter(i => i.status === "done").length;
+    return `
+      <div class="wq-group">
+        <div class="wq-group-head">
+          <h3>${esc(g.label)}</h3>
+          <span class="rule"></span>
+          <span class="wq-group-count">${done} of ${g.items.length} done</span>
+        </div>
+        <div class="wq-rows">${sorted.map(rowHTML).join("")}</div>
+      </div>`;
+  }).join("");
+}
+
+/* ---------------- add / edit ---------------- */
+function fillSelect(sel, options, labelKey, valueKey){
+  sel.innerHTML = options.map(o => `<option value="${esc(o[valueKey])}">${esc(o[labelKey])}</option>`).join("");
+}
+
+function openForm(item){
+  editId = item ? item.id : null;
+  $("formTitle").textContent = item ? "Edit task" : "Add a task";
+  $("fTitle").value  = item ? item.title : "";
+  $("fCategory").value = item ? item.category : CATEGORIES[0].name;
+  $("fStage").value    = item ? item.stage : "someday";
+  $("fStatus").value   = item ? item.status : "todo";
+  $("fWho").value      = item ? item.who : "together";
+  $("fDue").value      = item ? item.dueDate : "";
+  $("fNotes").value    = item ? item.notes : "";
+  $("deleteBtn").style.display = item ? "inline-block" : "none";
+  $("form").classList.add("open");
+  $("fTitle").focus();
+}
+
+function closeForm(){
+  $("form").classList.remove("open");
+  editId = null;
+}
+
+function saveTask(){
+  const title = $("fTitle").value.trim();
+  if(!title){ $("fTitle").focus(); return; }
+
+  if(editId){
+    const item = state.items.find(i => i.id === editId);
+    if(item){
+      item.title    = title;
+      item.category = $("fCategory").value;
+      item.stage    = $("fStage").value;
+      item.status   = $("fStatus").value;
+      item.who      = $("fWho").value;
+      item.dueDate  = $("fDue").value;
+      item.notes    = $("fNotes").value.trim();
+    }
+  }else{
+    state.items.push(normalize({
+      id: uid(), title,
+      category: $("fCategory").value,
+      stage:    $("fStage").value,
+      status:   $("fStatus").value,
+      who:      $("fWho").value,
+      dueDate:  $("fDue").value,
+      notes:    $("fNotes").value.trim(),
+      added: today()
+    }));
+  }
+
+  closeForm();
+  save();
+}
+
+function deleteTask(id){
+  if(!confirm("Remove this task from the checklist?")) return;
+  state.items = state.items.filter(i => i.id !== id);
+  closeForm();
+  save();
+}
+
+function cycleStatus(id){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+  item.status = STATUS_NEXT[item.status] || "todo";
+  save();
+}
+
+/* ---------------- events ---------------- */
+document.addEventListener("click", e => {
+  if(e.target.id === "addBtn"){ openForm(null); return; }
+  if(e.target.id === "saveBtn"){ saveTask(); return; }
+  if(e.target.id === "cancelBtn"){ closeForm(); return; }
+  if(e.target.id === "deleteBtn" && editId){ deleteTask(editId); return; }
+
+  const cycle = e.target.closest("[data-cycle]");
+  if(cycle){ cycleStatus(cycle.getAttribute("data-cycle")); return; }
+
+  const del = e.target.closest("[data-del]");
+  if(del){ deleteTask(del.getAttribute("data-del")); return; }
+
+  const edit = e.target.closest("[data-edit]");
+  if(edit){ openForm(state.items.find(i => i.id === edit.getAttribute("data-edit"))); return; }
+
+  const row = e.target.closest("[data-open]");
+  if(row){ openForm(state.items.find(i => i.id === row.getAttribute("data-open"))); return; }
+
+  const pill = e.target.closest(".wq-bar [data-filter]");
+  if(pill){
+    filter = pill.getAttribute("data-filter");
+    document.querySelectorAll(".wq-bar [data-filter]").forEach(b =>
+      b.setAttribute("aria-pressed", b === pill ? "true" : "false"));
+    render();
+  }
+});
+
+$("groupBy").onchange = e => { groupBy = e.target.value; render(); };
+$("fltCat").onchange  = e => { fltCat  = e.target.value; render(); };
+$("fltWho").onchange  = e => { fltWho  = e.target.value; render(); };
+
+document.addEventListener("keydown", e => { if(e.key === "Escape" && $("form").classList.contains("open")) closeForm(); });
+
+fillSelect($("fCategory"), CATEGORIES, "name", "name");
+fillSelect($("fStage"), STAGES, "label", "key");
+
+load();
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>

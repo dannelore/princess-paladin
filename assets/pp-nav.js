@@ -130,7 +130,8 @@ window.PPNav = (function(){
           { label:'Spooky Quest', href:'/side-quests/spooky-quest.html', note:'1 September – 31 October' },
           { label:'Classics Quest', href:'/side-quests/classics-quest.html', note:'A hundred classics, A to Z' },
           { label:'Reading Quest', href:'/side-quests/reading-quest.html', note:'The to-be-read pile, and everything read' },
-          { label:'Watch History', href:'/side-quests/watch-history.html', note:'Both watch lists, in the order you finished them' }
+          { label:'Watch History', href:'/side-quests/watch-history.html', note:'Both watch lists, in the order you finished them' },
+          { label:'Wedding Quest', href:'/side-quests/wedding-quest.html', note:'The traditional planning checklist, editable' }
         ]}
       ]
     },
