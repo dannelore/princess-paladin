@@ -447,6 +447,13 @@ const SEED = [
   { id:"s55", title:"Enjoy it",                                       category:"Day-Of Details" }
 ];
 
+/* Bumped whenever SEED's defaults change in a way that should reach a
+   checklist that already seeded itself. syncSeedUpdates() below only
+   touches rows still sitting at their untouched default (status "todo",
+   no notes, no due date) — anything you've since checked off, edited, or
+   deleted in the app is never overwritten. */
+const SEED_VERSION = 2;
+
 let state  = { items: [] };
 let editId = null;
 let filter = "all", fltCat = "all", fltWho = "all";
@@ -489,13 +496,51 @@ function seedItems(){
   })));
 }
 
+function isUntouched(item){
+  return item.status === "todo" && !item.notes && !item.dueDate;
+}
+
+/* Brings a checklist that already seeded itself up to date with SEED's
+   current defaults, without clobbering anything you've since checked off,
+   edited, or deleted. Runs once per SEED_VERSION bump. */
+function syncSeedUpdates(){
+  if((state.seedVersion || 0) >= SEED_VERSION) return;
+
+  const byId = {};
+  state.items.forEach(i => { byId[i.id] = i; });
+
+  SEED.forEach(seed => {
+    const existing = byId[seed.id];
+    if(existing){
+      if(isUntouched(existing)){
+        Object.assign(existing, seed, {
+          status: seed.status || "todo", dueDate: seed.dueDate || "", notes: seed.notes || "",
+          added: existing.added
+        });
+      }
+    } else {
+      state.items.push(normalize(Object.assign({}, seed, {
+        status: seed.status || "todo", dueDate: seed.dueDate || "", notes: seed.notes || "", added: today()
+      })));
+    }
+  });
+
+  const currentSeedIds = new Set(SEED.map(s => s.id));
+  state.items = state.items.filter(i => {
+    if(!/^s\d+$/.test(i.id) || currentSeedIds.has(i.id)) return true;
+    return !isUntouched(i);
+  });
+
+  state.seedVersion = SEED_VERSION;
+}
+
 /* ---------------- storage ---------------- */
 function loadCache(){
   try{
     const raw = localStorage.getItem(CACHE_KEY);
     if(raw){
       const p = JSON.parse(raw);
-      if(p && Array.isArray(p.items)) state = { items: p.items };
+      if(p && Array.isArray(p.items)) state = { items: p.items, seedVersion: p.seedVersion || 0 };
     }
   }catch(e){}
 }
@@ -512,7 +557,7 @@ async function load(){
     const snap = await docRef.get();
     if(snap.exists){
       const data = snap.data();
-      if(Array.isArray(data.items)){ state = { items: data.items }; cameFromCloud = true; }
+      if(Array.isArray(data.items)){ state = { items: data.items, seedVersion: data.seedVersion || 0 }; cameFromCloud = true; }
     }
   }catch(err){
     console.error("Firestore unavailable, working from the local copy:", err);
@@ -526,6 +571,9 @@ async function load(){
      list you cleared on purpose — is the real state from then on. */
   if(!cameFromCloud && !hadLocal && !state.items.length){
     state.items = seedItems();
+    state.seedVersion = SEED_VERSION;
+  } else {
+    syncSeedUpdates();
   }
 
   state.items.forEach(normalize);
@@ -546,7 +594,7 @@ function save(){
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     saving = true;
-    docRef.set({ items: state.items, updated: Date.now() })
+    docRef.set({ items: state.items, seedVersion: state.seedVersion || 0, updated: Date.now() })
       .then(() => setSync("idle", "Synced"))
       .catch(e => { console.error(e); setSync("error", "Couldn't save"); })
       .finally(() => { saving = false; });
