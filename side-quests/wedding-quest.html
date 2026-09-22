@@ -17,11 +17,11 @@
      WEDDING QUEST
 
      The traditional wedding-planning checklist, seeded once from SEED
-     below and grouped by how far out each task usually happens. Nothing
-     about the seed is precious — every row (seeded or added later) can be
-     edited or deleted, so anything that doesn't apply just goes away and
-     stays gone. Re-seeding only ever happens on the very first load, when
-     neither this device nor the shared doc has anything saved yet.
+     below and grouped by category. Nothing about the seed is precious —
+     every row (seeded or added later) can be edited or deleted, so
+     anything that doesn't apply just goes away and stays gone. Re-seeding
+     only ever happens on the very first load, when neither this device
+     nor the shared doc has anything saved yet.
 
      Firestore: sidequest/wedding-list
      ====================================================================== */
@@ -226,10 +226,10 @@
   </div>
 
   <p class="wq-intro">
-    The traditional planning checklist, roughly in the order it usually
-    happens. It&rsquo;s seeded to start &mdash; edit or delete anything
-    that doesn&rsquo;t apply to the two of you, and add whatever&rsquo;s
-    missing. Nothing here is precious except what you decide to keep.
+    The traditional planning checklist, organized by category. It&rsquo;s
+    seeded to start &mdash; edit or delete anything that doesn&rsquo;t
+    apply to the two of you, and add whatever&rsquo;s missing. Nothing
+    here is precious except what you decide to keep.
   </p>
 
   <div class="wq-banner">
@@ -255,14 +255,6 @@
   </div>
 
   <div class="wq-selects">
-    <div class="wq-pick">
-      <label for="groupBy">Group by</label>
-      <select id="groupBy">
-        <option value="stage">Timeline</option>
-        <option value="category">Category</option>
-      </select>
-    </div>
-
     <div class="wq-pick">
       <label for="fltCat">Category</label>
       <select id="fltCat"><option value="all">All</option></select>
@@ -296,11 +288,6 @@
       <div class="wq-field">
         <label for="fCategory">Category</label>
         <select id="fCategory"></select>
-      </div>
-
-      <div class="wq-field">
-        <label for="fStage">When</label>
-        <select id="fStage"></select>
       </div>
 
       <div class="wq-field">
@@ -379,22 +366,6 @@ const CATEGORIES = [
 const CAT_BY_NAME = {};
 CATEGORIES.forEach(c => { CAT_BY_NAME[c.name] = c; });
 
-/* The order things traditionally get done in. "someday" catches anything
-   without a natural slot — the default for a task you add yourself. */
-const STAGES = [
-  { key:"engaged", label:"As soon as you're engaged" },
-  { key:"m9to12",  label:"9–12 months before" },
-  { key:"m6to8",   label:"6–8 months before" },
-  { key:"m4to5",   label:"4–5 months before" },
-  { key:"m2to3",   label:"2–3 months before" },
-  { key:"w4to6",   label:"4–6 weeks before" },
-  { key:"w1to2",   label:"1–2 weeks before" },
-  { key:"dayof",   label:"Wedding day" },
-  { key:"someday", label:"Someday / not scheduled" }
-];
-const STAGE_BY_KEY = {};
-STAGES.forEach((s, i) => { STAGE_BY_KEY[s.key] = s; s.order = i; });
-
 const STATUSES = [
   { key:"todo",  label:"To do" },
   { key:"doing", label:"In progress" },
@@ -411,73 +382,73 @@ const WHO_LABEL = { together:"Together", danni:"Danni", brendon:"Brendon" };
    This only ever runs once, on the very first load, when nothing has been
    saved anywhere yet. */
 const SEED = [
-  { id:"s01", title:"Set the overall budget",                         category:"Budget & Planning", stage:"engaged" },
-  { id:"s02", title:"Decide who's contributing financially",          category:"Budget & Planning", stage:"engaged" },
-  { id:"s03", title:"Pick a rough date or season",                    category:"Venue & Date",       stage:"engaged" },
-  { id:"s04", title:"Draft the guest list headcount",                 category:"Guests & Party",     stage:"engaged" },
-  { id:"s05", title:"Choose the wedding party",                       category:"Guests & Party",     stage:"engaged" },
-  { id:"s06", title:"Start a shared planning folder or spreadsheet",  category:"Budget & Planning",  stage:"engaged" },
-  { id:"s07", title:"Get engagement photos taken",                    category:"Vendors",            stage:"engaged" },
+  { id:"s01", title:"Set the overall budget",                         category:"Budget & Planning", status:"done" },
+  { id:"s02", title:"Decide who's contributing financially",          category:"Budget & Planning", status:"done" },
+  { id:"s03", title:"Pick a rough date or season",                    category:"Venue & Date" },
+  { id:"s04", title:"Draft the guest list headcount",                 category:"Guests & Party" },
+  { id:"s05", title:"Choose the wedding party",                       category:"Guests & Party" },
+  { id:"s06", title:"Start a shared planning folder or spreadsheet",  category:"Budget & Planning" },
+  { id:"s07", title:"Get engagement photos taken",                    category:"Vendors" },
 
-  { id:"s08", title:"Book the ceremony venue",                        category:"Venue & Date",       stage:"m9to12" },
-  { id:"s09", title:"Book the reception venue",                       category:"Venue & Date",       stage:"m9to12" },
-  { id:"s10", title:"Hire a wedding planner or coordinator",          category:"Vendors",            stage:"m9to12" },
-  { id:"s11", title:"Book the officiant",                             category:"Ceremony",           stage:"m9to12" },
-  { id:"s12", title:"Start researching photographers",                category:"Vendors",            stage:"m9to12" },
-  { id:"s13", title:"Start researching videographers",                category:"Vendors",            stage:"m9to12" },
-  { id:"s14", title:"Book the caterer, if not included with the venue", category:"Reception",         stage:"m9to12" },
-  { id:"s15", title:"Set up a wedding website",                       category:"Stationery",         stage:"m9to12" },
-  { id:"s16", title:"Start wedding dress shopping",                   category:"Attire & Beauty",    stage:"m9to12", who:"danni" },
-  { id:"s17", title:"Research honeymoon destinations",                category:"Honeymoon",          stage:"m9to12" },
+  { id:"s08", title:"Book the ceremony venue",                        category:"Venue & Date", status:"done" },
+  { id:"s09", title:"Book the reception venue",                       category:"Venue & Date", status:"done" },
+  { id:"s10", title:"Hire a wedding planner or coordinator",          category:"Vendors" },
+  { id:"s11", title:"Book the officiant",                             category:"Ceremony" },
+  { id:"s12", title:"Start researching photographers",                category:"Vendors" },
+  { id:"s13", title:"Start researching videographers",                category:"Vendors" },
+  { id:"s14", title:"Book the caterer, if not included with the venue", category:"Reception", status:"done" },
+  { id:"s15", title:"Set up a wedding website",                       category:"Stationery" },
+  { id:"s16", title:"Start wedding dress shopping",                   category:"Attire & Beauty",    who:"danni", status:"done" },
+  { id:"s17", title:"Research honeymoon destinations",                category:"Honeymoon" },
 
-  { id:"s18", title:"Book the photographer",                          category:"Vendors",            stage:"m6to8" },
-  { id:"s19", title:"Book the videographer",                          category:"Vendors",            stage:"m6to8" },
-  { id:"s20", title:"Book the florist",                                category:"Vendors",            stage:"m6to8" },
-  { id:"s21", title:"Book the DJ or band",                            category:"Reception",          stage:"m6to8" },
-  { id:"s22", title:"Order the wedding dress",                        category:"Attire & Beauty",    stage:"m6to8", who:"danni" },
-  { id:"s23", title:"Order suits or tuxedos for the party",           category:"Attire & Beauty",    stage:"m6to8", who:"brendon" },
-  { id:"s24", title:"Book a hair and makeup trial",                   category:"Attire & Beauty",    stage:"m6to8", who:"danni" },
-  { id:"s25", title:"Register for gifts",                             category:"Gifts & Registry",   stage:"m6to8" },
-  { id:"s26", title:"Reserve room blocks for out-of-town guests",     category:"Guests & Party",      stage:"m6to8" },
-  { id:"s27", title:"Book the honeymoon",                             category:"Honeymoon",          stage:"m6to8" },
-  { id:"s28", title:"Apply for a passport, if needed",                category:"Paperwork & Legal",  stage:"m6to8" },
+  { id:"s18", title:"Book the photographer",                          category:"Vendors" },
+  { id:"s19", title:"Book the videographer",                          category:"Vendors" },
+  { id:"s20", title:"Book the florist",                                category:"Vendors" },
+  { id:"s21", title:"Book the DJ or band",                            category:"Reception", status:"done" },
+  { id:"s22", title:"Order the wedding dress",                        category:"Attire & Beauty",    who:"danni", status:"done" },
+  { id:"s23", title:"Order suits or tuxedos for the party",           category:"Attire & Beauty",    who:"brendon" },
+  { id:"s24", title:"Book a hair and makeup trial",                   category:"Attire & Beauty",    who:"danni", status:"done" },
+  { id:"s25", title:"Register for gifts",                             category:"Gifts & Registry" },
+  { id:"s26", title:"Reserve room blocks for out-of-town guests",     category:"Guests & Party" },
+  { id:"s27", title:"Book the honeymoon",                             category:"Honeymoon" },
+  { id:"s28", title:"Apply for a passport, if needed",                category:"Paperwork & Legal" },
 
-  { id:"s29", title:"Send save-the-dates and order invitations",      category:"Stationery",         stage:"m4to5" },
-  { id:"s30", title:"Do a menu and cake tasting",                     category:"Reception",          stage:"m4to5" },
-  { id:"s31", title:"Order the wedding cake",                         category:"Reception",          stage:"m4to5" },
-  { id:"s32", title:"Arrange transportation for the wedding day",     category:"Day-Of Details",     stage:"m4to5" },
-  { id:"s33", title:"Buy the wedding rings",                          category:"Ceremony",           stage:"m4to5" },
-  { id:"s34", title:"Plan the rehearsal dinner",                      category:"Reception",          stage:"m4to5" },
+  { id:"s29", title:"Send save-the-dates and order invitations",      category:"Stationery" },
+  { id:"s30", title:"Do a menu and cake tasting",                     category:"Reception" },
+  { id:"s31", title:"Order the wedding cake",                         category:"Reception" },
+  { id:"s32", title:"Arrange transportation for the wedding day",     category:"Day-Of Details" },
+  { id:"s33", title:"Buy the wedding rings",                          category:"Ceremony" },
+  { id:"s34", title:"Plan the rehearsal dinner",                      category:"Reception" },
 
-  { id:"s35", title:"Mail the invitations",                           category:"Stationery",         stage:"m2to3" },
-  { id:"s36", title:"Finalize readings, vows and ceremony music",     category:"Ceremony",           stage:"m2to3" },
-  { id:"s37", title:"Schedule dress and suit fittings",               category:"Attire & Beauty",    stage:"m2to3" },
-  { id:"s38", title:"Look into the marriage license requirements",    category:"Paperwork & Legal",  stage:"m2to3" },
-  { id:"s39", title:"Plan the seating chart",                         category:"Guests & Party",      stage:"m2to3" },
-  { id:"s40", title:"Write thank-you notes as gifts arrive",          category:"Gifts & Registry",   stage:"m2to3" },
+  { id:"s35", title:"Mail the invitations",                           category:"Stationery" },
+  { id:"s36", title:"Finalize readings, vows and ceremony music",     category:"Ceremony" },
+  { id:"s37", title:"Schedule dress and suit fittings",               category:"Attire & Beauty" },
+  { id:"s38", title:"Look into the marriage license requirements",    category:"Paperwork & Legal" },
+  { id:"s39", title:"Plan the seating chart",                         category:"Guests & Party" },
+  { id:"s40", title:"Write thank-you notes as gifts arrive",          category:"Gifts & Registry" },
 
-  { id:"s41", title:"Follow up on missing RSVPs",                     category:"Guests & Party",      stage:"w4to6" },
-  { id:"s42", title:"Confirm the final headcount with caterer and venue", category:"Reception",       stage:"w4to6" },
-  { id:"s43", title:"Finalize the day-of timeline",                   category:"Day-Of Details",     stage:"w4to6" },
-  { id:"s44", title:"Confirm details with every vendor",              category:"Vendors",            stage:"w4to6" },
-  { id:"s45", title:"Pick up the wedding rings",                      category:"Ceremony",           stage:"w4to6" },
-  { id:"s46", title:"Break in wedding shoes",                         category:"Attire & Beauty",    stage:"w4to6" },
+  { id:"s41", title:"Follow up on missing RSVPs",                     category:"Guests & Party" },
+  { id:"s42", title:"Confirm the final headcount with caterer and venue", category:"Reception" },
+  { id:"s43", title:"Finalize the day-of schedule",                   category:"Day-Of Details" },
+  { id:"s44", title:"Confirm details with every vendor",              category:"Vendors" },
+  { id:"s45", title:"Pick up the wedding rings",                      category:"Ceremony" },
+  { id:"s46", title:"Break in wedding shoes",                         category:"Attire & Beauty" },
 
-  { id:"s47", title:"Get the marriage license",                       category:"Paperwork & Legal",  stage:"w1to2" },
-  { id:"s48", title:"Final dress and suit fitting and pickup",        category:"Attire & Beauty",    stage:"w1to2" },
-  { id:"s49", title:"Pack for the honeymoon",                         category:"Honeymoon",          stage:"w1to2" },
-  { id:"s50", title:"Prepare vendor tip and payment envelopes",       category:"Budget & Planning",  stage:"w1to2" },
-  { id:"s51", title:"Delegate day-of tasks to the wedding party",     category:"Day-Of Details",     stage:"w1to2" },
+  { id:"s47", title:"Get the marriage license",                       category:"Paperwork & Legal" },
+  { id:"s48", title:"Final dress and suit fitting and pickup",        category:"Attire & Beauty" },
+  { id:"s49", title:"Pack for the honeymoon",                         category:"Honeymoon" },
+  { id:"s50", title:"Prepare vendor tip and payment envelopes",       category:"Budget & Planning" },
+  { id:"s51", title:"Delegate day-of tasks to the wedding party",     category:"Day-Of Details" },
 
-  { id:"s52", title:"Eat breakfast",                                  category:"Day-Of Details",     stage:"dayof" },
-  { id:"s53", title:"Give the rings to the best man or maid of honor", category:"Ceremony",           stage:"dayof" },
-  { id:"s54", title:"Sign the marriage license",                      category:"Paperwork & Legal",  stage:"dayof" },
-  { id:"s55", title:"Enjoy it",                                       category:"Day-Of Details",     stage:"dayof" }
+  { id:"s52", title:"Eat breakfast",                                  category:"Day-Of Details" },
+  { id:"s53", title:"Give the rings to the best man or maid of honor", category:"Ceremony" },
+  { id:"s54", title:"Sign the marriage license",                      category:"Paperwork & Legal" },
+  { id:"s55", title:"Enjoy it",                                       category:"Day-Of Details" }
 ];
 
 let state  = { items: [] };
 let editId = null;
-let filter = "all", fltCat = "all", fltWho = "all", groupBy = "stage";
+let filter = "all", fltCat = "all", fltWho = "all";
 let saving = false, docRef = null, saveTimer = null;
 
 const $ = id => document.getElementById(id);
@@ -503,7 +474,6 @@ function fmtDate(d){
 /* ---------------- shape ---------------- */
 function normalize(item){
   if(!CAT_BY_NAME[item.category]) item.category = CATEGORIES[0].name;
-  if(!STAGE_BY_KEY[item.stage]) item.stage = "someday";
   if(!STATUS_LABEL[item.status]) item.status = "todo";
   if(!WHO_LABEL[item.who]) item.who = "together";
   if(typeof item.dueDate !== "string") item.dueDate = "";
@@ -514,7 +484,7 @@ function normalize(item){
 
 function seedItems(){
   return SEED.map(t => normalize(Object.assign({}, t, {
-    status: "todo", dueDate: "", notes: "", added: today()
+    status: t.status || "todo", dueDate: "", notes: "", added: today()
   })));
 }
 
@@ -676,16 +646,9 @@ function render(){
     return;
   }
 
-  let groups;
-  if(groupBy === "category"){
-    groups = CATEGORIES
-      .map(c => ({ key: c.name, label: c.name, items: rows.filter(i => i.category === c.name) }))
-      .filter(g => g.items.length);
-  } else {
-    groups = STAGES
-      .map(s => ({ key: s.key, label: s.label, items: rows.filter(i => i.stage === s.key) }))
-      .filter(g => g.items.length);
-  }
+  const groups = CATEGORIES
+    .map(c => ({ key: c.name, label: c.name, items: rows.filter(i => i.category === c.name) }))
+    .filter(g => g.items.length);
 
   list.innerHTML = groups.map(g => {
     const sorted = g.items.slice().sort((a, b) => {
@@ -715,7 +678,6 @@ function openForm(item){
   $("formTitle").textContent = item ? "Edit task" : "Add a task";
   $("fTitle").value  = item ? item.title : "";
   $("fCategory").value = item ? item.category : CATEGORIES[0].name;
-  $("fStage").value    = item ? item.stage : "someday";
   $("fStatus").value   = item ? item.status : "todo";
   $("fWho").value      = item ? item.who : "together";
   $("fDue").value      = item ? item.dueDate : "";
@@ -739,7 +701,6 @@ function saveTask(){
     if(item){
       item.title    = title;
       item.category = $("fCategory").value;
-      item.stage    = $("fStage").value;
       item.status   = $("fStatus").value;
       item.who      = $("fWho").value;
       item.dueDate  = $("fDue").value;
@@ -749,7 +710,6 @@ function saveTask(){
     state.items.push(normalize({
       id: uid(), title,
       category: $("fCategory").value,
-      stage:    $("fStage").value,
       status:   $("fStatus").value,
       who:      $("fWho").value,
       dueDate:  $("fDue").value,
@@ -804,14 +764,12 @@ document.addEventListener("click", e => {
   }
 });
 
-$("groupBy").onchange = e => { groupBy = e.target.value; render(); };
 $("fltCat").onchange  = e => { fltCat  = e.target.value; render(); };
 $("fltWho").onchange  = e => { fltWho  = e.target.value; render(); };
 
 document.addEventListener("keydown", e => { if(e.key === "Escape" && $("form").classList.contains("open")) closeForm(); });
 
 fillSelect($("fCategory"), CATEGORIES, "name", "name");
-fillSelect($("fStage"), STAGES, "label", "key");
 
 load();
 </script>
