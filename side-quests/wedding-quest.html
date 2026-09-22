@@ -384,9 +384,9 @@ const WHO_LABEL = { together:"Together", danni:"Danni", brendon:"Brendon" };
 const SEED = [
   { id:"s01", title:"Set the overall budget",                         category:"Budget & Planning", status:"done" },
   { id:"s02", title:"Decide who's contributing financially",          category:"Budget & Planning", status:"done" },
-  { id:"s03", title:"Pick a rough date or season",                    category:"Venue & Date" },
-  { id:"s04", title:"Draft the guest list headcount",                 category:"Guests & Party" },
-  { id:"s05", title:"Choose the wedding party",                       category:"Guests & Party" },
+  { id:"s03", title:"Pick a rough date or season",                    category:"Venue & Date", status:"done", dueDate:"2027-01-15", notes:"Wedding day: January 15, 2027." },
+  { id:"s04", title:"Draft the guest list headcount",                 category:"Guests & Party", status:"done", notes:"112 guests, from the finalized guest list." },
+  { id:"s05", title:"Choose the wedding party",                       category:"Guests & Party", status:"done", notes:"Bridal party chosen." },
   { id:"s06", title:"Start a shared planning folder or spreadsheet",  category:"Budget & Planning" },
   { id:"s07", title:"Get engagement photos taken",                    category:"Vendors" },
 
@@ -484,7 +484,7 @@ function normalize(item){
 
 function seedItems(){
   return SEED.map(t => normalize(Object.assign({}, t, {
-    status: t.status || "todo", dueDate: "", notes: "", added: today()
+    status: t.status || "todo", dueDate: t.dueDate || "", notes: t.notes || "", added: today()
   })));
 }
 
