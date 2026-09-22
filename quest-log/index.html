@@ -365,6 +365,14 @@
     color:var(--accent-dark);
   }
   .quick-foot{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .tidy-btn{
+    font-family:var(--font-body); font-size:11.5px; font-weight:500;
+    color:var(--accent-dark); background:var(--pink-bg);
+    border:1px solid rgba(232,124,166,0.5); border-radius:14px;
+    padding:5px 11px; cursor:pointer; flex-shrink:0; white-space:nowrap;
+  }
+  .tidy-btn:hover{ background:var(--pink-bg-alt); }
+  .tidy-btn[disabled]{ opacity:.6; cursor:default; }
   .quick-status{ font-size:11.5px; color:var(--sage-dark); flex:1; min-width:0; }
   .quick-status .undo{
     background:none; border:none; padding:0 0 0 6px; cursor:pointer;
@@ -811,6 +819,8 @@
   html.pp-paladin .quick-fab{ background:#9C7440; border-color:#F7F1E4; }
   html.pp-paladin .quick-fab:hover{ background:#7C5B30; }
   html.pp-paladin .quick-status{ color:#5C7A4A; }
+  html.pp-paladin .tidy-btn{ color:#7C5B30; background:#F7F1E4; border-color:rgba(156,116,64,0.5); }
+  html.pp-paladin .tidy-btn:hover{ background:#EFE4CE; }
 
   html.pp-paladin .add-btn{ background:#9C7440; }
   html.pp-paladin .btn:hover,
@@ -1221,6 +1231,24 @@
     </div>
 
     <div class="panel-section">
+      <h3 class="panel-section-title">Paste helper</h3>
+      <p class="rate-readout" style="margin-top:0;">
+        Lets the quick-add box take a messy pasted list and come back with tidy
+        to-dos, tagged and rated. It needs the little worker deployed — see
+        <code>worker/README.md</code>. These live in this browser only, never in
+        the quest log.
+      </p>
+      <div class="add-row" style="margin-bottom:0;">
+        <input type="text" id="helperUrl" placeholder="https://pp-paste-helper.…workers.dev">
+        <input type="password" id="helperToken" placeholder="Shared token">
+        <div class="add-row-controls">
+          <span class="field-label" id="helperState"></span>
+          <button class="add-btn" id="saveHelper">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-section">
       <h3 class="panel-section-title">Reset progress</h3>
       <p class="rate-readout">Back to Level 1 and 0 XP. Tasks, tags, pets, wardrobe, rewards and coins all stay exactly as they are — only the level and XP go. Party members move to the stable, since party slots unlock by level.</p>
       <button class="danger-btn" id="resetProgress">Reset to Level 1</button>
@@ -1246,6 +1274,7 @@
     <div class="quick-preview" id="quickPreview"></div>
     <div class="quick-foot">
       <span class="quick-status" id="quickStatus"></span>
+      <button type="button" class="tidy-btn" id="quickTidy" title="Send this to Claude to be tidied into to-dos">✨ tidy with Claude</button>
     </div>
     <p class="quick-legend">
       <code>!urgent</code> <code>!high</code> <code>!low</code> priority ·
@@ -1785,6 +1814,104 @@ document.addEventListener('keydown', e => {
   e.preventDefault();
   quickOpen();
 });
+
+/* ============ PASTE HELPER ============
+   The quick-add box takes shorthand. This takes everything else: a rambling
+   note, a forwarded email, the text off a screenshot. It posts the paste to
+   a small Cloudflare Worker (worker/), which is the only piece holding an
+   API key, and gets back the same shorthand you would have typed — which
+   then goes through the ordinary preview-and-add path. Nothing is written to
+   the quest log by the helper; it hands you lines and you press Enter.
+
+   The worker URL and token live in localStorage rather than the quest log,
+   because they belong to this browser, not to the person. */
+const HELPER_KEY = 'pp-paste-helper';
+function helperConfig(){
+  try { return JSON.parse(localStorage.getItem(HELPER_KEY)) || {}; }
+  catch(e){ return {}; }
+}
+function renderHelperSettings(){
+  const cfg = helperConfig();
+  const url = document.getElementById('helperUrl');
+  const token = document.getElementById('helperToken');
+  if(document.activeElement !== url) url.value = cfg.url || '';
+  if(document.activeElement !== token) token.value = cfg.token || '';
+  document.getElementById('helperState').textContent =
+    (cfg.url && cfg.token) ? 'ready' : 'not set up';
+}
+document.getElementById('saveHelper').onclick = () => {
+  const url = document.getElementById('helperUrl').value.trim().replace(/\/+$/, '');
+  const token = document.getElementById('helperToken').value.trim();
+  try {
+    if(url && token) localStorage.setItem(HELPER_KEY, JSON.stringify({ url, token }));
+    else localStorage.removeItem(HELPER_KEY);
+  } catch(e){}
+  renderHelperSettings();
+};
+
+/* What the helper is told: the tag names, how this person has rated things
+   before, and what is already open so it can skip repeats. Titles and
+   difficulties only — the rest of the log is none of its business. */
+function helperContext(){
+  const tagName = id => (S().tags.find(t => t.id === id) || {}).name || null;
+  const rated = [];
+  COLUMNS.forEach(col => S()[col].forEach(t => {
+    rated.push({ title: t.title, difficulty: t.difficulty || 3, tag: tagName(t.tag) });
+  }));
+  return {
+    today: PQ.TODAY_KEY,
+    tags: S().tags.map(t => ({ id: t.id, name: t.name })),
+    samples: rated.slice(-60),
+    open: S().todos.filter(t => !t.done).map(t => t.title).slice(-60)
+  };
+}
+
+const tidyBtn = document.getElementById('quickTidy');
+tidyBtn.onclick = async () => {
+  const cfg = helperConfig();
+  if(!cfg.url || !cfg.token){
+    quickStatus.textContent = 'Set the paste helper up in Settings first.';
+    return;
+  }
+  const text = quickInput.value.trim();
+  if(!text){ quickStatus.textContent = 'Paste something first.'; return; }
+
+  tidyBtn.disabled = true;
+  tidyBtn.textContent = 'tidying…';
+  quickStatus.textContent = '';
+  try {
+    const res = await fetch(cfg.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-PP-Token': cfg.token },
+      body: JSON.stringify(Object.assign({ text }, helperContext()))
+    });
+    const data = await res.json().catch(() => ({}));
+    if(!res.ok || !Array.isArray(data.lines)){
+      quickStatus.textContent = data.error || `The helper answered ${res.status}.`;
+      return;
+    }
+    if(!data.lines.length){
+      quickStatus.textContent = 'Nothing came back that looked like a to-do.';
+      return;
+    }
+    /* Straight into the box, not straight onto the board — you still read it
+       and press Enter, exactly as if you had typed it. */
+    quickInput.value = data.lines.join('\n');
+    quickGrow();
+    renderQuickPreview();
+    quickInput.focus();
+
+    const bits = [`${data.lines.length} ready — read them, then Enter`];
+    (data.skipped || []).forEach(s => bits.push(`left out "${s.text}" (${s.reason})`));
+    (data.notes || []).forEach(n => bits.push(n));
+    quickStatus.textContent = bits.join(' · ');
+  } catch(err){
+    quickStatus.textContent = 'Could not reach the paste helper.';
+  } finally {
+    tidyBtn.disabled = false;
+    tidyBtn.textContent = '✨ tidy with Claude';
+  }
+};
 
 /* ============ CARDS ============ */
 const expanded = new Set();
@@ -2398,6 +2525,7 @@ function renderSettings(){
   if(buffs.payout > 1) html += `<br>Legend bonus: +${Math.round((buffs.payout-1)*100)}% payout`;
   document.getElementById('rateReadout').innerHTML = html;
   renderTagEditor();
+  renderHelperSettings();
 }
 
 /* ============ PANELS + DATE NAV ============ */

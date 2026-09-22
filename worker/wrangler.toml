@@ -1,0 +1,8 @@
+name = "pp-paste-helper"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+# The Anthropic SDK is a Node-flavoured package; this lets it run on Workers.
+compatibility_flags = ["nodejs_compat"]
+
+# Secrets are NOT set here — they go in with `wrangler secret put`, so they
+# never land in the repo. See README.md.
