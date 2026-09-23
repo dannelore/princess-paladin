@@ -214,8 +214,16 @@
     font-weight: 700;
     letter-spacing: .02em;
   }
+  .clq-mark[data-mark="az"]{
+    color: #fff;
+    background: var(--dusk);
+    font-family: var(--font-body);
+    font-size: .46rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+  }
 
-  /* Same two marks spelled out under the title in the detail panel. */
+  /* Same marks spelled out under the title in the detail panel. */
   .clq-marknote{
     font-family: var(--font-body);
     font-size: .6rem;
@@ -473,6 +481,7 @@
     <button class="pp-pill" data-filter="dnf" aria-pressed="false">Abandoned</button>
     <button class="pp-pill" data-filter="star" aria-pressed="false">&#9733; Ultimate</button>
     <button class="pp-pill" data-filter="hundred" aria-pressed="false">100% Club</button>
+    <button class="pp-pill" data-filter="az" aria-pressed="false">A&ndash;Z</button>
     <span class="spacer"></span>
     <button class="pp-btn" id="addBtn">+ Add a book</button>
     <span class="clq-count" id="count"></span>
@@ -571,23 +580,25 @@ const CACHE_KEY = "pp_classics_list";
 
      star    = an Ultimate Classic.
      hundred = the 100% Club, the ones predicted to land dead-on.
+     az      = the A-to-Z pick: the one book chosen for its letter, 26 in all.
 
    A letter can hold several books; Round 1 below only asks for one finished
-   book from each. */
+   book from each, whichever it is -- the A-to-Z pick is a suggestion, not
+   a rule. */
 const SEED = [
   { id:"a2",  letter:"A", title:"Alice\u2019s Adventures in Wonderland", author:"Lewis Carroll" },
-  { id:"a4",  letter:"A", title:"All My Sons", author:"Arthur Miller" },
+  { id:"a4",  letter:"A", title:"All My Sons", author:"Arthur Miller", az:true },
   { id:"a",   letter:"A", title:"Animal Farm", author:"George Orwell", star:true },
   { id:"a3",  letter:"A", title:"The Adventures of Huckleberry Finn", author:"Mark Twain", star:true },
   { id:"a6",  letter:"A", title:"The Awakening", author:"Kate Chopin", star:true },
   { id:"b3",  letter:"B", title:"Beloved", author:"Toni Morrison", star:true },
   { id:"b2",  letter:"B", title:"Brave New World", author:"Aldous Huxley", star:true },
-  { id:"b",   letter:"B", title:"The Bell Jar", author:"Sylvia Plath", star:true },
+  { id:"b",   letter:"B", title:"The Bell Jar", author:"Sylvia Plath", star:true, az:true },
   { id:"c7",  letter:"C", title:"Candide", author:"Voltaire", star:true },
   { id:"c4",  letter:"C", title:"Carrie", author:"Stephen King", star:true },
   { id:"c6",  letter:"C", title:"Catch-22", author:"Joseph Heller", star:true },
   { id:"c3",  letter:"C", title:"Charlotte\u2019s Web", author:"E. B. White" },
-  { id:"c",   letter:"C", title:"The Catcher in the Rye", author:"J. D. Salinger", star:true },
+  { id:"c",   letter:"C", title:"The Catcher in the Rye", author:"J. D. Salinger", star:true, az:true },
   { id:"c8",  letter:"C", title:"The Canterbury Tales", author:"Geoffrey Chaucer", star:true },
   { id:"c9",  letter:"C", title:"The Collector", author:"John Fowles", hundred:true },
   { id:"c10", letter:"C", title:"Crime and Punishment", author:"Fyodor Dostoevsky", star:true },
@@ -595,48 +606,48 @@ const SEED = [
   { id:"d5",  letter:"D", title:"A Doll\u2019s House", author:"Henrik Ibsen", star:true },
   { id:"d3",  letter:"D", title:"Death of a Salesman", author:"Arthur Miller", star:true },
   { id:"d4",  letter:"D", title:"Do Androids Dream of Electric Sheep?", author:"Philip K. Dick" },
-  { id:"d",   letter:"D", title:"Dracula", author:"Bram Stoker", star:true },
+  { id:"d",   letter:"D", title:"Dracula", author:"Bram Stoker", star:true, az:true },
   { id:"d2",  letter:"D", title:"The Diary of a Young Girl", author:"Anne Frank", star:true },
-  { id:"e2",  letter:"E", title:"Ethan Frome", author:"Edith Wharton" },
+  { id:"e2",  letter:"E", title:"Ethan Frome", author:"Edith Wharton", az:true },
   { id:"f5",  letter:"F", title:"A Farewell to Arms", author:"Ernest Hemingway" },
   { id:"f6",  letter:"F", title:"Fahrenheit 451", author:"Ray Bradbury", star:true },
-  { id:"f",   letter:"F", title:"Frankenstein", author:"Mary Shelley", star:true },
+  { id:"f",   letter:"F", title:"Frankenstein", author:"Mary Shelley", star:true, az:true },
   { id:"f2",  letter:"F", title:"The Fall of the House of Usher", author:"Edgar Allan Poe", star:true },
   { id:"g2",  letter:"G", title:"The Gift of the Magi", author:"O. Henry" },
   { id:"g3",  letter:"G", title:"The Glass Menagerie", author:"Tennessee Williams", star:true },
-  { id:"g",   letter:"G", title:"The Great Gatsby", author:"F. Scott Fitzgerald", star:true, hundred:true },
+  { id:"g",   letter:"G", title:"The Great Gatsby", author:"F. Scott Fitzgerald", star:true, hundred:true, az:true },
   { id:"g4",  letter:"G", title:"Great Expectations", author:"Charles Dickens", star:true },
   { id:"h2",  letter:"H", title:"Hamlet", author:"William Shakespeare", star:true },
   { id:"h",   letter:"H", title:"The Handmaid\u2019s Tale", author:"Margaret Atwood", star:true },
-  { id:"h3",  letter:"H", title:"The Haunting of Hill House", author:"Shirley Jackson", star:true },
+  { id:"h3",  letter:"H", title:"The Haunting of Hill House", author:"Shirley Jackson", star:true, az:true },
   { id:"h6",  letter:"H", title:"The Hunchback of Notre-Dame", author:"Victor Hugo", star:true },
-  { id:"i",   letter:"I", title:"The Importance of Being Earnest", author:"Oscar Wilde" },
+  { id:"i",   letter:"I", title:"The Importance of Being Earnest", author:"Oscar Wilde", az:true },
   { id:"i2",  letter:"I", title:"The Invisible Man", author:"H. G. Wells" },
-  { id:"j",   letter:"J", title:"Jane Eyre", author:"Charlotte Bront\u00eb", star:true },
-  { id:"k2",  letter:"K", title:"The King in Yellow", author:"Robert W. Chambers" },
+  { id:"j",   letter:"J", title:"Jane Eyre", author:"Charlotte Bront\u00eb", star:true, az:true },
+  { id:"k2",  letter:"K", title:"The King in Yellow", author:"Robert W. Chambers", az:true },
   { id:"k3",  letter:"K", title:"The Kreutzer Sonata", author:"Leo Tolstoy" },
   { id:"l2",  letter:"L", title:"Little Women", author:"Louisa May Alcott", star:true },
   { id:"l",   letter:"L", title:"Lord of the Flies", author:"William Golding", star:true },
   { id:"l4",  letter:"L", title:"The Legend of Sleepy Hollow", author:"Washington Irving" },
   { id:"l3",  letter:"L", title:"The Little Prince", author:"Antoine de Saint-Exup\u00e9ry", star:true },
-  { id:"l5",  letter:"L", title:"The Lottery", author:"Shirley Jackson", hundred:true },
-  { id:"m2",  letter:"M", title:"Macbeth", author:"William Shakespeare", star:true, hundred:true },
+  { id:"l5",  letter:"L", title:"The Lottery", author:"Shirley Jackson", hundred:true, az:true },
+  { id:"m2",  letter:"M", title:"Macbeth", author:"William Shakespeare", star:true, hundred:true, az:true },
   { id:"m",   letter:"M", title:"Murder on the Orient Express", author:"Agatha Christie", star:true },
   { id:"m3",  letter:"M", title:"The Metamorphosis", author:"Franz Kafka", star:true },
   { id:"m4",  letter:"M", title:"The Monkey\u2019s Paw", author:"W. W. Jacobs", star:true },
-  { id:"n",   letter:"N", title:"Night", author:"Elie Wiesel", star:true },
+  { id:"n",   letter:"N", title:"Night", author:"Elie Wiesel", star:true, az:true },
   { id:"o2",  letter:"O", title:"Of Mice and Men", author:"John Steinbeck", star:true },
-  { id:"o6",  letter:"O", title:"One Flew Over the Cuckoo\u2019s Nest", author:"Ken Kesey", star:true },
+  { id:"o6",  letter:"O", title:"One Flew Over the Cuckoo\u2019s Nest", author:"Ken Kesey", star:true, az:true },
   { id:"o3",  letter:"O", title:"Othello", author:"William Shakespeare", star:true },
   { id:"o4",  letter:"O", title:"The Odyssey", author:"Homer", star:true },
   { id:"o7",  letter:"O", title:"The Outsiders", author:"S. E. Hinton", star:true },
   { id:"p1",  letter:"P", title:"Pride and Prejudice", author:"Jane Austen", star:true },
   { id:"p3",  letter:"P", title:"The Phantom of the Opera", author:"Gaston Leroux", star:true },
-  { id:"p2",  letter:"P", title:"The Picture of Dorian Gray", author:"Oscar Wilde", star:true, hundred:true },
+  { id:"p2",  letter:"P", title:"The Picture of Dorian Gray", author:"Oscar Wilde", star:true, hundred:true, az:true },
   { id:"p4",  letter:"P", title:"The Pit and the Pendulum", author:"Edgar Allan Poe" },
   { id:"p6",  letter:"P", title:"The Prime of Miss Jean Brodie", author:"Muriel Spark" },
-  { id:"q",   letter:"Q", title:"Quicksand", author:"Nella Larsen" },
-  { id:"r2",  letter:"R", title:"Rebecca", author:"Daphne du Maurier", star:true, hundred:true },
+  { id:"q",   letter:"Q", title:"Quicksand", author:"Nella Larsen", az:true },
+  { id:"r2",  letter:"R", title:"Rebecca", author:"Daphne du Maurier", star:true, hundred:true, az:true },
   { id:"r3",  letter:"R", title:"Romeo and Juliet", author:"William Shakespeare", star:true },
   { id:"r7",  letter:"R", title:"Rosemary\u2019s Baby", author:"Ira Levin", star:true, hundred:true },
   { id:"r",   letter:"R", title:"The Raven", author:"Edgar Allan Poe", star:true },
@@ -644,36 +655,36 @@ const SEED = [
   { id:"r8",  letter:"R", title:"A Raisin in the Sun", author:"Lorraine Hansberry", star:true },
   { id:"s4",  letter:"S", title:"Slaughterhouse-Five", author:"Kurt Vonnegut", star:true },
   { id:"s2",  letter:"S", title:"The Scarlet Letter", author:"Nathaniel Hawthorne", star:true },
-  { id:"s",   letter:"S", title:"The Shining", author:"Stephen King", star:true, hundred:true },
+  { id:"s",   letter:"S", title:"The Shining", author:"Stephen King", star:true, hundred:true, az:true },
   { id:"s7",  letter:"S", title:"The Stepford Wives", author:"Ira Levin" },
   { id:"s6",  letter:"S", title:"The Strange Case of Dr Jekyll and Mr Hyde", author:"Robert Louis Stevenson", star:true },
   { id:"s3",  letter:"S", title:"The Stranger", author:"Albert Camus", star:true },
   { id:"s8",  letter:"S", title:"A Streetcar Named Desire", author:"Tennessee Williams", star:true, hundred:true },
   { id:"s9",  letter:"S", title:"The Sun Also Rises", author:"Ernest Hemingway", star:true },
   { id:"t",   letter:"T", title:"A Tale of Two Cities", author:"Charles Dickens", star:true },
-  { id:"t2",  letter:"T", title:"The Tell-Tale Heart", author:"Edgar Allan Poe", star:true, hundred:true },
+  { id:"t2",  letter:"T", title:"The Tell-Tale Heart", author:"Edgar Allan Poe", star:true, hundred:true, az:true },
   { id:"t9",  letter:"T", title:"Their Eyes Were Watching God", author:"Zora Neale Hurston", star:true },
   { id:"t3",  letter:"T", title:"The Time Machine", author:"H. G. Wells", star:true },
   { id:"t4",  letter:"T", title:"The Turn of the Screw", author:"Henry James", star:true },
   { id:"t10", letter:"T", title:"The Trial", author:"Franz Kafka" },
   { id:"t5",  letter:"T", title:"Twelve Angry Men", author:"Reginald Rose", star:true },
   { id:"t11", letter:"T", title:"Twelfth Night", author:"William Shakespeare", star:true },
-  { id:"u3",  letter:"U", title:"The Ugly Duckling", author:"Hans Christian Andersen", star:true },
+  { id:"u3",  letter:"U", title:"The Ugly Duckling", author:"Hans Christian Andersen", star:true, az:true },
   { id:"v4",  letter:"V", title:"A Vindication of the Rights of Woman", author:"Mary Wollstonecraft", star:true },
   { id:"v3",  letter:"V", title:"The Vampyre", author:"John Polidori" },
   { id:"v2",  letter:"V", title:"The Velveteen Rabbit", author:"Margery Williams" },
-  { id:"v",   letter:"V", title:"The Virgin Suicides", author:"Jeffrey Eugenides" },
+  { id:"v",   letter:"V", title:"The Virgin Suicides", author:"Jeffrey Eugenides", az:true },
   { id:"w6",  letter:"W", title:"A Wrinkle in Time", author:"Madeleine L\u2019Engle", star:true },
   { id:"w2",  letter:"W", title:"The War of the Worlds", author:"H. G. Wells", star:true },
   { id:"w7",  letter:"W", title:"We Have Always Lived in the Castle", author:"Shirley Jackson", hundred:true },
   { id:"w3",  letter:"W", title:"The Wonderful Wizard of Oz", author:"L. Frank Baum", star:true },
   { id:"w4",  letter:"W", title:"Waiting for Godot", author:"Samuel Beckett", star:true },
-  { id:"w5",  letter:"W", title:"Who\u2019s Afraid of Virginia Woolf?", author:"Edward Albee", star:true, hundred:true },
+  { id:"w5",  letter:"W", title:"Who\u2019s Afraid of Virginia Woolf?", author:"Edward Albee", star:true, hundred:true, az:true },
   { id:"w",   letter:"W", title:"Wuthering Heights", author:"Emily Bront\u00eb", star:true, hundred:true },
-  { id:"x1",  letter:"X", title:"Xingu", author:"Edith Wharton" },
-  { id:"y",   letter:"Y", title:"The Yellow Wallpaper", author:"Charlotte Perkins Gilman" },
+  { id:"x1",  letter:"X", title:"Xingu", author:"Edith Wharton", az:true },
+  { id:"y",   letter:"Y", title:"The Yellow Wallpaper", author:"Charlotte Perkins Gilman", az:true },
   { id:"y2",  letter:"Y", title:"Young Goodman Brown", author:"Nathaniel Hawthorne" },
-  { id:"z3",  letter:"Z", title:"The Zoo Story", author:"Edward Albee" },
+  { id:"z3",  letter:"Z", title:"The Zoo Story", author:"Edward Albee", az:true },
   { id:"x",   letter:"N", title:"1984", author:"George Orwell", star:true }
 ];
 
@@ -887,10 +898,11 @@ function normalize(item){
     item.estPages = (typeof known === "number") ? known : null;
   }
 
-  /* The two list marks. Books added by hand carry neither unless you say so,
+  /* The three list marks. Books added by hand carry none unless you say so,
      and seed() re-applies whatever SEED currently says for the hundred. */
   if(typeof item.star !== "boolean") item.star = false;
   if(typeof item.hundred !== "boolean") item.hundred = false;
+  if(typeof item.az !== "boolean") item.az = false;
   return item;
 }
 
@@ -930,9 +942,10 @@ function seed(){
   SEED.forEach(book => {
     const have = state.items.find(i => i.id === book.id);
     if(have){
-      if(have.star !== !!book.star || have.hundred !== !!book.hundred){
+      if(have.star !== !!book.star || have.hundred !== !!book.hundred || have.az !== !!book.az){
         have.star    = !!book.star;
         have.hundred = !!book.hundred;
+        have.az      = !!book.az;
         changed++;
       }
       return;
@@ -951,13 +964,14 @@ function seed(){
 
 const stateLabel = key => (STATES.find(st => st.key === key) || STATES[0]).label;
 
-/* The corner badges: a star for an Ultimate Classic, a 100 for the 100% Club.
-   Titles carry one, both or neither. */
+/* The corner badges: a star for an Ultimate Classic, a 100 for the 100% Club,
+   an A–Z for the letter's pick. Titles carry any mix of the three. */
 function marks(item){
-  if(!item.star && !item.hundred) return "";
+  if(!item.star && !item.hundred && !item.az) return "";
   return `<span class="clq-marks">` +
     (item.star    ? `<span class="clq-mark" data-mark="star" title="Ultimate Classic">★</span>` : "") +
     (item.hundred ? `<span class="clq-mark" data-mark="hundred" title="100% Club">100</span>` : "") +
+    (item.az      ? `<span class="clq-mark" data-mark="az" title="A–Z pick">A–Z</span>` : "") +
     `</span>`;
 }
 
@@ -1267,6 +1281,7 @@ function visible(){
     if(filter === "all") return true;
     if(filter === "star") return i.star;
     if(filter === "hundred") return i.hundred;
+    if(filter === "az") return i.az;
     return i.status === filter;         /* unread | reading | read | dnf */
   });
 }
@@ -1446,9 +1461,10 @@ function openDetail(id){
       <div style="flex:1 1 auto;min-width:0;">
         <h2>${esc(item.title)}</h2>
         <p class="clq-author">${esc(item.author)}${item.year != null ? ` &middot; ${item.year}` : ""}${item.estPages != null ? ` &middot; ~${item.estPages}pp` : ""}</p>
-        ${item.star || item.hundred ? `<p class="clq-marknote">${[
+        ${item.star || item.hundred || item.az ? `<p class="clq-marknote">${[
           item.star    ? "★ Ultimate Classic" : "",
-          item.hundred ? "100% Club" : ""
+          item.hundred ? "100% Club" : "",
+          item.az      ? `A–Z pick for ${esc(item.letter)}` : ""
         ].filter(Boolean).join(" &middot; ")}</p>` : ""}
       </div>
       <button class="pp-btn pp-btn-quiet pp-btn-sm" id="editBook">Edit</button>
