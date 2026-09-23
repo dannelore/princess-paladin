@@ -26,6 +26,15 @@
      anything you add or edit later is safe. Titles dropped from the list are
      listed in RETIRED and swept off only while nothing has been tracked
      against them -- see seed().
+
+     ONE SHELF, TWO PAGES
+     Reading Quest (/side-quests/reading-quest.html) reads and writes this
+     same document, with the same shape per book. Every book carries
+     `classic`: true for anything on this shelf, false for a book added over
+     there. This page only ever shows and counts the classics -- see shelf()
+     -- but saves the whole document, so nothing added on the other page is
+     lost. Changes made on either page arrive on the other live, through the
+     snapshot listener in load().
      ====================================================================== */
 
   .clq-intro{
@@ -130,6 +139,7 @@
     border-color: var(--dusk);
   }
   .clq-card.is-read{ border-color: var(--sage); }
+  .clq-card.is-dnf{ border-color: var(--line-strong); }
 
   .clq-coverwrap{ position: relative; }
   .clq-cover{
@@ -142,6 +152,7 @@
   /* Covers dim once you've read the book, the way a finished card does on the
      watch trackers — done things shouldn't shout as loudly as the queue. */
   .clq-card.is-read .clq-cover{ opacity: .72; }
+  .clq-card.is-dnf  .clq-cover{ opacity: .5; filter: grayscale(.5); }
 
   /* No cover: the letter carries the tile instead. */
   .clq-nocover{
@@ -260,6 +271,11 @@
     color: #fff;
     background: var(--sage-deep);
     border-color: var(--sage-deep);
+  }
+  .clq-status[data-state="dnf"]{
+    color: #fff;
+    background: var(--unavail);
+    border-color: var(--unavail);
   }
 
   .clq-when{
@@ -454,6 +470,7 @@
     <button class="pp-pill" data-filter="unread" aria-pressed="false">Unread</button>
     <button class="pp-pill" data-filter="reading" aria-pressed="false">Reading</button>
     <button class="pp-pill" data-filter="read" aria-pressed="false">Read</button>
+    <button class="pp-pill" data-filter="dnf" aria-pressed="false">Abandoned</button>
     <button class="pp-pill" data-filter="star" aria-pressed="false">&#9733; Ultimate</button>
     <button class="pp-pill" data-filter="hundred" aria-pressed="false">100% Club</button>
     <span class="spacer"></span>
@@ -776,10 +793,12 @@ const PAGE_ESTIMATES = {
   "Young Goodman Brown": 20
 };
 
+/* Keys match Reading Quest exactly -- it's the same record. */
 const STATES = [
   { key:"unread",  label:"Not started" },
   { key:"reading", label:"Reading" },
-  { key:"read",    label:"Read" }
+  { key:"read",    label:"Read" },
+  { key:"dnf",     label:"Abandoned" }
 ];
 
 /* Format decides how progress is tracked on a current read: e-book by
@@ -806,6 +825,10 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7
 
 /* ---------------- dates ----------------
    Plain YYYY-MM-DD, split by hand so a UTC parse can't shift the day. */
+function today(){
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
+}
 function fmtDate(d){
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || ""));
   if(!m) return "";
@@ -831,6 +854,18 @@ function normalize(item){
   if(!STATES.some(st => st.key === item.status)) item.status = "unread";
   if(typeof item.date !== "string") item.date = "";
   if(typeof item.notes !== "string") item.notes = "";
+
+  /* Shared with Reading Quest. Anything saved before `classic` existed was
+     on this shelf, so missing reads as true; books added over there say
+     false. A book from over there has no shelf letter until it's promoted,
+     so derive one rather than let the letter sort trip on undefined. */
+  if(typeof item.title !== "string") item.title = "";
+  if(typeof item.author !== "string") item.author = "";
+  if(typeof item.classic !== "boolean") item.classic = true;
+  if(typeof item.letter !== "string" || !item.letter) item.letter = deriveLetter(item.title);
+  if(typeof item.started !== "string") item.started = "";
+  if(typeof item.added !== "string") item.added = "";
+  if(typeof item.rating !== "number" || !isFinite(item.rating)) item.rating = 0;
   if(typeof item.cover !== "string") item.cover = "";
   /* Set once a lookup has been attempted, hit or miss, so a book Open Library
      has no cover for isn't re-queried on every single page load. */
@@ -865,9 +900,15 @@ function normalize(item){
    automatically, and a cover is not a reading record. */
 function untouched(item){
   return item.status === "unread"
-    && !item.date && !item.notes
+    && !item.date && !item.started && !item.notes && !item.rating
     && !item.format && !item.ownership
     && !item.pct && !item.page && !item.mins;
+}
+
+/* The books this page is about: everything flagged classic. Reading Quest
+   keeps its own additions in the same document, and they're skipped here. */
+function shelf(){
+  return state.items.filter(i => i.classic);
 }
 
 /* Seeds anything missing by id, sweeps off retired titles that were never
@@ -897,7 +938,7 @@ function seed(){
       return;
     }
     state.items.push(normalize(Object.assign({}, book,
-      { status:"unread", date:"", notes:"", cover:"", coverTried:false })));
+      { classic:true, status:"unread", date:"", notes:"", cover:"", coverTried:false })));
     changed++;
   });
 
@@ -1105,10 +1146,10 @@ function saveBook(){
     }
   }else{
     state.items.push(normalize({
-      id: uid(), letter, title, author,
+      id: uid(), letter, title, author, classic: true,
       year: (year != null && isFinite(year)) ? year : null,
       estPages: (estPages != null && isFinite(estPages)) ? estPages : null,
-      status: "unread", date: "", notes: "",
+      status: "unread", started: "", date: "", added: today(), notes: "",
       cover: pendingCover, coverTried: !!pendingCover
     }));
   }
@@ -1170,16 +1211,63 @@ async function load(){
   if(added) save();
   else setSync(docRef ? "Synced" : "Offline");
 
+  /* Live updates from Reading Quest (or this page in another tab). Our own
+     writes come back through here too, flagged as pending, and are skipped. */
+  if(docRef){
+    docRef.onSnapshot(s => {
+      if(!s.exists || s.metadata.hasPendingWrites) return;
+      const data = s.data();
+      if(Array.isArray(data.items)) applyRemote(data);
+    }, err => console.error("Live sync stopped:", err));
+  }
+
   fillCovers();
+}
+
+/* JSON with keys in a fixed order, so two copies of the same shelf compare
+   equal however their objects were built. */
+const canon = v => JSON.stringify(v, (k, val) =>
+  (val && typeof val === "object" && !Array.isArray(val))
+    ? Object.keys(val).sort().reduce((o, key) => { o[key] = val[key]; return o; }, {})
+    : val);
+
+/* A change that arrived from the other page (or another tab). Swap the shelf
+   in and redraw. If the detail panel is open, redraw that too, but keep any
+   half-typed note -- it hasn't been saved yet and it's yours. No seeding or
+   saving here: the other page never removes a seeded title, so there's
+   nothing to put back, and writing on receipt would ping-pong. */
+function applyRemote(data){
+  const items = data.items.map(i => normalize(Object.assign({}, i)));
+  if(canon(items) === canon(state.items)) return;
+
+  const draft = openId && $("notes") ? $("notes").value : null;
+  state = Object.assign({}, data, { items });
+  state.items.sort((a,b) => a.letter === b.letter
+    ? a.title.localeCompare(b.title)
+    : a.letter.localeCompare(b.letter));
+  localStorage.setItem(CACHE_KEY, JSON.stringify(state));
+  render();
+
+  if(openId){
+    if(state.items.some(i => i.id === openId)){
+      openDetail(openId);
+      if(draft != null && $("notes")) $("notes").value = draft;
+    }else{
+      openId = null;
+      $("detail").classList.remove("open");
+      $("overlay").classList.remove("open");
+    }
+  }
+  setSync("Updated");
 }
 
 /* ---------------- rendering ---------------- */
 function visible(){
-  return state.items.filter(i => {
+  return shelf().filter(i => {
     if(filter === "all") return true;
     if(filter === "star") return i.star;
     if(filter === "hundred") return i.hundred;
-    return i.status === filter;         /* unread | reading | read */
+    return i.status === filter;         /* unread | reading | read | dnf */
   });
 }
 
@@ -1255,7 +1343,7 @@ const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
    letter until every letter has had a first finished book. This just makes
    that visible — it doesn't stop anything on its own (see setStatus). */
 function readLetters(){
-  return new Set(state.items.filter(i => i.status === "read").map(i => i.letter));
+  return new Set(shelf().filter(i => i.status === "read").map(i => i.letter));
 }
 
 function renderRoundOne(){
@@ -1276,8 +1364,9 @@ function renderRoundOne(){
 }
 
 function renderProgress(){
-  const total = state.items.length;
-  const done  = state.items.filter(i => i.status === "read").length;
+  const books = shelf();
+  const total = books.length;
+  const done  = books.filter(i => i.status === "read").length;
 
   $("progress").innerHTML = `
     <div class="pp-panel pp-panel-tight clq-track">
@@ -1294,7 +1383,7 @@ function render(){
   renderProgress();
 
   const rows = sorted(visible());
-  const total = state.items.length;
+  const total = shelf().length;
   $("count").textContent = rows.length === total
     ? `${total} books`
     : `Showing ${rows.length} of ${total}`;
@@ -1305,9 +1394,10 @@ function render(){
   }
 
   $("grid").innerHTML = rows.map(item => {
-    const when = item.status === "read" && item.date
-      ? `<p class="clq-when">Finished ${esc(fmtDate(item.date))}</p>`
-      : "";
+    let when = "";
+    if(item.status === "read" && item.date)            when = `<p class="clq-when">Finished ${esc(fmtDate(item.date))}</p>`;
+    else if(item.status === "reading" && item.started) when = `<p class="clq-when">Started ${esc(fmtDate(item.started))}</p>`;
+    else if(item.status === "dnf" && item.date)        when = `<p class="clq-when">Put down ${esc(fmtDate(item.date))}</p>`;
 
     const prog = item.status === "reading" && item.format
       ? `<span class="clq-cardprogress" aria-hidden="true"><span class="clq-cardprogress-fill" style="width:${Math.round(progressFrac(item) * 100)}%"></span></span>
@@ -1321,7 +1411,9 @@ function render(){
               onerror="this.outerHTML='<div class=\'clq-nocover\'>${esc(item.letter)}</div>'">`
       : `<div class="clq-nocover">${esc(item.letter)}</div>`;
 
-    return `<button class="clq-card${item.status === "read" ? " is-read" : ""}" data-open="${esc(item.id)}">
+    const cls = item.status === "read" ? " is-read" : item.status === "dnf" ? " is-dnf" : "";
+
+    return `<button class="clq-card${cls}" data-open="${esc(item.id)}">
       <span class="clq-coverwrap">
         ${art}
         <span class="clq-letter" aria-hidden="true">${esc(item.letter)}</span>
@@ -1369,8 +1461,12 @@ function openDetail(id){
         ${STATES.map(st => `<button data-set="${st.key}"
             aria-pressed="${item.status === st.key}">${esc(st.label)}</button>`).join("")}
       </div>
-      <div class="clq-finished" ${item.status === "read" ? "" : 'style="display:none;"'}>
-        <label for="finishedOn">Finished</label>
+      <div class="clq-finished" ${item.status !== "unread" ? "" : 'style="display:none;"'}>
+        <label for="startedOn">Started</label>
+        <input id="startedOn" type="date" value="${esc(item.started)}">
+      </div>
+      <div class="clq-finished" ${item.status === "read" || item.status === "dnf" ? "" : 'style="display:none;"'}>
+        <label for="finishedOn">${item.status === "dnf" ? "Put down" : "Finished"}</label>
         <input id="finishedOn" type="date" value="${esc(item.date)}">
       </div>
     </div>
@@ -1452,9 +1548,11 @@ function closeDetail(){
   $("overlay").classList.remove("open");
 }
 
-/* Marking a book read stamps today's date if there isn't one, because the day
-   you tick it is almost always the day you finished it. Moving off "read"
-   keeps the date, so a mis-tap doesn't lose the record. */
+/* Starting a book stamps today as the start date if there isn't one, and
+   marking it read (or putting it down) stamps today as the finish, because
+   the day you tick it is almost always the day it happened. Moving back off
+   a state keeps its dates, so a mis-tap doesn't lose the record. Same rule
+   as Reading Quest, so the two pages stamp the same thing. */
 function setStatus(id, status){
   const item = state.items.find(i => i.id === id);
   if(!item) return;
@@ -1474,10 +1572,8 @@ function setStatus(id, status){
   }
 
   item.status = status;
-  if(status === "read" && !item.date){
-    const t = new Date();
-    item.date = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
-  }
+  if(status !== "unread" && !item.started) item.started = today();
+  if((status === "read" || status === "dnf") && !item.date) item.date = today();
   save();
   openDetail(id);
 }
@@ -1580,11 +1676,10 @@ document.addEventListener("change", e => {
     return;
   }
 
-  if(e.target.id !== "finishedOn") return;
   const item = state.items.find(i => i.id === openId);
   if(!item) return;
-  item.date = e.target.value;
-  save();
+  if(e.target.id === "startedOn"){ item.started = e.target.value; save(); return; }
+  if(e.target.id === "finishedOn"){ item.date = e.target.value; save(); return; }
 });
 
 /* A cover you set by hand counts as tried, so the automatic pass leaves it
