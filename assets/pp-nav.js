@@ -31,8 +31,8 @@
 
      ribbon dropdown  lists a folder's SECTION INDEXES only. It's there to get
                       you across the site, so it stays short — a folder with
-                      one section (Castle, Side Quests, Templates, Paladin)
-                      gets a plain link and no menu at all. Only Princess has
+                      one section (Castle, Templates, Paladin) gets a plain
+                      link and no menu at all. Princess and Side Quests have
                       enough sections to be worth a dropdown.
 
      mini navbar      the row under the ribbon. Lists the section you're
@@ -120,18 +120,33 @@ window.PPNav = (function(){
       ]
     },
 
+    /* Each quest family is its own section, with the parent quest as the
+       section index. The URLs stay flat in /side-quests/ — the families only
+       exist here, so a child like Classics sits under Reading in the nav
+       without moving. The hub gets the same families as wide tiles. */
     {
       key: 'side-quests', label: 'Side Quests', href: '/side-quests/', nav: true,
       sections: [
         { name:'Side Quests', href:'/side-quests/', indexLabel:'Side Quests',
-          note:'The tile grid', pages:[
-          { label:'Bucket Quest', href:'/side-quests/bucket-quest.html', note:'Couples bucket list and its timeline' },
-          { label:'Couch Quest',  href:'/side-quests/couch-quest.html',  note:'Watch list' },
-          { label:'Spooky Quest', href:'/side-quests/spooky-quest.html', note:'1 September – 31 October' },
-          { label:'Classics Quest', href:'/side-quests/classics-quest.html', note:'A hundred classics, A to Z' },
-          { label:'Reading Quest', href:'/side-quests/reading-quest.html', note:'The to-be-read pile, and everything read' },
-          { label:'Watch History', href:'/side-quests/watch-history.html', note:'Both watch lists, in the order you finished them' },
+          note:'The tile grid', pages:[] },
+
+        { name:'Bucket Quest', href:'/side-quests/bucket-quest.html', indexLabel:'Bucket Quest',
+          note:'Couples bucket list and its timeline', pages:[
           { label:'Wedding Quest', href:'/side-quests/wedding-quest.html', note:'The traditional planning checklist, editable' }
+        ]},
+
+        { name:'Game Quest', href:'/side-quests/game-quest.html', indexLabel:'Game Quest',
+          note:'The backlog', pages:[] },
+
+        { name:'Reading Quest', href:'/side-quests/reading-quest.html', indexLabel:'Reading Quest',
+          note:'The to-be-read pile, and everything read', pages:[
+          { label:'Classics Quest', href:'/side-quests/classics-quest.html', note:'A hundred classics, A to Z' }
+        ]},
+
+        { name:'Couch Quest', href:'/side-quests/couch-quest.html', indexLabel:'Couch Quest',
+          note:'Watch list', pages:[
+          { label:'Spooky Quest',  href:'/side-quests/spooky-quest.html',  note:'1 September – 31 October' },
+          { label:'Watch History', href:'/side-quests/watch-history.html', note:'Both watch lists, in the order you finished them' }
         ]}
       ]
     },
