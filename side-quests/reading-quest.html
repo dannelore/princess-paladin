@@ -15,15 +15,23 @@
 
 <style>
   /* ======================================================================
-     THE QUEST TO READ EVERYTHING ELSE
+     THE QUEST TO READ EVERYTHING
 
-     A general reading tracker, and Danni's alone — the same shape as the
-     Classics Quest shelf, minus the alphabet. No seeded list, no shelf
-     letters, no house rules: the pile is whatever you add to it. Each book
-     carries one status, a started date, a finished date and a verdict.
+     The whole reading tracker, and Danni's alone — the same shape as the
+     Classics Quest shelf, minus the alphabet. No shelf letters on show, no
+     house rules: every book on the pile, classics included, with one status,
+     a started date, a finished date and a verdict each.
 
-     Firestore: sidequest/reading-list
-     Nothing is seeded, so the shelf starts empty and grows from the form.
+     ONE SHELF, TWO PAGES
+     This page and Classics Quest read and write the SAME Firestore document,
+     sidequest/classics-list, and keep the same shape per book. A book carries
+     `classic: true` if it belongs on the Classics Quest shelf (the seeded
+     hundred, plus anything you promote from here); Classics Quest shows only
+     those, this page shows everything. Ticking a book read on either page
+     shows up on the other, live, through the snapshot listener in load().
+
+     Classics themselves are added and removed over on Classics Quest, which
+     owns the seed list -- deleting one here would only see it re-seeded.
      ====================================================================== */
 
   .rq-intro{
@@ -36,6 +44,7 @@
     margin: 0 auto 22px;
     line-height: 1.5;
   }
+  .rq-intro a{ color: var(--dusk-deep); }
 
   /* ---- progress ---- */
   .rq-progress{ margin-bottom: 20px; display: flex; flex-direction: column; gap: 14px; }
@@ -98,7 +107,7 @@
 
   /* ---- the shelf ----
      Cover-forward, same as the classics shelf. No cover means a drop-cap
-     tile of the title's first letter, so the grid never has a hole. */
+     tile of the shelf letter, so the grid never has a hole. */
   .rq-grid{
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -152,6 +161,23 @@
     font-weight: 600;
     line-height: 1;
     color: var(--dusk);
+  }
+
+  /* A small "classic" tag, top-right, on anything that also lives on the
+     Classics Quest shelf. */
+  .rq-classic{
+    position: absolute;
+    top: 6px; right: 6px;
+    font-family: var(--font-body);
+    font-size: .5rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--dusk-deep);
+    background: rgba(255,253,248,.94);
+    border-radius: 999px;
+    padding: 3px 7px;
+    box-shadow: 0 1px 4px rgba(46,36,31,.22);
   }
 
   .rq-body{ padding: 10px 11px 12px; display: flex; flex-direction: column; gap: 2px; }
@@ -289,6 +315,17 @@
     font-weight: 600;
     color: var(--dusk);
   }
+  /* The two classics-list marks spelled out under the title, same as the
+     classics page does. */
+  .rq-marknote{
+    font-family: var(--font-body);
+    font-size: .6rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin: 4px 0 0;
+  }
   .rq-coverrow{ display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
   .rq-coverrow input{ flex: 1 1 200px; min-width: 0; }
   .rq-coverstate{
@@ -297,6 +334,14 @@
     font-size: .85rem;
     color: var(--ink-soft);
   }
+  .rq-shelfnote{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .85rem;
+    color: var(--ink-soft);
+    margin: 8px 0 0;
+  }
+  .rq-shelfnote a{ color: var(--dusk-deep); }
 
   .rq-progressrow{
     display: flex;
@@ -420,22 +465,24 @@
 <div class="pp-wrap">
 
   <div class="pp-page-title">
-    <h2>The Quest to Read Everything Else</h2>
+    <h2>The Quest to Read Everything</h2>
   </div>
 
   <p class="rq-intro">
-    Everything that isn&rsquo;t a classic. The to-be-read pile, whatever&rsquo;s
-    on the go right now, and the ones already finished, with a verdict on each.
+    Every book on the pile, the <a href="/side-quests/classics-quest.html">classics</a>
+    included. Whatever&rsquo;s on the go right now, whatever&rsquo;s waiting, and
+    the ones already finished, with a verdict on each.
   </p>
 
   <div class="rq-progress" id="progress"></div>
 
   <div class="rq-bar">
     <button class="pp-pill" data-filter="all" aria-pressed="true">All</button>
-    <button class="pp-pill" data-filter="tbr" aria-pressed="false">To read</button>
+    <button class="pp-pill" data-filter="unread" aria-pressed="false">To read</button>
     <button class="pp-pill" data-filter="reading" aria-pressed="false">Reading</button>
     <button class="pp-pill" data-filter="read" aria-pressed="false">Read</button>
     <button class="pp-pill" data-filter="dnf" aria-pressed="false">Abandoned</button>
+    <button class="pp-pill" data-filter="classic" aria-pressed="false">Classics</button>
     <span class="spacer"></span>
     <button class="pp-btn" id="addBtn">+ Add a book</button>
     <span class="rq-count" id="count"></span>
@@ -524,11 +571,16 @@
 
 const firebaseConfig = window.PPFirebaseConfig;
 
-const DOC_PATH  = "sidequest/reading-list";
-const CACHE_KEY = "pp_reading_list";
+/* Shared with Classics Quest -- see the note at the top of the page. The
+   local cache key is shared too, so an offline edit on one page is what the
+   other page sees when it opens. */
+const DOC_PATH  = "sidequest/classics-list";
+const CACHE_KEY = "pp_classics_list";
+const CLASSICS_PAGE = "/side-quests/classics-quest.html";
 
+/* Status keys match Classics Quest exactly: it's the same record. */
 const STATES = [
-  { key:"tbr",     label:"To read" },
+  { key:"unread",  label:"To read" },
   { key:"reading", label:"Reading" },
   { key:"read",    label:"Read" },
   { key:"dnf",     label:"Abandoned" }
@@ -570,18 +622,35 @@ function fmtDate(d){
 }
 const yearOf = d => { const m = /^(\d{4})-/.exec(String(d || "")); return m ? +m[1] : null; };
 
+/* Library-style alphabetizing, same rule as Classics Quest: "The Bell Jar"
+   shelves under B. Only used to give a book a letter when it has none. */
+function deriveLetter(title){
+  const stripped = String(title || "").trim().replace(/^(the|an?)\s+/i, "");
+  const m = /[a-zA-Z]/.exec(stripped) || /[a-zA-Z]/.exec(title || "");
+  return m ? m[0].toUpperCase() : "?";
+}
+
 /* ---------------- shape ----------------
-   status is one of STATES; started is the day you began, date is the day
-   you finished (kept as `date` to match the classics shelf). rating is 0
-   for unrated, else 1–5. added is the day the book joined the pile. */
+   The one record both pages share. status is one of STATES; started is the
+   day you began, date the day you finished (or put it down). rating is 0
+   for unrated, else 1–5. added is the day the book joined the pile.
+
+   `classic` is whether the book sits on the Classics Quest shelf. Anything
+   already saved before this flag existed was a classic, so the default is
+   true; books added from this page say false explicitly. */
 function normalize(item){
-  if(!STATES.some(st => st.key === item.status)) item.status = "tbr";
+  if(typeof item.title !== "string") item.title = "";
+  if(typeof item.author !== "string") item.author = "";
+  if(typeof item.letter !== "string" || !item.letter) item.letter = deriveLetter(item.title);
+  if(typeof item.classic !== "boolean") item.classic = true;
+  if(typeof item.star !== "boolean") item.star = false;
+  if(typeof item.hundred !== "boolean") item.hundred = false;
+  if(!STATES.some(st => st.key === item.status)) item.status = "unread";
   if(typeof item.started !== "string") item.started = "";
   if(typeof item.date !== "string") item.date = "";
   if(typeof item.added !== "string") item.added = "";
   if(typeof item.notes !== "string") item.notes = "";
   if(typeof item.cover !== "string") item.cover = "";
-  if(typeof item.author !== "string") item.author = "";
   /* Set once a lookup has been attempted, hit or miss, so a book Open Library
      has no cover for isn't re-queried on every single page load. */
   if(typeof item.coverTried !== "boolean") item.coverTried = false;
@@ -601,7 +670,6 @@ function normalize(item){
 }
 
 const stateLabel = key => (STATES.find(st => st.key === key) || STATES[0]).label;
-const initial = title => (String(title || "").trim().replace(/^(the|an?)\s+/i, "").slice(0,1) || "?").toUpperCase();
 
 /* 0–1 fraction complete, by format. Unset totals read as 0 rather than
    dividing by zero. */
@@ -706,7 +774,7 @@ function showBookResults(rows){
     b.className = "cq-result";
     b.innerHTML =
       (r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy">`
-               : `<div class="rq-nocover" style="aspect-ratio:2/3;">${esc(initial(r.name))}</div>`) +
+               : `<div class="rq-nocover" style="aspect-ratio:2/3;">${esc(deriveLetter(r.name))}</div>`) +
       `<div class="cq-rname">${esc(r.name)}</div>` +
       `<div class="cq-rmeta">${esc(r.meta)}</div>`;
     b.onclick = () => pickBook(r);
@@ -739,7 +807,8 @@ function openForm(item){
   $("results").innerHTML = "";
   $("results").classList.remove("open");
   $("lookupHint").textContent = "";
-  $("deleteBookBtn").style.display = item ? "inline-block" : "none";
+  /* Classics are removed over on Classics Quest, which owns the seed list. */
+  $("deleteBookBtn").style.display = item && !item.classic ? "inline-block" : "none";
   $("form").classList.add("open");
   $("fTitle").focus();
 }
@@ -770,10 +839,10 @@ function saveBook(){
     }
   }else{
     state.items.push(normalize({
-      id: uid(), title, author,
+      id: uid(), title, author, letter: deriveLetter(title), classic: false,
       year: (year != null && isFinite(year)) ? year : null,
       estPages: (estPages != null && isFinite(estPages)) ? estPages : null,
-      status: "tbr", started: "", date: "", added: today(), notes: "",
+      status: "unread", started: "", date: "", added: today(), notes: "",
       cover: pendingCover, coverTried: !!pendingCover
     }));
   }
@@ -786,6 +855,11 @@ function saveBook(){
 
 function deleteBook(){
   if(!editId) return;
+  const item = state.items.find(i => i.id === editId);
+  if(item && item.classic){
+    alert("This one lives on the Classics Quest shelf — remove it from there instead.");
+    return;
+  }
   if(!confirm("Remove this book from the pile?")) return;
   state.items = state.items.filter(i => i.id !== editId);
   closeForm();
@@ -807,6 +881,38 @@ function save(){
   docRef.set(state)
     .then(() => setSync("Saved"))
     .catch(err => { console.error("Sync failed:", err); setSync("Offline — saved here", "error"); });
+}
+
+/* JSON with keys in a fixed order, so two copies of the same shelf compare
+   equal however their objects were built. */
+const canon = v => JSON.stringify(v, (k, val) =>
+  (val && typeof val === "object" && !Array.isArray(val))
+    ? Object.keys(val).sort().reduce((o, key) => { o[key] = val[key]; return o; }, {})
+    : val);
+
+/* A change that arrived from the other page (or another tab). Swap the shelf
+   in and redraw. If the detail panel is open, redraw that too, but keep any
+   half-typed note -- it hasn't been saved yet and it's yours. */
+function applyRemote(data){
+  const items = data.items.map(i => normalize(Object.assign({}, i)));
+  if(canon(items) === canon(state.items)) return;
+
+  const draft = openId && $("notes") ? $("notes").value : null;
+  state = Object.assign({}, data, { items });
+  localStorage.setItem(CACHE_KEY, JSON.stringify(state));
+  render();
+
+  if(openId){
+    if(state.items.some(i => i.id === openId)){
+      openDetail(openId);
+      if(draft != null && $("notes")) $("notes").value = draft;
+    }else{
+      openId = null;
+      $("detail").classList.remove("open");
+      $("overlay").classList.remove("open");
+    }
+  }
+  setSync("Updated");
 }
 
 async function load(){
@@ -833,12 +939,26 @@ async function load(){
   render();
   setSync(docRef ? "Synced" : "Offline");
 
+  /* Live updates from Classics Quest (or this page in another tab). Our own
+     writes come back through here too, flagged as pending, and are skipped. */
+  if(docRef){
+    docRef.onSnapshot(s => {
+      if(!s.exists || s.metadata.hasPendingWrites) return;
+      const data = s.data();
+      if(Array.isArray(data.items)) applyRemote(data);
+    }, err => console.error("Live sync stopped:", err));
+  }
+
   fillCovers();
 }
 
 /* ---------------- rendering ---------------- */
 function visible(){
-  return state.items.filter(i => filter === "all" || i.status === filter);
+  return state.items.filter(i => {
+    if(filter === "all") return true;
+    if(filter === "classic") return i.classic;
+    return i.status === filter;
+  });
 }
 
 /* ---------------- sorting ----------------
@@ -856,7 +976,7 @@ const byTitle = (a, b) => sortTitle(a.title).localeCompare(sortTitle(b.title));
    tracking was never filled in — the status is the more trustworthy signal. */
 function completionFrac(item){
   if(item.status === "read") return 1;
-  if(item.status === "tbr") return 0;
+  if(item.status === "unread") return 0;
   return progressFrac(item);
 }
 
@@ -903,7 +1023,8 @@ function sorted(rows){
   }else if(sortBy === "pages-desc"){
     out.sort((a,b) => nullLast(i => i.estPages, a, b, false));
   }else{
-    /* Recently added. Books saved before `added` existed sort last. */
+    /* Recently added. The seeded classics have no added date, so they sit
+       after everything you've added by hand, alphabetically. */
     out.sort((a,b) => nullLast(i => orNull(i.added), a, b, false));
   }
   return out;
@@ -935,7 +1056,7 @@ function renderYears(){
   }).join("");
 
   const reading = state.items.filter(i => i.status === "reading").length;
-  const tbr = state.items.filter(i => i.status === "tbr").length;
+  const tbr = state.items.filter(i => i.status === "unread").length;
   const note = [
     reading ? `${reading} on the go` : "Nothing on the go",
     `${tbr} waiting in the pile`
@@ -981,12 +1102,10 @@ function render(){
   }
 
   $("grid").innerHTML = rows.map(item => {
-    const letter = initial(item.title);
-
     let when = "";
-    if(item.status === "read" && item.date)         when = `<p class="rq-when">Finished ${esc(fmtDate(item.date))}</p>`;
+    if(item.status === "read" && item.date)           when = `<p class="rq-when">Finished ${esc(fmtDate(item.date))}</p>`;
     else if(item.status === "reading" && item.started) when = `<p class="rq-when">Started ${esc(fmtDate(item.started))}</p>`;
-    else if(item.status === "dnf" && item.date)     when = `<p class="rq-when">Put down ${esc(fmtDate(item.date))}</p>`;
+    else if(item.status === "dnf" && item.date)        when = `<p class="rq-when">Put down ${esc(fmtDate(item.date))}</p>`;
 
     const verdict = item.status === "read" && item.rating ? stars(item.rating, "rq-stars") : "";
 
@@ -999,14 +1118,15 @@ function render(){
        than leaving a broken-image box on the shelf. */
     const art = item.cover
       ? `<img class="rq-cover" src="${esc(item.cover)}" alt="" loading="lazy"
-              onerror="this.outerHTML='<div class=\'rq-nocover\'>${esc(letter)}</div>'">`
-      : `<div class="rq-nocover">${esc(letter)}</div>`;
+              onerror="this.outerHTML='<div class=\'rq-nocover\'>${esc(item.letter)}</div>'">`
+      : `<div class="rq-nocover">${esc(item.letter)}</div>`;
 
     const cls = item.status === "read" ? " is-read" : item.status === "dnf" ? " is-dnf" : "";
 
     return `<button class="rq-card${cls}" data-open="${esc(item.id)}">
       <span class="rq-coverwrap">
         ${art}
+        ${item.classic ? `<span class="rq-classic" title="On the Classics Quest shelf">Classic</span>` : ""}
         <span class="rq-status" data-state="${item.status}">${esc(stateLabel(item.status))}</span>
       </span>
       <span class="rq-body">
@@ -1026,19 +1146,22 @@ function openDetail(id){
   const item = state.items.find(i => i.id === id);
   if(!item) return;
   openId = id;
-  const letter = initial(item.title);
-  const showDates = item.status !== "tbr";
+  const showDates = item.status !== "unread";
   const showFinished = item.status === "read" || item.status === "dnf";
 
   $("detail").innerHTML = `
     <div class="rq-detail-head">
       ${item.cover
         ? `<img class="rq-detail-cover" src="${esc(item.cover)}" alt=""
-                onerror="this.outerHTML='<div class=\'rq-detail-nocover\'>${esc(letter)}</div>'">`
-        : `<div class="rq-detail-nocover">${esc(letter)}</div>`}
+                onerror="this.outerHTML='<div class=\'rq-detail-nocover\'>${esc(item.letter)}</div>'">`
+        : `<div class="rq-detail-nocover">${esc(item.letter)}</div>`}
       <div style="flex:1 1 auto;min-width:0;">
         <h2>${esc(item.title)}</h2>
         <p class="rq-author">${esc(item.author)}${item.year != null ? ` &middot; ${item.year}` : ""}${item.estPages != null ? ` &middot; ~${item.estPages}pp` : ""}</p>
+        ${item.star || item.hundred ? `<p class="rq-marknote">${[
+          item.star    ? "★ Ultimate Classic" : "",
+          item.hundred ? "100% Club" : ""
+        ].filter(Boolean).join(" &middot; ")}</p>` : ""}
         ${item.added ? `<p class="rq-when">Added ${esc(fmtDate(item.added))}</p>` : ""}
       </div>
       <button class="pp-btn pp-btn-quiet pp-btn-sm" id="editBook">Edit</button>
@@ -1116,6 +1239,16 @@ function openDetail(id){
     </div>` : ""}
 
     <div class="rq-block">
+      <div class="rq-block-name">Classics Quest</div>
+      <div class="rq-states">
+        <button id="toggleClassic" aria-pressed="${item.classic}">On the classics shelf</button>
+      </div>
+      <p class="rq-shelfnote">${item.classic
+        ? `Shelved under ${esc(item.letter)}. <a href="${CLASSICS_PAGE}">Open it on Classics Quest</a> — any change you make there shows up here, and the other way round.`
+        : "Not on the classics shelf. Turn this on and it joins the alphabet over there, sharing this same record."}</p>
+    </div>
+
+    <div class="rq-block">
       <div class="rq-block-name">Cover</div>
       <div class="rq-coverrow">
         <input class="pp-input" id="coverUrl" type="url" placeholder="Paste an image URL"
@@ -1160,7 +1293,7 @@ function setStatus(id, status){
   if(!item) return;
 
   item.status = status;
-  if(status !== "tbr" && !item.started) item.started = today();
+  if(status !== "unread" && !item.started) item.started = today();
   if((status === "read" || status === "dnf") && !item.date) item.date = today();
   save();
   openDetail(id);
@@ -1170,6 +1303,17 @@ function setRating(id, n){
   const item = state.items.find(i => i.id === id);
   if(!item) return;
   item.rating = item.rating === n ? 0 : n;
+  save();
+  openDetail(id);
+}
+
+/* Promote a book onto the Classics Quest shelf, or take it off. It keeps
+   the same record either way; only which page shows it changes. */
+function setClassic(id, on){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+  item.classic = !!on;
+  if(item.classic && (!item.letter || item.letter === "?")) item.letter = deriveLetter(item.title);
   save();
   openDetail(id);
 }
@@ -1226,6 +1370,10 @@ document.addEventListener("click", e => {
 
   if(e.target.id === "coverFind"){ lookupOne(openId); return; }
   if(e.target.id === "coverClear"){ setCover(openId, ""); return; }
+  if(e.target.id === "toggleClassic" && openId){
+    setClassic(openId, e.target.getAttribute("aria-pressed") !== "true");
+    return;
+  }
 
   if(e.target.id === "addBtn"){ openForm(null); return; }
   if(e.target.id === "editBook" && openId){ openForm(state.items.find(i => i.id === openId)); return; }
