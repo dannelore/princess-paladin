@@ -628,7 +628,6 @@ const DEFAULT_PANTRY_GROUPS = {
     'garlic',
     'milk',
     'olive oil',
-    'potatoes',
     'rice',
     'bread',
     'cooking spray'
@@ -637,19 +636,14 @@ const DEFAULT_PANTRY_GROUPS = {
   'Fridge': [
     'cream cheese',
     'grated cheese',
-    'salsa',
-    'shredded cheese',
-    'sliced cheese',
-    'sour cream'
+    'sliced cheese'
   ],
 
   'Pantry': [
-    'alfredo sauce',
     'apple cider vinegar',
     'cornstarch',
     'egg noodles',
     'pasta',
-    'pasta sauce',
     'peanut butter',
     'Nutella',
     'red cooking wine',
@@ -897,7 +891,8 @@ const UNIT_ALIASES = {
   grams:'g', gram:'g', kilograms:'kg', kilogram:'kg',
   liters:'l', litres:'l', liter:'l', litre:'l',
   milliliters:'ml', millilitres:'ml',
-  cloves:'clove', cans:'can', sticks:'stick', bunches:'bunch', pinches:'pinch'
+  cloves:'clove', cans:'can', sticks:'stick', bunches:'bunch', pinches:'pinch',
+  jars:'jar', bags:'bag', boxes:'box', slices:'slice', packages:'package', containers:'container', ribs:'rib'
 };
 function canonUnit(u){
   const c = (u || '').trim().toLowerCase();
@@ -918,7 +913,17 @@ function mergeKey(name){
 function round2(n){ return Math.round(n * 100) / 100; }
 
 // Abbreviations never pluralize — "3 tbsp", not "3 tbsps"
-const PLURAL_UNITS = ['cup','clove','can','stick','bunch','pinch','slice','package','box','bag'];
+const PLURAL_UNITS = ['cup','clove','can','stick','bunch','pinch','slice','package','box','bag','jar','container','rib'];
+function pluralUnit(unit){ return /(ch|sh|x|s)$/.test(unit) ? unit + 'es' : unit + 's'; } // box → boxes
+
+// 0.5 → "½", 1.25 → "1¼" — reads like a recipe card, not a calculator
+const FRACTION_GLYPHS = [[1/8,'⅛'],[1/4,'¼'],[1/3,'⅓'],[1/2,'½'],[2/3,'⅔'],[3/4,'¾']];
+function fmtAmount(n){
+  const whole = Math.floor(n), frac = n - whole;
+  if (frac < 0.01) return String(whole);
+  const hit = FRACTION_GLYPHS.find(([v]) => Math.abs(v - frac) < 0.01);
+  return hit ? (whole || '') + hit[1] : String(round2(n));
+}
 
 // Turns { cup: 3, tbsp: 2 } into "3 cups + 2 tbsp"
 function formatQty(units){
@@ -926,9 +931,9 @@ function formatQty(units){
     .filter(([, qty]) => qty > 0)
     .map(([unit, qty]) => {
       const n = round2(qty);
-      if (!unit) return String(n);
-      const plural = n !== 1 && PLURAL_UNITS.includes(unit);
-      return n + ' ' + (plural ? unit + 's' : unit);
+      if (!unit) return fmtAmount(n);
+      const plural = n > 1 && PLURAL_UNITS.includes(unit);
+      return fmtAmount(n) + ' ' + (plural ? pluralUnit(unit) : unit);
     });
   if (!parts.length) return '';
   return parts.join(' + ');
@@ -962,6 +967,9 @@ function addToMap(map, name, qty, unit, source, extra){
   return entry;
 }
 
+// Recipe ingredients that stay in the recipe but never go on the list
+const NEVER_BUY = new Set(['water']);
+
 function renderShopList(){
   const allRecipes = getWeekRecipesForMatching();
   const pantryKeys = getPantryItems().map(mergeKey);
@@ -971,6 +979,7 @@ function renderShopList(){
 
   // Everything this week's recipes call for, merged by ingredient
   allRecipes.forEach(r => (r.ingredients || []).forEach(ing => {
+    if (NEVER_BUY.has(mergeKey(ing.name))) return;
     if (matchesPantry(ing.name)) return; // flagged in the Pantry sidebar instead
     addToMap(map, ing.name, ing.qty, ing.unit, r.name);
   }));

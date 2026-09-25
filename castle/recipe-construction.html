@@ -233,22 +233,51 @@ function getRecipes(){ return mealState.recipes; }
 function saveRecipes(list){ mealState.recipes = list; saveMealState(); }
 function uid(){ return 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
+// Recipes copied from the web use "½" rather than "1/2" — both have to parse,
+// or the amount gets stuck in the ingredient's name and never adds up.
+const UNICODE_FRACTIONS = { '½':1/2, '⅓':1/3, '⅔':2/3, '¼':1/4, '¾':3/4, '⅛':1/8 };
 function parseFraction(str){
   str = str.trim();
+  const uni = str.match(/^(\d*)([½⅓⅔¼¾⅛])$/); // "½" or "1½"
+  if (uni) return (uni[1] ? +uni[1] : 0) + UNICODE_FRACTIONS[uni[2]];
   if (/^\d+\/\d+$/.test(str)){ const [a,b] = str.split('/'); return (+a)/(+b); }
   const n = parseFloat(str);
   return isNaN(n) ? null : n;
 }
-const UNITS = ['g','kg','ml','l','tsp','tbsp','cup','cups','oz','lb','lbs','can','cans','clove','cloves','pinch','stick','sticks','bunch'];
+const UNITS = ['g','kg','ml','l','tsp','tbsp','cup','cups','oz','lb','lbs','can','cans','clove','cloves','pinch','pinches','stick','sticks','bunch','bunches',
+  'tablespoon','tablespoons','teaspoon','teaspoons','ounce','ounces','pound','pounds',
+  'jar','jars','bag','bags','box','boxes','slice','slices','package','packages','container','containers','rib','ribs'];
+// Spelled-out units are saved as the abbreviation everything else uses
+const UNIT_SHORT = { tablespoon:'tbsp', tablespoons:'tbsp', teaspoon:'tsp', teaspoons:'tsp',
+  ounce:'oz', ounces:'oz', pound:'lb', pounds:'lb', lbs:'lb' };
 function parseIngredientLine(line){
   const tokens = line.trim().split(/\s+/);
   if (!tokens.length || !tokens[0]) return null;
   let qty = null, unit = '';
   const maybeQty = parseFraction(tokens[0]);
-  if (maybeQty !== null){ qty = maybeQty; tokens.shift(); }
-  if (tokens.length && UNITS.includes(tokens[0].toLowerCase())){ unit = tokens.shift(); }
+  if (maybeQty !== null){
+    qty = maybeQty; tokens.shift();
+    // "1 1/2 cups" — a mixed number spread over two words
+    const rest = tokens.length ? parseFraction(tokens[0]) : null;
+    if (rest !== null && rest < 1 && /[\/½⅓⅔¼¾⅛]/.test(tokens[0])){ qty += rest; tokens.shift(); }
+  }
+  if (tokens.length && UNITS.includes(tokens[0].toLowerCase())){
+    const u = tokens.shift();
+    unit = UNIT_SHORT[u.toLowerCase()] || u;
+    if (tokens.length > 1 && tokens[0].toLowerCase() === 'of') tokens.shift(); // "slices of bread"
+  }
   const name = tokens.join(' ');
   return name ? { qty, unit, name } : null;
+}
+
+// 0.5 → "½", 1.25 → "1¼" — reads like a recipe card, not a calculator
+const FRACTION_GLYPHS = [[1/8,'⅛'],[1/4,'¼'],[1/3,'⅓'],[1/2,'½'],[2/3,'⅔'],[3/4,'¾']];
+function fmtAmount(n){
+  if (typeof n !== 'number') return n;
+  const whole = Math.floor(n), frac = n - whole;
+  if (frac < 0.01) return String(whole);
+  const hit = FRACTION_GLYPHS.find(([v]) => Math.abs(v - frac) < 0.01);
+  return hit ? (whole || '') + hit[1] : String(Math.round(n * 100) / 100);
 }
 
 const DEFAULT_TAGS = ['beef','chicken','turkey','pork','pasta','quick','2 servings','4 servings','6 servings','8 servings','kid friendly'];
@@ -430,7 +459,7 @@ function renderList(){
         <summary>View recipe</summary>
         <div class="recipe-detail-body">
           <h4>Ingredients</h4>
-          <ul>${(r.ingredients||[]).map(i => `<li>${[i.qty, i.unit, i.name].filter(Boolean).join(' ')}</li>`).join('') || '<li>—</li>'}</ul>
+          <ul>${(r.ingredients||[]).map(i => `<li>${[fmtAmount(i.qty), i.unit, i.name].filter(Boolean).join(' ')}</li>`).join('') || '<li>—</li>'}</ul>
           <h4>Instructions</h4>
           <ol>${(r.instructions||[]).map(s => `<li>${s}</li>`).join('') || '<li>—</li>'}</ol>
         </div>
@@ -471,7 +500,7 @@ function editRecipe(id){
   renderMethodChips(r.methods || (r.method ? [r.method] : []));
   (r.tags||[]).forEach(t => addTagOption(t)); // make sure old/typed-in tags still show as options
   renderTagChips(r.tags || []);
-  document.getElementById('f_ingredients').value = (r.ingredients||[]).map(i => `${i.qty ?? ''} ${i.unit||''} ${i.name}`.trim().replace(/\s+/g,' ')).join('\n');
+  document.getElementById('f_ingredients').value = (r.ingredients||[]).map(i => `${fmtAmount(i.qty) ?? ''} ${i.unit||''} ${i.name}`.trim().replace(/\s+/g,' ')).join('\n');
   document.getElementById('f_instructions').value = (r.instructions||[]).join('\n');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
