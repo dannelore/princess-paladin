@@ -404,61 +404,60 @@ const CACHE_KEY = "pp_couch_list";
 
    A lookup can also be scoped to one season instead of the whole show, so
    tracking just what's airing now doesn't re-import every season already
-   watched some other way — unionSeasons/scopedSeasons below are the
-   additive counterpart to mergeSeasons, which replaces the whole array. */
+   watched some other way — unionSeasons/scopedSeasons below do the adding,
+   and mergeSeasons (Refresh seasons, and the daily check) only ever brings
+   in seasons newer than the ones already tracked.
+
+   One request fetches both the season list (which carries each season's own
+   poster, for its card) and the episode list (for the aired count). */
 function todayKey(){
   const d = new Date();
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
 
-function fetchSeasons(showId){
-  return fetch(TVMAZE + "/shows/" + showId + "/seasons")
-    .then(r => r.json())
-    .then(seasonData => {
-      return fetch(TVMAZE + "/shows/" + showId + "?embed=episodes")
-        .then(r => r.json())
-        .then(showData => {
-          const eps = (showData._embedded && showData._embedded.episodes) || [];
-          const today = todayKey();
-          const aired = {};
-          eps.forEach(ep => {
-            if(!ep.season || ep.number == null) return;
-            if(!ep.airdate || ep.airdate > today) return;
-            aired[ep.season] = (aired[ep.season] || 0) + 1;
-          });
-          return seasonData
-            .filter(s => s.number != null && s.number > 0)
-            .sort((a, b) => a.number - b.number)
-            .map(s => ({
-              number:   s.number,
-              episodes: aired[s.number] || 0,
-              watched:  0
-            }))
-            .filter(s => s.episodes > 0);
-        });
+function fetchShow(showId){
+  return fetch(TVMAZE + "/shows/" + showId + "?embed[]=seasons&embed[]=episodes")
+    .then(r => {
+      if(!r.ok){ const err = new Error("TVmaze " + r.status); err.status = r.status; throw err; }
+      return r.json();
+    })
+    .then(show => {
+      const emb = show._embedded || {};
+      const today = todayKey();
+      const aired = {};
+      (emb.episodes || []).forEach(ep => {
+        if(!ep.season || ep.number == null) return;
+        if(!ep.airdate || ep.airdate > today) return;
+        aired[ep.season] = (aired[ep.season] || 0) + 1;
+      });
+      const seasons = (emb.seasons || [])
+        .filter(s => s.number != null && s.number > 0)
+        .sort((a, b) => a.number - b.number)
+        .map(s => {
+          const out = { number: s.number, episodes: aired[s.number] || 0, watched: 0 };
+          if(s.image) out.image = toHttps(s.image.medium || s.image.original);
+          return out;
+        })
+        .filter(s => s.episodes > 0);
+      return { seasons: seasons, ended: show.status === "Ended" };
     });
 }
 
+function fetchSeasons(showId){
+  return fetchShow(showId).then(res => res.seasons);
+}
+
+/* Refreshing never brings back a season left out on purpose. Seasons already
+   tracked pick up new episode counts and posters, and a season newer than any
+   of them is added — that's a new season airing. Older ones stay out, so a
+   show added as "Season 3 only" stays that way; Edit → Look it up → All
+   seasons is how to pull the back catalogue in deliberately. */
 function mergeSeasons(oldSeasons, fresh){
-  const prev = {};
-  (oldSeasons || []).forEach(s => {
-    prev[s.number] = {
-      watchedEps: s.watchedEps || null,
-      watched: s.watched || 0,
-      episodes: s.episodes || 0,
-      startDate: s.startDate,
-      endDate: s.endDate
-    };
-  });
-  return fresh.map(s => {
-    const p = prev[s.number];
-    const weps = p && p.watchedEps ? p.watchedEps.filter(i => i <= s.episodes) : null;
-    const wc   = weps ? weps.length : Math.min(p ? p.watched : 0, s.episodes);
-    const out  = { number: s.number, episodes: s.episodes, watchedEps: weps, watched: wc };
-    if(p && p.startDate) out.startDate = p.startDate;
-    if(p && p.endDate)   out.endDate   = p.endDate;
-    return out;
-  });
+  const old = oldSeasons || [];
+  if(!old.length) return fresh;
+  const newest = Math.max.apply(null, old.map(s => s.number));
+  return unionSeasons(old, fresh.filter(s =>
+    s.number > newest || old.some(o => o.number === s.number)));
 }
 
 function unionSeasons(oldSeasons, fresh){
@@ -469,7 +468,8 @@ function unionSeasons(oldSeasons, fresh){
       const p = list[idx];
       const weps = Array.isArray(p.watchedEps) ? p.watchedEps.filter(i => i <= s.episodes) : null;
       const wc   = weps ? weps.length : Math.min(p.watched || 0, s.episodes);
-      list[idx] = Object.assign({}, p, { episodes: s.episodes, watchedEps: weps, watched: wc });
+      list[idx] = Object.assign({}, p, { episodes: s.episodes, watchedEps: weps, watched: wc },
+                                s.image ? { image: s.image } : {});
     }else{
       list.push(Object.assign({}, s));
     }
@@ -539,6 +539,57 @@ function pickSeries(r){
       $("lookupHint").textContent = "Got the show, but the seasons didn't load. Try Refresh seasons after saving.";
     });
 }
+
+/* ---------------- keeping seasons current ----------------
+   Once the list has synced, each show is quietly re-checked against TVmaze
+   so new episodes and new seasons turn up without pressing Refresh seasons.
+   A show is checked at most once a day, and one TVmaze lists as Ended only
+   the once — nothing new is coming. Requests go one at a time, spaced to
+   stay well inside TVmaze's limit of 20 calls per 10 seconds. Progress is
+   saved every few shows so a closed tab doesn't lose the lot. */
+const CHECK_GAP_MS = 700;
+const CHECK_SAVE_EVERY = 8;
+
+function checkSeasons(){
+  const today = todayKey();
+  const due = state.items
+    .filter(it => it.type === "series" && it.tvmazeId
+               && it.seasonsChecked !== today
+               && !(it.showEnded && it.seasonsChecked))
+    .map(it => it.id);
+  let unsaved = 0;
+
+  const step = i => {
+    if(i >= due.length){ if(unsaved) save(); return; }
+    const first = state.items.find(x => x.id === due[i]);
+    if(!first){ step(i + 1); return; }
+
+    fetchShow(first.tvmazeId)
+      .then(res => {
+        /* the list may have re-synced while this was in flight — write to what's current */
+        const item = state.items.find(x => x.id === due[i]);
+        if(item){
+          item.seasons = mergeSeasons(item.seasons, res.seasons);
+          item.seasonsChecked = today;
+          item.showEnded = res.ended;
+          syncStatus(item);
+          if(++unsaved >= CHECK_SAVE_EVERY){ unsaved = 0; save(); }
+        }
+        setTimeout(() => step(i + 1), CHECK_GAP_MS);
+      })
+      .catch(e => {
+        console.error("Season check failed for " + first.title, e);
+        /* rate-limited: stop for now, the rest get checked next visit */
+        if(e.status === 429){ if(unsaved) save(); return; }
+        setTimeout(() => step(i + 1), CHECK_GAP_MS);
+      });
+  };
+  step(0);
+}
+
+/* ---------------- hooks into the shared engine (see pp-watchlist.js) ---------------- */
+seasonCards = true;
+onFirstSync = checkSeasons;
 
 boot();
 </script>

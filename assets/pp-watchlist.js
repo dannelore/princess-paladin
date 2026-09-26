@@ -18,6 +18,8 @@
      extraNewItemDefaults         — extra fields merged into a freshly-created item
      extraRenderSteps             — array of no-arg render functions run alongside the shared ones
      extraReset()                 — extra work for the "Clear filters" button
+     seasonCards                  — true gives every season its own status and card (see "season cards")
+     onFirstSync()                — called once, after the first snapshot arrives from Firestore
 
    Season fetching/merging (fetchSeasons, mergeSeasons, pickSeries) stays
    page-specific — Couch Quest counts only aired episodes and can scope a
@@ -65,7 +67,7 @@ let editId = null, openId = null, pickedStreams = [];
 let filter = "unfinished", fltKind = "all", fltWho = "all", fltPri = "all", fltStream = "all";
 let sortBy = "priority-desc";
 let pendingLookup = null;
-let saving = false, docRef = null, saveTimer = null;
+let saving = false, docRef = null, saveTimer = null, firstSynced = false;
 
 /* ---------------- extension hooks (see file header) ---------------- */
 let onMarkWatched      = null;
@@ -75,6 +77,8 @@ let extraCardParts     = null;
 let extraNewItemDefaults = {};
 let extraRenderSteps   = [];
 let extraReset         = null;
+let seasonCards        = false;
+let onFirstSync        = null;
 
 const $ = id => document.getElementById(id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
@@ -120,7 +124,10 @@ function itemEnd(item){
 }
 
 function dateLine(item){
-  const a = itemStart(item), b = itemEnd(item);
+  return rangeText(itemStart(item), itemEnd(item));
+}
+
+function rangeText(a, b){
   if(a && b) return fmtDate(a) + " – " + fmtDate(b);
   if(b)      return "Finished " + fmtDate(b);
   if(a)      return "Started " + fmtDate(a);
@@ -216,25 +223,103 @@ function position(item){
     return "Up to " + hm(t.done) + " of " + hm(t.total);
   }
   for(const s of item.seasons){
-    const eps = Array.isArray(s.watchedEps) ? s.watchedEps : [];
-    const wc  = watchedCount(s);
-    if(wc < (s.episodes || 0)){
-      /* find first unwatched episode index */
-      let next = 1;
-      if(eps.length){
-        const set = {};
-        eps.forEach(i => { set[i] = true; });
-        while(set[next] && next <= s.episodes) next++;
-      }else{
-        next = wc + 1;
-      }
-      return "Up next: S" + s.number + " E" + next;
-    }
+    if(watchedCount(s) < (s.episodes || 0)) return "Up next: S" + s.number + " E" + seasonNext(s);
   }
   return "";
 }
 
+/* first unwatched episode number in a season */
+function seasonNext(s){
+  const eps = Array.isArray(s.watchedEps) ? s.watchedEps : [];
+  if(!eps.length) return watchedCount(s) + 1;
+  const set = {};
+  eps.forEach(i => { set[i] = true; });
+  let next = 1;
+  while(set[next] && next <= s.episodes) next++;
+  return next;
+}
+
+/* ---------------- season cards ----------------
+   A page that sets seasonCards = true gives every season its own status and
+   its own card, grouped on the grid under a card for the show. The show's
+   status is then worked out from its seasons rather than set by hand, so a
+   show with two seasons watched and two to go reads as Watching, not TBW.
+
+   Episodes decide a season's status wherever they can. The one thing they
+   can't say is "we've started this but haven't ticked anything off", so a
+   season set to Watching by hand stays that way until an episode says
+   otherwise. A season with no episodes counted keeps whatever it was set to. */
+const hasSeasonCards = item => seasonCards && item.type === "series"
+  && Array.isArray(item.seasons) && item.seasons.length > 0;
+
+const seasonStatus = s => s.status || "want";
+
+function syncSeasonStatus(s){
+  const total = s.episodes || 0, done = watchedCount(s);
+  if(!total) return;
+  if(done >= total)                s.status = "watched";
+  else if(done)                    s.status = "watching";
+  else if(s.status !== "watching") s.status = "want";
+}
+
+function statusFromSeasons(seasons){
+  const all = seasons.map(seasonStatus);
+  if(all.every(x => x === "watched")) return "watched";
+  if(all.every(x => x === "want"))    return "want";
+  return "watching";
+}
+
+function fillSeason(s){
+  s.watchedEps = Array.from({length: s.episodes || 0}, (_,i) => i + 1);
+  s.watched    = s.watchedEps.length;
+}
+function emptySeason(s){ s.watchedEps = []; s.watched = 0; }
+
+/* Which of a show's seasons get a card under the current status tab.
+   Current hides the seasons you've finished, the same way it hides
+   finished films; the other status tabs show only their own seasons. */
+function seasonShown(s){
+  const st = seasonStatus(s);
+  if(filter === "unfinished") return st !== "watched";
+  if(["want","watching","watched"].includes(filter)) return st === filter;
+  return true;
+}
+
+/* TBW → Watching → Watched → TBW, same order as a title's own status.
+   Watched ticks every episode and TBW clears them; Watching leaves the
+   episodes alone. */
+function cycleSeason(itemId, seasonNo){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item) return;
+  const s = (item.seasons || []).find(x => x.number === seasonNo);
+  if(!s) return;
+  s.status = NEXT[seasonStatus(s)];
+  if(s.status === "watched") fillSeason(s);
+  if(s.status === "want")    emptySeason(s);
+  syncStatus(item);
+  save();
+}
+
+/* The Status field on the edit form, for a show with season cards. A change
+   there is carried down to the seasons, since that's where status lives now.
+   `status` is null when the field wasn't changed, which just re-derives the
+   show's status from its seasons. */
+function applyStatusToSeasons(item, status){
+  if(status === "watched") item.seasons.forEach(s => { fillSeason(s);  s.status = "watched"; });
+  if(status === "want")    item.seasons.forEach(s => { emptySeason(s); s.status = "want"; });
+  if(status === "watching" && item.seasons.every(s => seasonStatus(s) === "want")){
+    item.seasons[0].status = "watching";
+  }
+  syncStatus(item);
+}
+
 function syncStatus(item){
+  if(hasSeasonCards(item)){
+    item.seasons.forEach(syncSeasonStatus);
+    item.status = statusFromSeasons(item.seasons);
+    if(item.status === "watched" && onMarkWatched) onMarkWatched(item);
+    return;
+  }
   const t = totals(item);
   if(t.kind === "none" || !t.total) return;
   if(t.done === 0)          item.status = "want";
@@ -277,6 +362,7 @@ function migrate(){
       it.streams = Array.from(new Set(known.concat("Unavailable")));
       touched = true;
     }
+    if(migrateSeasonStatus(it)) touched = true;
     if(extraMigrateItem && extraMigrateItem(it)) touched = true;
   });
   if(!Array.isArray(state.subs)){
@@ -286,6 +372,38 @@ function migrate(){
   }else if(state.subs.includes("Other")){
     state.subs = state.subs.filter(s => s !== "Other");
     touched = true;
+  }
+  return touched;
+}
+
+/* Season cards, first run: seasons don't have a status yet, so each one is
+   given one from its ticked episodes. A show marked Watched as a whole counts
+   every season as watched, and a show marked Watching with nothing ticked
+   keeps that on its first season. Empty placeholder seasons (no episodes, no
+   dates, nothing watched) are dropped — the season lookup never makes those
+   any more, and the daily check brings a season back once it has aired. */
+function migrateSeasonStatus(it){
+  if(!seasonCards || it.type !== "series" || !Array.isArray(it.seasons) || !it.seasons.length) return false;
+  let touched = false;
+  if(it.seasons.some(s => !s.status)){
+    it.seasons = it.seasons.filter(s =>
+      s.status || s.episodes || watchedCount(s) || s.startDate || s.endDate);
+    it.seasons.forEach(s => {
+      if(s.status) return;
+      const total = s.episodes || 0, done = watchedCount(s);
+      if(total && done >= total)   s.status = "watched";
+      else if(done)                s.status = "watching";
+      else if(it.status === "watched"){ fillSeason(s); s.status = "watched"; }
+      else                         s.status = "want";
+    });
+    if(it.status === "watching" && it.seasons.length && it.seasons.every(s => s.status === "want")){
+      it.seasons[0].status = "watching";
+    }
+    touched = true;
+  }
+  if(hasSeasonCards(it)){
+    const st = statusFromSeasons(it.seasons);
+    if(st !== it.status){ it.status = st; touched = true; }
   }
   return touched;
 }
@@ -330,6 +448,10 @@ function startFirebase(){
       if(openId) openDetail(openId);
       setSync("idle","Synced");
       if(changed) save();
+      if(!firstSynced){
+        firstSynced = true;
+        if(onFirstSync) onFirstSync();
+      }
     }, err => { console.error(err); setSync("error","Offline — this device only"); });
   }catch(e){ console.error(e); setSync("error","Offline — this device only"); }
 }
@@ -664,9 +786,14 @@ function visibleItems(){
        Rewatches go too. A thing you've seen and mean to see again isn't
        unfinished — it's finished, more than once. Each viewing is logged as
        its own date instead, and the Rewatches tab collects them. */
-    if(filter === "unfinished" && i.status === "watched") return false;
-    const statusFilters = ["want","watching","watched"];
-    if(statusFilters.includes(filter) && i.status !== filter) return false;
+    if(hasSeasonCards(i)){
+      /* a show is in if any of its seasons is — render() shows just those */
+      if(!i.seasons.some(seasonShown)) return false;
+    }else{
+      if(filter === "unfinished" && i.status === "watched") return false;
+      const statusFilters = ["want","watching","watched"];
+      if(statusFilters.includes(filter) && i.status !== filter) return false;
+    }
     if(fltKind !== "all" && (i.type || "series") !== fltKind) return false;
     if(fltWho !== "all"  && whoOf(i) !== fltWho) return false;
     if(fltStream === "__subbed"){
@@ -767,6 +894,168 @@ function renderSubsPicker(){
   });
 }
 
+/* ---------------- cards ---------------- */
+function posterArt(src, fallback){
+  return src
+    ? `<img class="cq-poster" src="${esc(src)}" alt="" loading="lazy"
+         onerror="this.outerHTML='<div class=&quot;cq-poster-none&quot;>${esc(fallback)}</div>'">`
+    : `<div class="cq-poster-none">${esc(fallback)}</div>`;
+}
+
+/* The pieces a title card and a show card have in common. */
+function cardBits(item){
+  const who = whoOf(item);
+  const avg = priAvg(item);
+  const streams = (item.streams || []).map(x => {
+    const svc = SERVICE_BY_NAME[x];
+    const col = svc ? svc.color : "#6B5E54";
+    const lbl = svc && svc.short ? svc.short : x;
+    const sub = isSubbed(x);
+    return `<span class="cq-stream" data-sub="${sub}" ${svc && svc.light ? 'data-light="true"' : ""}
+      style="background:${col};${sub ? "" : `color:${col};border-color:${col};`}"
+      title="${esc(x)}${sub ? "" : " — not subscribed"}">${esc(lbl)}</span>`;
+  }).join("");
+
+  /* Nothing it's on is anything we have. An item with no service listed at
+     all is unknown rather than unavailable, so it stays clean. */
+  const onNothing = (item.streams || []).length > 0 && !(item.streams || []).some(isSubbed);
+
+  return {
+    onNothing: onNothing,
+    whoBadge: `<span class="cq-who" data-who="${who}">${esc(WHO_LABEL[who])}</span>`,
+    pri: avg ? `<span class="cq-pri" data-tier="${priTier(avg)}">${esc(priLabel(avg))}</span>` : "",
+    rewatch: item.rewatch ? `<span class="cq-rewatch">Rewatch</span>` : "",
+    streams: streams ? `<div class="cq-streams">${streams}</div>` : "",
+    unavail: onNothing
+      ? `<span class="cq-unavail" title="Not on anything we have">Unavailable</span>` : "",
+    amazonPill: (onNothing && item.amazonRentBuy)
+      ? `<span class="cq-amazon" title="Not included with a subscription, but Amazon has it">Rent/buy on Amazon</span>` : "",
+    tools: `
+      <div class="cq-tools">
+        <button data-edit="${item.id}" aria-label="Edit ${esc(item.title)}">✎</button>
+        <button data-del="${item.id}" aria-label="Remove ${esc(item.title)}">✕</button>
+      </div>`,
+    extra: extraCardParts ? (extraCardParts(item) || {}) : {}
+  };
+}
+
+function titleCard(item){
+  const t = totals(item);
+  const b = cardBits(item);
+  const card = document.createElement("div");
+  card.className = "cq-card" + (item.status === "watched" ? " is-done" : "") + (b.onNothing ? " is-unavail" : "");
+
+  const ring = (t.kind !== "none")
+    ? `<div class="cq-ring"><div class="pp-progress-ring" data-color="pink"
+         data-current="${t.done}" data-total="${t.total}" data-size="38"></div></div>`
+    : "";
+  const where = position(item);
+
+  card.innerHTML = `
+    <div class="cq-posterwrap" data-open="${item.id}">${posterArt(item.image, item.title)}${b.unavail}${b.whoBadge}${ring}</div>
+    ${b.tools}
+    <div class="cq-body">
+      <h3 class="cq-name">${esc(item.title)}</h3>
+      ${b.amazonPill}
+      ${where ? `<div class="cq-where">${esc(where)}</div>` : ""}
+      ${dateLine(item) ? `<div class="cq-dateline">${esc(dateLine(item))}</div>` : ""}
+      ${rewatchLines(item)}
+      <div class="cq-meta">
+        <button class="cq-status" data-status="${item.status}" data-cycle="${item.id}">${LABEL[item.status]}</button>
+        ${b.pri}${b.rewatch}${b.extra.metaExtra || ""}
+      </div>
+      ${b.extra.belowMeta || ""}
+      ${b.streams}
+    </div>`;
+  return card;
+}
+
+/* A show with season cards: one card for the show itself, carrying the
+   overall progress, followed by a card per season. The group spans as many
+   grid columns as it has cards (the stylesheet caps that at the column
+   count) and wraps inside itself when there are more. The show's status is
+   shown but can't be clicked — it follows the seasons. */
+function showGroup(item, seasons){
+  const t = totals(item);
+  const b = cardBits(item);
+  const group = document.createElement("section");
+  group.className = "cq-show";
+  group.style.gridColumn = "span " + Math.min(seasons.length + 1, gridColumns());
+  group.setAttribute("aria-label", item.title);
+
+  const seasonsDone = item.seasons.filter(s => seasonStatus(s) === "watched").length;
+  const where = position(item);
+
+  const head = document.createElement("div");
+  head.className = "cq-card cq-showcard" + (item.status === "watched" ? " is-done" : "") + (b.onNothing ? " is-unavail" : "");
+  head.innerHTML = `
+    <div class="cq-posterwrap" data-open="${item.id}">${posterArt(item.image, item.title)}${b.unavail}${b.whoBadge}</div>
+    ${b.tools}
+    <div class="cq-body">
+      <h3 class="cq-name">${esc(item.title)}</h3>
+      ${b.amazonPill}
+      <div class="pp-progress pp-progress-sm" data-color="pink" data-label="Overall"
+           data-current="${t.done}" data-total="${t.total}" data-text="${t.done} of ${t.total} ep"></div>
+      <div class="cq-where">${seasonsDone} of ${item.seasons.length} season${item.seasons.length === 1 ? "" : "s"} done${where && where !== "Finished" ? " · " + esc(where.replace("Up next: ", "next ")) : ""}</div>
+      ${dateLine(item) ? `<div class="cq-dateline">${esc(dateLine(item))}</div>` : ""}
+      ${rewatchLines(item)}
+      <div class="cq-meta">
+        <span class="cq-status" data-status="${item.status}" title="Follows the seasons">${LABEL[item.status]}</span>
+        ${b.pri}${b.rewatch}${b.extra.metaExtra || ""}
+      </div>
+      ${b.extra.belowMeta || ""}
+      ${b.streams}
+    </div>`;
+  group.appendChild(head);
+
+  seasons.forEach(s => {
+    const st    = seasonStatus(s);
+    const total = s.episodes || 0;
+    const done  = watchedCount(s);
+    const range = rangeText(s.startDate, s.endDate);
+    const where = (total && done >= total) ? "Finished"
+      : (done || st === "watching") ? `Up next: E${seasonNext(s)} · ${done} of ${total}`
+      : `${total} episode${total === 1 ? "" : "s"}`;
+
+    const tile = document.createElement("div");
+    tile.className = "cq-card cq-season" + (st === "watched" ? " is-done" : "");
+    tile.innerHTML = `
+      <div class="cq-posterwrap" data-open="${item.id}" data-open-season="${s.number}">
+        ${posterArt(s.image || item.image, "Season " + s.number)}
+        <span class="cq-seasontag">S${s.number}</span>
+        ${total ? `<div class="cq-ring"><div class="pp-progress-ring" data-color="pink"
+          data-current="${done}" data-total="${total}" data-size="38"></div></div>` : ""}
+      </div>
+      <div class="cq-body">
+        <h3 class="cq-name">Season ${s.number}</h3>
+        <div class="cq-where">${esc(where)}</div>
+        ${range ? `<div class="cq-dateline">${esc(range)}</div>` : ""}
+        <div class="cq-meta">
+          <button class="cq-status" data-status="${st}" data-item="${item.id}" data-season-cycle="${s.number}"
+                  aria-label="${esc(item.title)} season ${s.number}: ${LABEL[st]}. Change status">${LABEL[st]}</button>
+        </div>
+      </div>`;
+    group.appendChild(tile);
+  });
+
+  return group;
+}
+
+/* However many columns the grid actually has right now — read from the
+   browser rather than assumed, since the breakpoints can be overridden. */
+function gridColumns(){
+  return getComputedStyle($("grid")).gridTemplateColumns.split(" ").length || 1;
+}
+
+/* A show group's span depends on the column count, so redraw when a resize
+   changes it. */
+let lastColumns = 0;
+window.addEventListener("resize", () => {
+  if(!seasonCards) return;
+  const n = gridColumns();
+  if(n !== lastColumns){ lastColumns = n; render(); }
+});
+
 /* ---------------- render ---------------- */
 function render(){
   const grid  = $("grid");
@@ -781,71 +1070,11 @@ function render(){
         ? "Nothing left to watch. The Watched tab has everything you've finished."
         : "Nothing matches those filters.");
 
+  grid.classList.toggle("has-shows", seasonCards);
   shown.forEach(item => {
-    const t = totals(item);
-    const card = document.createElement("div");
-    card.className = "cq-card" + (item.status === "watched" ? " is-done" : "");
-
-    const art = item.image
-      ? `<img class="cq-poster" src="${esc(item.image)}" alt="" loading="lazy"
-           onerror="this.outerHTML='<div class=&quot;cq-poster-none&quot;>${esc(item.title)}</div>'">`
-      : `<div class="cq-poster-none">${esc(item.title)}</div>`;
-
-    const ring = (t.kind !== "none")
-      ? `<div class="cq-ring"><div class="pp-progress-ring" data-color="pink"
-           data-current="${t.done}" data-total="${t.total}" data-size="38"></div></div>`
-      : "";
-
-    const who = whoOf(item);
-    const whoBadge = `<span class="cq-who" data-who="${who}">${esc(WHO_LABEL[who])}</span>`;
-
-    const avg = priAvg(item);
-    const pri = avg ? `<span class="cq-pri" data-tier="${priTier(avg)}">${esc(priLabel(avg))}</span>` : "";
-
-    const where = position(item);
-    const streams = (item.streams || []).map(x => {
-      const svc = SERVICE_BY_NAME[x];
-      const col = svc ? svc.color : "#6B5E54";
-      const lbl = svc && svc.short ? svc.short : x;
-      const sub = isSubbed(x);
-      return `<span class="cq-stream" data-sub="${sub}" ${svc && svc.light ? 'data-light="true"' : ""}
-        style="background:${col};${sub ? "" : `color:${col};border-color:${col};`}"
-        title="${esc(x)}${sub ? "" : " — not subscribed"}">${esc(lbl)}</span>`;
-    }).join("");
-    const rewatch = item.rewatch ? `<span class="cq-rewatch">Rewatch</span>` : "";
-
-    /* Nothing it's on is anything we have. An item with no service listed at
-       all is unknown rather than unavailable, so it stays clean. */
-    const onNothing = (item.streams || []).length > 0 && !(item.streams || []).some(isSubbed);
-    const unavail = onNothing
-      ? `<span class="cq-unavail" title="Not on anything we have">Unavailable</span>` : "";
-    if(onNothing) card.classList.add("is-unavail");
-
-    const amazonPill = (onNothing && item.amazonRentBuy)
-      ? `<span class="cq-amazon" title="Not included with a subscription, but Amazon has it">Rent/buy on Amazon</span>` : "";
-
-    const extra = extraCardParts ? (extraCardParts(item) || {}) : {};
-
-    card.innerHTML = `
-      <div class="cq-posterwrap" data-open="${item.id}">${art}${unavail}${whoBadge}${ring}</div>
-      <div class="cq-tools">
-        <button data-edit="${item.id}" aria-label="Edit ${esc(item.title)}">✎</button>
-        <button data-del="${item.id}" aria-label="Remove ${esc(item.title)}">✕</button>
-      </div>
-      <div class="cq-body">
-        <h3 class="cq-name">${esc(item.title)}</h3>
-        ${amazonPill}
-        ${where ? `<div class="cq-where">${esc(where)}</div>` : ""}
-        ${dateLine(item) ? `<div class="cq-dateline">${esc(dateLine(item))}</div>` : ""}
-        ${rewatchLines(item)}
-        <div class="cq-meta">
-          <button class="cq-status" data-status="${item.status}" data-cycle="${item.id}">${LABEL[item.status]}</button>
-          ${pri}${rewatch}${extra.metaExtra || ""}
-        </div>
-        ${extra.belowMeta || ""}
-        ${streams ? `<div class="cq-streams">${streams}</div>` : ""}
-      </div>`;
-    grid.appendChild(card);
+    grid.appendChild(hasSeasonCards(item)
+      ? showGroup(item, item.seasons.filter(seasonShown))
+      : titleCard(item));
   });
 
   PPProgress.draw(grid);
@@ -928,11 +1157,16 @@ function openDetail(id){
       item.seasons.forEach(s => {
         const row = document.createElement("div");
         row.className = "cq-block";
+        row.setAttribute("data-season-block", s.number);
         const wc      = watchedCount(s);
         const wepsStr = Array.isArray(s.watchedEps) ? s.watchedEps.join(",") : "";
+        const st      = seasonStatus(s);
+        const stBtn   = seasonCards
+          ? `<button class="cq-status" data-status="${st}" data-season-cycle="${s.number}"
+                     aria-label="Season ${s.number}: ${LABEL[st]}. Change status">${LABEL[st]}</button>` : "";
         row.innerHTML = `
           <div class="cq-block-head">
-            <span class="cq-block-name">Season ${s.number}</span>
+            <span class="cq-block-name">Season ${s.number} ${stBtn}</span>
             <span class="cq-block-count">${wc} of <input
               class="cq-ep-count" type="number" min="0" step="1"
               data-season-total="${s.number}" value="${s.episodes}"
@@ -1011,6 +1245,16 @@ function openDetail(id){
 }
 
 function closeDetail(){ openId = null; $("detail").classList.remove("open"); }
+
+/* Opening a show from one of its season cards lands on that season. */
+function showSeasonBlock(seasonNo){
+  const blk = $("detailBody").querySelector(`[data-season-block="${seasonNo}"]`);
+  if(!blk) return;
+  blk.scrollIntoView({ behavior:"smooth", block:"center" });
+  blk.classList.remove("is-flash");
+  void blk.offsetWidth;   /* restart the animation if it's already run */
+  blk.classList.add("is-flash");
+}
 
 /* Save a set of watched episode indices for a season */
 function setSeasonEps(itemId, seasonNo, watchedEps){
@@ -1198,6 +1442,9 @@ $("saveBtn").onclick = () => {
       if(pendingLookup && pendingLookup.tmdbId) merged.tmdbId = pendingLookup.tmdbId;
       if(pendingLookup && pendingLookup.hasOwnProperty("amazonRentBuy")) merged.amazonRentBuy = pendingLookup.amazonRentBuy;
       if(isMovie) merged.watchedMin = Math.min(merged.watchedMin || 0, merged.runtime);
+      if(hasSeasonCards(merged)){
+        applyStatusToSeasons(merged, payload.status !== state.items[i].status ? payload.status : null);
+      }
       state.items[i] = merged;
     }
   }else{
@@ -1217,6 +1464,7 @@ $("saveBtn").onclick = () => {
         s.watched    = s.episodes;
       });
     }
+    if(hasSeasonCards(item)) applyStatusToSeasons(item, item.status);
     state.items.unshift(item);
   }
   closeForm();
@@ -1244,6 +1492,11 @@ $("refetchBtn").onclick = () => {
 
 
 $("grid").onclick = e => {
+  const seasonCycle = e.target.closest("[data-season-cycle]");
+  if(seasonCycle){
+    cycleSeason(seasonCycle.dataset.item, parseInt(seasonCycle.dataset.seasonCycle, 10));
+    return;
+  }
   const cycle = e.target.closest("[data-cycle]");
   if(cycle){
     const item = state.items.find(x => x.id === cycle.dataset.cycle);
@@ -1279,7 +1532,10 @@ $("grid").onclick = e => {
     return;
   }
   const open = e.target.closest("[data-open]");
-  if(open) openDetail(open.dataset.open);
+  if(open){
+    openDetail(open.dataset.open);
+    if(open.dataset.openSeason) showSeasonBlock(open.dataset.openSeason);
+  }
 };
 
 /* chips fire this with e.detail.watched (the new set object) */
@@ -1318,7 +1574,15 @@ $("detailBody").onclick = e => {
   }
   if(noneBtn){
     const no = parseInt(noneBtn.getAttribute("data-season-none"), 10);
+    const s  = (item.seasons || []).find(x => x.number === no);
+    if(s && seasonCards) s.status = "want";   /* Clear means back to TBW, not "started" */
     if(no) setSeasonEps(openId, no, []);
+    return;
+  }
+
+  const seasonCycle = e.target.closest("[data-season-cycle]");
+  if(seasonCycle){
+    cycleSeason(openId, parseInt(seasonCycle.dataset.seasonCycle, 10));
     return;
   }
 
