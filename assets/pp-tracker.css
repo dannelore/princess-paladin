@@ -315,3 +315,43 @@
     border-radius:999px; padding:3px 9px;
     margin:0 0 2px;
   }
+
+  /* --- season cards (Couch Quest) ---
+     A show is a framed group: its own card first, carrying the overall
+     progress, then one card per season. The group spans as many columns as
+     it has cards and borrows the grid's own columns (subgrid), so a season
+     card is exactly as wide as any other card. Past the column count it
+     wraps inside the frame. `dense` lets a film tuck into the gap a group
+     leaves at the end of a row instead of leaving a hole. */
+  .cq-grid.has-shows{ gap:22px 18px; grid-auto-flow:row dense; align-items:start; }
+
+  .cq-show{
+    display:grid; grid-template-columns:subgrid; row-gap:22px; align-items:start;
+    margin:-8px; padding:8px;
+    background:rgba(156,116,64,.07);
+    border:1px solid var(--line-gold);
+    border-radius:calc(var(--radius-sm) + 8px);
+  }
+  /* how many columns a group spans is set inline by render(), from the
+     grid's live column count, so it can never ask for more than exist */
+
+  .cq-showcard .cq-status{ cursor:default; }
+  .cq-showcard .pp-progress{ margin:2px 0 1px; }
+
+  .cq-season .cq-name{ font-size:.95rem; }
+  .cq-seasontag{
+    position:absolute; top:7px; left:7px;
+    font-family:var(--font-body); font-size:.62rem; font-weight:700; letter-spacing:.08em;
+    color:var(--ink); background:rgba(255,253,248,.94);
+    border:1px solid var(--line-gold); border-radius:999px; padding:3px 8px;
+  }
+
+  /* the status pill that sits beside a season's name in the detail panel */
+  .cq-block-name .cq-status{ margin-left:8px; vertical-align:1px; }
+
+  /* the season you opened the detail panel from */
+  .cq-block.is-flash{ animation:cq-flash 1.6s ease-out; }
+  @keyframes cq-flash{
+    0%, 30%{ background:var(--panel-tint); box-shadow:0 0 0 8px var(--panel-tint); }
+    100%   { background:transparent;       box-shadow:0 0 0 8px transparent; }
+  }
