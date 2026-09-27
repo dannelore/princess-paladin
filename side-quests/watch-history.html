@@ -389,13 +389,11 @@ function rowsFor(item, source){
 
   const out = again.slice();
   item.seasons.forEach(s => {
-    /* A season counts as watched when every episode is ticked, when Couch
-       Quest has marked the season itself watched, or when the whole title is
-       marked watched and the season has a finish date on it. */
+    /* A season counts as watched when every episode is ticked, or when the
+       whole title is marked watched and the season has a finish date on it. */
     const total = s.episodes || 0;
     const seen  = Array.isArray(s.watchedEps) ? s.watchedEps.length : (s.watched || 0);
-    const done  = (total > 0 && seen >= total) || s.status === "watched"
-               || (item.status === "watched" && s.endDate);
+    const done  = (total > 0 && seen >= total) || (item.status === "watched" && s.endDate);
     if(!done) return;
     out.push(Object.assign({}, base, {
       unit: "Season " + (s.number != null ? s.number : "?"),

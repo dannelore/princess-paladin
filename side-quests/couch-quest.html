@@ -409,7 +409,7 @@ const CACHE_KEY = "pp_couch_list";
    in seasons newer than the ones already tracked.
 
    One request fetches both the season list (which carries each season's own
-   poster, for its card) and the episode list (for the aired count). */
+   poster, used by season cards) and the episode list (for the aired count). */
 function todayKey(){
   const d = new Date();
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -587,8 +587,9 @@ function checkSeasons(){
   step(0);
 }
 
-/* ---------------- hooks into the shared engine (see pp-watchlist.js) ---------------- */
-seasonCards = true;
+/* ---------------- hooks into the shared engine (see pp-watchlist.js) ----------------
+   Season cards were tried and switched off — one card per show reads better
+   here. Set seasonCards = true to bring them back. */
 onFirstSync = checkSeasons;
 
 boot();
