@@ -94,6 +94,9 @@
   .room-note{width:9rem;}
   .save-note{font-size:.8rem;color:rgba(42,32,19,.6);margin-top:.4rem;}
   .empty-hint{color:rgba(42,32,19,.6);font-size:.9rem;}
+  .loading-note{display:none;color:var(--wax);font-style:italic;margin:-1rem 0 1.4rem;}
+  #admin.loading .loading-note{display:block;}
+  #admin.loading section{opacity:.55;pointer-events:none;}
 </style>
 </head>
 <body>
@@ -108,9 +111,10 @@
   </div>
 </div>
 
-<div id="admin">
+<div id="admin" class="loading">
   <h1>Bach Quest — Guest Manager</h1>
   <p class="sub">Changes here sync live to <a href="index.html">the itinerary page</a> — no more hand-editing HTML.</p>
+  <p class="loading-note">Loading the latest guest list… editing unlocks once it's in.</p>
 
   <section id="guestsSection">
     <h2>Guests</h2>
@@ -184,6 +188,9 @@
   }
 
   function renderAdmin(){
+    // Hold edits until Firestore has answered — before that we're showing
+    // this device's cached copy, which may be days old.
+    document.getElementById("admin").classList.toggle("loading", !serverLoaded);
     renderGuestList();
     renderEventsTable();
     renderRooms();

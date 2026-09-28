@@ -53,53 +53,15 @@ let state = null;
 let docRef = null;
 let saveTimer = null;
 let onStateChange = null;
+// Flips true on the first snapshot that came from the server rather than
+// the SDK's local cache. Until then `state` may be a stale localStorage
+// copy, so save() refuses to write it over the real doc.
+let serverLoaded = false;
 
 function uid(){ return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
 
 function defaultState(){
   return { guests: [], capacity: {}, attendance: {}, rooms: {} };
-}
-
-/* Seeds the doc the first time it's ever loaded, from the names/capacities
-   that used to be hand-typed into bach/index.html, so the page doesn't
-   regress to blanks the moment this ships. */
-function seedState(){
-  const s = defaultState();
-  const mk = name => { const id = uid(); s.guests.push({ id, name }); return id; };
-  const danni = mk("Danni"), brendon = mk("Brendon"), jess = mk("Jess"),
-        brian = mk("Brian"), benji = mk("Benji"), garrett = mk("Garrett");
-
-  EVENTS.forEach(ev => {
-    if(ev.kind === "simple") s.attendance[ev.key] = [];
-    else if(ev.kind === "dual") s.attendance[ev.key] = { players: [], audience: [] };
-  });
-  s.capacity = { dragBrunch: "15+", roomEscapers: "12" };
-
-  NIGHTS.forEach(n => { s.rooms[n.key] = {}; ROOMS.forEach(r => { s.rooms[n.key][r.key] = { guestIds: [], note: "" }; }); });
-  const room = (night, key, guestIds, note) => { s.rooms[night][key] = { guestIds: guestIds || [], note: note || "" }; };
-
-  room("friday", "bedroom1", [danni, brendon]);
-  room("friday", "bedroom2", [jess]);
-  room("friday", "bedroom3", [], "TBD");
-  room("friday", "bedroom4", [], "AVAILABLE");
-  room("friday", "couch", [], "TBD");
-  room("friday", "floor", [], "TBD");
-
-  room("saturday", "bedroom1", [danni, brendon]);
-  room("saturday", "bedroom2", [jess]);
-  room("saturday", "bedroom3", [], "AVAILABLE+");
-  room("saturday", "bedroom4", [brian, benji]);
-  room("saturday", "couch", [], "if needed");
-  room("saturday", "floor", [], "if needed");
-
-  room("sunday", "bedroom1", [danni, brendon]);
-  room("sunday", "bedroom2", [jess]);
-  room("sunday", "bedroom3", [garrett]);
-  room("sunday", "bedroom4", [], "AVAILABLE");
-  room("sunday", "couch", [], "if needed");
-  room("sunday", "floor", [], "if needed");
-
-  return s;
 }
 
 function migrate(){
@@ -155,21 +117,30 @@ function writeCache(){
 
 function startFirebase(){
   docRef = firebase.firestore().collection("bach").doc("guest-data");
-  docRef.onSnapshot(snap => {
+  docRef.onSnapshot({ includeMetadataChanges: true }, snap => {
+    if(!snap.metadata.fromCache) serverLoaded = true;
     if(snap.exists){
       state = Object.assign(defaultState(), snap.data());
       migrate();
       writeCache();
-      if(onStateChange) onStateChange();
-    }else{
-      docRef.set(seedState()).catch(err => console.error("Bach seed failed:", err));
     }
+    // A missing doc is never written from here. The SDK reports "doesn't
+    // exist" from its empty local cache on a flaky connection, and this
+    // used to answer that by re-seeding — which on 2026-09-28 overwrote
+    // the real guest list with the original six starter guests. Restore
+    // from firestore_backups/ instead if the doc is ever genuinely gone.
+    if(onStateChange) onStateChange();
   }, err => console.error("Bach sync failed:", err));
 }
 
 /* Debounced write-through, same 500ms pattern as the watchlist pages.
-   Only guests.html should ever call this. */
+   Only guests.html should ever call this, and only once serverLoaded —
+   the admin UI stays locked until then. */
 function save(){
+  if(!serverLoaded){
+    console.warn("Bach save skipped: latest guest list hasn't loaded yet.");
+    return;
+  }
   writeCache();
   if(onStateChange) onStateChange();
   clearTimeout(saveTimer);
