@@ -80,6 +80,12 @@ const SPECIES_KEYS = Object.keys(SPECIES);
    `unlock` is the pet level the item appears at. Levels run 1 + xp/250, so
    the ladder below lands roughly: 1 straight away, 4 around Child, 11 around
    Teen, 20 well into Adult. Nothing is ever taken away once it's bought. */
+const WIZARD_HAT_FIT = {
+  child: { y:50   },
+  teen:  { y:47.5 },
+  adult: { y:46   }
+};
+
 const CATALOG = [
   { id:'hat-knight',   slot:'hat',        name:'Knight helmet',  price:600, unlock:1, fit:{
       child: { x:51,   y:54.7, w:85.5 },
@@ -92,6 +98,13 @@ const CATALOG = [
       adult: { x:50.1, y:51.3, w:100  }
     } },
   { id:'hat-3cor',     slot:'hat',        name:'Three Corner H', price:600, unlock:1, questOnly:true },
+  /* One wizard silhouette in three colourways. Its brim sits lower in the
+     frame than other hats, so all three share a fit that lifts it clear of
+     the eyes. The princess hat sits at the `hat` slot default. */
+  { id:'hat-wizblue',  slot:'hat',        name:'Wizard hat, blue',  price:600, unlock:1, fit:WIZARD_HAT_FIT },
+  { id:'hat-wizplum',  slot:'hat',        name:'Wizard hat, plum',  price:600, unlock:1, fit:WIZARD_HAT_FIT },
+  { id:'hat-wizblack', slot:'hat',        name:'Wizard hat, black', price:600, unlock:1, fit:WIZARD_HAT_FIT },
+  { id:'hat-princess', slot:'hat',        name:'Princess hat',      price:700, unlock:4 },
 
   /* Same silhouette, three colourways — they sit at the `top` slot default,
      so none of them carries its own fit. Retuning SLOT_FIT.top moves all three.
