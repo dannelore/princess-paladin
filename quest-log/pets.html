@@ -721,10 +721,15 @@ const SWATCH = {
   grey:'#9A968D', cream:'#EBD9B8', brown:'#7C5B30', calico:'#D9A05B',
   gray:'#A9A6A0', grey:'#A9A6A0',
   blue:'#7FB1E8', green:'#7BD063', orange:'#F58220', pink:'#F86BB0',
-  purple:'#7B27B0', yellow:'#F5D22B', red:'#C7402F', teal:'#3FB6A8',
+  purple:'#7B27B0', yellow:'#F5D22B', red:'#FF3131', teal:'#3FB6A8',
   amber:'#E5A020', silver:'#C3C7CC', copper:'#B87333', violet:'#9B6BD8'
 };
 const swatchColor = k => SWATCH[k] || '#B4B2A9';
+/* Fur swatches match the pet art. Where a fur shares its name with an eye
+   colour but the art uses a different shade, the fur shade lives here so the
+   eye swatch keeps matching the eye art. */
+const FUR_SWATCH = { orange:'#FF791F', pink:'#E61F93' };
+const furSwatchColor = k => FUR_SWATCH[k] || swatchColor(k);
 
 let selectedId = null;
 let activeSlot = 'hat';
@@ -893,7 +898,7 @@ function renderSwatchRow(id, values, current, field, textual){
     const b = document.createElement('button');
     b.className = 'swatch' + (textual ? ' text' : '') + (v === current ? ' on' : '');
     if(textual) b.textContent = v;
-    else b.style.background = swatchColor(v);
+    else b.style.background = field === 'fur' ? furSwatchColor(v) : swatchColor(v);
     b.title = v;
     b.setAttribute('aria-label', v);
     b.onclick = () => applyLook(pet, field, v);
