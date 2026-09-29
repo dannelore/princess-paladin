@@ -48,7 +48,7 @@ const LAYERS = ['background','bottoms','shoes','top','hat','held'];
 const SPECIES = {
   cat: {
     name:'Cat',
-    furs:['black','gray'],
+    furs:['black','gray','blue','red','orange'],
     buff: { key:'payout', label:'Coin sense', text:'+12% on every payout' }
   },
   penguin: {
@@ -58,7 +58,7 @@ const SPECIES = {
   },
   panda: {
     name:'Panda',
-    furs:['black'],
+    furs:['black','red','blue','pink'],
     buff: { key:'xp', label:'Slow wisdom', text:'+20% XP from everything' }
   }
 };
