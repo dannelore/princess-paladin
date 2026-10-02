@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Library Quest &middot; Side Quests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/themes/side-quests.css">
+<link rel="stylesheet" href="/assets/pp-progress.css">
+<link rel="stylesheet" href="/assets/pp-tracker.css">
+
+<style>
+  /* ======================================================================
+     THE QUEST FOR A THOUSAND BOOKS
+
+     A catalogue of every book we own, counting up to a library of 1,000 —
+     and on past it. Where Reading Quest is the pile of things to read, this
+     is the shelves: what's here, in what format, and where it lives.
+
+     STORAGE: EIGHT SHELVES
+     A thousand-plus books won't fit in one Firestore document (they cap at
+     1 MiB, and a book with its cover URL runs ~700 bytes), so the catalogue
+     is split across eight docs, sidequest/library-shelf-1 … -8, each shaped
+     { items: [...] } like every other side quest. A book's shelf is a hash
+     of its id, so it always lands in the same one and nothing has to keep
+     an index. Eight shelves hold ten thousand books before any one of them
+     gets heavy. They live in `sidequest` on purpose: the security rules
+     already cover that collection, so there's no console step.
+
+     OFFLINE
+     Cataloguing a few hundred books in one sitting is exactly when the
+     signal drops, so unsaved shelves are remembered in an outbox (with the
+     ids of anything deleted). Next time the page reaches Firestore, it
+     merges book by book — newest `updated` wins — instead of letting the
+     server copy wipe the session out.
+
+     READING QUEST
+     The library reads sidequest/classics-list (Reading Quest's shelf) but
+     never stores anything of its own there except when you ask it to put a
+     book on the pile. Matching is by title and author's last name. Books
+     on the pile marked "Owned" that aren't catalogued here get a banner
+     offering to shelve them.
+     ====================================================================== */
+
+  .lq-intro{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.02rem;
+    color: var(--ink-soft);
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto 22px;
+    line-height: 1.5;
+  }
+  .lq-intro a{ color: var(--dusk-deep); }
+
+  /* ---- the count ---- */
+  .lq-hero{ padding: 20px 22px; margin-bottom: 14px; }
+  .lq-count{
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin: 0 0 10px;
+  }
+  .lq-count b{
+    font-family: var(--font-display);
+    font-size: 3rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--dusk-deep);
+  }
+  .lq-count span{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--ink-soft);
+  }
+
+  /* Milestones on the road to a thousand. Reached ones fill in gold and
+     say the day the shelf hit that number. */
+  .lq-miles{ display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .lq-mile{
+    display: inline-flex; align-items: baseline; gap: 6px;
+    padding: 4px 11px;
+    font-family: var(--font-body); font-size: .74rem; font-weight: 600;
+    color: var(--ink-soft);
+    background: var(--panel); border: 1px dashed var(--line-strong);
+    border-radius: 999px;
+  }
+  .lq-mile.is-reached{
+    color: #fff; background: var(--gold); border: 1px solid var(--gold-deep);
+  }
+  .lq-mile.is-goal{ border-width: 2px; }
+  .lq-mile small{ font-weight: 500; font-size: .66rem; opacity: .9; }
+
+  .lq-note{
+    font-family: var(--font-serif); font-style: italic; font-size: .9rem;
+    color: var(--ink-soft); margin: 12px 0 0; line-height: 1.45;
+  }
+
+  /* ---- the bridge to Reading Quest ---- */
+  .lq-bridge{
+    display: none;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+  }
+  .lq-bridge.open{ display: flex; }
+  .lq-bridge p{
+    flex: 1 1 260px;
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: .98rem;
+    color: var(--ink);
+  }
+  .lq-bridge a{ color: var(--dusk-deep); }
+
+  /* ---- controls ---- */
+  .cq-form, .lq-session{ display: none; margin-bottom: 22px; }
+  .lq-session.open{ display: block; }
+
+  .lq-bar{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .lq-bar .spacer{ flex: 1 1 auto; }
+  .lq-search{
+    flex: 1 1 220px;
+    min-width: 0;
+    font-family: var(--font-body);
+    font-size: .92rem;
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--line-gold);
+    border-radius: 999px;
+    padding: 8px 16px;
+  }
+  .lq-search:focus{ outline: 2px solid var(--pink); outline-offset: 1px; }
+  .lq-count-line{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .95rem;
+    color: var(--ink-soft);
+  }
+  .lq-sync{
+    font-family: var(--font-body);
+    font-size: .7rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .lq-sync[data-state="saving"]{ color: var(--gold); }
+  .lq-sync[data-state="error"]{ color: var(--blade); }
+
+  /* ---- the shelving session ----
+     For cataloguing in bulk: scan, type or paste ISBNs (or titles) and each
+     one is looked up and shelved without a form. A USB or Bluetooth barcode
+     scanner types the digits and presses Enter, so it just works here. */
+  .lq-session textarea{
+    width: 100%;
+    min-height: 92px;
+    resize: vertical;
+    font-family: var(--font-body);
+    font-size: .95rem;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+  }
+  .lq-session textarea:focus{ outline: 2px solid var(--pink); outline-offset: 1px; }
+  .lq-session-row{ display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
+  .lq-session-row .spacer{ flex: 1 1 auto; }
+
+  .lq-camera{
+    display: none;
+    position: relative;
+    margin-top: 12px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: #000;
+    max-width: 420px;
+  }
+  .lq-camera.open{ display: block; }
+  .lq-camera video{ display: block; width: 100%; height: auto; }
+  /* A guide line across the middle to aim the barcode at, which flashes
+     green on a read. */
+  .lq-camera::after{
+    content: "";
+    position: absolute;
+    left: 12%; right: 12%; top: 50%;
+    height: 2px;
+    background: rgba(232,124,166,.85);
+    box-shadow: 0 0 8px rgba(232,124,166,.9);
+    transition: background .15s ease, box-shadow .15s ease;
+  }
+  .lq-camera.is-hit::after{ background: #8FD18F; box-shadow: 0 0 14px #8FD18F; }
+
+  .lq-log{ list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .lq-log li{
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    padding: 7px 11px;
+    font-family: var(--font-body);
+    font-size: .84rem;
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-left-width: 4px;
+    border-radius: var(--radius-sm);
+  }
+  .lq-log li[data-state="added"]{ border-left-color: var(--sage-deep); }
+  .lq-log li[data-state="dupe"]{ border-left-color: var(--gold); }
+  .lq-log li[data-state="missing"],
+  .lq-log li[data-state="error"]{ border-left-color: var(--blade); }
+  .lq-log li[data-state="working"]{ border-left-color: var(--line-strong); color: var(--ink-soft); }
+  .lq-log .what{ flex: 1 1 200px; min-width: 0; }
+  .lq-log .what i{ font-family: var(--font-serif); color: var(--ink-soft); }
+  .lq-log .tag{
+    font-size: .6rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .lq-log button{
+    font-family: var(--font-serif); font-style: italic; font-size: .86rem;
+    color: var(--dusk-deep); background: none; border: 0; padding: 0; cursor: pointer;
+    text-decoration: underline;
+  }
+
+  /* ---- the shelves ---- */
+  .lq-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 14px;
+  }
+
+  .lq-card{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    text-align: left;
+    cursor: pointer;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--lift);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+  .lq-card:hover,
+  .lq-card:focus-visible{
+    transform: translateY(-3px);
+    box-shadow: var(--lift-lg);
+    border-color: var(--dusk);
+  }
+
+  .lq-coverwrap{ position: relative; }
+  .lq-cover{
+    display: block;
+    width: 100%;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    background: var(--parchment);
+  }
+  .lq-nocover{
+    aspect-ratio: 2/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 30% 25%, rgba(156,116,64,.18), transparent 62%), var(--parchment);
+    font-family: var(--font-display);
+    font-size: 3.2rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--gold);
+  }
+
+  /* Format, on the foot of the cover. Physical is the default, so it goes
+     unlabelled — only e-books and audiobooks get a pill. */
+  .lq-format{
+    position: absolute;
+    bottom: 6px; left: 6px;
+    font-family: var(--font-body);
+    font-size: .52rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--dusk-deep);
+    background: rgba(255,253,248,.94);
+    border-radius: 999px;
+    padding: 3px 7px;
+    box-shadow: 0 1px 4px rgba(46,36,31,.22);
+  }
+  /* Where the book stands on Reading Quest, top-right, if it's on the pile. */
+  .lq-pile{
+    position: absolute;
+    top: 6px; right: 6px;
+    font-family: var(--font-body);
+    font-size: .52rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: rgba(255,253,248,.94);
+    border-radius: 999px;
+    padding: 3px 7px;
+    box-shadow: 0 1px 4px rgba(46,36,31,.22);
+  }
+  .lq-pile[data-state="read"]{ color: #fff; background: var(--sage-deep); }
+  .lq-pile[data-state="reading"]{ color: var(--gold-deep); }
+
+  .lq-body{ padding: 9px 10px 11px; display: flex; flex-direction: column; gap: 2px; }
+  .lq-title{
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: .93rem;
+    line-height: 1.2;
+    margin: 0;
+    color: var(--ink);
+    word-break: break-word;
+  }
+  .lq-author{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .82rem;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .lq-where{
+    font-family: var(--font-body);
+    font-size: .66rem;
+    color: var(--ink-soft);
+    margin-top: 5px;
+  }
+
+  .lq-more{ display: flex; justify-content: center; margin: 22px 0 0; }
+
+  .lq-empty{
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 36px;
+    font-family: var(--font-serif);
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
+  /* ---- detail ---- */
+  .lq-detail{
+    display: none;
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 120;
+    max-height: 88vh;
+    overflow-y: auto;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: 0 -8px 40px rgba(46,36,31,.28);
+  }
+  .lq-detail.open{ display: block; }
+  @media (min-width: 720px){
+    .lq-detail{
+      inset: 50% auto auto 50%;
+      transform: translate(-50%,-50%);
+      width: min(560px, 92vw);
+      border-radius: var(--radius-lg);
+    }
+  }
+  .lq-detail-head{ display: flex; gap: 16px; align-items: flex-start; margin-bottom: 4px; }
+  .lq-detail-head h2{ margin: 0 0 2px; font-size: 1.4rem; }
+  .lq-detail-cover,
+  .lq-detail-nocover{
+    flex: 0 0 auto;
+    width: 92px;
+    aspect-ratio: 2/3;
+    border-radius: var(--radius-sm);
+    background: var(--parchment);
+    border: 1px solid var(--line);
+  }
+  .lq-detail-cover{ object-fit: cover; }
+  .lq-detail-nocover{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    font-weight: 600;
+    color: var(--gold);
+  }
+  .lq-meta{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .82rem;
+    color: var(--ink-soft);
+    margin: 4px 0 0;
+  }
+
+  .lq-block{ padding: 14px 0; border-top: 1px solid var(--line); }
+  .lq-block-name{
+    font-family: var(--font-body);
+    font-size: .68rem;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .lq-states{ display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .lq-states button{
+    font-family: var(--font-body);
+    font-size: .72rem;
+    font-weight: 500;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 13px;
+    cursor: pointer;
+  }
+  .lq-states button[aria-pressed="true"]{
+    color: #fff;
+    background: var(--dusk);
+    border-color: var(--dusk);
+  }
+  .lq-row{ display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .lq-row input[type="text"],
+  .lq-row input[type="url"]{ flex: 1 1 200px; min-width: 0; }
+  .lq-row input[type="date"]{
+    font-family: var(--font-body);
+    font-size: .84rem;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 5px 9px;
+  }
+  .lq-small{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .85rem;
+    color: var(--ink-soft);
+    margin: 8px 0 0;
+  }
+  .lq-small a{ color: var(--dusk-deep); }
+
+  @media (max-width: 420px){
+    .lq-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .lq-count b{ font-size: 2.4rem; }
+  }
+</style>
+</head>
+
+<body class="pp-sidequest" data-nav-eyebrow="Side Quests" data-nav-title="Library Quest">
+
+<div class="pp-wrap">
+
+  <div class="pp-page-title">
+    <h2>The Quest for a Thousand Books</h2>
+  </div>
+
+  <p class="lq-intro">
+    Every book on our shelves, one by one, until there are a thousand of them.
+    Read or not doesn&rsquo;t matter here &mdash; that&rsquo;s the
+    <a href="/side-quests/reading-quest.html">reading pile&rsquo;s</a> job. This
+    is the library itself.
+  </p>
+
+  <div id="progress"></div>
+
+  <div class="pp-panel pp-panel-tight lq-bridge" id="bridge"></div>
+
+  <div class="lq-bar">
+    <button class="pp-btn" id="addBtn">+ Add a book</button>
+    <button class="pp-btn pp-btn-quiet" id="sessionBtn">Shelving session</button>
+    <span class="spacer"></span>
+    <span class="lq-count-line" id="count"></span>
+    <span class="lq-sync" id="sync"></span>
+  </div>
+
+  <section class="pp-panel lq-session" id="session">
+    <h2 class="pp-panel-title">Shelving session</h2>
+    <p class="lq-small" style="margin-top:0;">
+      One book per line: an ISBN (from the barcode on the back), or a title &mdash;
+      &ldquo;Piranesi by Susanna Clarke&rdquo; narrows it down. Press Enter to shelve
+      them. A barcode scanner works straight into this box.
+    </p>
+    <textarea id="sessionInput" placeholder="9780241341735&#10;The Night Circus by Erin Morgenstern" autocomplete="off" spellcheck="false"></textarea>
+    <div class="lq-session-row">
+      <button class="pp-btn" id="sessionGo">Shelve them</button>
+      <button class="pp-btn pp-btn-quiet" id="cameraBtn" style="display:none;">Scan with camera</button>
+      <label class="cq-check-label" for="sessionNew">
+        <input type="checkbox" id="sessionNew"> New arrivals (date them today)
+      </label>
+      <span class="spacer"></span>
+      <button class="pp-btn pp-btn-quiet" id="sessionClose">Done</button>
+    </div>
+    <div class="lq-camera" id="camera"><video id="cameraVideo" playsinline muted></video></div>
+    <ul class="lq-log" id="sessionLog"></ul>
+  </section>
+
+  <section class="pp-panel cq-form" id="form">
+    <h2 class="pp-panel-title" id="formTitle">Add a book</h2>
+
+    <div class="cq-fields">
+      <div class="cq-field wide">
+        <label for="fTitle">Title</label>
+        <div class="cq-inline">
+          <input id="fTitle" type="text" placeholder="Piranesi" autocomplete="off">
+          <button class="pp-btn pp-btn-quiet" id="lookupBtn" style="white-space:nowrap;">Look it up</button>
+        </div>
+        <span class="cq-hint" id="lookupHint"></span>
+        <div class="cq-results" id="results"></div>
+      </div>
+
+      <div class="cq-field">
+        <label for="fAuthor">Author</label>
+        <input id="fAuthor" type="text" placeholder="Susanna Clarke" autocomplete="off">
+      </div>
+
+      <div class="cq-field">
+        <label for="fIsbn">ISBN</label>
+        <input id="fIsbn" type="text" inputmode="numeric" placeholder="Optional" autocomplete="off">
+      </div>
+
+      <div class="cq-field">
+        <label for="fYear">Year published</label>
+        <input id="fYear" type="number" placeholder="2020" autocomplete="off">
+      </div>
+
+      <div class="cq-field">
+        <label for="fPages">Pages</label>
+        <input id="fPages" type="number" min="0" autocomplete="off">
+      </div>
+
+      <div class="cq-field">
+        <label for="fFormat">Format</label>
+        <select id="fFormat">
+          <option value="physical">Physical</option>
+          <option value="ebook">E-book</option>
+          <option value="audio">Audiobook</option>
+        </select>
+      </div>
+
+      <div class="cq-field">
+        <label for="fAcquired">Acquired</label>
+        <input id="fAcquired" type="date">
+      </div>
+
+      <div class="cq-field wide">
+        <label for="fShelf">Where it lives</label>
+        <input id="fShelf" type="text" list="shelfNames" placeholder="Living room, top shelf" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="cq-actions">
+      <button class="pp-btn" id="saveBookBtn">Save</button>
+      <button class="pp-btn pp-btn-quiet" id="cancelBookBtn">Cancel</button>
+      <span class="cq-spacer"></span>
+      <button class="pp-btn pp-btn-quiet" id="deleteBookBtn" style="display:none;">Remove from the library</button>
+    </div>
+  </section>
+
+  <div class="lq-bar">
+    <input class="lq-search" id="search" type="search" placeholder="Search title, author, ISBN or shelf" autocomplete="off">
+    <button class="pp-pill" data-filter="all" aria-pressed="true">All</button>
+    <button class="pp-pill" data-filter="physical" aria-pressed="false">Physical</button>
+    <button class="pp-pill" data-filter="ebook" aria-pressed="false">E-books</button>
+    <button class="pp-pill" data-filter="audio" aria-pressed="false">Audiobooks</button>
+  </div>
+
+  <div class="cq-selects">
+    <div class="cq-pick">
+      <label for="sortBy">Sort</label>
+      <select id="sortBy">
+        <option value="added-desc">Recently shelved</option>
+        <option value="title-asc">Title (A–Z)</option>
+        <option value="author-asc">Author last name (A–Z)</option>
+        <option value="year-asc">Year published (oldest first)</option>
+        <option value="year-desc">Year published (newest first)</option>
+        <option value="acquired-desc">Acquired (newest first)</option>
+        <option value="shelf-asc">Where it lives</option>
+      </select>
+    </div>
+  </div>
+
+  <datalist id="shelfNames"></datalist>
+
+  <div class="lq-grid" id="grid"></div>
+  <div class="lq-more" id="more"></div>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+
+</div>
+
+<div class="pp-overlay" id="overlay"></div>
+<div class="pp-panel pp-panel-lg lq-detail" id="detail"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-firebase.js"></script>
+<script src="/assets/pp-progress.js" defer></script>
+<script>
+"use strict";
+
+const firebaseConfig = window.PPFirebaseConfig;
+
+/* See STORAGE at the top of the page. Never change SHELF_COUNT once books
+   are saved: it decides which doc each book lives in. */
+const SHELF_COUNT = 8;
+const shelfPath   = n => `sidequest/library-shelf-${n + 1}`;
+const CACHE_KEY   = "pp_library";
+const OUTBOX_KEY  = "pp_library_outbox";
+
+const GOAL = 1000;
+
+/* Reading Quest's shelf, read-only here except for "Add to the reading pile". */
+const READING_DOC  = "sidequest/classics-list";
+const READING_PAGE = "/side-quests/reading-quest.html";
+
+const FORMATS = [
+  { key:"physical", label:"Physical",  plural:"physical" },
+  { key:"ebook",    label:"E-book",    plural:"e-books" },
+  { key:"audio",    label:"Audiobook", plural:"audiobooks" }
+];
+const PILE_LABELS = { unread:"To read", reading:"Reading", read:"Read", dnf:"Abandoned" };
+
+const PAGE_SIZE = 120;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+let shelves = Array.from({ length: SHELF_COUNT }, () => []);
+let outbox  = {};            /* { shelfIndex: { v, deleted:[ids] } } */
+let db = null, refs = [];
+let reading = null;          /* Reading Quest's items, or null if not loaded */
+
+let filter = "all", sortBy = "added-desc", query = "", shown = PAGE_SIZE;
+let openId = null, editId = null, pendingCover = "";
+
+/* ---------------- dates ----------------
+   Plain YYYY-MM-DD, split by hand so a UTC parse can't shift the day. */
+function today(){
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
+}
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function fmtDate(d){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || ""));
+  return m ? `${+m[3]} ${MONTHS[+m[2]-1]} ${m[1]}` : "";
+}
+function daysAgo(d){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || ""));
+  if(!m) return Infinity;
+  const then = new Date(+m[1], +m[2]-1, +m[3]);
+  const now  = new Date(); now.setHours(0,0,0,0);
+  return Math.round((now - then) / 86400000);
+}
+const n0 = n => Number(n).toLocaleString();
+
+/* ---------------- titles ----------------
+   Library-style: "The Bell Jar" shelves under B. */
+function sortTitle(title){
+  return String(title || "").trim().replace(/^(the|an?)\s+/i, "");
+}
+function letterOf(title){
+  const m = /[a-zA-Z]/.exec(sortTitle(title)) || /[a-zA-Z]/.exec(title || "");
+  return m ? m[0].toUpperCase() : "?";
+}
+function lastName(author){
+  const parts = String(author || "").trim().split(/\s+/).filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : "";
+}
+
+/* Loose identity for spotting the same book twice: title without its
+   subtitle, article or punctuation, plus the author's last name. */
+function titleKey(title){
+  return sortTitle(String(title || "").split(":")[0])
+    .toLowerCase()
+    .replace(/[‘’'".,!?;()\[\]-]/g, "")
+    .replace(/&/g, "and")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function sameBook(a, b){
+  if(!titleKey(a.title) || titleKey(a.title) !== titleKey(b.title)) return false;
+  const la = lastName(a.author).toLowerCase(), lb = lastName(b.author).toLowerCase();
+  return !la || !lb || la === lb;
+}
+
+/* ---------------- ISBNs ----------------
+   Everything is stored as ISBN-13. An ISBN-10 is converted on the way in. */
+function isbn13ok(s){
+  let sum = 0;
+  for(let i = 0; i < 13; i++) sum += (+s[i]) * (i % 2 ? 3 : 1);
+  return sum % 10 === 0;
+}
+function isbn10ok(s){
+  let sum = 0;
+  for(let i = 0; i < 10; i++) sum += (s[i] === "X" ? 10 : +s[i]) * (10 - i);
+  return sum % 11 === 0;
+}
+function cleanIsbn(raw){
+  const s = String(raw || "").toUpperCase().replace(/[^0-9X]/g, "");
+  if(s.length === 13 && /^\d{13}$/.test(s) && isbn13ok(s)) return s;
+  if(s.length === 10 && /^\d{9}[\dX]$/.test(s) && isbn10ok(s)){
+    const core = "978" + s.slice(0, 9);
+    let sum = 0;
+    for(let i = 0; i < 12; i++) sum += (+core[i]) * (i % 2 ? 3 : 1);
+    return core + ((10 - sum % 10) % 10);
+  }
+  return "";
+}
+
+/* ---------------- shape ----------------
+   One record per book. `added` is the day it was catalogued; `acquired` is
+   the day it actually arrived, and stays blank for books we already had —
+   which keeps a big cataloguing day from looking like a buying spree. */
+function normalize(b){
+  ["id","title","author","isbn","cover","shelf","acquired","added","updated","notes"].forEach(k => {
+    if(typeof b[k] !== "string") b[k] = "";
+  });
+  if(!b.id) b.id = uid();
+  if(!FORMATS.some(f => f.key === b.format)) b.format = "physical";
+  ["year","pages"].forEach(k => {
+    if(typeof b[k] !== "number" || !isFinite(b[k])) b[k] = null;
+  });
+  if(typeof b.coverTried !== "boolean") b.coverTried = false;
+  return b;
+}
+
+const allBooks = () => [].concat(...shelves);
+const formatLabel = key => (FORMATS.find(f => f.key === key) || FORMATS[0]).label;
+
+function homeShelf(id){
+  let h = 5381;
+  for(let i = 0; i < id.length; i++) h = ((h * 33) ^ id.charCodeAt(i)) >>> 0;
+  return h % SHELF_COUNT;
+}
+/* Which shelf a book is actually sitting on. Normally its home shelf, but
+   look rather than assume. */
+function shelfIndexOf(id){
+  for(let n = 0; n < SHELF_COUNT; n++){
+    if(shelves[n].some(b => b.id === id)) return n;
+  }
+  return -1;
+}
+const find = id => allBooks().find(b => b.id === id) || null;
+const touch = b => { b.updated = new Date().toISOString(); return b; };
+
+/* ---------------- storage ---------------- */
+function setSync(text, stateName){
+  $("sync").textContent = text;
+  if(stateName) $("sync").setAttribute("data-state", stateName);
+  else $("sync").removeAttribute("data-state");
+}
+
+function writeCache(){
+  try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ shelves })); }
+  catch(err){ console.error("Couldn't cache the library locally:", err); }
+}
+function writeOutbox(){
+  try{ localStorage.setItem(OUTBOX_KEY, JSON.stringify(outbox)); }catch(e){}
+}
+function outboxMark(n, deletedId){
+  const box = outbox[n] || (outbox[n] = { v: 0, deleted: [] });
+  box.v++;
+  if(deletedId && box.deleted.indexOf(deletedId) < 0) box.deleted.push(deletedId);
+  writeOutbox();
+}
+/* Only clear the entry if nothing changed on that shelf since this write
+   went out — otherwise the newer change still needs sending. */
+function outboxDone(n, v){
+  if(outbox[n] && outbox[n].v === v){ delete outbox[n]; writeOutbox(); }
+}
+
+/* Book-by-book merge of a shelf: server copy, plus anything this device
+   changed more recently, minus anything this device deleted. */
+function mergeShelf(server, local, deleted){
+  const byId = {};
+  server.forEach(b => { byId[b.id] = b; });
+  local.forEach(b => {
+    const theirs = byId[b.id];
+    if(!theirs || String(b.updated) > String(theirs.updated)) byId[b.id] = b;
+  });
+  (deleted || []).forEach(id => { delete byId[id]; });
+  return Object.keys(byId).map(id => byId[id]);
+}
+
+let dirty = new Set(), flushTimer = null, pending = 0, slowTimer = null;
+
+/* Saves the shelves that changed. Local first and at once; Firestore a beat
+   later, so a run of scans in a session goes up as a handful of writes. */
+function save(shelfNs, deletedId){
+  [].concat(shelfNs).forEach(n => {
+    if(n < 0) return;
+    dirty.add(n);
+    outboxMark(n, deletedId);
+  });
+  writeCache();
+  render();
+  clearTimeout(flushTimer);
+  flushTimer = setTimeout(flush, 350);
+}
+
+function flush(){
+  if(!db){ setSync("Offline — saved here", "error"); return; }
+  const jobs = Array.from(dirty);
+  dirty.clear();
+  if(!jobs.length) return;
+
+  setSync("Saving…", "saving");
+  clearTimeout(slowTimer);
+  /* A write made offline doesn't resolve until it reaches the server. Say
+     so after a moment rather than spinning on "Saving…" forever. */
+  slowTimer = setTimeout(() => {
+    if(pending > 0) setSync("Saved on this device — will sync", "error");
+  }, 4000);
+
+  jobs.forEach(n => {
+    const v = outbox[n] ? outbox[n].v : 0;
+    pending++;
+    refs[n].set({ items: shelves[n] })
+      .then(() => { outboxDone(n, v); })
+      .catch(err => {
+        console.error("Sync failed for " + shelfPath(n) + ":", err);
+        setSync("Offline — saved here", "error");
+      })
+      .then(() => {
+        pending = Math.max(0, pending - 1);
+        if(!pending && !Object.keys(outbox).length){ clearTimeout(slowTimer); setSync("Saved"); }
+      });
+  });
+}
+
+/* JSON with keys in a fixed order, so two copies of the same shelf compare
+   equal however their objects were built. */
+const canon = v => JSON.stringify(v, (k, val) =>
+  (val && typeof val === "object" && !Array.isArray(val))
+    ? Object.keys(val).sort().reduce((o, key) => { o[key] = val[key]; return o; }, {})
+    : val);
+
+/* A shelf changed somewhere else — another tab, or the other phone. If this
+   device still has changes of its own waiting on that shelf, merge rather
+   than replace, and send the merged shelf back up. */
+function applyRemote(n, data){
+  let items = (Array.isArray(data.items) ? data.items : []).map(b => normalize(Object.assign({}, b)));
+  const mine = outbox[n];
+  if(mine) items = mergeShelf(items, shelves[n], mine.deleted);
+  if(canon(items) === canon(shelves[n])) return;
+
+  const draft = openId && $("notes") ? $("notes").value : null;
+  shelves[n] = items;
+  writeCache();
+  render();
+
+  if(openId){
+    if(find(openId)){
+      openDetail(openId);
+      if(draft != null && $("notes")) $("notes").value = draft;
+    }else{
+      closeDetail(true);
+    }
+  }
+  if(mine) save(n);
+  else setSync("Updated");
+}
+
+async function load(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+    if(raw && Array.isArray(raw.shelves)){
+      shelves = Array.from({ length: SHELF_COUNT }, (_, n) =>
+        Array.isArray(raw.shelves[n]) ? raw.shelves[n] : []);
+    }
+  }catch(e){}
+  try{ outbox = JSON.parse(localStorage.getItem(OUTBOX_KEY) || "{}") || {}; }catch(e){ outbox = {}; }
+  shelves.forEach(s => s.forEach(normalize));
+  render();
+  setSync("Loading…", "saving");
+
+  const resend = [];
+  try{
+    if(!window.firebase) throw new Error("Firebase didn't load");
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const fs = firebase.firestore();
+    const shelfRefs = shelves.map((_, n) => fs.doc(shelfPath(n)));
+    const snaps = await Promise.all(shelfRefs.map(r => r.get()));
+
+    snaps.forEach((snap, n) => {
+      const server = snap.exists && Array.isArray(snap.data().items)
+        ? snap.data().items.map(b => normalize(Object.assign({}, b)))
+        : [];
+      if(outbox[n]){
+        shelves[n] = mergeShelf(server, shelves[n], outbox[n].deleted);
+        resend.push(n);
+      }else{
+        shelves[n] = server;
+      }
+    });
+
+    db = fs;
+    refs = shelfRefs;
+  }catch(err){
+    console.error("Firestore unavailable, working from the local copy:", err);
+  }
+
+  writeCache();
+  render();
+  setSync(db ? "Synced" : "Offline", db ? null : "error");
+  if(resend.length) save(resend);
+
+  if(db){
+    /* Our own writes come back through here too, flagged as pending, and
+       are skipped. */
+    refs.forEach((ref, n) => {
+      ref.onSnapshot(s => {
+        if(!s.exists || s.metadata.hasPendingWrites) return;
+        applyRemote(n, s.data());
+      }, err => console.error("Live sync stopped for " + shelfPath(n) + ":", err));
+    });
+
+    db.doc(READING_DOC).onSnapshot(s => {
+      const data = s.exists ? s.data() : null;
+      reading = data && Array.isArray(data.items) ? data.items : [];
+      render();
+      if(openId && !$("form").classList.contains("open")) refreshDetailPile();
+    }, err => console.error("Couldn't read the reading pile:", err));
+  }
+
+  fillCovers();
+}
+
+/* ---------------- Reading Quest ---------------- */
+function pileFor(book){
+  if(!reading) return null;
+  return reading.find(r => sameBook(r, book)) || null;
+}
+
+function unshelvedOwned(){
+  if(!reading) return [];
+  const books = allBooks();
+  return reading.filter(r =>
+    r.ownership === "owned" && r.title && !books.some(b => sameBook(b, r)));
+}
+
+/* Every book on the pile marked Owned gets a library card, carrying over
+   what the pile already knows about it. */
+function shelveFromPile(){
+  const todo = unshelvedOwned();
+  if(!todo.length) return;
+  const touched = new Set();
+  todo.forEach(r => {
+    const book = touch(normalize({
+      id: uid(),
+      title: r.title,
+      author: r.author || "",
+      year: typeof r.year === "number" ? r.year : null,
+      pages: typeof r.estPages === "number" ? r.estPages : null,
+      format: FORMATS.some(f => f.key === r.format) ? r.format : "physical",
+      cover: r.cover || "",
+      coverTried: !!r.cover,
+      added: today()
+    }));
+    const n = homeShelf(book.id);
+    shelves[n].push(book);
+    touched.add(n);
+  });
+  save(Array.from(touched));
+  fillCovers();
+}
+
+/* Puts a library book on Reading Quest's pile, in that page's own shape.
+   A transaction, since it's that page's document and it may be open in
+   another tab — this must never write over a change made there. */
+async function addToPile(id){
+  const book = find(id);
+  if(!book || !db) return;
+  const note = $("pileNote");
+  if(note) note.textContent = "Adding…";
+
+  try{
+    const ref = db.doc(READING_DOC);
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      const data = snap.exists ? snap.data() : {};
+      const items = Array.isArray(data.items) ? data.items.slice() : [];
+      if(items.some(r => sameBook(r, book))) return;
+      items.push({
+        id: uid(), title: book.title, author: book.author, letter: letterOf(book.title),
+        classic: false, star: false, hundred: false, az: false,
+        year: book.year, estPages: book.pages,
+        status: "unread", started: "", date: "", added: today(), notes: "",
+        cover: book.cover, coverTried: !!book.cover,
+        format: book.format, ownership: "owned",
+        pct: 0, page: 0, pages: 0, mins: 0, totalMins: 0, rating: 0
+      });
+      tx.set(ref, Object.assign({}, data, { items }));
+    });
+  }catch(err){
+    console.error("Couldn't add to the reading pile:", err);
+    if(note) note.textContent = "Couldn't reach the reading pile just now — try again with a connection.";
+  }
+}
+
+/* ---------------- covers ----------------
+   Open Library, which needs no key and no account. Whatever is found is
+   stored on the book, so each one is only ever looked up once. */
+const OL_SEARCH = "https://openlibrary.org/search.json";
+const OL_COVER  = "https://covers.openlibrary.org/b/id/";
+const OL_FIELDS = "title,author_name,first_publish_year,number_of_pages_median,cover_i";
+
+async function olSearch(params, limit){
+  const res = await fetch(`${OL_SEARCH}?${params}&fields=${OL_FIELDS}&limit=${limit || 5}`);
+  if(!res.ok) throw new Error("Open Library said " + res.status);
+  const data = await res.json();
+  return data.docs || [];
+}
+const coverOf = d => d && d.cover_i ? OL_COVER + d.cover_i + "-M.jpg" : "";
+
+async function findCover(book){
+  const docs = book.isbn
+    ? await olSearch("isbn=" + book.isbn, 1)
+    : await olSearch("title=" + encodeURIComponent(book.title) +
+        (book.author ? "&author=" + encodeURIComponent(book.author) : ""), 5);
+  return coverOf(docs.find(d => d.cover_i));
+}
+
+let coversRunning = false;
+async function fillCovers(){
+  if(coversRunning) return;
+  coversRunning = true;
+  const todo = allBooks().filter(b => !b.cover && !b.coverTried && b.title);
+  const touched = new Set();
+  for(const book of todo){
+    try{
+      book.cover = await findCover(book);
+    }catch(err){
+      console.error("Cover lookup failed for " + book.title + ":", err);
+      continue;
+    }
+    book.coverTried = true;
+    touch(book);
+    touched.add(shelfIndexOf(book.id));
+    await new Promise(r => setTimeout(r, 150));
+  }
+  coversRunning = false;
+  if(touched.size) save(Array.from(touched));
+}
+
+/* ---------------- the shelving session ----------------
+   Each line is an ISBN or a title. They queue up and go one at a time —
+   it's a free public API and there's no hurry. */
+const queue = [];
+let queueRunning = false;
+let logRows = [];
+
+function logRow(row){
+  logRows.unshift(row);
+  logRows = logRows.slice(0, 60);
+  renderLog();
+  return row;
+}
+function renderLog(){
+  $("sessionLog").innerHTML = logRows.map(r => {
+    const tag = r.tag || { working:"Looking…", added:"Shelved", dupe:"Already here", missing:"Not found", error:"Couldn't reach Open Library" }[r.state];
+    let actions = "";
+    if(r.state === "added" || r.state === "dupe") actions = `<button data-open-log="${esc(r.id)}">Open</button>`;
+    if(r.manual && (r.state === "missing" || r.state === "error")) actions = `<button data-manual="${esc(r.raw)}">Add by hand</button>`;
+    if(r.state === "added" && r.guess) actions += ` <span class="tag">best match — check it</span>`;
+    return `<li data-state="${r.state}">
+      <span class="tag">${esc(tag)}</span>
+      <span class="what">${r.title ? `${esc(r.title)} <i>${esc(r.author || "")}</i>` : esc(r.raw)}</span>
+      ${actions}
+    </li>`;
+  }).join("");
+}
+
+/* "Title by Author", "Title — Author" or "Title - Author" split into the
+   two halves, on the last separator so "Stand by Me by Stephen King" keeps
+   its title whole; anything else is searched as one string. */
+function splitTitle(line){
+  const m = /^(.+)\s+(?:by|—|–|-)\s+(.+)$/i.exec(line);
+  return m ? { title: m[1].trim(), author: m[2].trim() } : { title: line.trim(), author: "" };
+}
+
+function enqueueText(text){
+  const lines = String(text || "").split(/[\n;]+/).map(s => s.trim()).filter(Boolean);
+  lines.forEach(line => {
+    const whole = cleanIsbn(line);
+    if(whole){ queue.push({ raw: line, isbn: whole }); return; }
+    /* A line of several ISBNs separated by spaces or commas. */
+    const parts = line.split(/[\s,]+/).filter(Boolean);
+    if(parts.length > 1 && parts.every(p => cleanIsbn(p))){
+      parts.forEach(p => queue.push({ raw: p, isbn: cleanIsbn(p) }));
+      return;
+    }
+    /* Nine or more digits that fail the checksum are a mistyped ISBN, not a
+       title. (A short number is a title — "1984".) */
+    if(/^[\d\s-]+X?$/i.test(line) && line.replace(/\D/g, "").length >= 9){
+      logRow({ state: "missing", tag: "Not a valid ISBN", raw: line, manual: true });
+      return;
+    }
+    queue.push({ raw: line, isbn: "" });
+  });
+  runQueue();
+}
+
+async function runQueue(){
+  if(queueRunning) return;
+  queueRunning = true;
+  while(queue.length){
+    const job = queue.shift();
+    await shelveOne(job);
+    await new Promise(r => setTimeout(r, 150));
+  }
+  queueRunning = false;
+}
+
+async function shelveOne(job){
+  const row = logRow({ state: "working", raw: job.raw, manual: true });
+
+  /* Already catalogued under this ISBN: don't even ask Open Library. */
+  if(job.isbn){
+    const have = allBooks().find(b => b.isbn === job.isbn);
+    if(have){ Object.assign(row, { state:"dupe", id: have.id, title: have.title, author: have.author }); renderLog(); return; }
+  }
+
+  let doc;
+  try{
+    if(job.isbn){
+      doc = (await olSearch("isbn=" + job.isbn, 1))[0];
+    }else{
+      const q = splitTitle(job.raw);
+      doc = (await olSearch("title=" + encodeURIComponent(q.title) +
+        (q.author ? "&author=" + encodeURIComponent(q.author) : ""), 1))[0];
+    }
+  }catch(err){
+    console.error("Lookup failed for " + job.raw + ":", err);
+    Object.assign(row, { state: "error" });
+    renderLog();
+    return;
+  }
+
+  if(!doc){ Object.assign(row, { state: "missing" }); renderLog(); return; }
+
+  const book = normalize({
+    id: uid(),
+    title: doc.title || job.raw,
+    author: (doc.author_name || [])[0] || "",
+    isbn: job.isbn,
+    year: doc.first_publish_year || null,
+    pages: doc.number_of_pages_median || null,
+    cover: coverOf(doc),
+    coverTried: true,
+    format: "physical",
+    acquired: $("sessionNew").checked ? today() : "",
+    added: today()
+  });
+
+  const dupe = allBooks().find(b => sameBook(b, book));
+  if(dupe){ Object.assign(row, { state:"dupe", id: dupe.id, title: dupe.title, author: dupe.author }); renderLog(); return; }
+
+  touch(book);
+  const n = homeShelf(book.id);
+  shelves[n].push(book);
+  Object.assign(row, { state: "added", id: book.id, title: book.title, author: book.author, guess: !job.isbn });
+  renderLog();
+  save(n);
+}
+
+function openSession(){
+  closeForm();
+  $("session").classList.add("open");
+  $("sessionInput").focus();
+}
+function closeSession(){
+  stopCamera();
+  $("session").classList.remove("open");
+}
+
+/* ---------------- camera scanning ----------------
+   Uses the browser's own BarcodeDetector, which Chrome on Android has and
+   iPhones don't (yet). Where it's missing the button never shows — typing
+   or a Bluetooth scanner still works. */
+let camStream = null, camDetector = null, camTimer = null;
+const camSeen = {};
+
+async function cameraSupported(){
+  try{
+    if(!("BarcodeDetector" in window) || !navigator.mediaDevices) return false;
+    const formats = await BarcodeDetector.getSupportedFormats();
+    return formats.indexOf("ean_13") > -1;
+  }catch(e){ return false; }
+}
+
+async function startCamera(){
+  try{
+    camDetector = new BarcodeDetector({ formats: ["ean_13"] });
+    camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
+    const video = $("cameraVideo");
+    video.srcObject = camStream;
+    await video.play();
+    $("camera").classList.add("open");
+    $("cameraBtn").textContent = "Stop camera";
+    scanTick();
+  }catch(err){
+    console.error("Camera unavailable:", err);
+    stopCamera();
+    logRow({ state: "error", tag: "No camera", raw: "The camera didn't start — check the browser's camera permission." });
+  }
+}
+
+function stopCamera(){
+  clearTimeout(camTimer);
+  if(camStream) camStream.getTracks().forEach(t => t.stop());
+  camStream = null;
+  $("camera").classList.remove("open");
+  $("cameraBtn").textContent = "Scan with camera";
+}
+
+/* Only book barcodes (978/979) count, and the same one is ignored for a few
+   seconds so holding a book in view doesn't shelve it ten times. */
+async function scanTick(){
+  if(!camStream) return;
+  try{
+    const codes = await camDetector.detect($("cameraVideo"));
+    codes.forEach(c => {
+      const isbn = cleanIsbn(c.rawValue);
+      if(!isbn || !/^97[89]/.test(isbn)) return;
+      if(camSeen[isbn] && Date.now() - camSeen[isbn] < 4000) return;
+      camSeen[isbn] = Date.now();
+      $("camera").classList.add("is-hit");
+      setTimeout(() => $("camera").classList.remove("is-hit"), 400);
+      if(navigator.vibrate) navigator.vibrate(60);
+      queue.push({ raw: isbn, isbn });
+      runQueue();
+    });
+  }catch(e){ /* a frame that wasn't ready; try the next */ }
+  camTimer = setTimeout(scanTick, 250);
+}
+
+/* ---------------- add / edit, one at a time ---------------- */
+function searchBooks(q){
+  $("lookupHint").textContent = "Searching…";
+  const isbn = cleanIsbn(q);
+  olSearch(isbn ? "isbn=" + isbn : "q=" + encodeURIComponent(q), 8)
+    .then(docs => showBookResults(docs.map(d => ({
+      raw: d, isbn,
+      name: d.title,
+      image: coverOf(d),
+      meta: [(d.author_name || [])[0] || "", d.first_publish_year || ""].filter(Boolean).join(" · ")
+    }))))
+    .catch(err => {
+      console.error("Book lookup failed:", err);
+      $("lookupHint").textContent = "Couldn't reach Open Library — fill it in by hand.";
+    });
+}
+
+function showBookResults(rows){
+  const box = $("results");
+  box.innerHTML = "";
+  if(!rows.length){
+    $("lookupHint").textContent = "Nothing found. Check the spelling, or fill it in by hand.";
+    box.classList.remove("open");
+    return;
+  }
+  $("lookupHint").textContent = "Pick the right one:";
+  rows.forEach(r => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cq-result";
+    b.innerHTML =
+      (r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy">`
+               : `<div class="lq-nocover">${esc(letterOf(r.name))}</div>`) +
+      `<div class="cq-rname">${esc(r.name)}</div>` +
+      `<div class="cq-rmeta">${esc(r.meta)}</div>`;
+    b.onclick = () => pickBook(r);
+    box.appendChild(b);
+  });
+  box.classList.add("open");
+}
+
+function pickBook(r){
+  $("fTitle").value  = r.name;
+  $("fAuthor").value = (r.raw.author_name || [])[0] || "";
+  if(r.isbn) $("fIsbn").value = r.isbn;
+  if(r.raw.first_publish_year) $("fYear").value = r.raw.first_publish_year;
+  if(r.raw.number_of_pages_median) $("fPages").value = r.raw.number_of_pages_median;
+  pendingCover = r.image || "";
+  $("results").classList.remove("open");
+  $("lookupHint").textContent = pendingCover
+    ? "Cover found."
+    : "No cover on file for that edition — you can add one after saving.";
+}
+
+function openForm(book, prefill){
+  closeDetail();
+  editId = book ? book.id : null;
+  pendingCover = "";
+  $("formTitle").textContent = book ? "Edit book" : "Add a book";
+  $("fTitle").value    = book ? book.title  : "";
+  $("fAuthor").value   = book ? book.author : "";
+  $("fIsbn").value     = book ? book.isbn   : "";
+  $("fYear").value     = book && book.year  != null ? book.year  : "";
+  $("fPages").value    = book && book.pages != null ? book.pages : "";
+  $("fFormat").value   = book ? book.format : "physical";
+  $("fAcquired").value = book ? book.acquired : today();
+  $("fShelf").value    = book ? book.shelf  : "";
+  $("results").innerHTML = "";
+  $("results").classList.remove("open");
+  $("lookupHint").textContent = "";
+  $("deleteBookBtn").style.display = book ? "inline-block" : "none";
+
+  /* From the session's "Add by hand": an ISBN goes in its box, a title in
+     the title box. */
+  if(prefill){
+    const isbn = cleanIsbn(prefill);
+    if(isbn) $("fIsbn").value = isbn;
+    else if(/^[\d\s-]+X?$/i.test(prefill)) $("fIsbn").value = prefill;
+    else{
+      const q = splitTitle(prefill);
+      $("fTitle").value = q.title;
+      $("fAuthor").value = q.author;
+    }
+  }
+
+  $("form").classList.add("open");
+  $("form").scrollIntoView({ behavior: "smooth", block: "start" });
+  $("fTitle").focus({ preventScroll: true });
+}
+
+function closeForm(){
+  $("form").classList.remove("open");
+  editId = null;
+  pendingCover = "";
+}
+
+function numOrNull(v){
+  const n = parseInt(String(v).trim(), 10);
+  return isFinite(n) ? n : null;
+}
+
+function saveBook(){
+  const title = $("fTitle").value.trim();
+  if(!title){ $("fTitle").focus(); return; }
+
+  const rawIsbn = $("fIsbn").value.trim();
+  const isbn = cleanIsbn(rawIsbn);
+  if(rawIsbn && !isbn){
+    $("lookupHint").textContent = "That ISBN doesn't check out — fix the digits or leave it blank.";
+    $("fIsbn").focus();
+    return;
+  }
+
+  const fields = {
+    title,
+    author:   $("fAuthor").value.trim(),
+    isbn,
+    year:     numOrNull($("fYear").value),
+    pages:    numOrNull($("fPages").value),
+    format:   $("fFormat").value,
+    acquired: $("fAcquired").value,
+    shelf:    $("fShelf").value.trim()
+  };
+
+  if(editId){
+    const book = find(editId);
+    if(book){
+      Object.assign(book, fields);
+      if(pendingCover){ book.cover = pendingCover; book.coverTried = true; }
+      touch(book);
+      save(shelfIndexOf(book.id));
+    }
+  }else{
+    const book = normalize(Object.assign({
+      id: uid(), added: today(),
+      cover: pendingCover, coverTried: !!pendingCover
+    }, fields));
+    const dupe = allBooks().find(b => (isbn && b.isbn === isbn) || sameBook(b, book));
+    if(dupe && !confirm(`"${dupe.title}" is already in the library. Add another copy?`)) return;
+    touch(book);
+    const n = homeShelf(book.id);
+    shelves[n].push(book);
+    save(n);
+  }
+
+  closeForm();
+  fillCovers();
+}
+
+function deleteBook(){
+  if(!editId) return;
+  const n = shelfIndexOf(editId);
+  if(n < 0) return;
+  if(!confirm("Take this book out of the library?")) return;
+  shelves[n] = shelves[n].filter(b => b.id !== editId);
+  const gone = editId;
+  closeForm();
+  save(n, gone);
+}
+
+/* ---------------- filtering + sorting ---------------- */
+function visible(){
+  const q = query.toLowerCase();
+  const qIsbn = cleanIsbn(query) || query.replace(/[^0-9X]/gi, "");
+  return allBooks().filter(b => {
+    if(filter !== "all" && b.format !== filter) return false;
+    if(!q) return true;
+    return b.title.toLowerCase().indexOf(q) > -1 ||
+           b.author.toLowerCase().indexOf(q) > -1 ||
+           b.shelf.toLowerCase().indexOf(q) > -1 ||
+           (qIsbn.length >= 4 && b.isbn.indexOf(qIsbn) > -1);
+  });
+}
+
+const byTitle = (a, b) => sortTitle(a.title).localeCompare(sortTitle(b.title));
+
+/* Blanks sit at the end whichever direction is picked. */
+function nullLast(get, a, b, ascending){
+  const av = get(a), bv = get(b);
+  const an = av == null || av === "", bn = bv == null || bv === "";
+  if(an && bn) return byTitle(a, b);
+  if(an) return 1;
+  if(bn) return -1;
+  if(av === bv) return byTitle(a, b);
+  if(typeof av === "string") return ascending ? av.localeCompare(bv) : bv.localeCompare(av);
+  return ascending ? av - bv : bv - av;
+}
+
+function sorted(rows){
+  const out = rows.slice();
+  if(sortBy === "title-asc")          out.sort(byTitle);
+  else if(sortBy === "author-asc")    out.sort((a,b) => nullLast(i => lastName(i.author).toLowerCase(), a, b, true));
+  else if(sortBy === "year-asc")      out.sort((a,b) => nullLast(i => i.year, a, b, true));
+  else if(sortBy === "year-desc")     out.sort((a,b) => nullLast(i => i.year, a, b, false));
+  else if(sortBy === "acquired-desc") out.sort((a,b) => nullLast(i => i.acquired, a, b, false));
+  else if(sortBy === "shelf-asc")     out.sort((a,b) => nullLast(i => i.shelf.toLowerCase(), a, b, true));
+  /* Recently shelved: by when it was catalogued, then by the exact moment,
+     so a session's scans come back newest first. */
+  else out.sort((a,b) => String(b.added).localeCompare(String(a.added)) ||
+                         String(b.updated).localeCompare(String(a.updated)));
+  return out;
+}
+
+/* ---------------- progress ----------------
+   The count, the milestones on the way to a thousand (and every 250 after),
+   the format split, and how fast new books are actually arriving. */
+function milestones(total){
+  const list = [100, 250, 500, 750, GOAL];
+  let next = GOAL + 250;
+  while(list[list.length - 1] < total){ list.push(next); next += 250; }
+  /* Once past the thousand, show the next one still to come as well. */
+  if(total >= GOAL && list[list.length - 1] <= total) list.push(next);
+  return list;
+}
+
+function renderProgress(){
+  const books = allBooks();
+  const total = books.length;
+
+  /* The day each milestone was reached is the day its Nth book was
+     catalogued. */
+  const byAdded = books.map(b => b.added).filter(Boolean).sort();
+  const miles = milestones(total).map(m => {
+    const reached = total >= m;
+    const when = reached ? byAdded[m - 1] || "" : "";
+    return `<span class="lq-mile${reached ? " is-reached" : ""}${m === GOAL ? " is-goal" : ""}"
+      title="${reached && when ? "Reached " + esc(fmtDate(when)) : ""}">${n0(m)}${
+      reached && when ? ` <small>${esc(fmtDate(when))}</small>` : ""}</span>`;
+  }).join("");
+
+  const counts = FORMATS.map(f => ({ f, n: books.filter(b => b.format === f.key).length }))
+    .filter(x => x.n)
+    .map(x => `${n0(x.n)} ${x.f.plural}`);
+
+  /* Pace counts arrivals only (the Acquired date), never cataloguing. */
+  const yearArrivals = books.filter(b => daysAgo(b.acquired) <= 365).length;
+  const thisYear = String(new Date().getFullYear());
+  const calYear = books.filter(b => b.acquired.slice(0, 4) === thisYear).length;
+
+  let pace = "";
+  if(total < GOAL && yearArrivals >= 3){
+    const years = (GOAL - total) / yearArrivals;
+    const when = new Date();
+    when.setDate(when.getDate() + Math.round(years * 365));
+    pace = ` At this year&rsquo;s pace (~${n0(yearArrivals)} a year), the thousandth book arrives around ${MONTHS[when.getMonth()]} ${when.getFullYear()}.`;
+  }
+
+  const notes = [];
+  if(counts.length) notes.push(counts.join(" · ") + ".");
+  notes.push(`${n0(calYear)} new ${calYear === 1 ? "arrival" : "arrivals"} in ${thisYear}.` + pace);
+  if(total >= GOAL) notes.unshift("A thousand books. The quest is won &mdash; and the shelves keep filling.");
+
+  const barTotal = total >= GOAL ? milestones(total).find(m => m > total) : GOAL;
+
+  $("progress").innerHTML = `
+    <div class="pp-panel pp-panel-tight lq-hero">
+      <p class="lq-count"><b>${n0(total)}</b><span>${total >= GOAL
+        ? `books &middot; on to ${n0(barTotal)}`
+        : `of ${n0(GOAL)} books`}</span></p>
+      <div class="pp-progress" data-color="gold"
+           data-current="${total}" data-total="${barTotal}" data-format="percent"></div>
+      <div class="lq-miles">${miles}</div>
+      <p class="lq-note">${notes.join(" ")}</p>
+    </div>`;
+
+  if(window.PPProgress) PPProgress.draw($("progress"));
+}
+
+function renderBridge(){
+  const todo = unshelvedOwned();
+  const box = $("bridge");
+  if(!todo.length){ box.classList.remove("open"); box.innerHTML = ""; return; }
+  const names = todo.slice(0, 3).map(r => `<i>${esc(r.title)}</i>`).join(", ") +
+    (todo.length > 3 ? ` and ${todo.length - 3} more` : "");
+  box.innerHTML = `
+    <p>${todo.length === 1 ? "One book" : `${todo.length} books`} on the
+      <a href="${READING_PAGE}">reading pile</a> ${todo.length === 1 ? "is" : "are"} marked Owned
+      but not shelved here yet: ${names}.</p>
+    <button class="pp-btn pp-btn-sm" id="bridgeBtn">Shelve ${todo.length === 1 ? "it" : "them"}</button>`;
+  box.classList.add("open");
+}
+
+function renderShelfNames(){
+  const names = Array.from(new Set(allBooks().map(b => b.shelf).filter(Boolean))).sort();
+  $("shelfNames").innerHTML = names.map(s => `<option value="${esc(s)}">`).join("");
+}
+
+function render(){
+  renderProgress();
+  renderBridge();
+  renderShelfNames();
+
+  const rows = sorted(visible());
+  const total = allBooks().length;
+  $("count").textContent = rows.length === total
+    ? `${n0(total)} ${total === 1 ? "book" : "books"}`
+    : `Showing ${n0(rows.length)} of ${n0(total)}`;
+
+  if(!rows.length){
+    $("grid").innerHTML = total
+      ? `<p class="lq-empty">Nothing on the shelves matches that.</p>`
+      : `<p class="lq-empty">The shelves are empty. Add a book, or start a shelving session and work along a bookcase.</p>`;
+    $("more").innerHTML = "";
+    return;
+  }
+
+  /* A thousand covers at once is a lot of page. Draw a stretch at a time. */
+  $("grid").innerHTML = rows.slice(0, shown).map(b => {
+    const letter = letterOf(b.title);
+    const art = b.cover
+      ? `<img class="lq-cover" src="${esc(b.cover)}" alt="" loading="lazy"
+              onerror="this.outerHTML='<div class=\\'lq-nocover\\'>${letter}</div>'">`
+      : `<div class="lq-nocover">${letter}</div>`;
+    const pile = pileFor(b);
+    return `<button class="lq-card" data-open="${esc(b.id)}">
+      <span class="lq-coverwrap">
+        ${art}
+        ${b.format !== "physical" ? `<span class="lq-format">${esc(formatLabel(b.format))}</span>` : ""}
+        ${pile ? `<span class="lq-pile" data-state="${esc(pile.status)}" title="On the reading pile">${esc(PILE_LABELS[pile.status] || "On the pile")}</span>` : ""}
+      </span>
+      <span class="lq-body">
+        <span class="lq-title">${esc(b.title)}</span>
+        <span class="lq-author">${esc(b.author)}</span>
+        ${b.shelf ? `<span class="lq-where">${esc(b.shelf)}</span>` : ""}
+      </span>
+    </button>`;
+  }).join("");
+
+  $("more").innerHTML = rows.length > shown
+    ? `<button class="pp-btn pp-btn-quiet" id="moreBtn">Show more (${n0(rows.length - shown)} to go)</button>`
+    : "";
+}
+
+/* ---------------- detail ---------------- */
+function pileBlock(book){
+  if(!db && !reading) return `<p class="lq-small">The reading pile needs a connection to check.</p>`;
+  if(!reading) return `<p class="lq-small">Checking the reading pile…</p>`;
+  const pile = pileFor(book);
+  if(pile){
+    const when = pile.status === "read" && pile.date ? ` &middot; finished ${esc(fmtDate(pile.date))}` : "";
+    const stars = pile.status === "read" && pile.rating ? ` &middot; ${"★".repeat(pile.rating)}` : "";
+    return `<p class="lq-small" style="margin-top:0;">On the pile: <b>${esc(PILE_LABELS[pile.status] || "To read")}</b>${when}${stars}.
+      <a href="${READING_PAGE}">Open Reading Quest</a></p>`;
+  }
+  return `<div class="lq-states"><button id="toPile">Add to the reading pile</button></div>
+    <p class="lq-small" id="pileNote">Not on the pile. Adding it puts it on Reading Quest as To read, marked Owned.</p>`;
+}
+
+function refreshDetailPile(){
+  const book = find(openId);
+  if(book && $("pileBlock")) $("pileBlock").innerHTML = pileBlock(book);
+}
+
+function openDetail(id){
+  const book = find(id);
+  if(!book) return;
+  openId = id;
+  const letter = letterOf(book.title);
+  const meta = [book.year, book.pages ? `${n0(book.pages)}pp` : "", book.isbn ? `ISBN ${book.isbn}` : ""]
+    .filter(Boolean).map(esc).join(" &middot; ");
+
+  $("detail").innerHTML = `
+    <div class="lq-detail-head">
+      ${book.cover
+        ? `<img class="lq-detail-cover" src="${esc(book.cover)}" alt=""
+                onerror="this.outerHTML='<div class=\\'lq-detail-nocover\\'>${letter}</div>'">`
+        : `<div class="lq-detail-nocover">${letter}</div>`}
+      <div style="flex:1 1 auto;min-width:0;">
+        <h2>${esc(book.title)}</h2>
+        <p class="lq-author">${esc(book.author)}</p>
+        ${meta ? `<p class="lq-meta">${meta}</p>` : ""}
+        ${book.added ? `<p class="lq-meta">Shelved ${esc(fmtDate(book.added))}</p>` : ""}
+      </div>
+      <button class="pp-btn pp-btn-quiet pp-btn-sm" id="editBook">Edit</button>
+      <button class="pp-btn pp-btn-quiet pp-btn-sm" id="closeDetail">Close</button>
+    </div>
+
+    <div class="lq-block">
+      <div class="lq-block-name">Format</div>
+      <div class="lq-states">
+        ${FORMATS.map(f => `<button data-set-format="${f.key}"
+            aria-pressed="${book.format === f.key}">${esc(f.label)}</button>`).join("")}
+      </div>
+    </div>
+
+    <div class="lq-block">
+      <div class="lq-block-name">Where it lives</div>
+      <div class="lq-row">
+        <input class="pp-input" id="shelfInput" type="text" list="shelfNames"
+               placeholder="Living room, top shelf" value="${esc(book.shelf)}">
+      </div>
+    </div>
+
+    <div class="lq-block">
+      <div class="lq-block-name">Acquired</div>
+      <div class="lq-row">
+        <input id="acquiredInput" type="date" value="${esc(book.acquired)}">
+        ${book.acquired ? "" : `<button class="pp-btn pp-btn-quiet pp-btn-sm" id="acquiredToday">Today</button>`}
+      </div>
+      <p class="lq-small">Leave blank for books we already had. Only dated arrivals count toward the pace.</p>
+    </div>
+
+    <div class="lq-block">
+      <div class="lq-block-name">Reading Quest</div>
+      <div id="pileBlock">${pileBlock(book)}</div>
+    </div>
+
+    <div class="lq-block">
+      <div class="lq-block-name">Cover</div>
+      <div class="lq-row">
+        <input class="pp-input" id="coverUrl" type="url" placeholder="Paste an image URL" value="${esc(book.cover)}">
+        <button class="pp-btn pp-btn-quiet pp-btn-sm" id="coverFind">Find one</button>
+        ${book.cover ? `<button class="pp-btn pp-btn-quiet pp-btn-sm" id="coverClear">Clear</button>` : ""}
+      </div>
+      <p class="lq-small" id="coverState">${book.cover
+        ? "Paste your own if you'd rather show your edition."
+        : "No cover yet. Try a lookup, or paste an image URL."}</p>
+    </div>
+
+    <div class="lq-block">
+      <div class="lq-block-name">Notes</div>
+      <div class="pp-field">
+        <textarea id="notes" placeholder="Signed copy, a gift, which edition…">${esc(book.notes)}</textarea>
+      </div>
+    </div>`;
+
+  $("detail").classList.add("open");
+  $("overlay").classList.add("open");
+}
+
+/* `quiet` closes without saving the notes box — used when the book itself
+   has gone. */
+function closeDetail(quiet){
+  if(openId && !quiet){
+    const book = find(openId);
+    const box = $("notes");
+    if(book && box && box.value !== book.notes){
+      book.notes = box.value;
+      touch(book);
+      save(shelfIndexOf(book.id));
+    }
+  }
+  openId = null;
+  $("detail").classList.remove("open");
+  $("overlay").classList.remove("open");
+}
+
+function update(id, fn){
+  const book = find(id);
+  if(!book) return;
+  fn(book);
+  touch(book);
+  save(shelfIndexOf(id));
+  openDetail(id);
+}
+
+async function lookupCover(id){
+  const book = find(id);
+  if(!book) return;
+  if($("coverState")) $("coverState").textContent = "Looking…";
+  try{
+    const url = await findCover(book);
+    if(url) update(id, b => { b.cover = url; b.coverTried = true; });
+    else if($("coverState")) $("coverState").textContent = "Open Library has no cover for this one. Paste a URL instead.";
+  }catch(err){
+    console.error("Cover lookup failed:", err);
+    if($("coverState")) $("coverState").textContent = "Couldn't reach Open Library just now.";
+  }
+}
+
+/* ---------------- events ---------------- */
+document.addEventListener("click", e => {
+  const t = e.target;
+
+  const card = t.closest("[data-open]");
+  if(card){ openDetail(card.getAttribute("data-open")); return; }
+
+  const fromLog = t.closest("[data-open-log]");
+  if(fromLog){ openDetail(fromLog.getAttribute("data-open-log")); return; }
+
+  const manual = t.closest("[data-manual]");
+  if(manual){ openForm(null, manual.getAttribute("data-manual")); return; }
+
+  if(t.id === "closeDetail" || t.id === "overlay"){ closeDetail(); return; }
+  if(t.id === "editBook" && openId){ openForm(find(openId)); return; }
+  if(t.id === "coverFind" && openId){ lookupCover(openId); return; }
+  if(t.id === "coverClear" && openId){ update(openId, b => { b.cover = ""; b.coverTried = true; }); return; }
+  if(t.id === "acquiredToday" && openId){ update(openId, b => { b.acquired = today(); }); return; }
+  if(t.id === "toPile" && openId){ addToPile(openId); return; }
+
+  const fmt = t.closest("[data-set-format]");
+  if(fmt && openId){ update(openId, b => { b.format = fmt.getAttribute("data-set-format"); }); return; }
+
+  if(t.id === "addBtn"){ closeSession(); openForm(null); return; }
+  if(t.id === "lookupBtn"){
+    const q = $("fTitle").value.trim() || $("fIsbn").value.trim();
+    if(q) searchBooks(q);
+    return;
+  }
+  if(t.id === "saveBookBtn"){ saveBook(); return; }
+  if(t.id === "cancelBookBtn"){ closeForm(); return; }
+  if(t.id === "deleteBookBtn"){ deleteBook(); return; }
+
+  if(t.id === "sessionBtn"){ openSession(); return; }
+  if(t.id === "sessionClose"){ closeSession(); return; }
+  if(t.id === "sessionGo"){ enqueueText($("sessionInput").value); $("sessionInput").value = ""; $("sessionInput").focus(); return; }
+  if(t.id === "cameraBtn"){ camStream ? stopCamera() : startCamera(); return; }
+
+  if(t.id === "bridgeBtn"){ shelveFromPile(); return; }
+  if(t.id === "moreBtn"){ shown += PAGE_SIZE; render(); return; }
+
+  const pill = t.closest(".lq-bar [data-filter]");
+  if(pill){
+    filter = pill.getAttribute("data-filter");
+    document.querySelectorAll(".lq-bar [data-filter]").forEach(b =>
+      b.setAttribute("aria-pressed", b === pill ? "true" : "false"));
+    shown = PAGE_SIZE;
+    render();
+  }
+});
+
+document.addEventListener("change", e => {
+  if(!openId) return;
+  const t = e.target;
+  if(t.id === "shelfInput"){ update(openId, b => { b.shelf = t.value.trim(); }); return; }
+  if(t.id === "acquiredInput"){ update(openId, b => { b.acquired = t.value; }); return; }
+  if(t.id === "coverUrl"){ update(openId, b => { b.cover = t.value.trim(); b.coverTried = true; }); return; }
+});
+
+/* Enter shelves what's in the box (that's also what a barcode scanner
+   sends after each code); Shift+Enter starts a new line for a typed list. */
+$("sessionInput").addEventListener("keydown", e => {
+  if(e.key === "Enter" && !e.shiftKey){
+    e.preventDefault();
+    enqueueText(e.target.value);
+    e.target.value = "";
+  }
+});
+
+/* Enter in the title box looks it up rather than doing nothing. */
+$("fTitle").addEventListener("keydown", e => {
+  if(e.key === "Enter"){ e.preventDefault(); $("lookupBtn").click(); }
+});
+
+let searchTimer = null;
+$("search").addEventListener("input", e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { query = e.target.value.trim(); shown = PAGE_SIZE; render(); }, 150);
+});
+
+$("sortBy").onchange = e => { sortBy = e.target.value; shown = PAGE_SIZE; render(); };
+
+document.addEventListener("keydown", e => { if(e.key === "Escape" && openId) closeDetail(); });
+
+cameraSupported().then(ok => { if(ok) $("cameraBtn").style.display = ""; });
+
+load();
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>

@@ -140,7 +140,8 @@ window.PPNav = (function(){
 
         { name:'Reading Quest', href:'/side-quests/reading-quest.html', indexLabel:'Reading Quest',
           note:'The to-be-read pile, and everything read', pages:[
-          { label:'Classics Quest', href:'/side-quests/classics-quest.html', note:'A hundred classics, A to Z' }
+          { label:'Classics Quest', href:'/side-quests/classics-quest.html', note:'A hundred classics, A to Z' },
+          { label:'Library Quest',  href:'/side-quests/library-quest.html',  note:'Every book we own, on the way to a thousand' }
         ]},
 
         { name:'Couch Quest', href:'/side-quests/couch-quest.html', indexLabel:'Couch Quest',

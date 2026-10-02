@@ -83,8 +83,9 @@
   /* A quest family: the parent quest big on the left, its children as
      smaller squares stacked on the right, all inside one border. Same
      families as the Side Quests dropdown in /assets/pp-nav.js. A family
-     is two tiles wide; Couch has three children, so it's two tall as
-     well (sq-family-tall), and the aspect ratio keeps it square. */
+     is two tiles wide; one with more than one child (Reading, Couch) is
+     two tall as well (sq-family-tall), or the children's icons get
+     squeezed out, and the aspect ratio keeps it square. */
   .sq-family{
     grid-column: span 2;
     display: grid;
@@ -281,8 +282,9 @@
         <p>The backlog</p>
       </a>
 
-      <!-- ---------- Reading Quest, with Classics Quest ---------- -->
-      <div class="pp-panel pp-panel-tight sq-family">
+      <!-- ---------- Reading Quest, with Classics Quest and Library Quest.
+           Two children, so two tiles tall like Couch. ---------- -->
+      <div class="pp-panel pp-panel-tight sq-family sq-family-tall">
         <a class="sq-family-main" href="/side-quests/reading-quest.html">
           <svg class="sq-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <!-- an open book, a ribbon marking the page -->
@@ -310,6 +312,25 @@
             </svg>
             <h4>Classics Quest</h4>
             <p>A hundred classics, A to Z</p>
+          </a>
+          <a class="sq-satellite" href="/side-quests/library-quest.html">
+            <svg class="sq-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <!-- a bookcase, two shelves full -->
+              <rect x="7" y="5" width="34" height="38" rx="2" fill="#F7F1E4" stroke="#7C5B30" stroke-width="2"/>
+              <path d="M7 24 H41" stroke="#7C5B30" stroke-width="2"/>
+              <rect x="11" y="9"  width="4" height="14" rx="1" fill="#6B4A78"/>
+              <rect x="16" y="11" width="4" height="12" rx="1" fill="#E87CA6"/>
+              <rect x="21" y="9"  width="5" height="14" rx="1" fill="#9C7440"/>
+              <rect x="27" y="12" width="4" height="11" rx="1" fill="#8FA37E"/>
+              <path d="M33 23 L36.5 11 L39.5 12 L36 23 Z" fill="#B23A3A"/>
+              <rect x="11" y="28" width="5" height="14" rx="1" fill="#8FA37E"/>
+              <rect x="17" y="30" width="4" height="12" rx="1" fill="#9C7440"/>
+              <rect x="22" y="28" width="4" height="14" rx="1" fill="#E87CA6"/>
+              <rect x="27" y="29" width="5" height="13" rx="1" fill="#6B4A78"/>
+              <rect x="33" y="31" width="4" height="11" rx="1" fill="#EDE1C3" stroke="#9C7440" stroke-width=".8"/>
+            </svg>
+            <h4>Library Quest</h4>
+            <p>On the way to a thousand books</p>
           </a>
         </div>
       </div>
