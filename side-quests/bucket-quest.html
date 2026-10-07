@@ -1045,8 +1045,8 @@ function render(){
     card.className = "bq-card" + (item.status === "done" ? " is-done" : "");
 
     const art = item.image
-      ? `<img class="bq-art" src="${esc(item.image)}" alt="" loading="lazy"
-           onerror="this.outerHTML='<div class=&quot;bq-art-none&quot;>${esc(item.title)}</div>'">`
+      ? `<img class="bq-art" src="${esc(item.image)}" alt="" loading="lazy" data-fallback="${esc(item.title)}"
+           onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'bq-art-none',textContent:this.dataset.fallback}))">`
       : `<div class="bq-art-none">${esc(item.title)}</div>`;
 
     const ring = (t.kind === "steps")
