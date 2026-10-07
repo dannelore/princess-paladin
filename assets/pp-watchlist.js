@@ -895,10 +895,13 @@ function renderSubsPicker(){
 }
 
 /* ---------------- cards ---------------- */
+/* A poster that fails to load is swapped for a text tile. The text rides in
+   data-fallback and goes in as textContent — never spliced into the onerror
+   JavaScript, where an apostrophe ("A Knight's Tale") ends the string. */
 function posterArt(src, fallback){
   return src
-    ? `<img class="cq-poster" src="${esc(src)}" alt="" loading="lazy"
-         onerror="this.outerHTML='<div class=&quot;cq-poster-none&quot;>${esc(fallback)}</div>'">`
+    ? `<img class="cq-poster" src="${esc(src)}" alt="" loading="lazy" data-fallback="${esc(fallback)}"
+         onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'cq-poster-none',textContent:this.dataset.fallback}))">`
     : `<div class="cq-poster-none">${esc(fallback)}</div>`;
 }
 

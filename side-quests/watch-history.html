@@ -572,8 +572,8 @@ function render(){
                 title="${esc(e.title + " — " + full + " — " + e.sourceLabel)}">
       <div class="wh-postwrap">
         ${e.image
-          ? `<img class="wh-poster" src="${esc(e.image)}" alt="" loading="lazy"
-                  onerror="this.outerHTML='<div class=\'wh-noposter\'>${esc(e.title)}</div>'">`
+          ? `<img class="wh-poster" src="${esc(e.image)}" alt="" loading="lazy" data-fallback="${esc(e.title)}"
+                  onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'wh-noposter',textContent:this.dataset.fallback}))">`
           : `<div class="wh-noposter">${esc(e.title)}</div>`}
         ${e.spooky ? `<span class="wh-pumpkin" aria-label="Spooky season">&#127875;</span>` : ""}
         ${e.again ? `<span class="wh-again" aria-label="Rewatch">&#8635;</span>`
