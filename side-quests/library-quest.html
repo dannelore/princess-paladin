@@ -38,6 +38,11 @@
      merges book by book — newest `updated` wins — instead of letting the
      server copy wipe the session out.
 
+     GOODREADS
+     A Goodreads export (My Books -> Import and export) can be dropped in to
+     catalogue a library in one go. Only the shelves you tick come across,
+     since an export holds every book you've ever shelved, owned or not.
+
      READING QUEST
      The library reads sidequest/classics-list (Reading Quest's shelf) but
      never stores anything of its own there except when you ask it to put a
@@ -123,8 +128,8 @@
   .lq-bridge a{ color: var(--dusk-deep); }
 
   /* ---- controls ---- */
-  .cq-form, .lq-session{ display: none; margin-bottom: 22px; }
-  .lq-session.open{ display: block; }
+  .cq-form, .lq-session, .lq-import{ display: none; margin-bottom: 22px; }
+  .lq-session.open, .lq-import.open{ display: block; }
 
   .lq-bar{
     display: flex;
@@ -237,6 +242,28 @@
     color: var(--dusk-deep); background: none; border: 0; padding: 0; cursor: pointer;
     text-decoration: underline;
   }
+
+  /* ---- Goodreads import ---- */
+  .lq-import input[type="file"]{
+    font-family: var(--font-body);
+    font-size: .88rem;
+    color: var(--ink);
+    max-width: 100%;
+  }
+  .lq-import-preview{ margin-top: 14px; }
+  .lq-shelfpick{ display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0 0 6px; }
+  .lq-shelfpick .cq-check-label{ font-size: .88rem; }
+  .lq-shelfpick small{ color: var(--ink-soft); }
+  .lq-sample{
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    font-family: var(--font-serif);
+    font-size: .92rem;
+    color: var(--ink);
+  }
+  .lq-sample li{ padding: 2px 0; }
+  .lq-sample i{ color: var(--ink-soft); }
 
   /* ---- the shelves ---- */
   .lq-grid{
@@ -484,6 +511,7 @@
   <div class="lq-bar">
     <button class="pp-btn" id="addBtn">+ Add a book</button>
     <button class="pp-btn pp-btn-quiet" id="sessionBtn">Shelving session</button>
+    <button class="pp-btn pp-btn-quiet" id="importBtn">Import from Goodreads</button>
     <span class="spacer"></span>
     <span class="lq-count-line" id="count"></span>
     <span class="lq-sync" id="sync"></span>
@@ -508,6 +536,21 @@
     </div>
     <div class="lq-camera" id="camera"><video id="cameraVideo" playsinline muted></video></div>
     <ul class="lq-log" id="sessionLog"></ul>
+  </section>
+
+  <section class="pp-panel lq-import" id="import">
+    <h2 class="pp-panel-title">Import from Goodreads</h2>
+    <p class="lq-small" style="margin-top:0;">
+      On Goodreads, go to <b>My Books &rarr; Import and export &rarr; Export library</b>,
+      download the CSV, and choose it here. You&rsquo;ll pick which shelves to bring
+      across before anything is added.
+    </p>
+    <div class="lq-session-row">
+      <input type="file" id="importFile" accept=".csv,text/csv">
+      <span class="spacer"></span>
+      <button class="pp-btn pp-btn-quiet" id="importClose">Cancel</button>
+    </div>
+    <div class="lq-import-preview" id="importPreview"></div>
   </section>
 
   <section class="pp-panel cq-form" id="form">
@@ -645,7 +688,9 @@ const PAGE_SIZE = 120;
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s)
   .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+/* Eight random characters: a Goodreads import makes hundreds of ids in the
+   same millisecond, and five left a real chance of two books sharing one. */
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,10).padEnd(8, "0");
 
 let shelves = Array.from({ length: SHELF_COUNT }, () => []);
 let outbox  = {};            /* { shelfIndex: { v, deleted:[ids] } } */
@@ -1043,23 +1088,32 @@ async function findCover(book){
   return coverOf(docs.find(d => d.cover_i));
 }
 
+/* Keeps going until nothing's left, so books added while it runs (an import,
+   say) get covers too. Saves every 25, so a long run that's cut short keeps
+   what it found. A lookup that fails is left for the next page load. */
 let coversRunning = false;
 async function fillCovers(){
   if(coversRunning) return;
   coversRunning = true;
-  const todo = allBooks().filter(b => !b.cover && !b.coverTried && b.title);
-  const touched = new Set();
-  for(const book of todo){
-    try{
-      book.cover = await findCover(book);
-    }catch(err){
-      console.error("Cover lookup failed for " + book.title + ":", err);
-      continue;
+  const failed = new Set();
+  let touched = new Set(), found = 0;
+  for(;;){
+    const todo = allBooks().filter(b => !b.cover && !b.coverTried && b.title && !failed.has(b.id));
+    if(!todo.length) break;
+    for(const book of todo){
+      try{
+        book.cover = await findCover(book);
+      }catch(err){
+        console.error("Cover lookup failed for " + book.title + ":", err);
+        failed.add(book.id);
+        continue;
+      }
+      book.coverTried = true;
+      touch(book);
+      touched.add(shelfIndexOf(book.id));
+      if(++found % 25 === 0){ save(Array.from(touched)); touched = new Set(); }
+      await new Promise(r => setTimeout(r, 150));
     }
-    book.coverTried = true;
-    touch(book);
-    touched.add(shelfIndexOf(book.id));
-    await new Promise(r => setTimeout(r, 150));
   }
   coversRunning = false;
   if(touched.size) save(Array.from(touched));
@@ -1188,12 +1242,224 @@ async function shelveOne(job){
 
 function openSession(){
   closeForm();
+  closeImport();
   $("session").classList.add("open");
   $("sessionInput").focus();
 }
 function closeSession(){
   stopCamera();
   $("session").classList.remove("open");
+}
+
+/* ---------------- Goodreads import ----------------
+   Read the export, let you tick which shelves are books you own, then add
+   the lot in one save. Covers aren't in the export, so they're looked up
+   afterwards by ISBN, in the background. */
+let importRows = [];        /* { book, keys } for every row in the file */
+let importPick = new Set(); /* the shelf keys ticked */
+
+/* A plain CSV reader: quoted fields, "" for a quote, and newlines inside
+   quotes (Goodreads reviews have them). */
+function parseCsv(text){
+  const rows = [];
+  let row = [], field = "", quoted = false;
+  for(let i = 0; i < text.length; i++){
+    const c = text[i];
+    if(quoted){
+      if(c === '"'){
+        if(text[i + 1] === '"'){ field += '"'; i++; }
+        else quoted = false;
+      }else field += c;
+    }else if(c === '"') quoted = true;
+    else if(c === ","){ row.push(field); field = ""; }
+    else if(c === "\n" || c === "\r"){
+      if(c === "\r" && text[i + 1] === "\n") i++;
+      row.push(field); rows.push(row); row = []; field = "";
+    }else field += c;
+  }
+  if(field || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r => r.some(f => f.trim()));
+}
+
+/* One export row as a library book. Goodreads hangs the series on the end of
+   the title ("The Way of Kings (The Stormlight Archive, #1)") — that comes
+   off so it matches the same book elsewhere. Its ISBNs come wrapped as
+   ="9780…", which cleanIsbn strips. "Date Added" is when it went on
+   Goodreads, not when it arrived, so Acquired stays blank. */
+function goodreadsBook(get){
+  const binding = get("Binding");
+  return {
+    title: get("Title").replace(/\s*\([^()]*#\s*[\d.]+(?:\s*-\s*[\d.]+)?\)\s*$/, "").trim(),
+    author: get("Author").replace(/\s+/g, " ").trim(),
+    isbn: cleanIsbn(get("ISBN13")) || cleanIsbn(get("ISBN")),
+    year: numOrNull(get("Original Publication Year")) || numOrNull(get("Year Published")),
+    pages: numOrNull(get("Number of Pages")) || null,
+    format: /audio|audible/i.test(binding) ? "audio"
+          : /kindle|e-?book|nook|digital|epub/i.test(binding) ? "ebook"
+          : "physical",
+    notes: get("Private Notes").trim()
+  };
+}
+
+/* The shelves a row sits on, as pick keys: its exclusive shelf (read,
+   to-read, currently-reading), its other shelves, and "owned" if Goodreads'
+   own Owned Copies count says so. */
+function goodreadsKeys(get){
+  const keys = new Set();
+  const excl = get("Exclusive Shelf").trim();
+  if(excl) keys.add("shelf:" + excl);
+  get("Bookshelves").split(",").map(s => s.trim()).filter(Boolean).forEach(s => keys.add("shelf:" + s));
+  if((numOrNull(get("Owned Copies")) || 0) > 0) keys.add("owned-copies");
+  return keys;
+}
+
+function readGoodreads(text){
+  const rows = parseCsv(text.replace(/^\uFEFF/, ""));
+  const head = rows.shift() || [];
+  const col = {};
+  head.forEach((h, i) => { col[h.trim()] = i; });
+  if(!("Title" in col) || !("Author" in col) || !("Exclusive Shelf" in col || "ISBN13" in col)) return null;
+
+  return rows.map(r => {
+    const get = name => (name in col && r[col[name]] != null) ? String(r[col[name]]) : "";
+    return { book: goodreadsBook(get), keys: goodreadsKeys(get) };
+  }).filter(r => r.book.title);
+}
+
+const keyLabel = k => k === "owned-copies" ? "Owned copies (Goodreads&rsquo; own count)" : esc(k.slice(6));
+
+/* "Is this book already here?" over a whole library at once: the same rule
+   as an ISBN match or sameBook, but looked up rather than compared pair by
+   pair, which froze the page for seconds on a 1,500-row export. */
+function bookIndex(books){
+  const isbns = new Set(), titles = new Map();
+  const add = b => {
+    if(b.isbn) isbns.add(b.isbn);
+    const k = titleKey(b.title);
+    if(!k) return;
+    if(!titles.has(k)) titles.set(k, []);
+    titles.get(k).push(lastName(b.author).toLowerCase());
+  };
+  const has = b => {
+    if(b.isbn && isbns.has(b.isbn)) return true;
+    const names = titles.get(titleKey(b.title));
+    if(!names) return false;
+    const mine = lastName(b.author).toLowerCase();
+    return !mine || names.some(n => !n || n === mine);
+  };
+  books.forEach(add);
+  return { add, has };
+}
+
+/* What ticking these shelves would add: rows on any ticked shelf, minus
+   books already in the library and repeats within the file itself. */
+function importPlan(){
+  const have = bookIndex(allBooks()), seen = bookIndex([]);
+  const take = [];
+  let already = 0;
+  importRows.forEach(r => {
+    if(!Array.from(r.keys).some(k => importPick.has(k))) return;
+    if(have.has(r.book)){ already++; return; }
+    if(seen.has(r.book)) return;
+    seen.add(r.book);
+    take.push(r.book);
+  });
+  return { take, already };
+}
+
+function renderImport(){
+  const box = $("importPreview");
+  if(!importRows.length){ box.innerHTML = ""; return; }
+
+  const counts = {};
+  importRows.forEach(r => r.keys.forEach(k => { counts[k] = (counts[k] || 0) + 1; }));
+  /* Owned copies first, then Goodreads' three, then your own shelves A–Z. */
+  const order = ["owned-copies", "shelf:read", "shelf:currently-reading", "shelf:to-read"];
+  const keys = Object.keys(counts).sort((a, b) => {
+    const ia = order.indexOf(a), ib = order.indexOf(b);
+    if(ia > -1 || ib > -1) return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+    return a.localeCompare(b);
+  });
+
+  const plan = importPlan();
+  const sample = plan.take.slice(0, 6).map(b =>
+    `<li>${esc(b.title)} <i>${esc(b.author)}</i></li>`).join("") +
+    (plan.take.length > 6 ? `<li><i>and ${n0(plan.take.length - 6)} more</i></li>` : "");
+
+  box.innerHTML = `
+    <p class="lq-small" style="margin-top:0;">${n0(importRows.length)} books in the export.
+      Which shelves are books you own?</p>
+    <div class="lq-shelfpick">
+      ${keys.map(k => `<label class="cq-check-label">
+        <input type="checkbox" data-gr-key="${esc(k)}" ${importPick.has(k) ? "checked" : ""}>
+        ${keyLabel(k)} <small>${n0(counts[k])}</small></label>`).join("")}
+    </div>
+    ${importPick.size ? `
+      <p class="lq-small">${plan.take.length ? `${n0(plan.take.length)} to add` : "Nothing new to add"}${
+        plan.already ? ` &middot; ${n0(plan.already)} already in the library` : ""}.</p>
+      <ul class="lq-sample">${sample}</ul>
+      <div class="lq-session-row">
+        <button class="pp-btn" id="importGo" ${plan.take.length ? "" : "disabled"}>Add ${n0(plan.take.length)} ${plan.take.length === 1 ? "book" : "books"}</button>
+      </div>`
+    : `<p class="lq-small">Tick the shelves that are books you own.</p>`}`;
+}
+
+function loadImportFile(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const rows = readGoodreads(String(reader.result || ""));
+    if(!rows){
+      importRows = [];
+      $("importPreview").innerHTML = `<p class="lq-small" style="margin-top:0;">That doesn&rsquo;t look like a Goodreads export &mdash; it should be the CSV from <b>Export library</b>.</p>`;
+      return;
+    }
+    importRows = rows;
+    /* Start from the obvious guess: any shelf with "own" in its name, else
+       Goodreads' Owned Copies count. Nothing ticked if neither exists. */
+    importPick = new Set();
+    rows.forEach(r => r.keys.forEach(k => { if(/^shelf:.*own/i.test(k)) importPick.add(k); }));
+    if(!importPick.size && rows.some(r => r.keys.has("owned-copies"))) importPick.add("owned-copies");
+    renderImport();
+  };
+  reader.onerror = () => {
+    $("importPreview").innerHTML = `<p class="lq-small" style="margin-top:0;">Couldn&rsquo;t read that file.</p>`;
+  };
+  reader.readAsText(file);
+}
+
+function runImport(){
+  const plan = importPlan();
+  if(!plan.take.length) return;
+  const touched = new Set();
+  plan.take.forEach(b => {
+    const book = touch(normalize(Object.assign({}, b, { id: uid(), added: today(), coverTried: false })));
+    const n = homeShelf(book.id);
+    shelves[n].push(book);
+    touched.add(n);
+  });
+  save(Array.from(touched));
+
+  importRows = [];
+  importPick = new Set();
+  $("importFile").value = "";
+  $("importPreview").innerHTML = `<p class="lq-small" style="margin-top:0;">Added ${n0(plan.take.length)} ${
+    plan.take.length === 1 ? "book" : "books"}. Covers are being looked up in the background &mdash;
+    for a big library that takes a few minutes, and they fill in as they&rsquo;re found.</p>`;
+  fillCovers();
+}
+
+function openImport(){
+  closeForm();
+  closeSession();
+  $("import").classList.add("open");
+}
+function closeImport(){
+  $("import").classList.remove("open");
+  importRows = [];
+  importPick = new Set();
+  $("importFile").value = "";
+  $("importPreview").innerHTML = "";
 }
 
 /* ---------------- camera scanning ----------------
@@ -1313,6 +1579,7 @@ function pickBook(r){
 
 function openForm(book, prefill){
   closeDetail();
+  closeImport();
   editId = book ? book.id : null;
   pendingCover = "";
   $("formTitle").textContent = book ? "Edit book" : "Add a book";
@@ -1761,6 +2028,9 @@ document.addEventListener("click", e => {
   if(t.id === "deleteBookBtn"){ deleteBook(); return; }
 
   if(t.id === "sessionBtn"){ openSession(); return; }
+  if(t.id === "importBtn"){ openImport(); return; }
+  if(t.id === "importClose"){ closeImport(); return; }
+  if(t.id === "importGo"){ runImport(); return; }
   if(t.id === "sessionClose"){ closeSession(); return; }
   if(t.id === "sessionGo"){ enqueueText($("sessionInput").value); $("sessionInput").value = ""; $("sessionInput").focus(); return; }
   if(t.id === "cameraBtn"){ camStream ? stopCamera() : startCamera(); return; }
@@ -1779,8 +2049,15 @@ document.addEventListener("click", e => {
 });
 
 document.addEventListener("change", e => {
-  if(!openId) return;
   const t = e.target;
+  if(t.id === "importFile"){ loadImportFile(t.files && t.files[0]); return; }
+  if(t.hasAttribute("data-gr-key")){
+    const k = t.getAttribute("data-gr-key");
+    if(t.checked) importPick.add(k); else importPick.delete(k);
+    renderImport();
+    return;
+  }
+  if(!openId) return;
   if(t.id === "shelfInput"){ update(openId, b => { b.shelf = t.value.trim(); }); return; }
   if(t.id === "acquiredInput"){ update(openId, b => { b.acquired = t.value; }); return; }
   if(t.id === "coverUrl"){ update(openId, b => { b.cover = t.value.trim(); b.coverTried = true; }); return; }
