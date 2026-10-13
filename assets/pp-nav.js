@@ -147,6 +147,7 @@ window.PPNav = (function(){
         { name:'Couch Quest', href:'/side-quests/couch-quest.html', indexLabel:'Couch Quest',
           note:'Watch list', pages:[
           { label:'Spooky Quest',  href:'/side-quests/spooky-quest.html',  note:'1 September – 31 October' },
+          { label:'Holiday Quest', href:'/side-quests/holiday-quest.html', note:'1 November – 31 December; plans and gifts behind a password' },
           { label:'Watch History', href:'/side-quests/watch-history.html', note:'Both watch lists, in the order you finished them' }
         ]}
       ]

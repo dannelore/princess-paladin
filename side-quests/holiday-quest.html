@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Holiday Quest — Princess &amp; Paladin</title>
+
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/themes/side-quests.css">
+<link rel="stylesheet" href="/assets/pp-tracker.css">
+<link rel="stylesheet" href="/assets/pp-progress.css">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{ --moss: #5A7150; }
+
+  /* ---------- toolbar ---------- */
+  .cq-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:14px; }
+
+  /* ---------- form + detail ---------- */
+  .cq-form, .cq-detail{ display:none; margin-bottom:22px; }
+
+  /* ---------- detail ---------- */
+  .cq-detail-head{ display:flex; gap:16px; align-items:flex-start; margin-bottom:20px; }
+
+  /* an extra date line per rewatch, quieter than the original */
+  .cq-rewatchline{
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+
+  /* one row per logged viewing, in the detail panel */
+  .cq-rewatch-row{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px dashed var(--line);
+    font-family: var(--font-serif);
+    font-size: .95rem;
+    color: var(--ink);
+  }
+  .cq-rewatch-row:last-of-type{ border-bottom: 0; }
+  .cq-rewatch-row span{ flex: 1 1 auto; min-width: 0; }
+  .cq-rewatch-row button{
+    flex: 0 0 auto;
+    font-family: var(--font-body);
+    font-size: .9rem;
+    line-height: 1;
+    color: var(--ink-soft);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    padding: 3px 6px;
+  }
+  .cq-rewatch-row button:hover{ color: var(--burgundy); }
+
+  /* rewatch badge on card */
+  .cq-rewatch{
+    font-family: var(--font-body);
+    font-size: .66rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--pink-deep);
+    background: var(--panel-tint);
+    border: 1px solid var(--pink);
+    border-radius: 999px;
+    padding: 2px 9px;
+  }
+
+  /* streaming service badges on card — colour comes from an inline style */
+  .cq-streams{ display:flex; flex-wrap:wrap; gap:3px; }
+  /* pale swatches need dark text */
+  .cq-stream[data-light="true"]{ color: var(--ink); }
+
+  /* a service we don't pay for — hollow, with a dotted edge */
+  .cq-stream[data-sub="false"]{
+    background: transparent !important;
+    border-style: dotted;
+    opacity: .75;
+  }
+
+  /* the subscriptions panel */
+  .cq-subs{ display:none; margin-bottom:22px; }
+
+  /* ---------- season banner ---------- */
+  .hq-banner{
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 22px;
+    margin-bottom: 18px;
+    background:
+      radial-gradient(ellipse at 12% 30%, rgba(163,38,58,.12), transparent 60%),
+      var(--parchment);
+    border: 1px solid var(--parchment-border);
+    border-radius: var(--radius-md);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.4), var(--lift);
+  }
+  .hq-star{ width: 44px; height: 44px; flex-shrink: 0; }
+  .hq-snow{ width: 80px; height: 32px; flex-shrink: 0; margin-left: auto; opacity: .9; }
+  .hq-banner-text{ min-width: 0; }
+  .hq-banner-title{
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: var(--burgundy);
+    margin: 0;
+  }
+  .hq-banner-sub{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .92rem;
+    color: var(--ink-soft);
+    margin: 2px 0 0;
+  }
+  .hq-banner.is-off .hq-banner-title{ color: var(--pine); }
+
+  @media (max-width:560px){
+    .hq-snow{ display: none; }
+    .hq-banner{ padding: 14px 16px; gap: 12px; }
+  }
+
+  /* ---------- tradition + year badges ---------- */
+  .hq-tradition{
+    font-family: var(--font-body);
+    font-size: .66rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--cranberry);
+    border-radius: 999px;
+    padding: 3px 9px;
+  }
+  .hq-years{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .76rem;
+    color: var(--pine);
+  }
+  .hq-years b{ font-style: normal; font-weight: 600; }
+
+  /* the status pill goes evergreen and cranberry here */
+  .cq-status[data-status="want"]{ background: var(--pine); }
+  .cq-status[data-status="watching"]{ background: var(--cranberry); }
+
+  /* start / end dates */
+  .cq-dates{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  /* the small date line on a card */
+  .cq-dateline{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .78rem;
+    color: var(--gold-deep);
+  }
+
+  /* ---------- grid ---------- */
+  .cq-grid{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px; }
+
+  /* who badge — top left of the poster */
+  .cq-who{
+    position:absolute; top:7px; left:7px;
+    font-family:var(--font-body); font-size:.6rem; font-weight:700;
+    letter-spacing:.1em; text-transform:uppercase;
+    border-radius:999px; padding:3px 8px;
+    border:1px solid transparent;
+  }
+  /* cream needs a hairline or it vanishes on a pale poster */
+  .cq-who[data-who="together"]{ color:var(--ink);  background:#F7F1E4; border-color:var(--gold); }
+
+  /* ---------- tabs ---------- */
+  .hq-tabs{
+    display: flex;
+    gap: 6px;
+    margin: 0 0 18px;
+    padding: 5px;
+    background: rgba(255,253,249,.6);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    width: fit-content;
+    max-width: 100%;
+  }
+  .hq-tab{
+    font-family: var(--font-body);
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--pine);
+    padding: 8px 18px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .hq-tab:hover{ background: rgba(47,93,70,.1); text-decoration: none; }
+  .hq-tab[aria-current="page"]{ background: var(--pine); color: #fff; }
+  @media (max-width:420px){ .hq-tab{ padding: 8px 12px; letter-spacing: .06em; } }
+
+  /* ---------- lock screen ---------- */
+  .hq-lock{
+    max-width: 480px;
+    margin: 30px auto;
+    text-align: center;
+  }
+  .hq-lock > svg{ width: 34px; height: 34px; color: var(--cranberry); }
+  .hq-lock h2{ margin: 6px 0 6px; }
+  .hq-lock-form{ display: flex; gap: 8px; margin-top: 16px; }
+  .hq-lock-form input{
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    padding: 10px 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    background: #fff;
+  }
+  .hq-hint{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .95rem;
+    color: var(--ink-soft);
+    margin: 4px 0 12px;
+  }
+  .hq-error{ color: var(--cranberry-deep); font-size: .88rem; margin: 10px 0 0; }
+  .hq-error[hidden], .hq-note[hidden]{ display: none; }
+
+  /* ---------- unlocked ---------- */
+  .hq-vaultbar{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    margin-bottom: 16px;
+    font-size: .9rem;
+  }
+  .hq-vaultbar .cq-spacer{ flex: 1 1 auto; }
+  .hq-year{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .hq-year select{
+    font-family: var(--font-body);
+    font-size: .88rem;
+    text-transform: none;
+    letter-spacing: 0;
+    padding: 4px 8px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: #fff;
+  }
+  .hq-note{
+    padding: 10px 16px;
+    margin: 0 0 16px;
+    background: var(--parchment);
+    border: 1px solid var(--parchment-border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-serif);
+    font-style: italic;
+    color: var(--burgundy);
+  }
+  .hq-pwform, .hq-itemform{ margin-bottom: 20px; }
+  .hq-itemform textarea{
+    font-family: var(--font-body);
+    font-size: .95rem;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    width: 100%;
+    resize: vertical;
+  }
+
+  .hq-head{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 16px;
+    margin: 4px 0 14px;
+  }
+  .hq-head h2{ margin: 0; font-size: 1.6rem; }
+  .hq-head .pp-btn{ margin-left: auto; }
+  .hq-stats{ font-family: var(--font-serif); font-style: italic; color: var(--ink-soft); }
+
+  /* plans */
+  .hq-plan{
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+  .hq-check{
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1.5px solid var(--pine);
+    background: #fff;
+    color: transparent;
+    font-size: .85rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .hq-check[aria-pressed="true"]{ background: var(--pine); color: #fff; }
+  .hq-plan-body{ flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .hq-plan-title{ font-family: var(--font-serif); font-weight: 600; font-size: 1.12rem; line-height: 1.3; }
+  .hq-plan-when{ font-size: .84rem; color: var(--cranberry-deep); }
+  .hq-plan-notes{ font-size: .84rem; color: var(--ink-soft); white-space: pre-line; }
+  .hq-plan.is-done{ opacity: .6; }
+  .hq-plan.is-done .hq-plan-title{ text-decoration: line-through; }
+  .hq-edit{
+    flex: 0 0 auto;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: .9rem;
+    color: var(--ink-soft);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    padding: 2px 4px;
+  }
+  .hq-edit:hover{ color: var(--cranberry); }
+
+  /* gifts */
+  .hq-giftlist{ margin-bottom: 26px; }
+  .hq-subhead{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 10px; }
+  .hq-subhead h3{ margin: 0; font-size: 1.25rem; }
+  .hq-subhead .pp-btn{ margin-left: auto; }
+  .hq-secret .hq-subhead h3{ color: var(--cranberry-deep); }
+  .hq-person{ margin-bottom: 12px; }
+  .hq-person-head{
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 0 4px 8px;
+    margin-bottom: 4px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .hq-person-name{ font-family: var(--font-serif); font-weight: 600; font-size: 1.15rem; }
+  .hq-person-meta{ font-size: .8rem; color: var(--ink-soft); margin-left: auto; }
+  .hq-gift{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 4px;
+  }
+  .hq-gift + .hq-gift{ border-top: 1px solid rgba(46,36,31,.06); }
+  .hq-gift-idea{ flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .hq-gift-idea small{ font-size: .78rem; color: var(--ink-soft); }
+  .hq-gift-price{ font-variant-numeric: tabular-nums; color: var(--ink-soft); font-size: .9rem; }
+  .hq-status{
+    flex: 0 0 auto;
+    width: 78px;
+    font-family: var(--font-body);
+    font-size: .64rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 4px 0;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    color: #fff;
+  }
+  .hq-status[data-status="idea"]{ color: var(--ink-soft); background: #fff; border-color: var(--line-strong); }
+  .hq-status[data-status="bought"]{ background: var(--gold); }
+  .hq-status[data-status="wrapped"]{ background: var(--cranberry); }
+  .hq-status[data-status="given"]{ background: var(--pine); }
+</style>
+</head>
+
+<body class="pp-holiday">
+
+<header class="pp-ribbon">
+  <div class="pp-ribbon-inner">
+    <a class="pp-ribbon-mark" href="/" aria-label="Princess &amp; Paladin home">
+      <span class="pp-emblem pp-emblem-sm" style="margin:0;">
+        <!-- Tiara -->
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M8 44 H56" stroke="#9C7440" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="32" cy="10" r="3.5" fill="#9C7440"/>
+          <circle cx="4" cy="18" r="3" fill="#9C7440"/>
+          <circle cx="60" cy="18" r="3" fill="#9C7440"/>
+        </svg>
+        <!-- Sword -->
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g transform="translate(16,0)">
+            <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
+            <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+            <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
+            <circle cx="16" cy="60" r="3.4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+          </g>
+        </svg>
+      </span>
+    </a>
+    <div class="pp-ribbon-titles">
+      <span class="pp-ribbon-eyebrow">Side Quests</span>
+      <span class="pp-ribbon-title">Holiday Quest</span>
+    </div>
+    <nav class="pp-nav" aria-label="Main navigation">
+      <a href="/">Home</a>
+      <a href="/dannelore/">Princess</a>
+      <a href="/vmprman/">Paladin</a>
+      <a href="/castle/">Castle Keep</a>
+      <a href="/side-quests/" aria-current="page">Side Quests</a>
+      <a href="/templates/">Templates</a>
+    </nav>
+  </div>
+</header>
+
+<div class="pp-wrap">
+
+  <!-- ---------------- tabs ----------------
+       The watch list is open to anyone. Plans and Gifts are locked and
+       encrypted — /assets/pp-holiday-vault.js owns those two tabs. -->
+  <nav class="hq-tabs" aria-label="Holiday Quest">
+    <a class="hq-tab" href="#watch" data-tab="watch">Watch list</a>
+    <a class="hq-tab" href="#plans" data-tab="plans">Plans <span aria-hidden="true">&#128274;</span></a>
+    <a class="hq-tab" href="#gifts" data-tab="gifts">Gifts <span aria-hidden="true">&#128274;</span></a>
+  </nav>
+
+  <div id="paneWatch">
+
+  <!-- ---------------- season banner ---------------- -->
+  <div class="hq-banner" id="banner">
+    <svg class="hq-star" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <circle cx="24" cy="24" r="17" fill="#F4E9CC" stroke="#C9B688" stroke-width="1.5"/>
+      <path d="M24 11 L27.6 19.6 L36.8 20.2 L29.8 26.2 L32 35.2 L24 30.4 L16 35.2 L18.2 26.2 L11.2 20.2 L20.4 19.6 Z" fill="#C9A227" stroke="#9C7440" stroke-width="1.2" stroke-linejoin="round"/>
+    </svg>
+    <div class="hq-banner-text">
+      <p class="hq-banner-title" id="bannerTitle"></p>
+      <p class="hq-banner-sub" id="bannerSub"></p>
+    </div>
+    <svg class="hq-snow" viewBox="0 0 80 32" fill="none" stroke="#2F5D46" stroke-width="1.4" stroke-linecap="round" aria-hidden="true">
+      <g transform="translate(14 14)"><path d="M0 -8V8M-7 -4L7 4M-7 4L7 -4"/></g>
+      <g transform="translate(40 22)" opacity=".7"><path d="M0 -6V6M-5.2 -3L5.2 3M-5.2 3L5.2 -3"/></g>
+      <g transform="translate(64 11)" opacity=".5"><path d="M0 -6V6M-5.2 -3L5.2 3M-5.2 3L5.2 -3"/></g>
+    </svg>
+  </div>
+
+  <div class="cq-bar">
+    <button class="cq-filter" data-filter="unfinished" aria-pressed="true">Current</button>
+    <button class="cq-filter" data-filter="all" aria-pressed="false">Everything</button>
+    <button class="cq-filter" data-filter="want" aria-pressed="false">TBW</button>
+    <button class="cq-filter" data-filter="watching" aria-pressed="false">Watching</button>
+    <button class="cq-filter" data-filter="watched" aria-pressed="false">Watched</button>
+    <button class="cq-filter" data-filter="rewatch" aria-pressed="false">Rewatches</button>
+    <button class="cq-filter" data-filter="tradition" aria-pressed="false">Traditions</button>
+    <button class="cq-filter" data-filter="unseen" aria-pressed="false">Not yet this year</button>
+    <span class="cq-spacer"></span>
+    <button class="pp-btn" id="addBtn">Add something</button>
+  </div>
+
+  <div class="cq-selects">
+    <div class="cq-pick">
+      <label for="fltKind">Kind</label>
+      <select id="fltKind">
+        <option value="all">All</option>
+        <option value="series">Series</option>
+        <option value="movie">Films</option>
+      </select>
+    </div>
+
+    <div class="cq-pick">
+      <label for="fltWho">Who</label>
+      <select id="fltWho">
+        <option value="all">All</option>
+        <option value="together">Together</option>
+        <option value="danni">D only</option>
+        <option value="brendon">B only</option>
+        <option value="family">Family</option>
+      </select>
+    </div>
+
+    <div class="cq-pick">
+      <label for="fltPri">Priority</label>
+      <select id="fltPri">
+        <option value="all">All</option>
+        <option value="high">High</option>
+        <option value="mid">Medium</option>
+        <option value="low">Low</option>
+        <option value="none">Unrated</option>
+      </select>
+    </div>
+
+    <div class="cq-pick">
+      <label for="fltYear">Year</label>
+      <select id="fltYear"><option value="all">Any year</option></select>
+    </div>
+
+    <div class="cq-pick">
+      <label for="fltStream">Service</label>
+      <select id="fltStream">
+        <option value="all">All</option>
+        <option value="__subbed">Free to me</option>
+      </select>
+    </div>
+
+    <div class="cq-pick">
+      <label for="sortBy">Sort</label>
+      <select id="sortBy">
+        <option value="priority-desc">Priority: high first</option>
+        <option value="priority-asc">Priority: low first</option>
+        <option value="progress-desc">Progress: furthest along</option>
+        <option value="progress-asc">Progress: least started</option>
+        <option value="length-desc">Length: longest first</option>
+        <option value="length-asc">Length: shortest first</option>
+        <option value="title-asc">Title: A–Z</option>
+        <option value="title-desc">Title: Z–A</option>
+        <option value="added-desc">Date added: newest first</option>
+        <option value="added-asc">Date added: oldest first</option>
+        <option value="started-desc">Date started: most recent</option>
+        <option value="started-asc">Date started: earliest</option>
+        <option value="finished-desc">Date finished: most recent</option>
+        <option value="finished-asc">Date finished: earliest</option>
+      </select>
+    </div>
+
+    <button class="cq-reset" id="resetBtn">Clear filters</button>
+    <button class="cq-reset" id="subsBtn">Our services</button>
+  </div>
+
+  <!-- ---------------- subscriptions ---------------- -->
+  <section class="pp-panel cq-subs" id="subs">
+    <h2 class="pp-panel-title">What we subscribe to</h2>
+    <p class="cq-hint" style="margin:0 0 14px;">
+      Tap to toggle. Services you don't have show faded on cards, so you can
+      see at a glance when something needs a rental or a friend's login.
+    </p>
+    <div class="cq-tagpick" id="subsPick"></div>
+    <div class="cq-actions">
+      <button class="pp-btn pp-btn-quiet" id="subsClose">Done</button>
+    </div>
+  </section>
+
+  <div class="cq-bar" style="margin-bottom:14px;">
+    <span class="cq-count" id="count"></span>
+    <span class="cq-spacer"></span>
+    <span class="cq-sync" id="sync" data-state="idle">Connecting</span>
+  </div>
+
+  <!-- ---------------- add / edit ---------------- -->
+  <section class="pp-panel cq-form" id="form">
+    <h2 class="pp-panel-title" id="formTitle">Add something</h2>
+
+    <div class="cq-fields">
+      <div class="cq-field">
+        <label for="fType">Kind</label>
+        <select id="fType">
+          <option value="series">Series</option>
+          <option value="movie">Film</option>
+        </select>
+      </div>
+
+      <div class="cq-field">
+        <label for="fStatus">Status</label>
+        <select id="fStatus">
+          <option value="want">TBW (to be watched)</option>
+          <option value="watching">Watching</option>
+          <option value="watched">Watched</option>
+        </select>
+      </div>
+
+      <div class="cq-field wide">
+        <label for="fTitle">Title</label>
+        <div class="cq-inline">
+          <input id="fTitle" type="text" placeholder="Klaus" autocomplete="off">
+          <button class="pp-btn pp-btn-quiet" id="lookupBtn" style="white-space:nowrap;">Look it up</button>
+        </div>
+        <span class="cq-hint" id="lookupHint"></span>
+        <div class="cq-results" id="results"></div>
+      </div>
+
+      <div class="cq-field">
+        <label for="fWho">Who's watching</label>
+        <select id="fWho">
+          <option value="together">Together</option>
+          <option value="danni">D only</option>
+          <option value="brendon">B only</option>
+          <option value="family">Family</option>
+        </select>
+      </div>
+
+      <div class="cq-field hidden" id="runtimeField">
+        <label for="fRuntime">Runtime in minutes</label>
+        <input id="fRuntime" type="number" min="0" step="1" placeholder="118">
+      </div>
+
+      <div class="cq-field">
+        <label for="fPriD">D's priority</label>
+        <select id="fPriD">
+          <option value="0">Not rated</option>
+          <option value="1">Low</option>
+          <option value="2">Medium</option>
+          <option value="3">High</option>
+        </select>
+      </div>
+
+      <div class="cq-field">
+        <label for="fPriB">B's priority</label>
+        <select id="fPriB">
+          <option value="0">Not rated</option>
+          <option value="1">Low</option>
+          <option value="2">Medium</option>
+          <option value="3">High</option>
+        </select>
+      </div>
+
+      <div class="cq-field wide">
+        <label for="fImage">Poster image link</label>
+        <input id="fImage" type="url" placeholder="https://… (optional)" autocomplete="off">
+      </div>
+
+      <div class="cq-field wide">
+        <label>Where to watch</label>
+        <div class="cq-tagpick" id="streamPick"></div>
+      </div>
+
+      <div class="cq-field wide">
+        <label class="cq-check-label">
+          <input type="checkbox" id="fRewatch"> Rewatch
+        </label>
+        <label class="cq-check-label">
+          <input type="checkbox" id="fTradition"> Annual tradition — we watch this every year
+        </label>
+      </div>
+    </div>
+
+    <div class="cq-actions">
+      <button class="pp-btn" id="saveBtn">Save</button>
+      <button class="pp-btn pp-btn-quiet" id="cancelBtn">Cancel</button>
+      <span class="cq-spacer"></span>
+      <button class="pp-btn pp-btn-quiet" id="deleteBtn" style="display:none;">Delete</button>
+    </div>
+  </section>
+
+  <!-- ---------------- detail ---------------- -->
+  <section class="pp-panel cq-detail" id="detail">
+    <div class="cq-detail-head">
+      <img id="dImg" alt="">
+      <div style="flex:1 1 auto; min-width:0;">
+        <h2 id="dTitle"></h2>
+        <p class="cq-detail-meta" id="dMeta"></p>
+        <div class="pp-progress" id="dOverall" data-color="pink"></div>
+      </div>
+    </div>
+    <div id="detailBody"></div>
+    <div class="cq-actions">
+      <button class="pp-btn pp-btn-quiet" id="detailClose">Close</button>
+      <button class="pp-btn pp-btn-quiet" id="refetchBtn">Refresh seasons</button>
+    </div>
+  </section>
+
+  <div class="cq-grid" id="grid"></div>
+  <p class="pp-empty" id="empty" style="display:none;">Nothing here yet. Add the first one.</p>
+
+  </div><!-- /paneWatch -->
+
+  <!-- ---------------- plans + gifts ---------------- -->
+  <div id="paneVault" hidden>
+
+    <section class="pp-panel hq-lock" id="vaultLock">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="5" y="11" width="14" height="10" rx="2"/>
+        <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+      </svg>
+      <h2><span id="lockFor">Plans are</span> locked</h2>
+      <p class="hq-hint">Each of you has your own password. Either one opens Plans and the
+        family gift list; only yours opens your secret list.</p>
+      <p class="hq-error" id="lockNote" hidden></p>
+      <form id="lockForm" class="hq-lock-form">
+        <input type="password" id="lockPw" placeholder="Password" autocomplete="current-password" aria-label="Password">
+        <button class="pp-btn" id="lockBtn" type="submit">Unlock</button>
+      </form>
+      <p class="hq-error" id="lockError" hidden></p>
+    </section>
+
+    <div id="vaultOpen" hidden>
+      <div class="hq-vaultbar">
+        <span>&#128275; Unlocked for <b id="vaultWho"></b></span>
+        <label class="hq-year">Year
+          <select id="vaultYear"></select>
+        </label>
+        <span class="cq-spacer"></span>
+        <span class="cq-sync" id="vaultSync" data-state="idle">Connecting</span>
+        <button class="cq-reset" id="pwOpen" type="button">Change password</button>
+        <button class="cq-reset" id="lockBtnTop" type="button">Lock</button>
+      </div>
+
+      <p class="hq-note" id="vaultStarter" hidden>
+        You're still on the starter password. Change it so it's only yours &mdash;
+        <button class="cq-reset" id="pwOpenStarter" type="button">change it now</button>
+      </p>
+
+      <form class="pp-panel hq-pwform" id="pwForm" hidden>
+        <h2 class="pp-panel-title">Change your password</h2>
+        <p class="hq-hint" style="margin-top:0;">Your secret list is re-locked under the new one, so the old
+          password stops opening anything.</p>
+        <div class="cq-fields">
+          <div class="cq-field"><label for="pwNew">New password</label>
+            <input id="pwNew" type="password" autocomplete="new-password"></div>
+          <div class="cq-field"><label for="pwAgain">Same again</label>
+            <input id="pwAgain" type="password" autocomplete="new-password"></div>
+        </div>
+        <p class="hq-error" id="pwError" hidden></p>
+        <div class="cq-actions">
+          <button class="pp-btn" id="pwSave" type="submit">Save new password</button>
+          <button class="pp-btn pp-btn-quiet" id="pwCancel" type="button">Cancel</button>
+        </div>
+      </form>
+
+      <section class="pp-panel hq-itemform" id="itemForm" hidden></section>
+
+      <div id="plansView"></div>
+      <div id="giftsView" hidden></div>
+    </div>
+  </div><!-- /paneVault -->
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">♕ ───────── ⚔ ───────── ♕</p>
+    <p><a class="pp-back" href="/side-quests/">Back to Side Quests</a></p>
+  </footer>
+
+</div>
+
+<script src="/assets/pp-progress.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-firebase.js"></script>
+<script src="/assets/pp-watchlist.js"></script>
+
+<script>
+/* ------------------------------------------------------------------
+   PASTE YOUR FIREBASE CONFIG HERE — same block as your quest-log page.
+   Shared TMDB/TVmaze/streaming-service logic lives in
+   assets/pp-watchlist.js, since Couch Quest, Spooky Quest and Holiday
+   Quest are the
+   same engine underneath. Only what's genuinely different about this
+   page — the holiday season banner, traditions, and full-season
+   lookups — lives below.
+------------------------------------------------------------------- */
+const firebaseConfig = window.PPFirebaseConfig;
+
+const DOC_PATH  = "sidequest/holiday-list";
+const CACHE_KEY = "pp_holiday_list";
+let fltYear = "all";
+
+/* ---------------- holiday season ----------------
+   The season runs 1 November to 31 December. Before November we're still
+   counting last year's season, so history keeps working. */
+function seasonInfo(){
+  const now   = new Date();
+  const y     = now.getFullYear();
+  const start = new Date(y, 10, 1);                   // 1 Nov
+  const end   = new Date(y, 11, 31, 23, 59, 59);      // 31 Dec
+
+  if(now >= start && now <= end){
+    const daysLeft = Math.ceil((end - now) / 86400000);
+    return { year: y, inSeason: true, daysLeft: daysLeft };
+  }
+  /* January to October — the last completed season is the previous year */
+  const daysTo = Math.ceil((start - now) / 86400000);
+  return { year: y - 1, inSeason: false, daysTo: daysTo, nextYear: y };
+}
+
+const SEASON = seasonInfo();
+
+function renderBanner(){
+  const el  = $("banner");
+  const ttl = $("bannerTitle");
+  const sub = $("bannerSub");
+  if(!el) return;
+
+  const seen = state.items.filter(seenThisYear).length;
+
+  /* The total only counts what's free to me — on a service we subscribe to,
+     same test as the "Free to me" filter — so it's a list we can actually
+     finish. Anything already watched this year stays in, rented or not, so
+     the count can never read more than the total. */
+  const total = state.items.filter(i =>
+    seenThisYear(i) || (i.streams || []).some(isSubbed)).length;
+
+  if(SEASON.inSeason){
+    el.classList.remove("is-off");
+    ttl.textContent = "Holiday season is here — " + SEASON.daysLeft +
+      (SEASON.daysLeft === 1 ? " day left" : " days left");
+    sub.textContent = total
+      ? seen + " of " + total + " watched this year · counting what's free to me"
+      : state.items.length
+        ? "Nothing on the list is free to me right now."
+        : "Nothing on the list yet.";
+  }else{
+    el.classList.add("is-off");
+    ttl.textContent = SEASON.daysTo + (SEASON.daysTo === 1 ? " day" : " days") +
+      " until holiday season";
+    sub.textContent = "Last season you watched " + seen +
+      (seen === 1 ? " thing" : " things") + " · " + SEASON.year;
+  }
+}
+
+/* record the current season year when something gets finished */
+function markYear(item){
+  if(!Array.isArray(item.years)) item.years = [];
+  if(!item.years.includes(SEASON.year)) item.years.push(SEASON.year);
+  item.years.sort((a,b) => a - b);
+}
+
+function seenThisYear(item){
+  return (item.years || []).includes(SEASON.year);
+}
+
+function renderYearFilter(){
+  const sel = $("fltYear");
+  if(!sel) return;
+  const keep = sel.value;
+  const years = new Set();
+  state.items.forEach(i => (i.years || []).forEach(y => years.add(y)));
+  sel.innerHTML = '<option value="all">Any year</option>';
+  Array.from(years).sort((a,b) => b - a).forEach(y => {
+    const o = document.createElement("option");
+    o.value = String(y);
+    o.textContent = y + (y === SEASON.year ? " (this year)" : "");
+    sel.appendChild(o);
+  });
+  sel.value = years.has(parseInt(keep, 10)) ? keep : "all";
+  fltYear = sel.value;
+}
+
+/* ---------------- seasons ----------------
+   One request: the seasons endpoint gives us episodeOrder (total ordered
+   episodes including unaired). We store just that number, and don't scope a
+   lookup to one season the way Couch Quest does — a holiday rewatch
+   usually means catching up a whole season at once. */
+function fetchSeasons(showId){
+  return fetch(TVMAZE + "/shows/" + showId + "/seasons")
+    .then(r => r.json())
+    .then(seasonData => {
+      /* also fetch aired episodes as a fallback for episodeOrder */
+      return fetch(TVMAZE + "/shows/" + showId + "?embed=episodes")
+        .then(r => r.json())
+        .then(showData => {
+          const eps = (showData._embedded && showData._embedded.episodes) || [];
+          const aired = {};
+          eps.forEach(ep => {
+            if(!ep.season || ep.number == null) return;
+            aired[ep.season] = (aired[ep.season] || 0) + 1;
+          });
+          return seasonData
+            .filter(s => s.number != null && s.number > 0)
+            .sort((a, b) => a.number - b.number)
+            .map(s => ({
+              number:   s.number,
+              episodes: s.episodeOrder || aired[s.number] || 0,
+              watched:  0
+            }))
+            .filter(s => s.episodes > 0);
+        });
+    });
+}
+
+function mergeSeasons(oldSeasons, fresh){
+  const prev = {};
+  (oldSeasons || []).forEach(s => {
+    prev[s.number] = {
+      watchedEps: s.watchedEps || null,
+      watched: s.watched || 0,
+      episodes: s.episodes || 0,
+      startDate: s.startDate,
+      endDate: s.endDate
+    };
+  });
+  return fresh.map(s => {
+    const p = prev[s.number];
+    const weps = p && p.watchedEps ? p.watchedEps.filter(i => i <= s.episodes) : null;
+    const wc   = weps ? weps.length : Math.min(p ? p.watched : 0, s.episodes);
+    const out  = { number: s.number, episodes: s.episodes, watchedEps: weps, watched: wc };
+    if(p && p.startDate) out.startDate = p.startDate;
+    if(p && p.endDate)   out.endDate   = p.endDate;
+    return out;
+  });
+}
+
+function seasonsForEdit(oldSeasons, pendingLookup){
+  return mergeSeasons(oldSeasons, pendingLookup.seasons);
+}
+function seasonsForNew(pendingLookup){
+  return pendingLookup.seasons;
+}
+
+function pickSeries(r){
+  $("fTitle").value = r.name;
+  $("fImage").value = r.full;
+  $("results").classList.remove("open");
+  $("lookupHint").textContent = "Fetching seasons…";
+
+  fetchSeasons(r.raw.id)
+    .then(seasons => {
+      pendingLookup = { type:"series", tvmazeId: r.raw.id, seasons: seasons, episodeRuntime: r.episodeRuntime || 0 };
+      const eps = seasons.reduce((n,s) => n + s.episodes, 0);
+      const seasonMsg =
+        seasons.length + (seasons.length === 1 ? " season, " : " seasons, ") + eps + " episodes found.";
+      $("lookupHint").textContent = seasonMsg;
+      lookupSeriesProviders(r, seasonMsg);
+    })
+    .catch(e => {
+      console.error(e);
+      pendingLookup = { type:"series", tvmazeId: r.raw.id, seasons: [], episodeRuntime: r.episodeRuntime || 0 };
+      $("lookupHint").textContent = "Got the show, but the seasons didn't load. Try Refresh seasons after saving.";
+    });
+}
+
+/* ---------------- hooks into the shared engine (see pp-watchlist.js) ---------------- */
+onMarkWatched = markYear;
+
+extraMigrateItem = function(it){
+  let touched = false;
+  if(!Array.isArray(it.years)){ it.years = []; touched = true; }
+  if(it.tradition == null){ it.tradition = false; touched = true; }
+  /* anything already marked watched counts for the current season */
+  if(it.status === "watched" && !it.years.includes(SEASON.year)){
+    it.years.push(SEASON.year); it.years.sort((a,b) => a - b); touched = true;
+  }
+  return touched;
+};
+
+extraVisibleFilter = function(item){
+  if(filter === "tradition" && !item.tradition) return false;
+  if(filter === "unseen" && seenThisYear(item)) return false;
+  if(fltYear !== "all" && !(item.years || []).includes(parseInt(fltYear, 10))) return false;
+  return true;
+};
+
+extraCardParts = function(item){
+  const tradition = item.tradition ? `<span class="hq-tradition">Annual</span>` : "";
+  const yrs = (item.years || []).slice().sort((a,b) => b - a);
+  let yearLine = "";
+  if(yrs.length){
+    const thisYear = yrs.includes(SEASON.year);
+    const others   = yrs.filter(y => y !== SEASON.year);
+    yearLine = thisYear
+      ? `<div class="hq-years"><b>Seen this year</b>${others.length ? " · also " + others.join(", ") : ""}</div>`
+      : `<div class="hq-years">Last seen ${yrs[0]}</div>`;
+  }
+  return { metaExtra: tradition, belowMeta: yearLine };
+};
+
+extraNewItemDefaults = { years: [] };
+extraRenderSteps = [renderYearFilter, renderBanner];
+extraReset = function(){ fltYear = "all"; $("fltYear").value = "all"; };
+
+$("fltYear").onchange = e => { fltYear = e.target.value; render(); };
+
+boot();
+</script>
+<script src="/assets/pp-vault-crypto.js"></script>
+<script src="/assets/pp-holiday-vault.js"></script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>
