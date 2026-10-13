@@ -147,8 +147,16 @@ window.PPNav = (function(){
         { name:'Couch Quest', href:'/side-quests/couch-quest.html', indexLabel:'Couch Quest',
           note:'Watch list', pages:[
           { label:'Spooky Quest',  href:'/side-quests/spooky-quest.html',  note:'1 September – 31 October' },
-          { label:'Holiday Quest', href:'/side-quests/holiday-quest.html', note:'1 November – 31 December; plans and gifts behind a password' },
-          { label:'Watch History', href:'/side-quests/watch-history.html', note:'Both watch lists, in the order you finished them' }
+          { label:'Watch History', href:'/side-quests/watch-history.html', note:'Every watch list, in the order you finished them' }
+        ]},
+
+        /* Holiday Quest sits with Couch Quest on the hub, but gets a section
+           of its own here so Plans and Gifts are one tap from the dropdown.
+           All three are tabs on one page, picked by the #hash. */
+        { name:'Holiday Quest', href:'/side-quests/holiday-quest.html', indexLabel:'Watch list',
+          note:'1 November – 31 December', pages:[
+          { label:'Plans', href:'/side-quests/holiday-quest.html#plans', note:'Holiday plans — password' },
+          { label:'Gifts', href:'/side-quests/holiday-quest.html#gifts', note:'Gift lists, with a secret one each — password' }
         ]}
       ]
     },
@@ -220,6 +228,22 @@ window.PPNav = (function(){
 
   function here(){ return normalize(location.pathname); }
 
+  /* Holiday Quest's Plans and Gifts are tabs on one page, so their links
+     differ only by #hash. A link with a hash is current when the hash
+     matches; the plain link is current when no hash link is. */
+  function hashOf(href){
+    var i = String(href || '').indexOf('#');
+    return i < 0 ? '' : String(href).slice(i);
+  }
+  function isHere(href, siblings){
+    if(normalize(href) !== here()) return false;
+    var h = hashOf(href);
+    if(h) return location.hash === h;
+    return !(siblings || []).some(function(p){
+      return normalize(p.href) === here() && hashOf(p.href) && location.hash === hashOf(p.href);
+    });
+  }
+
   /* Every destination in a folder, section indexes included, in menu order. */
   function pagesOf(folder){
     var out = [];
@@ -269,7 +293,8 @@ window.PPNav = (function(){
     var path = here(), found = null;
     DIRECTORY.forEach(function(f){
       pagesOf(f).forEach(function(p){
-        if(normalize(p.href) === path) found = p;
+        /* the first match wins, and a #tab link never names the page */
+        if(!found && !hashOf(p.href) && normalize(p.href) === path) found = p;
       });
     });
     return found;
@@ -337,12 +362,11 @@ window.PPNav = (function(){
     var sec = currentSection(folder);
     if(!sec || !(sec.pages || []).length) return '';
 
-    var path = here();
     var rows = [indexPage(sec)].concat(sec.pages);
     var html = '';
 
     rows.forEach(function(p){
-      var on = normalize(p.href) === path;
+      var on = isHere(p.href, rows);
       html += '<a href="' + esc(withWho(p.href)) + '"' +
               (on ? ' aria-current="page"' : '') + '>' + esc(p.label) + '</a>';
     });
@@ -481,6 +505,10 @@ window.PPNav = (function(){
     }
     sub.setAttribute('aria-label', 'Section navigation');
     sub.innerHTML = rows;
+
+    /* A tab switch on the same page only changes the #hash, so the
+       highlighted link has to follow it. */
+    window.addEventListener('hashchange', function(){ sub.innerHTML = subnavHTML(); });
   }
 
   if(document.readyState === 'loading'){

@@ -137,6 +137,7 @@
   .home-folder.f-paladin  { --accent: var(--blade);      --accent-deep: var(--burgundy);   --accent-soft: rgba(178,58,58,0.12); }
   .home-folder.f-castle   { --accent: var(--sage);       --accent-deep: var(--sage-deep);  --accent-soft: rgba(143,163,126,0.18); }
   .home-folder.f-side     { --accent: var(--dusk);       --accent-deep: var(--dusk-deep);  --accent-soft: rgba(107,74,120,0.14); }
+  .home-folder.f-holiday  { --accent: var(--cranberry);  --accent-deep: var(--cranberry-deep); --accent-soft: rgba(163,38,58,0.12); }
   .home-folder.f-templates{ --accent: var(--gold);       --accent-deep: var(--gold-deep);  --accent-soft: rgba(156,116,64,0.14); }
 
   .home-folder-head{
@@ -198,6 +199,24 @@
     background: var(--accent-deep);
     color: #fff;
     text-decoration: none;
+  }
+
+  /* Seven cards leave one alone on the last row, so Templates runs the full
+     width there instead, laid out as a single line. */
+  .home-folder.f-templates{ grid-column: 1 / -1; }
+  @media (min-width: 640px){
+    .home-folder.f-templates{
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 18px;
+      padding: 16px 22px;
+    }
+    .home-folder.f-templates .home-folder-links{
+      margin: 0;
+      padding: 0;
+      border-top: 0;
+    }
   }
 
   /* ---- the way into the archive: quiet on purpose ---- */
@@ -394,8 +413,26 @@
         <li><a href="/side-quests/wedding-quest.html">Wedding</a></li>
         <li><a href="/side-quests/reading-quest.html">Reading</a></li>
         <li><a href="/side-quests/couch-quest.html">Couch</a></li>
-        <li><a href="/side-quests/holiday-quest.html">Holiday</a></li>
         <li><a href="/side-quests/game-quest.html">Games</a></li>
+      </ul>
+    </article>
+
+    <article class="pp-panel home-folder f-holiday">
+      <a class="home-folder-head" href="/side-quests/holiday-quest.html">
+        <span class="home-folder-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="4" y="9" width="16" height="12" rx="1.5"/>
+            <path d="M3 9h18M12 9v12"/>
+            <path d="M12 9c-2-4-6-4-6-1.5S10 9 12 9c2 0 6-.5 6-1.5S14 5 12 9Z"/>
+          </svg>
+        </span>
+        <h3>Holiday Quest</h3>
+      </a>
+      <p class="home-folder-note">The holiday watch list, our plans, and the gift lists &mdash; plans and gifts sit behind your password.</p>
+      <ul class="home-folder-links">
+        <li><a href="/side-quests/holiday-quest.html#plans">Plans &#128274;</a></li>
+        <li><a href="/side-quests/holiday-quest.html#gifts">Gifts &#128274;</a></li>
+        <li><a href="/side-quests/holiday-quest.html">Watch list</a></li>
       </ul>
     </article>
 
