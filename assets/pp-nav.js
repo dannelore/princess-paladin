@@ -52,15 +52,15 @@ window.PPNav = (function(){
   /* ------------------------------------------------------------------
      THE SITE MAP
      `nav:false` keeps a folder out of the ribbon but still lists it on
-     the links page. The Bach is the only one of those — it's a party
-     site with its own look and it doesn't belong in the site nav.
+     the links page. The Archive is the only one of those — finished
+     quests live there, reached from the home page, not the site nav.
      ------------------------------------------------------------------ */
   var DIRECTORY = [
     {
       key: 'home', label: 'Home', href: '/', nav: true,
       sections: [
         { name:'Home', href:'/', indexLabel:'Home',
-          note:'Hero, nav cards, comfort show roulette', pages:[] }
+          note:'Welcome, wedding countdown, folder cards', pages:[] }
       ]
     },
 
@@ -162,12 +162,17 @@ window.PPNav = (function(){
       ]
     },
 
-    /* Out of the ribbon on purpose — see the note at the top of DIRECTORY. */
+    /* Out of the ribbon on purpose — see the note at the top of DIRECTORY.
+       Archived quests keep their original URLs, so links people saved
+       still work; they're only listed here. */
     {
-      key: 'bach', label: 'The Bach', href: '/bach/', nav: false,
+      key: 'archive', label: 'Archive', href: '/archive/', nav: false,
       sections: [
+        { name:'Archive', href:'/archive/', indexLabel:'The Archive',
+          note:'Finished quests, kept as they were', pages:[] },
+
         { name:'The Bach', href:'/bach/', indexLabel:'The Bach',
-          note:'Party plan', pages:[
+          note:'Party plan, Oct 9–11 2026', pages:[
           { label:'Drag Show',    href:'/bach/dragshow.html',    note:'' },
           { label:'Smarty Pants', href:'/bach/smartypants.html', note:'' }
         ]}

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Archive — princessandpaladin.com</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/themes/home.css">
+<style>
+  /* Archive-only */
+  .archive-intro{
+    text-align: center;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--ink-soft);
+    margin: -6px auto 28px;
+    max-width: 560px;
+  }
+
+  .archive-list{
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+    margin-bottom: var(--gap);
+  }
+
+  /* One finished quest. Parchment, because these are the old records. */
+  .archive-entry{
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+    padding: 26px 28px;
+    background:
+      radial-gradient(ellipse at 15% 20%, rgba(156,116,64,0.12), transparent 55%),
+      radial-gradient(ellipse at 85% 80%, rgba(156,116,64,0.10), transparent 55%),
+      var(--parchment);
+    border: 1px solid var(--parchment-border);
+    border-radius: var(--radius-sm);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4), var(--lift);
+  }
+  @media (max-width: 560px){
+    .archive-entry{ grid-template-columns: 1fr; gap: 14px; padding: 22px 20px; }
+    .archive-when{ justify-self: start; min-width: 120px; }
+  }
+
+  .archive-when{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 14px 8px;
+    border: 1px solid var(--parchment-border);
+    border-radius: var(--radius-sm);
+    background: rgba(255,253,248,0.5);
+  }
+  .archive-when-month{
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+  }
+  .archive-when-days{
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.9rem;
+    line-height: 1.1;
+    color: var(--burgundy);
+  }
+  .archive-when-year{
+    font-family: var(--font-serif);
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
+  .archive-entry h3{
+    font-size: 1.5rem;
+    color: var(--burgundy);
+    margin: 0 0 4px;
+  }
+  .archive-entry p{
+    margin: 0 0 14px;
+    line-height: 1.7;
+  }
+
+  .archive-links{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .archive-links a{
+    display: inline-block;
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 5px 13px;
+    border-radius: 999px;
+    border: 1px solid rgba(110,36,48,0.35);
+    color: var(--burgundy);
+    background: rgba(255,253,248,0.6);
+    transition: background .15s ease, color .15s ease;
+  }
+  .archive-links a:hover,
+  .archive-links a:focus-visible{
+    background: var(--burgundy);
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .archive-back{
+    text-align: center;
+    font-family: var(--font-serif);
+    font-style: italic;
+  }
+</style>
+</head>
+<body class="pp-home" data-nav-eyebrow="Princess &amp; Paladin" data-nav-title="The Archive">
+
+<header class="pp-wrap pp-hero">
+  <div class="pp-emblem">
+    <!-- Tiara -->
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M8 44 L4 20 L20 32 L32 12 L44 32 L60 20 L56 44 Z" fill="#E87CA6" stroke="#9C7440" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M8 44 H56" stroke="#9C7440" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="32" cy="10" r="3.5" fill="#9C7440"/>
+      <circle cx="4" cy="18" r="3" fill="#9C7440"/>
+      <circle cx="60" cy="18" r="3" fill="#9C7440"/>
+    </svg>
+    <!-- Sword -->
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <g transform="translate(16,0)">
+        <path d="M16 2 L20 6 L20 40 L16 46 L12 40 L12 6 Z" fill="#B23A3A" stroke="#7C1F2A" stroke-width="1.5" stroke-linejoin="round"/>
+        <rect x="6" y="40" width="20" height="5" rx="1.5" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+        <rect x="14" y="45" width="4" height="15" rx="1.5" fill="#7C1F2A"/>
+        <circle cx="16" cy="60" r="3.4" fill="#9C7440" stroke="#7C5B30" stroke-width="1.2"/>
+      </g>
+    </svg>
+  </div>
+  <nav class="pp-nav" aria-label="Main navigation">
+    <a href="/">Home</a>
+    <a href="/quest-log/">Quest Log</a>
+    <a href="/dannelore/">Princess</a>
+    <a href="/vmprman/">Paladin</a>
+    <a href="/castle/">Castle Keep</a>
+    <a href="/side-quests/">Side Quests</a>
+    <a href="/templates/">Templates</a>
+  </nav>
+  <h1 class="pp-title">Princess &amp; Paladin</h1>
+  <p class="pp-tagline">where creativity and chaos meet organization and overthinking</p>
+</header>
+
+<main class="pp-wrap">
+
+  <div class="pp-page-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="4" rx="1"/>
+      <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/>
+      <path d="M10 12h4"/>
+    </svg>
+    <h2>The Archive</h2>
+  </div>
+
+  <p class="archive-intro">Quests we've finished, kept just as they were. Newest first.</p>
+
+  <!-- ADDING AN ENTRY: copy an <article> to the top of this list. Leave the
+       old pages where they are so any links people saved still work. -->
+  <div class="archive-list">
+
+    <article class="archive-entry">
+      <div class="archive-when" aria-label="October 9 to 11, 2026">
+        <span class="archive-when-month">October</span>
+        <span class="archive-when-days">9–11</span>
+        <span class="archive-when-year">2026</span>
+      </div>
+      <div>
+        <h3>The Bach</h3>
+        <p>Danni &amp; Brendon's joint Bachelor(ette) Quest. One weekend, three sessions, zero saving throws: drag brunch in Cambridge, Smarty Pants presentations, D&amp;D&amp;D, karaoke and an escape room.</p>
+        <ul class="archive-links">
+          <li><a href="/bach/">The party plan</a></li>
+          <li><a href="/bach/dragshow.html">Drag Brunch</a></li>
+          <li><a href="/bach/smartypants.html">Smarty Pants</a></li>
+        </ul>
+      </div>
+    </article>
+
+  </div>
+
+  <p class="archive-back"><a href="/">&larr; Back home</a></p>
+
+</main>
+
+<footer class="pp-wrap pp-footer">
+  <p class="pp-footer-flourish">♕ ───────── ⚔ ───────── ♕</p>
+  <p class="pp-footer-estab">Princess &amp; Paladin • Established 2021</p>
+</footer>
+
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>
