@@ -6,7 +6,8 @@
    pp.css. Load this right after it:
      <link rel="stylesheet" href="/assets/pp.css">
      <link rel="stylesheet" href="/assets/themes/side-quests.css">
-   Used by: /side-quests/* (spooky-quest.html carries its own .pp-spooky accent)
+   Used by: /side-quests/* (spooky-quest.html and holiday-quest.html carry
+   their own .pp-spooky / .pp-holiday accents)
    ========================================================================== */
 
 /* --- side quests: lavender and dusk --- */
@@ -27,4 +28,15 @@
   --accent-soft: rgba(201,106,46,0.14);
   --panel:       #FFFCF7;
   --panel-tint:  #FDF3E9;
+}
+
+/* --- holiday quest: snowy evergreen background, cranberry accent --- */
+.pp-holiday{
+  background-image: linear-gradient(160deg,#EEF2EC 0%,#D9E4DA 55%,#C5D6C8 100%);
+  --accent:      var(--cranberry);
+  --accent-deep: var(--cranberry-deep);
+  --accent-soft: rgba(163,38,58,0.12);
+  --hairline:    var(--cranberry);
+  --panel:       #FFFDF9;
+  --panel-tint:  #FBF1F1;
 }

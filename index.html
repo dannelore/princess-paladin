@@ -92,6 +92,7 @@
     color: var(--ink-soft);
   }
   .home-season-go{ margin-left: auto; font-style: normal; font-size: 1.3rem; }
+  .home-season-holiday svg{ color: var(--pine); }
 
   /* ---- the folder cards ---- */
   .home-heading{
@@ -289,6 +290,19 @@
     <span class="home-season-go" aria-hidden="true">&rarr;</span>
   </a>
 
+  <a class="pp-parchment home-season home-season-holiday" href="/side-quests/holiday-quest.html"
+     data-from="11-01" data-to="12-31" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 2.5 L17.5 10 H14.5 L19 16.5 H5 L9.5 10 H6.5 Z"/>
+      <path d="M12 16.5V21"/>
+    </svg>
+    <span class="home-season-text">
+      It's holiday season — the watch list, plans and gifts are in Holiday Quest.
+      <small data-season-left></small>
+    </span>
+    <span class="home-season-go" aria-hidden="true">&rarr;</span>
+  </a>
+
   <h2 class="home-heading pp-label">Where to?</h2>
 
   <div class="home-folders">
@@ -380,6 +394,7 @@
         <li><a href="/side-quests/wedding-quest.html">Wedding</a></li>
         <li><a href="/side-quests/reading-quest.html">Reading</a></li>
         <li><a href="/side-quests/couch-quest.html">Couch</a></li>
+        <li><a href="/side-quests/holiday-quest.html">Holiday</a></li>
         <li><a href="/side-quests/game-quest.html">Games</a></li>
       </ul>
     </article>
