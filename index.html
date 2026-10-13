@@ -462,8 +462,9 @@
       if(left){
         var parts = to.split('-');
         var year  = now.getFullYear() + (to < mmdd ? 1 : 0);
-        var n = dayNum(year, +parts[0] - 1, +parts[1]) - today;
-        left.textContent = n === 0 ? 'Last day!' : n + (n === 1 ? ' day' : ' days') + ' left this season';
+        /* Today counts, same as the Spooky Quest banner. */
+        var n = dayNum(year, +parts[0] - 1, +parts[1]) - today + 1;
+        left.textContent = n + (n === 1 ? ' day' : ' days') + ' left this season';
       }
     });
   })();
