@@ -131,9 +131,7 @@ window.PPNav = (function(){
           note:'The tile grid', pages:[] },
 
         { name:'Bucket Quest', href:'/side-quests/bucket-quest.html', indexLabel:'Bucket Quest',
-          note:'Couples bucket list and its timeline', pages:[
-          { label:'Wedding Quest', href:'/side-quests/wedding-quest.html', note:'The traditional planning checklist, editable' }
-        ]},
+          note:'Couples bucket list and its timeline', pages:[] },
 
         { name:'Game Quest', href:'/side-quests/game-quest.html', indexLabel:'Game Quest',
           note:'The backlog', pages:[] },
