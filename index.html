@@ -60,24 +60,7 @@
     font-size: 1.1rem;
     color: var(--ink);
   }
-  .home-countdown-date{ margin: 6px 0 12px; }
-  .home-countdown-go{
-    font-family: var(--font-serif);
-    font-weight: 600;
-    font-size: 1rem;
-    color: var(--accent-deep);
-  }
-  a.home-countdown{
-    color: var(--ink);
-    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-  }
-  a.home-countdown:hover,
-  a.home-countdown:focus-visible{
-    transform: translateY(-3px);
-    border-color: var(--accent);
-    box-shadow: var(--lift-lg);
-    text-decoration: none;
-  }
+  .home-countdown-date{ margin: 6px 0 0; }
 
   /* ---- seasonal callout: hidden until its dates come round ---- */
   .home-season{ margin-bottom: var(--gap); }
@@ -280,7 +263,7 @@
 
     <!-- The number is filled in by the script below. Without it the panel
          still reads sensibly, just without the count. -->
-    <a class="pp-panel home-countdown" href="/side-quests/wedding-quest.html" id="countdown">
+    <div class="pp-panel home-countdown" id="countdown">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="15" r="6"/>
         <path d="M9 4h6l-1.5 3.5h-3Z"/>
@@ -288,8 +271,7 @@
       <span class="home-countdown-num" id="countdown-num">&hearts;</span>
       <span class="home-countdown-unit" id="countdown-unit">until we say I do</span>
       <span class="pp-label home-countdown-date">January 15, 2027</span>
-      <span class="home-countdown-go">Wedding Quest &rarr;</span>
-    </a>
+    </div>
   </div>
 
   <!-- Seasonal callouts. Each one stays hidden until today falls between its
@@ -410,7 +392,6 @@
       <p class="home-folder-note">Everything we want to do, read, watch and play — and the record of what we already have.</p>
       <ul class="home-folder-links">
         <li><a href="/side-quests/bucket-quest.html">Bucket</a></li>
-        <li><a href="/side-quests/wedding-quest.html">Wedding</a></li>
         <li><a href="/side-quests/reading-quest.html">Reading</a></li>
         <li><a href="/side-quests/couch-quest.html">Couch</a></li>
         <li><a href="/side-quests/game-quest.html">Games</a></li>

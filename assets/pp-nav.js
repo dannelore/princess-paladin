@@ -123,7 +123,7 @@ window.PPNav = (function(){
     /* Each quest family is its own section, with the parent quest as the
        section index. The URLs stay flat in /side-quests/ — the families only
        exist here, so a child like Classics sits under Reading in the nav
-       without moving. The hub gets the same families as wide tiles. */
+       without moving. The hub shows the same families as cards. */
     {
       key: 'side-quests', label: 'Side Quests', href: '/side-quests/', nav: true,
       sections: [
@@ -131,9 +131,7 @@ window.PPNav = (function(){
           note:'The tile grid', pages:[] },
 
         { name:'Bucket Quest', href:'/side-quests/bucket-quest.html', indexLabel:'Bucket Quest',
-          note:'Couples bucket list and its timeline', pages:[
-          { label:'Wedding Quest', href:'/side-quests/wedding-quest.html', note:'The traditional planning checklist, editable' }
-        ]},
+          note:'Couples bucket list and its timeline', pages:[] },
 
         { name:'Game Quest', href:'/side-quests/game-quest.html', indexLabel:'Game Quest',
           note:'The backlog', pages:[] },
