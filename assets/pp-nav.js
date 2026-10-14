@@ -130,6 +130,9 @@ window.PPNav = (function(){
         { name:'Side Quests', href:'/side-quests/', indexLabel:'Side Quests',
           note:'The tile grid', pages:[] },
 
+        { name:'Honeymoon Adventure', href:'/side-quests/honeymoon-adventure.html', indexLabel:'Honeymoon Adventure',
+          note:'Twelve days around the British Isles', pages:[] },
+
         { name:'Bucket Quest', href:'/side-quests/bucket-quest.html', indexLabel:'Bucket Quest',
           note:'Couples bucket list and its timeline', pages:[] },
 
