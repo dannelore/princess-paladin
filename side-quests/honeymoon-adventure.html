@@ -127,15 +127,44 @@
   .hm-day.is-past .hm-card{ opacity: .72; }
 
   .hm-card{ padding: 20px 24px; }
+  .hm-day:not(.is-open) .hm-card{ padding-bottom: 18px; }
   .hm-day.is-sea .hm-card{
     background:
       repeating-linear-gradient(-8deg, transparent 0 22px, rgba(47,97,120,.05) 22px 24px),
       var(--panel);
   }
-  .hm-card-head{ display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; }
+  /* The whole head opens and closes the day: the button's ::after stretches over it. */
+  .hm-card-head{
+    position: relative;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 4px 14px;
+  }
   .hm-card h3{ font-family: var(--font-serif); font-weight: 600; font-size: 1.55rem; line-height: 1.15; margin: 0; }
+  .hm-fold{
+    font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0;
+    text-align: left; cursor: pointer;
+  }
+  .hm-fold::after{ content: ""; position: absolute; inset: -8px -10px; border-radius: var(--radius-sm); }
+  .hm-fold:focus-visible{ outline: none; }
+  .hm-fold:focus-visible::after{ outline: 2px solid var(--accent); }
+  .hm-card-head:hover h3{ color: var(--sea-deep); }
   .hm-where{ font-size: .85rem; color: var(--ink-soft); margin: 2px 0 0; }
+  .hm-head-meta{ display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
   .hm-date{ font-family: var(--font-serif); font-style: italic; color: var(--gold-deep); font-size: 1rem; white-space: nowrap; }
+  .hm-chev{
+    width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+    border: 1px solid var(--line); color: var(--sea-deep); background: #fff;
+    transition: transform .2s ease;
+  }
+  .hm-chev svg{ width: 12px; height: 12px; }
+  .hm-day.is-open .hm-chev{ transform: rotate(180deg); }
+
+  .hm-voyage-tools{ display: flex; justify-content: center; margin: -12px 0 22px; }
+  .hm-voyage-tools button{
+    font-family: var(--font-body); font-size: .7rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--sea-deep); background: transparent; border: 1px solid var(--sea); border-radius: 999px;
+    padding: 6px 14px; cursor: pointer;
+  }
+  .hm-voyage-tools button:hover, .hm-voyage-tools button:focus-visible{ background: var(--sea); color: #fff; }
   .hm-today-flag{
     display: inline-block; margin-left: 8px; padding: 2px 9px; border-radius: 999px;
     background: var(--blade); color: #fff; font-family: var(--font-body); font-style: normal;
@@ -161,6 +190,7 @@
 
   /* plans for the day */
   .hm-plans-wrap{ margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+  .hm-plans-head .hm-hint{ font-size: .74rem; color: var(--ink-soft); font-style: italic; }
   .hm-plans-head{ display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
   .hm-plans-head h4{
     margin: 0; font-family: var(--font-body); font-size: .7rem; font-weight: 600;
@@ -179,6 +209,36 @@
   .hm-plan-text{ flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
   .hm-plan-title{ font-weight: 500; overflow-wrap: anywhere; }
   .hm-plan-detail{ font-size: .8rem; color: var(--ink-soft); overflow-wrap: anywhere; }
+  .hm-plan-link{
+    align-self: flex-start; font-size: .8rem; color: var(--sea-deep); font-weight: 500;
+    text-decoration: underline; text-decoration-color: rgba(47,97,120,.35); text-underline-offset: 2px;
+    overflow-wrap: anywhere;
+  }
+  .hm-plan-link:hover{ text-decoration-color: currentColor; }
+
+  /* Priority: the numbered grip drags (mouse or touch) or moves with the arrow keys. */
+  .hm-grip{
+    flex-shrink: 0; display: flex; align-items: center; gap: 3px;
+    padding: 4px 6px 4px 2px; border: 0; border-radius: 6px; background: transparent;
+    color: var(--ink-soft); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
+  }
+  .hm-grip svg{ width: 8px; height: 14px; opacity: .55; }
+  .hm-grip span{
+    min-width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--accent-soft); color: var(--sea-deep);
+    font-family: var(--font-body); font-size: .7rem; font-weight: 600;
+  }
+  .hm-grip:hover svg, .hm-grip:focus-visible svg{ opacity: 1; }
+  .hm-grip:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
+  .hm-plans.is-single .hm-grip{ display: none; }
+  .hm-plan.is-dragging{
+    position: relative; z-index: 2; cursor: grabbing;
+    box-shadow: 0 8px 22px rgba(32,70,88,.22); background: #fff;
+  }
+  .hm-plan.is-dragging .hm-grip{ cursor: grabbing; }
+  .hm-plans.is-sorting .hm-plan:not(.is-dragging){ transition: transform .15s ease; }
+
+  .hm-plan.is-editing{ display: block; border-style: solid; border-color: var(--accent); background: #fff; }
   .hm-toggle{
     flex-shrink: 0; font-family: var(--font-body); font-size: .66rem; font-weight: 600;
     letter-spacing: .1em; text-transform: uppercase;
@@ -191,8 +251,11 @@
     color: var(--ink-soft); cursor: pointer; font-size: .95rem;
   }
   .hm-x:hover, .hm-x:focus-visible{ background: rgba(178,58,58,.1); color: var(--blade); }
+  .hm-x.edit:hover, .hm-x.edit:focus-visible{ background: var(--accent-soft); color: var(--sea-deep); }
 
-  .hm-add{ display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto; gap: 8px; }
+  .hm-add{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; }
+  .hm-add input[name="title"]{ grid-column: 1 / -1; }
+  .hm-add .hm-btns{ display: flex; gap: 6px; }
   .hm-add input{
     font-family: var(--font-body); font-size: .88rem; color: var(--ink);
     background: #fff; border: 1px solid var(--line); border-radius: var(--radius-sm);
@@ -201,7 +264,7 @@
   .hm-add input:focus{ outline: 2px solid var(--accent); outline-offset: 1px; }
   @media (max-width: 620px){
     .hm-add{ grid-template-columns: 1fr; }
-    .hm-add .pp-btn{ justify-self: start; }
+    .hm-add .pp-btn, .hm-add .hm-btns{ justify-self: start; }
   }
 
   @media (max-width: 620px){
@@ -213,6 +276,9 @@
     }
     .hm-badge b{ font-size: 1.2rem; }
     .hm-card{ padding: 26px 18px 18px; }
+    .hm-day:not(.is-open) .hm-card{ padding-bottom: 16px; }
+    .hm-card h3{ font-size: 1.35rem; }
+    .hm-plan{ gap: 6px; padding: 8px 6px; }
   }
 
   /* ---------- before we sail ---------- */
@@ -231,7 +297,9 @@
   }
   .hm-check-add input:focus{ outline: 2px solid var(--accent); outline-offset: 1px; }
 
-  @media (prefers-reduced-motion: reduce){ .hm-check-bar span{ transition: none; } }
+  @media (prefers-reduced-motion: reduce){
+    .hm-check-bar span, .hm-chev, .hm-plans.is-sorting .hm-plan{ transition: none; }
+  }
 </style>
 </head>
 <body class="pp-sidequest pp-honeymoon" data-nav-eyebrow="Side Quests" data-nav-title="Honeymoon Adventure">
@@ -288,7 +356,8 @@
 
   <!-- ---------------- the voyage ---------------- -->
   <h2 class="hm-section-title">The Voyage</h2>
-  <p class="hm-section-note">Times are local, as the ship keeps them. Add ideas to any day, and mark them booked once they are.</p>
+  <p class="hm-section-note">Times are local, as the ship keeps them. Open a day to add ideas, put them in order, and mark them booked once they are.</p>
+  <div class="hm-voyage-tools"><button type="button" id="foldAll">Open every day</button></div>
 
   <div class="hm-voyage" id="voyage"></div>
 
@@ -322,6 +391,8 @@ const DOC_PATH  = "sidequest/honeymoon";
 /* Day 1. Every other date on the page counts on from here. */
 const SAIL_DATE = new Date(2027, 6, 25);
 const CACHE_KEY = "pp_honeymoon";
+/* Which days are open is per-phone, so it stays out of the shared doc. */
+const OPEN_KEY  = "pp_honeymoon_open";
 
 /* ---------------- the itinerary ----------------
    Fixed. Times are 24-hour local time; null means "---" on the booking.
@@ -403,6 +474,10 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7
 
 let state = { plans:{}, checklist:null };
 let docRef = null, saving = false, pending = false, saveTimer = null;
+/* UI only: the plan being edited ({day, id}) and the drag in progress. While
+   either is live, render leaves that day's list alone so a snapshot from the
+   other phone can't pull the rug out from under it. */
+let editing = null, drag = null;
 
 /* ---------------- shape ---------------- */
 function migrate(){
@@ -438,6 +513,49 @@ function today(){ const n = new Date(); return new Date(n.getFullYear(), n.getMo
 
 function fmtDate(d){ return d.toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" }); }
 
+/* ---------------- websites ----------------
+   Typed as "viator.com/…" or a full link. Only http(s) ever reaches an href;
+   cleanUrl returns "" for blank and null for something that isn't a website. */
+function cleanUrl(raw){
+  let s = String(raw == null ? "" : raw).trim();
+  if(!s) return "";
+  if(!/^[a-z][a-z0-9+.-]*:/i.test(s)) s = "https://" + s;
+  try{
+    const u = new URL(s);
+    return /^https?:$/.test(u.protocol) && u.hostname.includes(".") ? u.href : null;
+  }catch(e){ return null; }
+}
+
+function siteLabel(url){
+  try{ return new URL(url).hostname.replace(/^www\./, ""); }catch(e){ return "Website"; }
+}
+
+/* ---------------- open / closed days ---------------- */
+function readOpen(){
+  try{ const a = JSON.parse(localStorage.getItem(OPEN_KEY)); return Array.isArray(a) ? a : []; }catch(e){ return []; }
+}
+
+function writeOpen(){
+  const ids = ITINERARY.filter(d => $(d.id).classList.contains("is-open")).map(d => d.id);
+  try{ localStorage.setItem(OPEN_KEY, JSON.stringify(ids)); }catch(e){}
+}
+
+function setOpen(id, open, remember){
+  const card = $(id);
+  if(!card) return;
+  card.classList.toggle("is-open", open);
+  card.querySelector(".hm-fold").setAttribute("aria-expanded", open ? "true" : "false");
+  card.querySelector(".hm-card-body").hidden = !open;
+  if(remember !== false) writeOpen();
+  syncFoldAll();
+}
+
+function syncFoldAll(){
+  const allOpen = ITINERARY.every(d => $(d.id).classList.contains("is-open"));
+  $("foldAll").textContent = allOpen ? "Close every day" : "Open every day";
+  $("foldAll").dataset.open = allOpen ? "1" : "";
+}
+
 /* ---------------- the voyage (built once, filled by render) ---------------- */
 function buildVoyage(){
   $("voyage").innerHTML = ITINERARY.map((d, i) => {
@@ -466,28 +584,42 @@ function buildVoyage(){
       <div class="pp-panel hm-card">
         <div class="hm-card-head">
           <div>
-            <h3>${esc(d.name)}</h3>
+            <h3><button class="hm-fold" type="button" data-fold="${d.id}" aria-expanded="false"
+                        aria-controls="${d.id}-body">${esc(d.name)}</button></h3>
             ${where ? `<p class="hm-where">${esc(where)}</p>` : ""}
           </div>
-          <span class="hm-date" data-date></span>
+          <div class="hm-head-meta">
+            <span class="hm-date" data-date></span>
+            <span class="hm-tally" data-tally></span>
+          </div>
+          <span class="hm-chev" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M2 4.5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         </div>
-        <div class="hm-times">${times.join("")}</div>
-        <p class="hm-blurb">${esc(d.blurb)}</p>
-        <p class="hm-note">${esc(d.note)}</p>
-        <div class="hm-plans-wrap">
-          <div class="hm-plans-head"><h4>Our plans</h4><span class="hm-tally" data-tally></span></div>
-          <ul class="hm-plans" data-plans="${d.id}"></ul>
-          <form class="hm-add" data-add="${d.id}">
-            <input name="title" type="text" autocomplete="off" aria-label="New plan for day ${i + 1}"
-                   placeholder="${esc(PLAN_HINTS[d.id] || "A tour, a sight, somewhere to eat…")}">
-            <input name="detail" type="text" autocomplete="off" aria-label="Details"
-                   placeholder="Time, price, confirmation #">
-            <button class="pp-btn pp-btn-sm" type="submit">Add</button>
-          </form>
+        <div class="hm-card-body" id="${d.id}-body" hidden>
+          <div class="hm-times">${times.join("")}</div>
+          <p class="hm-blurb">${esc(d.blurb)}</p>
+          <p class="hm-note">${esc(d.note)}</p>
+          <div class="hm-plans-wrap">
+            <div class="hm-plans-head"><h4>Our plans</h4><span class="hm-hint" data-hint></span></div>
+            <ul class="hm-plans" data-plans="${d.id}"></ul>
+            <form class="hm-add" data-add="${d.id}" novalidate>
+              ${planFields({}, `New plan for day ${i + 1}`, PLAN_HINTS[d.id])}
+              <button class="pp-btn pp-btn-sm" type="submit">Add</button>
+            </form>
+          </div>
         </div>
       </div>
     </article>`;
   }).join("");
+}
+
+/* The three inputs a plan has, shared by the add form and the edit form. */
+function planFields(p, label, hint){
+  return `<input name="title" type="text" autocomplete="off" aria-label="${esc(label)}"
+                 value="${esc(p.title)}" placeholder="${esc(hint || "A tour, a sight, somewhere to eat…")}">
+          <input name="detail" type="text" autocomplete="off" aria-label="Details"
+                 value="${esc(p.detail)}" placeholder="Time, price, confirmation #">
+          <input name="url" type="text" inputmode="url" autocomplete="off" spellcheck="false" aria-label="Website"
+                 value="${esc(p.url)}" placeholder="Website (optional)">`;
 }
 
 /* ---------------- render ---------------- */
@@ -536,19 +668,70 @@ function renderDays(){
     card.querySelector("[data-tally]").innerHTML = plans.length
       ? [booked ? `<b>${booked} booked</b>` : "", ideas ? `${ideas} idea${ideas === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ")
       : "";
+    card.querySelector("[data-hint]").textContent = plans.length > 1 ? "Drag the numbers to reorder" : "";
 
-    card.querySelector("[data-plans]").innerHTML = plans.map(p => `
-      <li class="hm-plan${p.booked ? " is-booked" : ""}">
-        <button class="hm-toggle" type="button" data-toggle="${esc(p.id)}" data-day="${d.id}"
-                aria-pressed="${p.booked ? "true" : "false"}">${p.booked ? "Booked" : "Idea"}</button>
-        <span class="hm-plan-text">
-          <span class="hm-plan-title">${esc(p.title)}</span>
-          ${p.detail ? `<span class="hm-plan-detail">${esc(p.detail)}</span>` : ""}
-        </span>
-        <button class="hm-x" type="button" data-remove="${esc(p.id)}" data-day="${d.id}"
-                aria-label="Remove ${esc(p.title)}">✕</button>
-      </li>`).join("");
+    if((editing && editing.day === d.id) || (drag && drag.day === d.id)) return;
+    const ul = card.querySelector("[data-plans]");
+    ul.classList.toggle("is-single", plans.length < 2);
+    ul.innerHTML = plans.map((p, n) => planRow(d.id, p, n)).join("");
   });
+}
+
+function planRow(day, p, n){
+  const url = cleanUrl(p.url);
+  return `<li class="hm-plan${p.booked ? " is-booked" : ""}" data-id="${esc(p.id)}">
+    <button class="hm-grip" type="button" data-grip="${esc(p.id)}" data-day="${day}"
+            aria-label="Priority ${n + 1}: ${esc(p.title)}. Drag, or use the up and down arrow keys, to move it.">
+      <svg viewBox="0 0 8 14" aria-hidden="true" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="6" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="6" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="6" cy="12" r="1.3"/></svg>
+      <span>${n + 1}</span>
+    </button>
+    <button class="hm-toggle" type="button" data-toggle="${esc(p.id)}" data-day="${day}"
+            aria-pressed="${p.booked ? "true" : "false"}">${p.booked ? "Booked" : "Idea"}</button>
+    <span class="hm-plan-text">
+      <span class="hm-plan-title">${esc(p.title)}</span>
+      ${p.detail ? `<span class="hm-plan-detail">${esc(p.detail)}</span>` : ""}
+      ${url ? `<a class="hm-plan-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(siteLabel(url))} ↗</a>` : ""}
+    </span>
+    <button class="hm-x edit" type="button" data-edit="${esc(p.id)}" data-day="${day}"
+            aria-label="Edit ${esc(p.title)}">✎</button>
+    <button class="hm-x" type="button" data-remove="${esc(p.id)}" data-day="${day}"
+            aria-label="Remove ${esc(p.title)}">✕</button>
+  </li>`;
+}
+
+function editRow(day, p){
+  return `<li class="hm-plan is-editing" data-id="${esc(p.id)}">
+    <form class="hm-add" data-edit-form="${esc(p.id)}" data-day="${day}" novalidate>
+      ${planFields(p, "Plan")}
+      <span class="hm-btns">
+        <button class="pp-btn pp-btn-sm" type="submit">Save</button>
+        <button class="pp-btn pp-btn-sm pp-btn-quiet" type="button" data-cancel-edit>Cancel</button>
+      </span>
+    </form>
+  </li>`;
+}
+
+function findPlan(day, id){ return (state.plans[day] || []).find(x => x.id === id); }
+
+/* Read the plan form; null (with the field flagged) if the website won't do. */
+function readPlanForm(form){
+  const title = form.elements.title.value.trim();
+  if(!title){ form.elements.title.focus(); return null; }
+  const url = cleanUrl(form.elements.url.value);
+  if(url === null){
+    form.elements.url.setCustomValidity("That doesn't look like a website — try something like viator.com");
+    form.elements.url.reportValidity();
+    return null;
+  }
+  return { title: title, detail: form.elements.detail.value.trim(), url: url };
+}
+
+function movePlan(day, id, to){
+  const list = state.plans[day] || [];
+  const from = list.findIndex(x => x.id === id);
+  if(from < 0 || to < 0 || to >= list.length || to === from) return false;
+  list.splice(to, 0, list.splice(from, 1)[0]);
+  return true;
 }
 
 function renderStats(){
@@ -633,14 +816,23 @@ document.addEventListener("submit", e => {
   const form = e.target;
   if(form.matches("[data-add]")){
     e.preventDefault();
-    const title = form.elements.title.value.trim();
-    if(!title){ form.elements.title.focus(); return; }
+    const f = readPlanForm(form);
+    if(!f) return;
     state.plans[form.dataset.add].push({
-      id: uid(), title: title, detail: form.elements.detail.value.trim(), booked: false, added: Date.now()
+      id: uid(), title: f.title, detail: f.detail, url: f.url, booked: false, added: Date.now()
     });
     form.reset();
     form.elements.title.focus();
     save();
+  }else if(form.matches("[data-edit-form]")){
+    e.preventDefault();
+    const f = readPlanForm(form);
+    if(!f) return;
+    const p = findPlan(form.dataset.day, form.dataset.editForm);
+    editing = null;
+    if(p){ p.title = f.title; p.detail = f.detail; p.url = f.url; save(); } else render();
+    const back = document.querySelector(`[data-edit="${CSS.escape(form.dataset.editForm)}"]`);
+    if(back) back.focus();
   }else if(form.id === "checkAdd"){
     e.preventDefault();
     const text = form.elements.text.value.trim();
@@ -653,6 +845,44 @@ document.addEventListener("submit", e => {
 });
 
 document.addEventListener("click", e => {
+  const fold = e.target.closest("[data-fold]");
+  if(fold){
+    setOpen(fold.dataset.fold, fold.getAttribute("aria-expanded") !== "true");
+    return;
+  }
+  if(e.target.closest("#foldAll")){
+    const open = !$("foldAll").dataset.open;
+    ITINERARY.forEach(d => setOpen(d.id, open, false));
+    writeOpen();
+    return;
+  }
+  /* A map pin (or any #dN link) opens the day it jumps to. */
+  const jump = e.target.closest('a[href^="#d"]');
+  if(jump){
+    setOpen(jump.getAttribute("href").slice(1), true);
+    return;
+  }
+  const ed = e.target.closest("[data-edit]");
+  if(ed){
+    const p = findPlan(ed.dataset.day, ed.dataset.edit);
+    if(!p) return;
+    if(editing){ editing = null; render(); }   /* only one open editor at a time */
+    editing = { day: ed.dataset.day, id: p.id };
+    const li = document.querySelector(`[data-plans="${ed.dataset.day}"] [data-id="${CSS.escape(p.id)}"]`);
+    if(li) li.outerHTML = editRow(ed.dataset.day, p);
+    const input = document.querySelector(`[data-edit-form="${CSS.escape(p.id)}"] input[name="title"]`);
+    if(input){ input.focus(); input.select(); }
+    return;
+  }
+  const cancel = e.target.closest("[data-cancel-edit]");
+  if(cancel){
+    const id = editing && editing.id;
+    editing = null;
+    render();
+    const back = id && document.querySelector(`[data-edit="${CSS.escape(id)}"]`);
+    if(back) back.focus();
+    return;
+  }
   const tog = e.target.closest("[data-toggle]");
   if(tog){
     const p = (state.plans[tog.dataset.day] || []).find(x => x.id === tog.dataset.toggle);
@@ -679,6 +909,76 @@ document.addEventListener("click", e => {
   }
 });
 
+/* ---------------- reordering ----------------
+   Drag the numbered grip (pointer events, so it works for a finger too), or
+   focus it and use the arrow keys. The list order is the priority. */
+document.addEventListener("pointerdown", e => {
+  const grip = e.target.closest("[data-grip]");
+  if(!grip || drag || editing || (e.pointerType === "mouse" && e.button !== 0)) return;
+  e.preventDefault();
+  const li = grip.closest(".hm-plan"), ul = li.parentElement;
+  grip.setPointerCapture(e.pointerId);
+  drag = { day: grip.dataset.day, li: li, ul: ul, grip: grip,
+           grab: e.clientY - li.getBoundingClientRect().top,
+           before: [...ul.children].map(x => x.dataset.id).join() };
+  li.classList.add("is-dragging");
+  ul.classList.add("is-sorting");
+});
+
+document.addEventListener("pointermove", e => {
+  if(!drag) return;
+  const li = drag.li, ul = drag.ul;
+  li.style.transform = "";
+  /* Swap past a neighbour once the pointer crosses its middle. */
+  let prev = li.previousElementSibling, next = li.nextElementSibling;
+  while(prev && e.clientY < midY(prev)){ ul.insertBefore(li, prev); prev = li.previousElementSibling; }
+  while(next && e.clientY > midY(next)){ ul.insertBefore(next, li); next = li.nextElementSibling; }
+  li.style.transform = `translateY(${e.clientY - drag.grab - li.getBoundingClientRect().top}px)`;
+});
+
+function midY(el){ const r = el.getBoundingClientRect(); return r.top + r.height / 2; }
+
+function endDrag(){
+  if(!drag) return;
+  const d = drag;
+  drag = null;
+  d.li.style.transform = "";
+  d.li.classList.remove("is-dragging");
+  d.ul.classList.remove("is-sorting");
+  const order = [...d.ul.children].map(x => x.dataset.id);
+  if(order.join() === d.before){ render(); return; }
+  const byId = {};
+  (state.plans[d.day] || []).forEach(p => { byId[p.id] = p; });
+  const moved = order.map(id => byId[id]).filter(Boolean);
+  /* Anything added from the other phone mid-drag keeps its place at the end. */
+  (state.plans[d.day] || []).forEach(p => { if(!order.includes(p.id)) moved.push(p); });
+  state.plans[d.day] = moved;
+  save();
+  const g = document.querySelector(`[data-grip="${CSS.escape(d.li.dataset.id)}"]`);
+  if(g && document.activeElement === d.grip) g.focus();
+}
+document.addEventListener("pointerup", endDrag);
+document.addEventListener("pointercancel", endDrag);
+
+document.addEventListener("keydown", e => {
+  const grip = e.target.closest && e.target.closest("[data-grip]");
+  if(!grip || drag) return;
+  const list = state.plans[grip.dataset.day] || [];
+  const at = list.findIndex(x => x.id === grip.dataset.grip);
+  const to = { ArrowUp: at - 1, ArrowDown: at + 1, Home: 0, End: list.length - 1 }[e.key];
+  if(to === undefined) return;
+  e.preventDefault();
+  if(movePlan(grip.dataset.day, grip.dataset.grip, to)){
+    save();
+    const g = document.querySelector(`[data-grip="${CSS.escape(grip.dataset.grip)}"]`);
+    if(g) g.focus();
+  }
+});
+
+document.addEventListener("input", e => {
+  if(e.target.name === "url") e.target.setCustomValidity("");
+});
+
 document.addEventListener("change", e => {
   const box = e.target.closest("[data-check]");
   if(!box) return;
@@ -689,6 +989,15 @@ document.addEventListener("change", e => {
 buildVoyage();
 loadCache();
 render();
+readOpen().forEach(id => { if($(id)) setOpen(id, true, false); });
+/* During the trip, today's day is always open; so is a day linked to directly. */
+const todayCard = document.querySelector(".hm-day.is-today");
+if(todayCard) setOpen(todayCard.id, true, false);
+if(/^#d\d+$/.test(location.hash) && $(location.hash.slice(1))) setOpen(location.hash.slice(1), true, false);
+syncFoldAll();
+window.addEventListener("hashchange", () => {
+  if(/^#d\d+$/.test(location.hash) && $(location.hash.slice(1))) setOpen(location.hash.slice(1), true);
+});
 startFirebase();
 </script>
 <script src="/assets/pp-nav.js" defer></script>
