@@ -17,8 +17,8 @@
 
      Twelve days around the British Isles, out of Southampton and back.
      The itinerary itself is fixed and lives in ITINERARY in the script —
-     ports, times and the notes about getting ashore. What we add on top
-     (the sail date, plans for each day, the packing checklist) is shared
+     sail date, ports, times and the notes about getting ashore. What we
+     add on top (plans for each day, the packing checklist) is shared
      through Firestore, so both phones see the same page.
 
      Firestore: sidequest/honeymoon
@@ -68,10 +68,10 @@
     font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--gold);
   }
 
-  .hm-sail{ display: flex; flex-direction: column; gap: 6px; }
-  .hm-sail input{ max-width: 220px; }
-  .hm-sail-row{ display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-  .hm-warn{ font-family: var(--font-serif); font-style: italic; font-size: .88rem; color: var(--blade); }
+  .hm-dates{
+    margin: 0; text-align: center; font-family: var(--font-serif); font-style: italic;
+    font-size: 1.05rem; color: var(--ink-soft); line-height: 1.4;
+  }
 
   .hm-stats{
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;
@@ -270,17 +270,9 @@
 
     <section class="pp-panel hm-summary" aria-label="Trip summary">
       <div class="hm-count" id="countdown">
-        <span class="hm-count-big is-words">Bon voyage</span>
-        <span class="hm-count-sub">Set the sail date to start the countdown</span>
       </div>
 
-      <div class="pp-field hm-sail">
-        <label for="sailDate">We sail on</label>
-        <div class="hm-sail-row">
-          <input id="sailDate" type="date">
-        </div>
-        <span class="hm-warn" id="sailWarn" hidden></span>
-      </div>
+      <p class="hm-dates">Sunday, July 25 &ndash; Thursday, August 5, 2027</p>
 
       <ul class="hm-stats">
         <li><b>12</b><span>days</span></li>
@@ -326,6 +318,9 @@
 "use strict";
 
 const DOC_PATH  = "sidequest/honeymoon";
+
+/* Day 1. Every other date on the page counts on from here. */
+const SAIL_DATE = new Date(2027, 6, 25);
 const CACHE_KEY = "pp_honeymoon";
 
 /* ---------------- the itinerary ----------------
@@ -406,12 +401,11 @@ const esc = s => String(s == null ? "" : s)
   .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
-let state = { sailDate:"", plans:{}, checklist:null };
+let state = { plans:{}, checklist:null };
 let docRef = null, saving = false, pending = false, saveTimer = null;
 
 /* ---------------- shape ---------------- */
 function migrate(){
-  if(typeof state.sailDate !== "string") state.sailDate = "";
   if(!state.plans || typeof state.plans !== "object") state.plans = {};
   ITINERARY.forEach(d => { if(!Array.isArray(state.plans[d.id])) state.plans[d.id] = []; });
   /* Seed the checklist only the very first time — an emptied list stays empty. */
@@ -436,14 +430,8 @@ function hoursLabel(h){
 
 function ashore(d){ return d.arrive && d.depart ? (mins(d.depart) - mins(d.arrive)) / 60 : 0; }
 
-function sailStart(){
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(state.sailDate || "");
-  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
-}
-
 function dayDate(i){
-  const s = sailStart();
-  return s ? new Date(s.getFullYear(), s.getMonth(), s.getDate() + i) : null;
+  return new Date(SAIL_DATE.getFullYear(), SAIL_DATE.getMonth(), SAIL_DATE.getDate() + i);
 }
 
 function today(){ const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
@@ -512,24 +500,7 @@ function render(){
 
 function renderCountdown(){
   const box = $("countdown");
-  const s = sailStart();
-  if(document.activeElement !== $("sailDate")) $("sailDate").value = state.sailDate || "";
-
-  const warn = $("sailWarn");
-  if(s && s.getDay() !== 0){
-    warn.hidden = false;
-    warn.textContent = "That's a " + s.toLocaleDateString("en-US", { weekday:"long" }) +
-      " — the cruise sets sail on a Sunday.";
-  }else{
-    warn.hidden = true;
-  }
-
-  if(!s){
-    box.innerHTML = `<span class="hm-count-big is-words">Bon voyage</span>
-      <span class="hm-count-sub">Set the sail date to start the countdown</span>`;
-    return;
-  }
-  const diff = Math.round((s - today()) / 864e5);
+  const diff = Math.round((SAIL_DATE - today()) / 864e5);
   if(diff > 0){
     box.innerHTML = `<span class="hm-count-big">${diff}</span>
       <span class="hm-count-sub">${diff === 1 ? "day" : "days"} until we sail</span>`;
@@ -550,12 +521,11 @@ function renderDays(){
   ITINERARY.forEach((d, i) => {
     const card = $(d.id);
     const date = dayDate(i);
-    const isToday = !!date && date.getTime() === t;
+    const isToday = date.getTime() === t;
     card.classList.toggle("is-today", isToday);
-    card.classList.toggle("is-past", !!date && date.getTime() < t);
-    card.querySelector("[data-date]").innerHTML = date
-      ? esc(fmtDate(date)) + (isToday ? `<span class="hm-today-flag">Today</span>` : "")
-      : "";
+    card.classList.toggle("is-past", date.getTime() < t);
+    card.querySelector("[data-date]").innerHTML =
+      esc(fmtDate(date)) + (isToday ? `<span class="hm-today-flag">Today</span>` : "");
     if(isToday && d.pin){
       const pin = document.querySelector(`.pin[data-pin="${d.pin}"]`);
       if(pin) pin.classList.add("is-today", "hm-pin-today");
@@ -619,7 +589,7 @@ function save(){
   saveTimer = setTimeout(() => {
     pending = false;
     saving = true;
-    docRef.set({ sailDate: state.sailDate, plans: state.plans, checklist: state.checklist, updated: Date.now() })
+    docRef.set({ plans: state.plans, checklist: state.checklist, updated: Date.now() })
       .then(() => setSync("idle", "Synced"))
       .catch(e => { console.error(e); setSync("error", "Couldn't save"); })
       .finally(() => { saving = false; });
@@ -642,7 +612,7 @@ function startFirebase(){
       if(saving || pending) return;
       const data = snap.data();
       if(data){
-        state = { sailDate: data.sailDate, plans: data.plans, checklist: data.checklist };
+        state = { plans: data.plans, checklist: data.checklist };
         migrate();
         writeCache();
         render();
@@ -659,8 +629,6 @@ function startFirebase(){
 }
 
 /* ---------------- events ---------------- */
-$("sailDate").addEventListener("change", e => { state.sailDate = e.target.value || ""; save(); });
-
 document.addEventListener("submit", e => {
   const form = e.target;
   if(form.matches("[data-add]")){
