@@ -25,18 +25,89 @@
                              set have no field at all.
        sidequest/ddv-todo    one field per to-do id:
                              { t: text, h: hint, g: group, o: order,
-                               d: ticked, q: linked quest id }
+                               d: ticked, q: linked quest id,
+                               f: { k: villager key, l: level } }
                              A to-do linked to a quest ticks itself off when
-                             that quest is marked Done.
+                             that quest is marked Done; one linked to a
+                             villager, when they reach that level.
 
      The quest list itself (Q below) is IGN's Disney Dreamlight Valley
      quest page, updated Sep 25, 2026: [id, expansion, character, section,
      title]. Ids are the field names in ddv-quests, so never rename one.
 
+       sidequest/ddv-friends one field per villager, keyed like the quest ids
+                             (e.g. "mike-wazowski"): their friendship level,
+                             1 to 10. Level 0 has no field.
+       sidequest/ddv-critters one field per critter colour, keyed by the
+                             variant id in CRITTERS below: true once befriended.
+
      Writes are per field (update), so ticking one quest never rewrites the
      others. Removing a to-do rewrites that whole document, since update can
      only add or change fields.
+
+     Three tabs, picked by the #hash: #quests (the default), #friendship
+     and #critters.
      ====================================================================== */
+
+  .dv [hidden]{ display: none !important; }
+  .dv-pane{ display: flex; flex-direction: column; gap: 20px; }
+  .dv-tabs{ display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+  .dv-tab{
+    font-family: var(--font-body); font-size: .78rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--gold); background: var(--panel); border: 1px solid var(--line-gold); border-radius: 999px; padding: 8px 18px; cursor: pointer;
+  }
+  .dv-tab:hover{ color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
+  .dv-tab[aria-selected="true"]{ color: var(--on-accent); background: var(--accent-deep); border-color: var(--accent-deep); }
+
+  /* ---- friendship ---- */
+  .dv-exppanel{ padding: 0; }
+  .dv-exppanel>summary{ list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; padding: 18px 24px; cursor: pointer; }
+  .dv-exppanel>summary::-webkit-details-marker{ display: none; }
+  .dv-exppanel>summary::after{
+    content: ""; margin-left: auto; align-self: center; flex: none; width: 7px; height: 7px;
+    border-right: 2px solid var(--gold); border-bottom: 2px solid var(--gold); transform: rotate(-45deg); transition: transform .15s;
+  }
+  .dv-exppanel[open]>summary::after{ transform: rotate(45deg); }
+  .dv-exppanel>summary .dv-expname{ font-family: var(--font-serif); font-weight: 600; font-size: 1.3rem; }
+  .dv-exppanel .dv-expbody{ padding: 0 24px 20px; }
+  .dv-vl{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .dv-v{ display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 6px 16px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+  .dv-v b{ font-weight: 600; }
+  .dv-v small{ display: block; font-size: .84rem; color: var(--ink-soft); line-height: 1.4; margin-top: 2px; }
+  .dv-v small.ready{ color: var(--sage-deep); font-weight: 500; }
+  .dv-v .dv-open-btn{ margin-top: 6px; }
+  .dv-v>div{ min-width: 0; }
+  .dv-lvl{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .dv-pips{ display: flex; gap: 3px; }
+  .dv-pip{ width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--white); cursor: pointer; }
+  .dv-pip[aria-pressed="true"]{ background: var(--pink); border-color: var(--pink-deep); }
+  .dv-pip.max[aria-pressed="true"]{ background: var(--gold); border-color: var(--gold-deep); }
+  .dv-pip:hover{ border-color: var(--accent); }
+  .dv-lvnum{ font-family: var(--font-serif); font-style: italic; font-size: .95rem; color: var(--ink-soft); min-width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; }
+  @media (max-width: 600px){
+    .dv-v{ grid-template-columns: 1fr; }
+    .dv-pip{ width: 20px; height: 20px; }
+    .dv-exppanel>summary{ padding: 16px 18px; }
+    .dv-exppanel .dv-expbody{ padding: 0 18px 16px; }
+  }
+
+  /* ---- critters ---- */
+  .dv-crgrid{ display: grid; grid-template-columns: repeat(auto-fill,minmax(min(100%,270px),1fr)); gap: 12px; align-items: start; }
+  .dv-cr{ border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--white); padding: 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .dv-cr h4{ font-family: var(--font-serif); font-weight: 600; font-size: 1.15rem; margin: 0; display: flex; align-items: baseline; gap: 8px; }
+  .dv-cr h4 span{ font-family: var(--font-body); font-weight: 400; font-size: .8rem; color: var(--ink-soft); margin-left: auto; font-variant-numeric: tabular-nums; }
+  .dv-cr .meta{ font-size: .84rem; color: var(--ink-soft); margin: 0; line-height: 1.4; }
+  .dv-cr .meta b{ font-weight: 500; color: var(--ink); }
+  .dv-vchips{ display: flex; flex-wrap: wrap; gap: 6px; }
+  .dv-vchip{
+    font-family: var(--font-body); font-size: .8rem; padding: 5px 11px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--white); color: var(--ink);
+  }
+  .dv-vchip[aria-pressed="true"]{ background: var(--sage-deep); border-color: var(--sage-deep); color: #fff; }
+  .dv-vchip[aria-pressed="true"]::before{ content: "\2713\00a0"; }
+  .dv-vchip.rare{ border-style: dashed; border-color: var(--gold); }
+  .dv-vchip.rare[aria-pressed="true"]{ border-style: solid; }
+  .dv-cr .rare-note{ font-size: .8rem; color: var(--gold-deep); margin: 0; line-height: 1.4; }
 
   .dv{
     --dv-done: var(--sage-deep);  --dv-done-soft: rgba(109,130,89,.16);
@@ -198,8 +269,43 @@
   </div>
 
   <div class="dv">
-    <p class="dv-intro">Every Disney Dreamlight Valley quest: what's done, what's on the go, and what the Valley is still hiding.</p>
+    <p class="dv-intro">Every Disney Dreamlight Valley quest, friendship and critter: what's done, what's on the go, and what the Valley is still hiding.</p>
 
+    <div class="dv-tabs" role="tablist" aria-label="Dreamlight Valley trackers">
+      <button class="dv-tab" role="tab" id="tab-quests" aria-controls="pane-quests" aria-selected="true">Quests</button>
+      <button class="dv-tab" role="tab" id="tab-friendship" aria-controls="pane-friendship" aria-selected="false">Friendship</button>
+      <button class="dv-tab" role="tab" id="tab-critters" aria-controls="pane-critters" aria-selected="false">Critters</button>
+    </div>
+
+    <div class="dv-pane" id="pane-friendship" role="tabpanel" aria-labelledby="tab-friendship" hidden>
+      <section class="pp-panel dv-summary" aria-label="Friendship progress">
+        <div class="dv-big">
+          <p class="dv-label">Best friends</p>
+          <div class="dv-num" id="f-tot">0</div>
+          <div class="dv-bar" id="f-bar"></div>
+          <p class="dv-hint">Tap a dot to set a villager's level. Tap their current level again to go down one.</p>
+        </div>
+        <div class="dv-regions" id="f-regions"></div>
+      </section>
+      <p class="dv-undo" id="f-undo" aria-live="polite" hidden></p>
+      <div id="f-list" class="dv-pane"></div>
+    </div>
+
+    <div class="dv-pane" id="pane-critters" role="tabpanel" aria-labelledby="tab-critters" hidden>
+      <section class="pp-panel dv-summary" aria-label="Critter progress">
+        <div class="dv-big">
+          <p class="dv-label">Critters befriended</p>
+          <div class="dv-num" id="c-tot">0</div>
+          <div class="dv-bar" id="c-bar"></div>
+          <p class="dv-hint">Tap a colour once you've befriended it. Dashed ones are rare or only turn up at certain times.</p>
+        </div>
+        <div class="dv-regions" id="c-regions"></div>
+      </section>
+      <div id="c-list" class="dv-pane"></div>
+      <p class="dv-foot" id="c-foot"></p>
+    </div>
+
+    <div class="dv-pane" id="pane-quests" role="tabpanel" aria-labelledby="tab-quests">
     <section class="pp-panel dv-summary" aria-label="Progress">
       <div class="dv-big">
         <p class="dv-label">All quests</p>
@@ -237,6 +343,7 @@
 
     <main id="list"></main>
     <p class="dv-foot">Quest list from IGN's Disney Dreamlight Valley quests page (updated Sep 25, 2026). Tap a status to change it: blank, In progress, Done, Not unlocked. Or tap a quest under "On your plate" to pick its status directly. Not connected to the game save, so everything here is ticked off by hand.</p>
+    </div>
   </div>
 
   <footer class="pp-footer">
@@ -255,7 +362,39 @@
 
 const QUEST_DOC = "sidequest/ddv-quests";
 const TODO_DOC  = "sidequest/ddv-todo";
+const FRIENDS_DOC  = "sidequest/ddv-friends";
+const CRITTERS_DOC = "sidequest/ddv-critters";
 const CACHE_KEY = "pp_ddv";
+/* Expansions Danni owns: open by default on the Friendship and Critters tabs. */
+const OWNED = ["Base Game","A Rift in Time"];
+/* Quest-list "characters" that aren't villagers you can befriend. */
+const NOT_VILLAGERS = ["Introductory","Once Upon a Dance (Dream Bundle)","The Forgotten","Trials","Lorekeeper","Secret Potatoes"];
+const MAX_LEVEL = 10;
+
+/* Tameable critters: { type, area, biome, food, feeds, variants: [{ name, rare }] }.
+   Variant ids are the slug of the name ("Black Squirrel" -> "black-squirrel"),
+   which are the field names in ddv-critters, so never rename one. */
+const CRITTER_SOURCE = "Critter list from the Dreamlight Valley Wiki, checked Oct 16, 2026. Feedings are the usual minimum. Event and Premium Shop companions aren't included.";
+const CRITTERS = [
+  {"type":"Squirrel","area":"Base Game","biome":"Plaza","food":"Peanut (any foraged fruit also counts)","feeds":2,"variants":[{"name":"Black Squirrel","rare":""},{"name":"Classic Squirrel","rare":""},{"name":"Gray Squirrel","rare":""},{"name":"Red Squirrel","rare":""},{"name":"White Squirrel","rare":"Rare: Sundays only"}]},
+  {"type":"Rabbit","area":"Base Game","biome":"Peaceful Meadow","food":"Carrot (vegetables/grains also count)","feeds":2,"variants":[{"name":"Black Rabbit","rare":""},{"name":"Brown Rabbit","rare":""},{"name":"Calico Rabbit","rare":"Rare: Thursdays only"},{"name":"Classic Rabbit","rare":""},{"name":"White Rabbit","rare":""}]},
+  {"type":"Sea Turtle","area":"Base Game","biome":"Dazzle Beach","food":"Seaweed (any seafood also counts)","feeds":3,"variants":[{"name":"Black Sea Turtle","rare":"Rare: Mondays only"},{"name":"Brown Sea Turtle","rare":""},{"name":"Classic Sea Turtle","rare":""},{"name":"Purple Sea Turtle","rare":""},{"name":"White Sea Turtle","rare":""}]},
+  {"type":"Raccoon","area":"Base Game","biome":"Forest of Valor","food":"Blueberry (other berries also count)","feeds":3,"variants":[{"name":"Black Raccoon","rare":""},{"name":"Blue Raccoon","rare":"Rare: Wednesdays only"},{"name":"Classic Raccoon","rare":""},{"name":"Red Raccoon","rare":""},{"name":"White Raccoon","rare":""}]},
+  {"type":"Crocodile","area":"Base Game","biome":"Glade of Trust","food":"Lobster (Glade of Trust fish also count)","feeds":4,"variants":[{"name":"Blue Crocodile","rare":""},{"name":"Classic Crocodile","rare":""},{"name":"Golden Crocodile","rare":""},{"name":"Pink Crocodile","rare":"Rare: Saturdays only"},{"name":"Red Crocodile","rare":""},{"name":"White Crocodile","rare":"Rare: Sundays only"}]},
+  {"type":"Sunbird","area":"Base Game","biome":"Sunlit Plateau","food":"Flowers in its colours (Emerald: green/yellow; Golden: orange/yellow; Orchid: pink/purple; Red: blue/red; Turquoise: green/pink)","feeds":4,"variants":[{"name":"Emerald Sunbird","rare":""},{"name":"Golden Sunbird","rare":""},{"name":"Orchid Sunbird","rare":"Rare: Fridays only"},{"name":"Red Sunbird","rare":""},{"name":"Turquoise Sunbird","rare":""}]},
+  {"type":"Fox","area":"Base Game","biome":"Frosted Heights","food":"White Sturgeon (Frosted Heights fish also count)","feeds":5,"variants":[{"name":"Black Fox","rare":""},{"name":"Blue Fox","rare":""},{"name":"Classic Fox","rare":""},{"name":"Red Fox","rare":"Rare: Saturdays only"},{"name":"White Fox","rare":""}]},
+  {"type":"Raven","area":"Base Game","biome":"Forgotten Lands","food":"Any 5-star meal (3-4 star meals also count)","feeds":5,"variants":[{"name":"Blue Raven","rare":""},{"name":"Brown Raven","rare":"Rare: Tuesdays only"},{"name":"Classic Raven","rare":""},{"name":"Red Raven","rare":""},{"name":"White Raven","rare":""}]},
+  {"type":"Capybara","area":"A Rift in Time","biome":"Wild Tangle","food":"Cabbage","feeds":3,"variants":[{"name":"Black and White Capybara","rare":""},{"name":"Blue Striped Capybara","rare":""},{"name":"Classic Capybara","rare":""},{"name":"Gray Spotted Capybara","rare":""},{"name":"Red and White Striped Capybara","rare":"Rare: Saturdays only"},{"name":"Toon Capybara","rare":"Limited: only after Oswald's quest 'The Spark of Imagination' (needs 4 feeds)"}]},
+  {"type":"Cobra","area":"A Rift in Time","biome":"Glittering Dunes","food":"Egg (dairy & oil ingredients also count)","feeds":3,"variants":[{"name":"Blue and Red Striped Cobra","rare":""},{"name":"Classic Cobra","rare":""},{"name":"Green and White Striped Cobra","rare":"Rare: Thursdays only"},{"name":"Pink Spotted Cobra","rare":""},{"name":"Toon Cobra","rare":"Limited: only after Oswald's quest 'The Spark of Imagination' (needs 4 feeds)"},{"name":"Yellow and Purple Striped Cobra","rare":""}]},
+  {"type":"Monkey","area":"A Rift in Time","biome":"Ancient's Landing","food":"Any 5-star dessert (3-star+ meals also count)","feeds":null,"variants":[{"name":"Beige Monkey","rare":""},{"name":"Black and Brown Monkey","rare":""},{"name":"Black and Gray Monkey","rare":"Rare: Tuesdays only"},{"name":"Classic Monkey","rare":""},{"name":"Red and Beige Monkey","rare":""},{"name":"Toon Monkey","rare":"Limited: only after Oswald's quest 'The Spark of Imagination' (needs 4 feeds)"}]},
+  {"type":"Baby Dragon","area":"Storybook Vale","biome":"Everafter","food":"Pure Ice or Magma (any gem also counts)","feeds":null,"variants":[{"name":"Blue Baby Dragon","rare":""},{"name":"Green Baby Dragon","rare":""},{"name":"Purple Baby Dragon","rare":""},{"name":"Red Baby Dragon","rare":""},{"name":"Teal Baby Dragon","rare":""}]},
+  {"type":"Pegasus","area":"Storybook Vale","biome":"Mythopia","food":"Any 4-star+ vegetable meal","feeds":null,"variants":[{"name":"Black Pegasus","rare":""},{"name":"Blue Pegasus","rare":""},{"name":"Peach Pegasus","rare":""},{"name":"Pink Pegasus","rare":""},{"name":"Yellow Pegasus","rare":"Limited: Tue-Sat, 6 PM-12 AM only"}]},
+  {"type":"Owl","area":"Storybook Vale","biome":"The Bind","food":"Barley (any grain also counts)","feeds":null,"variants":[{"name":"Brown Owl","rare":""},{"name":"Dark Owl","rare":"Limited: weekends only"},{"name":"White Owl","rare":"Limited: daily 3-8 PM only"},{"name":"Purple Owl","rare":"Limited: daily 12-9 AM only"}]},
+  {"type":"Goose","area":"Wishblossom Ranch","biome":"Wishing Alps","food":"Red Currants (other berries also count)","feeds":1,"variants":[{"name":"Black Goose","rare":""},{"name":"Blue Goose","rare":"Limited: daily 6-8 PM only"},{"name":"Golden Goose","rare":"Limited: daily 7-8 AM and 7-8 PM only"},{"name":"Goose","rare":""},{"name":"True North Goose","rare":""}]},
+  {"type":"Skunk","area":"Wishblossom Ranch","biome":"Glamour Gulch","food":"Button Mushroom or Pincushion Peach","feeds":2,"variants":[{"name":"Brown Skunk","rare":""},{"name":"Patterned Skunk","rare":"Limited: only in heavy clouds or rain"},{"name":"Skunk","rare":""},{"name":"White Skunk","rare":""}]},
+  {"type":"Sweet Bee","area":"Wishblossom Ranch","biome":"Pixie Acres","food":"Honey Coral (any flower also counts)","feeds":3,"variants":[{"name":"Blue Sweet Bee","rare":"Limited: only in clear or lightly cloudy weather"},{"name":"Pink Sweet Bee","rare":""},{"name":"Sweet Bee","rare":""},{"name":"White Sweet Bee","rare":"Limited: nights only, from 8 PM"}]},
+  {"type":"Hedgehog","area":"Honeyglow Woods","biome":"Honeyglow Woods","food":"Pufflebud Pods or Golden Honey (any fruit also counts)","feeds":3,"variants":[{"name":"Classic Hedgehog","rare":""},{"name":"Green Hedgehog","rare":""},{"name":"Orange Hedgehog","rare":"Limited: Sun/Wed/Sat, 12 PM-12 AM only"},{"name":"Yellow Hedgehog","rare":""}]}
+];
 const FOLD_KEY  = "pp_ddv_folds";
 
 /* [id, expansion, character, section, title] */
@@ -838,6 +977,28 @@ let S={}, filter="open", query="", qdoc=null, openSet=new Set(), first=true, edi
 let queue=Promise.resolve(), pending=0, plateOpen=null, plateTyping=false, undoTimer={}, lockOpen=new Set();
 let T={}, tdoc=null, tpending=0, tqueue=Promise.resolve(), tloaded=false;
 
+/* Friendship and critters are flat documents too, one field per villager or
+   critter colour. A field that goes back to 0 / unticked is deleted. */
+function fieldDoc(path,onChange){
+  const d={data:{},ref:null,pending:0,queue:Promise.resolve()};
+  d.set=(k,v)=>{
+    d.data={...d.data};if(v)d.data[k]=v;else delete d.data[k];
+    writeCache();onChange();
+    if(!d.ref)return;
+    d.pending++;setSync("saving","Saving");
+    d.queue=d.queue.then(async()=>{
+      try{await d.ref.update({[k]:v||firebase.firestore.FieldValue.delete()})}
+      catch(e){try{await d.ref.set({...d.data})}catch(e2){console.error(e2);setSync("error","Couldn't save");d.pending--;return}}
+      d.pending--; if(!busy()) setSync("idle","Synced");
+    });
+  };
+  d.listen=db=>{d.ref=db.doc(path);d.ref.onSnapshot(snap=>{if(d.pending)return;d.data=snap.exists?{...snap.data()}:{};writeCache();onChange()},err=>console.error(err))};
+  return d;
+}
+const F=fieldDoc(FRIENDS_DOC,()=>{renderFriends();renderTodo()});
+const C=fieldDoc(CRITTERS_DOC,()=>renderCritters());
+const busy=()=>pending||tpending||F.pending||C.pending;
+
 const byChar=[];{const m=new Map();for(const r of Q){const k=r[1]+"|"+r[2];if(!m.has(k)){const g={exp:r[1],ch:r[2],key:k,rows:[]};m.set(k,g);byChar.push(g)}m.get(k).rows.push(r)}}
 const st=id=>(S[id]&&S[id].s)||"";
 const nt=id=>(S[id]&&S[id].n)||"";
@@ -845,8 +1006,8 @@ const $=id=>document.getElementById(id);
 
 /* ---------------- storage ---------------- */
 function setSync(state,text){const el=$("sync");el.textContent=text;el.setAttribute("data-state",state)}
-function writeCache(){try{localStorage.setItem(CACHE_KEY,JSON.stringify({S,T}))}catch(e){}}
-function loadCache(){try{const p=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");if(p){S=p.S||{};if(p.T){T=p.T;tloaded=true}}}catch(e){}}
+function writeCache(){try{localStorage.setItem(CACHE_KEY,JSON.stringify({S,T,F:F.data,C:C.data}))}catch(e){}}
+function loadCache(){try{const p=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");if(p){S=p.S||{};if(p.T){T=p.T;tloaded=true}F.data=p.F||{};C.data=p.C||{}}}catch(e){}}
 
 function write(id){
   const v=S[id]||{};writeCache();
@@ -855,7 +1016,7 @@ function write(id){
   queue=queue.then(async()=>{
     try{await qdoc.update({[id]:v})}
     catch(e){try{await qdoc.set({...S})}catch(e2){console.error(e2);setSync("error","Couldn't save");pending--;return}}
-    pending--; if(!pending&&!tpending) setSync("idle","Synced");
+    pending--; if(!busy()) setSync("idle","Synced");
   });
 }
 function change(id,patch){S={...S,[id]:{...(S[id]||{}),...patch}};if(!S[id].s)delete S[id].s;if(!S[id].n)delete S[id].n;write(id);render()}
@@ -957,16 +1118,24 @@ function tsave(fn){
   tqueue=tqueue.then(async()=>{
     try{await fn()}
     catch(e){try{await tdoc.set({...T})}catch(e2){console.error(e2);setSync("error","Couldn't save");tpending--;return}}
-    tpending--; if(!tpending&&!pending) setSync("idle","Synced");
+    tpending--; if(!busy()) setSync("idle","Synced");
   });
 }
 function tchange(id,v){T={...T};if(v)T[id]=v;else delete T[id];tsave(v?()=>tdoc.update({[id]:v}):()=>tdoc.set({...T}));renderTodo()}
+/* A to-do ticks itself off when its linked quest is Done (q) or its
+   villager reaches the level in the friendship tracker (f: {k, l}).
+   Returns the reason, or "" while it still needs doing by hand. */
+function autoDone(v){
+  if(v.q&&st(v.q)==="d")return "Marked Done in the quest list.";
+  if(v.f&&lvl(v.f.k)>=v.f.l)return `Level ${v.f.l} reached in the friendship tracker.`;
+  return "";
+}
 function renderTodo(){
   const box=$("todo-groups");box.innerHTML="";
   const items=Object.entries(T).filter(([,v])=>v&&v.t);let left=0;
   for(const[g,label]of TG){
     const rs=items.filter(([,v])=>(v.g||"mine")===g).sort((a,b)=>(a[1].o||0)-(b[1].o||0));if(!rs.length)continue;
-    const gl=rs.filter(([,v])=>!(v.d||(v.q&&st(v.q)==="d"))).length;
+    const gl=rs.filter(([,v])=>!(v.d||autoDone(v))).length;
     const det=document.createElement("details");det.className="dv-tg";det.open=!folds.has("tg-"+g);
     det.ontoggle=()=>{det.open?folds.delete("tg-"+g):folds.add("tg-"+g);saveFolds()};
     const sm=document.createElement("summary");const h=document.createElement("span");h.className="dv-label";h.textContent=label;
@@ -975,12 +1144,12 @@ function renderTodo(){
     if(TGHINT[g]){const p=document.createElement("p");p.className="dv-hint";p.textContent=TGHINT[g];sec.append(p)}
     const ul=document.createElement("ul");ul.className="dv-tl";
     for(const[id,v]of rs){
-      const qd=!!v.q&&st(v.q)==="d",done=!!v.d||qd;if(!done)left++;
+      const auto=autoDone(v),done=!!v.d||!!auto;if(!done)left++;
       const li=document.createElement("li");li.className="dv-ti"+(done?" done":"");
-      const lab=document.createElement("label");const cb=document.createElement("input");cb.type="checkbox";cb.checked=done;cb.disabled=qd;
+      const lab=document.createElement("label");const cb=document.createElement("input");cb.type="checkbox";cb.checked=done;cb.disabled=!!auto;
       cb.onchange=()=>tchange(id,{...v,d:cb.checked});
       const tx=document.createElement("span");const b=document.createElement("b");b.textContent=v.t;tx.append(b);
-      const sub=qd?"Marked Done in the quest list.":v.h;if(sub){const s=document.createElement("small");s.textContent=sub;tx.append(s)}
+      const sub=auto||v.h;if(sub){const s=document.createElement("small");s.textContent=sub;tx.append(s)}
       lab.append(cb,tx);
       const rm=document.createElement("button");rm.type="button";rm.className="dv-rm";rm.textContent="×";rm.setAttribute("aria-label",`Remove "${v.t}"`);
       rm.onclick=()=>{tchange(id,null);showUndo(`Removed "${v.t}".`,()=>tchange(id,v),"todo-undo")};
@@ -1035,7 +1204,125 @@ function renderList(){
   if(!shown){L.innerHTML='<p class="pp-empty">No quests match. Try another filter or search.</p>'}
   first=false;
 }
-function render(){renderSummary();renderTodo();renderChips();renderList()}
+/* ---------------- expansion panels (Friendship and Critters tabs) ---------------- */
+// Owned expansions start open; a tap's choice is remembered with the other folds.
+function isOpen(key,def){return folds.has(key+":open")?true:folds.has(key+":closed")?false:def}
+function expPanel(key,title,count,def){
+  const det=document.createElement("details");det.className="pp-panel dv-exppanel";det.open=isOpen(key,def);
+  det.ontoggle=()=>{folds.delete(key+":open");folds.delete(key+":closed");folds.add(key+(det.open?":open":":closed"));saveFolds()};
+  const sm=document.createElement("summary");const n=document.createElement("span");n.className="dv-expname";n.textContent=title;
+  const c=document.createElement("span");c.className="dv-count";c.textContent=count;sm.append(n,c);
+  const body=document.createElement("div");body.className="dv-expbody";det.append(sm,body);
+  return{det,body};
+}
+function regionRow(name,d,p,t,label){
+  const row=document.createElement("div");row.className="dv-region";
+  const n=document.createElement("span");n.textContent=name;const pc=document.createElement("span");pc.className="pct";pc.textContent=label;
+  row.append(n,bar(d,p,t),pc);return row;
+}
+
+/* ---------------- friendship ---------------- */
+const VILLAGERS=byChar.filter(g=>!NOT_VILLAGERS.includes(g.ch)).map(g=>({k:g.rows[0][0].split("--")[0],name:g.ch,exp:g.exp,rows:g.rows}));
+const EXPS=[...new Set(Q.map(r=>r[1]))];
+function lvl(k){return +F.data[k]||0}
+const plural=(n,w)=>`${n} ${w}${n===1?"":"s"}`;
+
+// What the villager's level means for their locked quests, read from the
+// "Locked: … friendship level N" notes.
+function friendInfo(v){
+  const L=lvl(v.k),reqs=new Map(),other=[];
+  for(const r of v.rows){if(st(r[0])!=="l")continue;const m=/friendship level (\d+)/i.exec(nt(r[0]));
+    if(m){const n=+m[1];if(!reqs.has(n))reqs.set(n,[]);reqs.get(n).push(r)}else other.push(r)}
+  const ready=[...reqs].filter(([n])=>L>=n).flatMap(([,rs])=>rs);
+  const next=[...reqs].filter(([n])=>L<n).sort((a,b)=>a[0]-b[0])[0];
+  const c=counts(v.rows),bits=[`${c.d}/${c.t} quests done`];
+  if(ready.length)return{text:`${bits[0]} · ${plural(ready.length,"locked quest")} should be open now`,ready};
+  if(next){
+    const extra=why(nt(next[1][0][0])).replace(/,?\s*[^,]*friendship level \d+/i,"").replace(/^[,\s]+|[,\s]+$/g,"");
+    bits.push(`level ${next[0]} opens ${plural(next[1].length,"quest")}`+(extra?` (also needs: ${extra})`:""));
+  }else if(other.length)bits.push(`${plural(other.length,"quest")} locked: ${why(nt(other[0][0]))||"see the quest list"}`);
+  return{text:bits.join(" · "),ready:[]};
+}
+function openQuests(v,rows){
+  const prev=rows.map(r=>[r[0],{s:st(r[0]),n:nt(r[0])}]);
+  for(const r of rows){S={...S,[r[0]]:{}};write(r[0])}
+  render();
+  showUndo(`${plural(rows.length,"quest")} for ${v.name} moved to To do.`,()=>{for(const[id,p]of prev){S={...S,[id]:{...p}};write(id)}render()},"f-undo");
+}
+function renderFriends(){
+  const best=VILLAGERS.filter(v=>lvl(v.k)>=MAX_LEVEL).length,met=VILLAGERS.filter(v=>lvl(v.k)>0).length;
+  $("f-tot").innerHTML=`${best} <small>of ${VILLAGERS.length} at level ${MAX_LEVEL}</small>`;
+  $("f-bar").replaceWith(Object.assign(bar(best,met-best,VILLAGERS.length),{id:"f-bar"}));
+  const R=$("f-regions"),L=$("f-list");R.innerHTML="";L.innerHTML="";
+  for(const e of EXPS){
+    const vs=VILLAGERS.filter(v=>v.exp===e);if(!vs.length)continue;
+    const b=vs.filter(v=>lvl(v.k)>=MAX_LEVEL).length,m=vs.filter(v=>lvl(v.k)>0).length;
+    R.append(regionRow(e,b,m-b,vs.length,`${b}/${vs.length}`));
+    const{det,body}=expPanel("fx-"+e,e,`${b} of ${vs.length} at level ${MAX_LEVEL}`+(OWNED.includes(e)?"":" · not owned"),OWNED.includes(e));
+    const ul=document.createElement("ul");ul.className="dv-vl";
+    for(const v of vs){
+      const lv=lvl(v.k),info=friendInfo(v);
+      const li=document.createElement("li");li.className="dv-v";
+      const who=document.createElement("div");const nm=document.createElement("b");nm.textContent=v.name;who.append(nm);
+      const hint=document.createElement("small");hint.textContent=info.text;if(info.ready.length)hint.className="ready";who.append(hint);
+      if(info.ready.length){const go=document.createElement("button");go.className="pp-btn pp-btn-sm pp-btn-quiet dv-open-btn";go.textContent="Move them to To do";
+        go.onclick=()=>openQuests(v,info.ready);who.append(go)}
+      const ctl=document.createElement("div");ctl.className="dv-lvl";const pips=document.createElement("div");pips.className="dv-pips";
+      for(let i=1;i<=MAX_LEVEL;i++){const p=document.createElement("button");p.className="dv-pip"+(i===MAX_LEVEL?" max":"");
+        p.setAttribute("aria-pressed",i<=lv);p.title=`Level ${i}`;p.setAttribute("aria-label",`${v.name}: set friendship level ${i}`);
+        p.onclick=()=>F.set(v.k,i===lv?i-1:i);pips.append(p)}
+      const num=document.createElement("span");num.className="dv-lvnum";num.textContent=lv?`Lv ${lv}`:"—";
+      ctl.append(pips,num);li.append(who,ctl);ul.append(li)}
+    body.append(ul);L.append(det)}
+}
+
+/* ---------------- critters ---------------- */
+const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+function renderCritters(){
+  const all=CRITTERS.flatMap(c=>c.variants),got=all.filter(x=>C.data[slug(x.name)]).length;
+  $("c-tot").innerHTML=`${got} <small>of ${all.length} colours</small>`;
+  $("c-bar").replaceWith(Object.assign(bar(got,0,all.length),{id:"c-bar"}));
+  const R=$("c-regions"),L=$("c-list");R.innerHTML="";L.innerHTML="";
+  for(const e of [...new Set(CRITTERS.map(c=>c.area))]){
+    const cs=CRITTERS.filter(c=>c.area===e),vs=cs.flatMap(c=>c.variants),g=vs.filter(x=>C.data[slug(x.name)]).length;
+    R.append(regionRow(e,g,0,vs.length,`${g}/${vs.length}`));
+    const{det,body}=expPanel("cx-"+e,e,`${g} of ${vs.length} colours`+(OWNED.includes(e)?"":" · not owned"),OWNED.includes(e));
+    const grid=document.createElement("div");grid.className="dv-crgrid";
+    for(const c of cs){
+      const n=c.variants.filter(x=>C.data[slug(x.name)]).length;
+      const card=document.createElement("div");card.className="dv-cr";
+      const h=document.createElement("h4");h.textContent=c.type;const hc=document.createElement("span");hc.textContent=`${n}/${c.variants.length}`;h.append(hc);
+      const meta=document.createElement("p");meta.className="meta";
+      for(const[lab,val]of[["Where",c.biome],["Food",c.food],["Feedings",c.feeds]]){if(!val)continue;
+        if(meta.childNodes.length)meta.append(" · ");const b=document.createElement("b");b.textContent=lab+" ";meta.append(b,String(val))}
+      const chips=document.createElement("div");chips.className="dv-vchips";
+      for(const x of c.variants){const id=slug(x.name),on=!!C.data[id];
+        const b=document.createElement("button");b.className="dv-vchip"+(x.rare?" rare":"");b.setAttribute("aria-pressed",on);
+        // "Black Squirrel" reads as just "Black" inside the Squirrel card
+        b.textContent=x.name.replace(new RegExp("\\s+"+c.type+"$","i"),"")||x.name;b.setAttribute("aria-label",x.name+(x.rare?" (rare)":""));
+        if(x.rare)b.title=x.rare;
+        b.onclick=()=>C.set(id,!on);chips.append(b)}
+      card.append(h,meta,chips);
+      const rares=c.variants.filter(x=>x.rare);
+      if(rares.length){const p=document.createElement("p");p.className="rare-note";p.textContent=rares.map(x=>`${x.name}: ${x.rare.replace(/^(rare|limited):\s*/i,"")}`).join(" · ");card.append(p)}
+      grid.append(card)}
+    body.append(grid);L.append(det)}
+  $("c-foot").textContent=CRITTER_SOURCE;
+}
+
+/* ---------------- tabs: #quests (default), #friendship, #critters ---------------- */
+const TABS=["quests","friendship","critters"];
+function showTab(t,remember){
+  if(!TABS.includes(t))t="quests";
+  for(const x of TABS){$("tab-"+x).setAttribute("aria-selected",x===t);$("tab-"+x).tabIndex=x===t?0:-1;$("pane-"+x).hidden=x!==t}
+  if(remember)history.replaceState(null,"",t==="quests"?location.pathname+location.search:"#"+t);
+}
+TABS.forEach((t,i)=>{const b=$("tab-"+t);b.onclick=()=>showTab(t,true);
+  b.onkeydown=e=>{const d=e.key==="ArrowRight"?1:e.key==="ArrowLeft"?-1:0;if(!d)return;const n=TABS[(i+d+TABS.length)%TABS.length];showTab(n,true);$("tab-"+n).focus()}});
+window.addEventListener("hashchange",()=>showTab(location.hash.slice(1)));
+showTab(location.hash.slice(1));
+
+function render(){renderSummary();renderTodo();renderChips();renderList();renderFriends();renderCritters()}
 $("q").addEventListener("input",e=>{query=e.target.value.trim().toLowerCase();renderList()});
 
 /* ---------------- Firestore ---------------- */
@@ -1043,7 +1330,7 @@ function startFirebase(){
   try{
     firebase.initializeApp(window.PPFirebaseConfig);
     const db=firebase.firestore();
-    qdoc=db.doc(QUEST_DOC);tdoc=db.doc(TODO_DOC);
+    qdoc=db.doc(QUEST_DOC);tdoc=db.doc(TODO_DOC);F.listen(db);C.listen(db);
     qdoc.onSnapshot(snap=>{if(pending)return;S=snap.exists?{...snap.data()}:{};writeCache();if(!editing&&!plateTyping)render();setSync("idle","Synced")},
       err=>{console.error(err);setSync("error","Offline — saved here")});
     tdoc.onSnapshot(snap=>{if(tpending)return;tloaded=true;T=snap.exists?{...snap.data()}:{};writeCache();renderTodo()},
