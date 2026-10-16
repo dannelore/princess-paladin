@@ -173,7 +173,8 @@
   .dv-ti.done b{ text-decoration: line-through; color: var(--ink-soft); font-weight: 400; }
   .dv-rm{ font: inherit; font-size: 1.1rem; line-height: 1; border: 0; background: none; color: var(--ink-soft); cursor: pointer; padding: 0 6px 4px; border-radius: 6px; }
   .dv-rm:hover{ color: var(--blade); }
-  .dv-add{ display: flex; gap: 8px; flex-wrap: wrap; }
+  /* these sit in .pp-field for its input styling, which also stacks them in a column */
+  .dv-add{ display: flex; flex-direction: row; gap: 8px; flex-wrap: wrap; align-items: center; }
   .dv-add input{ flex: 1 1 200px; min-width: 0; }
 
   /* ---- on your plate + locked ---- */
@@ -223,7 +224,7 @@
   details[open]>summary .dv-chev::before{ transform: rotate(45deg); }
 
   /* ---- the full list ---- */
-  .dv-tools{ display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .dv-tools{ display: flex; flex-direction: row; flex-wrap: wrap; gap: 10px; align-items: center; }
   .dv-tools input{ flex: 1 1 220px; min-width: 0; width: auto; }
   .dv-chips{ display: flex; gap: 6px; flex-wrap: wrap; }
   .dv-exp{ font-family: var(--font-serif); font-weight: 600; font-size: 1.45rem; margin: 10px 0 0; }
