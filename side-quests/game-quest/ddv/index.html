@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dreamlight Valley &middot; Game Quest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/themes/side-quests.css">
+
+<style>
+  /* ======================================================================
+     THE QUEST TO RESTORE THE VALLEY
+
+     Danni's Disney Dreamlight Valley quest log, under Game Quest. It is NOT
+     connected to the game save — everything here is ticked off by hand.
+
+     Firestore:
+       sidequest/ddv-quests  one field per quest id: { s: status, n: note }
+                             s is "" (to do), "p" (in progress), "d" (done)
+                             or "l" (not unlocked yet). Quests with nothing
+                             set have no field at all.
+       sidequest/ddv-todo    one field per to-do id:
+                             { t: text, h: hint, g: group, o: order,
+                               d: ticked, q: linked quest id }
+                             A to-do linked to a quest ticks itself off when
+                             that quest is marked Done.
+
+     The quest list itself (Q below) is IGN's Disney Dreamlight Valley
+     quest page, updated Sep 25, 2026: [id, expansion, character, section,
+     title]. Ids are the field names in ddv-quests, so never rename one.
+
+     Writes are per field (update), so ticking one quest never rewrites the
+     others. Removing a to-do rewrites that whole document, since update can
+     only add or change fields.
+     ====================================================================== */
+
+  .dv{
+    --dv-done: var(--sage-deep);  --dv-done-soft: rgba(109,130,89,.16);
+    --dv-prog: var(--pink-deep);  --dv-prog-soft: rgba(232,124,166,.16);
+    --dv-lock: var(--ink-soft);   --dv-lock-soft: rgba(46,36,31,.07);
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .dv-intro{
+    font-family: var(--font-serif); font-style: italic; font-size: 1.02rem; color: var(--ink-soft);
+    text-align: center; max-width: 640px; margin: -18px auto 4px; line-height: 1.5;
+  }
+  .dv-label{
+    font-family: var(--font-body); font-size: .7rem; font-weight: 600; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--dusk-deep); margin: 0;
+  }
+  .dv-count{ font-family: var(--font-serif); font-style: italic; font-size: .92rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .dv-hint{ margin: 0; font-family: var(--font-serif); font-style: italic; font-size: .95rem; color: var(--ink-soft); line-height: 1.4; }
+  .dv button:focus-visible, .dv input:focus-visible, .dv summary:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- collapsible panels: tap the heading ---- */
+  .dv-panel{ display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; }
+  .dv-fold{
+    font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; width: 100%;
+    text-align: left; cursor: pointer; display: flex; align-items: baseline; gap: 10px;
+  }
+  .dv-fold::after, .dv-tg>summary::after{
+    content: ""; margin-left: auto; align-self: center; flex: none; width: 7px; height: 7px;
+    border-right: 2px solid var(--gold); border-bottom: 2px solid var(--gold); transform: rotate(45deg); transition: transform .15s;
+  }
+  .dv-folded .dv-fold::after, .dv-tg:not([open])>summary::after{ transform: rotate(-45deg); }
+  .dv-panel.dv-folded>:not(.dv-fold){ display: none !important; }
+
+  /* ---- progress ---- */
+  .dv-summary{ display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.5fr); gap: 24px; align-items: start; }
+  .dv-big{ display: flex; flex-direction: column; gap: 8px; }
+  .dv-num{ font-family: var(--font-display); font-weight: 600; font-size: 2.8rem; line-height: 1; font-variant-numeric: tabular-nums; }
+  .dv-num small{ font-family: var(--font-serif); font-style: italic; font-weight: 400; font-size: 1rem; color: var(--ink-soft); }
+  .dv-bar{ height: 8px; border-radius: 999px; background: var(--dv-lock-soft); overflow: hidden; display: flex; }
+  .dv-bar i{ display: block; height: 100%; }
+  .dv-bar .d{ background: var(--dv-done); } .dv-bar .p{ background: var(--pink); }
+  .dv-legend{ display: flex; gap: 12px; flex-wrap: wrap; font-size: .8rem; color: var(--ink-soft); }
+  .dv-legend span::before{ content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; background: var(--c); }
+  .dv-regions{ display: grid; gap: 9px; }
+  .dv-region{ display: grid; grid-template-columns: 9.5rem minmax(0,1fr) 3rem; gap: 10px; align-items: center; font-size: .86rem; }
+  .dv-region .pct{ text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+  .dv-sync{ font-family: var(--font-body); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .dv-sync[data-state="saving"]{ color: var(--gold); }
+  .dv-sync[data-state="error"]{ color: var(--blade); }
+  @media (max-width: 640px){ .dv-summary{ grid-template-columns: 1fr; } .dv-region{ grid-template-columns: 7.5rem minmax(0,1fr) 2.6rem; } }
+
+  /* ---- to-do ---- */
+  .dv-tgroups{ display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,320px),1fr)); gap: 16px 30px; align-items: start; }
+  .dv-tg{ min-width: 0; }
+  .dv-tg>summary{ list-style: none; display: flex; align-items: baseline; gap: 10px; padding: 2px 0 6px; cursor: pointer; }
+  .dv-tg>summary::-webkit-details-marker{ display: none; }
+  .dv-tgbody{ display: flex; flex-direction: column; gap: 6px; }
+  .dv-tl{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .dv-ti{ display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items: start; padding: 9px 0; border-top: 1px solid var(--line); }
+  .dv-ti label{ display: grid; grid-template-columns: auto minmax(0,1fr); gap: 10px; align-items: start; cursor: pointer; min-width: 0; }
+  .dv-ti input{ width: 17px; height: 17px; margin: 2px 0 0; accent-color: var(--sage-deep); cursor: pointer; }
+  .dv-ti b{ font-weight: 600; font-size: .95rem; }
+  .dv-ti small{ display: block; color: var(--ink-soft); font-size: .84rem; margin-top: 3px; line-height: 1.4; }
+  .dv-ti.done b{ text-decoration: line-through; color: var(--ink-soft); font-weight: 400; }
+  .dv-rm{ font: inherit; font-size: 1.1rem; line-height: 1; border: 0; background: none; color: var(--ink-soft); cursor: pointer; padding: 0 6px 4px; border-radius: 6px; }
+  .dv-rm:hover{ color: var(--blade); }
+  .dv-add{ display: flex; gap: 8px; flex-wrap: wrap; }
+  .dv-add input{ flex: 1 1 200px; min-width: 0; }
+
+  /* ---- on your plate + locked ---- */
+  .dv-plate{ list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill,minmax(230px,1fr)); gap: 8px; align-items: start; }
+  .dv-card{ display: flex; flex-direction: column; border-radius: var(--radius-sm); background: var(--dv-prog-soft); font-size: .9rem; min-width: 0; border: 1px solid transparent; }
+  .dv-card.note{ background: var(--accent-soft); }
+  .dv-card.lockd{ background: var(--dv-lock-soft); }
+  .dv-card.open{ background: var(--white); border-color: var(--line); }
+  .dv-pick{
+    font: inherit; color: inherit; text-align: left; background: none; border: 0; padding: 9px 11px; width: 100%;
+    display: grid; grid-template-columns: minmax(0,1fr) auto; column-gap: 8px; row-gap: 2px; cursor: pointer; border-radius: var(--radius-sm);
+  }
+  .dv-pick b, .dv-pick span{ grid-column: 1; min-width: 0; }
+  .dv-pick b{ font-weight: 600; }
+  .dv-pick span{ color: var(--ink-soft); font-size: .82rem; }
+  .dv-pick::after{
+    content: ""; grid-column: 2; grid-row: 1/3; align-self: center; width: 6px; height: 6px;
+    border-right: 2px solid var(--ink-soft); border-bottom: 2px solid var(--ink-soft); transform: rotate(45deg); margin: 0 4px 4px 0; transition: transform .15s;
+  }
+  .dv-card.open .dv-pick::after{ transform: rotate(-135deg); margin: 4px 4px 0 0; }
+  .dv-pick:hover b{ text-decoration: underline; text-underline-offset: 2px; }
+  .dv-acts{ display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 11px 11px; }
+  .dv-opt{
+    font-family: var(--font-body); font-size: .76rem; font-weight: 500; padding: 5px 11px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--white); color: var(--ink); cursor: pointer;
+  }
+  .dv-opt[aria-pressed="true"].d{ background: var(--dv-done); color: #fff; border-color: transparent; }
+  .dv-opt[aria-pressed="true"].p{ background: var(--pink-deep); color: #fff; border-color: transparent; }
+  .dv-opt[aria-pressed="true"].l{ background: var(--ink-soft); color: #fff; border-color: transparent; }
+  .dv-opt[aria-pressed="true"].x{ background: var(--dv-lock-soft); }
+  .dv-acts input{ flex: 1 1 100%; min-width: 0; font-size: .85rem; padding: 6px 9px; }
+  .dv-undo{ display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; font-size: .88rem; color: var(--ink-soft); }
+  .dv-undo button{ font: inherit; font-weight: 600; color: var(--accent-deep); background: none; border: 0; padding: 2px 4px; cursor: pointer; border-radius: 4px; }
+  .dv-lklist{ display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+  .dv-lk{ border-bottom: 1px solid var(--line); }
+  .dv-lk>summary{ list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; padding: 10px 2px; cursor: pointer; }
+  .dv-lk>summary::-webkit-details-marker{ display: none; }
+  .dv-lk>summary b{ font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .dv-lk>summary .meta{ font-size: .84rem; color: var(--ink-soft); min-width: 0; }
+  .dv-lk .dv-plate{ padding: 0 0 10px; }
+
+  /* chevron shared by the locked groups and the character list */
+  .dv-chev::before{
+    content: ""; width: 6px; height: 6px; border-right: 2px solid var(--ink-soft); border-bottom: 2px solid var(--ink-soft);
+    transform: rotate(-45deg); transition: transform .15s; flex: none; display: inline-block;
+  }
+  details[open]>summary .dv-chev::before{ transform: rotate(45deg); }
+
+  /* ---- the full list ---- */
+  .dv-tools{ display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .dv-tools input{ flex: 1 1 220px; min-width: 0; width: auto; }
+  .dv-chips{ display: flex; gap: 6px; flex-wrap: wrap; }
+  .dv-exp{ font-family: var(--font-serif); font-weight: 600; font-size: 1.45rem; margin: 10px 0 0; }
+  .dv-group{ background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; box-shadow: var(--lift); }
+  .dv-group+.dv-group{ margin-top: 8px; }
+  .dv-group>summary{ list-style: none; display: grid; grid-template-columns: minmax(0,1fr) 7rem 3.4rem; gap: 12px; align-items: center; padding: 12px 16px; cursor: pointer; }
+  .dv-group>summary::-webkit-details-marker{ display: none; }
+  .dv-group>summary .name{ font-weight: 600; display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .dv-group>summary .count{ text-align: right; font-variant-numeric: tabular-nums; font-size: .86rem; color: var(--ink-soft); }
+  .dv-group>summary .count.full{ color: var(--dv-done); font-weight: 600; }
+  .dv-group ol{ list-style: none; margin: 0; padding: 0 10px 10px; }
+  .dv-sec{ font-size: .7rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); padding: 10px 8px 4px; }
+  .dv-row{ display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 10px; align-items: start; padding: 7px 8px; border-radius: 8px; }
+  .dv-row:hover{ background: var(--panel-tint); }
+  .dv-st{
+    font-family: var(--font-body); font-size: .74rem; font-weight: 500; width: 6.8rem; padding: 4px 0; border-radius: 999px;
+    border: 1px solid var(--line); background: transparent; color: var(--ink-soft); cursor: pointer;
+  }
+  .dv-st.d{ background: var(--dv-done); color: #fff; border-color: transparent; }
+  .dv-st.p{ background: var(--pink-deep); color: #fff; border-color: transparent; }
+  .dv-st.l{ background: var(--dv-lock-soft); color: var(--ink-soft); border-color: transparent; }
+  .dv-qt{ min-width: 0; padding-top: 2px; }
+  .dv-row.is-d .dv-qt>span{ color: var(--ink-soft); }
+  .dv-qt small{ display: block; color: var(--dusk); font-size: .82rem; }
+  .dv-qt input{ margin-top: 4px; font-size: .85rem; padding: 5px 9px; }
+  .dv-nb{ font: inherit; font-size: .8rem; border: 0; background: none; color: var(--ink-soft); cursor: pointer; padding: 4px 6px; border-radius: 6px; }
+  .dv-nb:hover{ color: var(--accent-deep); }
+  .dv-foot{ font-family: var(--font-serif); font-style: italic; font-size: .9rem; color: var(--ink-soft); text-align: center; max-width: 640px; margin: 4px auto 0; }
+  @media (max-width: 560px){
+    .dv-panel{ padding: 20px 18px; }
+    .dv-group>summary{ grid-template-columns: minmax(0,1fr) 4rem 3rem; padding: 12px; }
+    .dv-st{ width: 5.9rem; }
+  }
+  @media (prefers-reduced-motion: reduce){ .dv *{ transition: none !important; } }
+</style>
+</head>
+<body class="pp-sidequest" data-nav-eyebrow="Side Quests" data-nav-title="Dreamlight Valley">
+
+<div class="pp-wrap">
+
+  <div class="pp-page-title">
+    <h2>The Quest to Restore the Valley</h2>
+  </div>
+
+  <div class="dv">
+    <p class="dv-intro">Every Disney Dreamlight Valley quest: what's done, what's on the go, and what the Valley is still hiding.</p>
+
+    <section class="pp-panel dv-summary" aria-label="Progress">
+      <div class="dv-big">
+        <p class="dv-label">All quests</p>
+        <div class="dv-num" id="tot">0%</div>
+        <div class="dv-bar" id="totbar"></div>
+        <div class="dv-legend"><span style="--c:var(--sage-deep)" id="lg-d">Done</span><span style="--c:var(--pink)" id="lg-p">In progress</span><span style="--c:rgba(46,36,31,.18)" id="lg-l">Not unlocked</span></div>
+        <span class="dv-sync" id="sync" data-state="idle">Connecting</span>
+      </div>
+      <div class="dv-regions" id="regions"></div>
+    </section>
+
+    <section class="pp-panel dv-panel" data-fold="todo" aria-label="To-do">
+      <button class="dv-fold" aria-expanded="true"><span class="dv-label">To-do</span><span class="dv-count" id="todo-count"></span></button>
+      <div class="dv-tgroups" id="todo-groups"></div>
+      <p class="dv-undo" id="todo-undo" aria-live="polite" hidden></p>
+      <form class="dv-add pp-field" id="todo-add"><input id="todo-new" maxlength="140" placeholder="Add your own to-do" aria-label="Add your own to-do"><button class="pp-btn pp-btn-sm" type="submit">Add</button></form>
+    </section>
+
+    <section class="pp-panel dv-panel" data-fold="plate" aria-label="On your plate">
+      <button class="dv-fold" aria-expanded="true"><span class="dv-label">On your plate</span><span class="dv-count" id="plate-count"></span></button>
+      <ul class="dv-plate" id="now"></ul>
+      <p class="dv-undo" id="undo" aria-live="polite" hidden></p>
+    </section>
+
+    <section class="pp-panel dv-panel" id="locked" data-fold="locked" aria-label="Locked quests" hidden>
+      <button class="dv-fold" aria-expanded="true"><span class="dv-label">Locked</span><span class="dv-count" id="locked-count"></span></button>
+      <p class="dv-hint">Waiting on friendship or another quest. When one opens up, tap it and mark it In progress.</p>
+      <div class="dv-lklist" id="locked-list"></div>
+    </section>
+
+    <div class="dv-tools pp-field">
+      <input id="q" type="search" placeholder="Search quests or characters" aria-label="Search quests or characters">
+      <div class="dv-chips" id="chips"></div>
+    </div>
+
+    <main id="list"></main>
+    <p class="dv-foot">Quest list from IGN's Disney Dreamlight Valley quests page (updated Sep 25, 2026). Tap a status to change it: blank, In progress, Done, Not unlocked. Or tap a quest under "On your plate" to pick its status directly. Not connected to the game save, so everything here is ticked off by hand.</p>
+  </div>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-firebase.js"></script>
+<script>
+"use strict";
+
+const QUEST_DOC = "sidequest/ddv-quests";
+const TODO_DOC  = "sidequest/ddv-todo";
+const CACHE_KEY = "pp_ddv";
+const FOLD_KEY  = "pp_ddv_folds";
+
+/* [id, expansion, character, section, title] */
+const Q=[
+["introductory--welcome-to-dreamlight-valley","Base Game","Introductory","","Welcome to Dreamlight Valley"],
+["introductory--the-royal-tools","Base Game","Introductory","","The Royal Tools"],
+["introductory--making-cents-of-things","Base Game","Introductory","","Making Cents of Things"],
+["introductory--fishing-expedition","Base Game","Introductory","","Fishing Expedition"],
+["introductory--foodception","Base Game","Introductory","","Foodception"],
+["introductory--the-dream-castle","Base Game","Introductory","","The Dream Castle"],
+["goofy--a-warm-welcome","Base Game","Goofy","","A Warm Welcome"],
+["goofy--photographic-memory","Base Game","Goofy","","Photographic Memory"],
+["goofy--the-mysterious-wreck","Base Game","Goofy","","The Mysterious Wreck"],
+["goofy--dinner-with-a-friend","Base Game","Goofy","","Dinner With a Friend"],
+["goofy--photo-fervor","Base Game","Goofy","","Photo Fervor"],
+["goofy--scrapbook-blitz","Base Game","Goofy","","Scrapbook Blitz"],
+["goofy--give-me-a-sign","Base Game","Goofy","","Give Me A Sign"],
+["goofy--the-ones-that-got-away","Base Game","Goofy","","The Ones That Got Away"],
+["goofy--wheel-big-trouble","Base Game","Goofy","","Wheel Big Trouble"],
+["mickey--mickey-s-memories","Base Game","Mickey","","Mickey's Memories"],
+["mickey--foodception","Base Game","Mickey","","Foodception"],
+["mickey--hangin-with-mickey","Base Game","Mickey","","Hangin' With Mickey"],
+["mickey--missing-minnie","Base Game","Mickey","","Missing Minnie"],
+["mickey--shadows-and-bows","Base Game","Mickey","","Shadows and Bows"],
+["mickey--memory-magnification","Base Game","Mickey","","Memory Magnification"],
+["mickey--the-secret-door","Base Game","Mickey","","The Secret Door"],
+["mickey--a-game-of-coins","Base Game","Mickey","","A Game Of Coins"],
+["mickey--flower-power","Base Game","Mickey","","Flower Power"],
+["mickey--use-your-imagination-mickey","Base Game","Mickey","","Use Your Imagination: Mickey"],
+["scrooge-mcduck--scrooge-mcduck-s-grand-re-opening","Base Game","Scrooge McDuck","Story & Friendship","Scrooge McDuck's Grand Re-opening"],
+["scrooge-mcduck--dreamlight-valley-economy-101","Base Game","Scrooge McDuck","Story & Friendship","Dreamlight Valley Economy 101"],
+["scrooge-mcduck--customers-know-best","Base Game","Scrooge McDuck","Story & Friendship","Customers Know Best"],
+["scrooge-mcduck--a-forgotten-combination","Base Game","Scrooge McDuck","Story & Friendship","A Forgotten Combination"],
+["scrooge-mcduck--what-s-bad-for-the-business","Base Game","Scrooge McDuck","Story & Friendship","What's Bad for the Business"],
+["scrooge-mcduck--the-treasure-hunt","Base Game","Scrooge McDuck","Story & Friendship","The Treasure Hunt"],
+["scrooge-mcduck--the-treasure-hunt-part-2","Base Game","Scrooge McDuck","Story & Friendship","The Treasure Hunt Part 2"],
+["scrooge-mcduck--the-haunting-of-dreamlight-valley","Base Game","Scrooge McDuck","Story & Friendship","The Haunting of Dreamlight Valley"],
+["scrooge-mcduck--rebuild-the-valley-peaceful-meadow","Base Game","Scrooge McDuck","Decoration","Rebuild the Valley: Peaceful Meadow"],
+["scrooge-mcduck--rebuild-the-valley-dazzle-beach","Base Game","Scrooge McDuck","Decoration","Rebuild the Valley: Dazzle Beach"],
+["scrooge-mcduck--rebuild-the-valley-glade-of-trust","Base Game","Scrooge McDuck","Decoration","Rebuild the Valley: Glade of Trust"],
+["scrooge-mcduck--rebuild-the-valley-forest-of-valor","Base Game","Scrooge McDuck","Decoration","Rebuild the Valley: Forest of Valor"],
+["scrooge-mcduck--developed-decorating","Base Game","Scrooge McDuck","Decoration","Developed Decorating"],
+["scrooge-mcduck--new-ventures-and-adventures","Base Game","Scrooge McDuck","Eternity Isle","New Ventures (and Adventures)"],
+["scrooge-mcduck--a-garden-in-the-desert","Base Game","Scrooge McDuck","Eternity Isle","A Garden in the Desert"],
+["scrooge-mcduck--village-project-gear-loose-and-fancy-free","Base Game","Scrooge McDuck","Eternity Isle","Village Project: Gear Loose and Fancy Free"],
+["scrooge-mcduck--ghost-town","Base Game","Scrooge McDuck","Wishblossom Ranch","Ghost Town"],
+["scrooge-mcduck--water-tower-of-terror","Base Game","Scrooge McDuck","Wishblossom Ranch","Water Tower of Terror"],
+["merlin--friendship-is-everything","Base Game","Merlin","Main Story","Friendship is Everything"],
+["merlin--with-great-power","Base Game","Merlin","Main Story","With Great Power..."],
+["merlin--secrets-schemes","Base Game","Merlin","Main Story","Secrets & Schemes"],
+["merlin--the-forgotten-relics","Base Game","Merlin","Main Story","The Forgotten Relics"],
+["merlin--the-dark-castle","Base Game","Merlin","Main Story","The Dark Castle"],
+["merlin--the-remembered","Base Game","Merlin","Main Story","The Remembered"],
+["merlin--odds-ends","Base Game","Merlin","Main Story","Odds & Ends..."],
+["merlin--between-a-skull-rock-and-a-hard-place","Base Game","Merlin","Main Story","Between a Skull Rock and a Hard Place"],
+["merlin--the-memento","Base Game","Merlin","Main Story","The Memento"],
+["merlin--the-moose-hunt","Base Game","Merlin","Main Story","The Moose Hunt"],
+["merlin--on-the-path-of-stars","Base Game","Merlin","Main Story","On the Path of Stars"],
+["merlin--a-creepy-crawly-mystery","Base Game","Merlin","Side Story","A Creepy Crawly Mystery"],
+["merlin--the-infestation-finale","Base Game","Merlin","Side Story","The Infestation Finale"],
+["merlin--islands-in-the-sky","Base Game","Merlin","Side Story","Islands in the Sky"],
+["merlin--the-magic-of-friendship","Base Game","Merlin","Side Story","The Magic of Friendship!"],
+["merlin--a-new-enchantment","Base Game","Merlin","Friendship","A New Enchantment"],
+["merlin--a-lesson-in-frustration","Base Game","Merlin","Friendship","A Lesson in Frustration"],
+["merlin--crystal-mystery","Base Game","Merlin","Friendship","Crystal Mystery"],
+["merlin--a-dark-experiment","Base Game","Merlin","Friendship","A Dark Experiment"],
+["merlin--the-final-trial","Base Game","Merlin","Friendship","The Final Trial"],
+["merlin--a-tangled-web","Base Game","Merlin","Friendship","A Tangled Web"],
+["merlin--the-port-of-many-worlds","Base Game","Merlin","Eternity Isle","The Port of Many Worlds"],
+["merlin--village-project-timeless-treasure","Base Game","Merlin","Eternity Isle","Village Project: Timeless Treasure"],
+["merlin--village-project-timeless-trash","Base Game","Merlin","Eternity Isle","Village Project: Timeless Trash"],
+["merlin--village-project-timeless-tools","Base Game","Merlin","Eternity Isle","Village Project: Timeless Tools"],
+["merlin--the-sunken-ruins","Base Game","Merlin","Eternity Isle","The Sunken Ruins"],
+["merlin--a-bit-of-help-from-your-friends","Base Game","Merlin","Eternity Isle","A Bit Of Help From Your Friends"],
+["merlin--the-monochrome-mystery","Base Game","Merlin","Eternity Isle","The Monochrome Mystery"],
+["merlin--mysterious-mickey","Base Game","Merlin","Eternity Isle","Mysterious Mickey"],
+["merlin--the-palace-of-time","Base Game","Merlin","Eternity Isle","The Palace of Time"],
+["merlin--jafar-s-laboratory","Base Game","Merlin","Eternity Isle","Jafar's Laboratory"],
+["merlin--the-now-and-then","Base Game","Merlin","Eternity Isle","The Now and Then"],
+["wall-e--the-shy-little-robot","Base Game","WALL-E","","The Shy Little Robot"],
+["wall-e--it-s-good-to-be-home","Base Game","WALL-E","","It's Good to Be Home!"],
+["wall-e--village-project-the-garden","Base Game","WALL-E","","Village Project: The Garden"],
+["wall-e--the-compressed-garbage-incident","Base Game","WALL-E","","The Compressed Garbage Incident"],
+["wall-e--the-broken-memory","Base Game","WALL-E","","The Broken Memory"],
+["wall-e--a-friendly-exchange","Base Game","WALL-E","","A Friendly Exchange"],
+["wall-e--the-astronomy-club","Base Game","WALL-E","","The Astronomy Club"],
+["moana--after-the-storm","Base Game","Moana","","After the Storm"],
+["moana--how-far-you-ll-go","Base Game","Moana","","How Far You'll Go"],
+["moana--fixing-the-boat","Base Game","Moana","","Fixing the Boat"],
+["moana--peacemakers","Base Game","Moana","","Peacemakers"],
+["moana--the-remembering","Base Game","Moana","","The Remembering"],
+["moana--the-search-for-pua","Base Game","Moana","","The Search for Pua"],
+["moana--the-ceremony","Base Game","Moana","","The Ceremony"],
+["moana--whispers-in-the-wind","Base Game","Moana","","Whispers in the Wind"],
+["maui--the-great-maui","Base Game","Maui","","The Great Maui"],
+["maui--a-feast-worthy-of-a-demigod","Base Game","Maui","","A Feast Worthy of a Demigod"],
+["maui--burying-the-eel","Base Game","Maui","","Burying the Eel"],
+["maui--a-tale-of-stone-and-fire","Base Game","Maui","","A Tale of Stone and Fire"],
+["maui--demigod-of-the-wind-and-sun","Base Game","Maui","","Demigod of the Wind and Sun"],
+["maui--the-heart-of-dreamlight-valley","Base Game","Maui","","The Heart of Dreamlight Valley"],
+["remy--an-important-night-at-the-restaurant","Base Game","Remy","","An Important Night at the Restaurant"],
+["remy--a-restaurant-makeover","Base Game","Remy","","A Restaurant Makeover"],
+["remy--remy-s-recipe-book","Base Game","Remy","","Remy's Recipe Book"],
+["remy--the-price-of-fame","Base Game","Remy","","The Price of Fame"],
+["remy--the-unknown-flavor","Base Game","Remy","","The Unknown Flavor"],
+["remy--a-three-course-thank-you","Base Game","Remy","","A Three-Course-Thank You"],
+["remy--ancient-landing-s-fine-dining","Base Game","Remy","","Ancient Landing's Fine Dining"],
+["ursula--lair-sweet-lair","Base Game","Ursula","","Lair Sweet Lair"],
+["ursula--magic-moments","Base Game","Ursula","","Magic Moments"],
+["ursula--the-ritual","Base Game","Ursula","","The Ritual"],
+["ursula--a-deal-with-ursula","Base Game","Ursula","","A Deal With Ursula"],
+["ursula--these-legs-were-made-for-walking","Base Game","Ursula","","These Legs Were Made For Walking"],
+["ursula--a-show-like-no-other","Base Game","Ursula","","A Show Like No Other"],
+["ursula--voice-of-reason","Base Game","Ursula","","Voice Of Reason"],
+["ursula--deals-of-the-day","Base Game","Ursula","","Deals of the Day"],
+["kristoff--lost-in-the-dark-grove","Base Game","Kristoff","","Lost in the Dark Grove"],
+["kristoff--leaving-the-woods-behind","Base Game","Kristoff","","Leaving the Woods Behind"],
+["kristoff--village-project-a-mountain-man-s-stall","Base Game","Kristoff","","Village Project: A Mountain Man's Stall"],
+["kristoff--a-broken-sled","Base Game","Kristoff","","A Broken Sled"],
+["kristoff--frozen-memories","Base Game","Kristoff","","Frozen Memories"],
+["kristoff--a-romantic-in-the-making","Base Game","Kristoff","","A Romantic in the Making"],
+["kristoff--once-upon-a-dance-soft-steps-strong-ties","Base Game","Kristoff","","Once Upon a Dance: Soft Steps, Strong Ties"],
+["donald-duck--a-house-fit-for-a-duck","Base Game","Donald Duck","","A House Fit For A Duck"],
+["donald-duck--a-fishy-dispute","Base Game","Donald Duck","","A Fishy Dispute"],
+["donald-duck--the-forgotten-project","Base Game","Donald Duck","","The Forgotten Project"],
+["donald-duck--the-dreamlight-fountain","Base Game","Donald Duck","","The Dreamlight Fountain"],
+["mother-gothel--the-curse","Base Game","Mother Gothel","","The Curse"],
+["mother-gothel--my-kingdom-for-a-scroll","Base Game","Mother Gothel","","My Kingdom For A Scroll"],
+["mother-gothel--shine-a-light","Base Game","Mother Gothel","","Shine a Light"],
+["mother-gothel--the-sunstone-fragments","Base Game","Mother Gothel","","The Sunstone Fragments"],
+["mother-gothel--village-project-restoring-the-sunstone","Base Game","Mother Gothel","","Village Project: Restoring the Sunstone"],
+["ariel--the-lonely-island","Base Game","Ariel","","The Lonely Island"],
+["ariel--the-missing-prince","Base Game","Ariel","","The Missing Prince"],
+["ariel--thingamabobs-gadgets-and-gizmos","Base Game","Ariel","","Thingamabobs, Gadgets, and Gizmos"],
+["ariel--the-ancient-doorway","Base Game","Ariel","","The Ancient Doorway"],
+["minnie--the-language-of-flowers","Base Game","Minnie","","The Language of Flowers"],
+["minnie--on-the-trail-of-minnie-s-memory","Base Game","Minnie","","On The Trail of Minnie's Memory"],
+["minnie--remembering-old-times","Base Game","Minnie","","Remembering Old Times"],
+["minnie--very-magical-minnie","Base Game","Minnie","","Very Magical Minnie"],
+["anna--the-spirits-of-nature","Base Game","Anna","","The Spirits of Nature"],
+["anna--welcoming-anna","Base Game","Anna","","Welcoming Anna"],
+["anna--an-icy-invitation","Base Game","Anna","","An Icy Invitation"],
+["anna--lost-loves-and-missing-memories","Base Game","Anna","","Lost Loves and Missing Memories"],
+["anna--the-enchanted-ring","Base Game","Anna","","The Enchanted Ring"],
+["anna--do-you-wanna-build-a-snowman","Base Game","Anna","","Do You Wanna Build a Snowman?"],
+["elsa--chasing-the-wind","Base Game","Elsa","","Chasing the Wind"],
+["elsa--welcoming-elsa","Base Game","Elsa","","Welcoming Elsa"],
+["elsa--breaking-the-ice","Base Game","Elsa","","Breaking the Ice"],
+["elsa--what-home-feels-like","Base Game","Elsa","","What Home Feels Like"],
+["elsa--the-singing-ice","Base Game","Elsa","","The Singing Ice"],
+["elsa--the-ice-cavern-mystery","Base Game","Elsa","","The Ice Cavern Mystery"],
+["eric--poor-unfortunate-prince","Base Game","Eric","","Poor Unfortunate Prince"],
+["eric--part-of-his-world","Base Game","Eric","","Part of His World"],
+["eric--back-on-the-waves","Base Game","Eric","","Back on the Waves"],
+["eric--the-mystical-crystal","Base Game","Eric","","The Mystical Crystal"],
+["scar--nature-and-nurture","Base Game","Scar","","Nature and Nurture"],
+["scar--friends-aren-t-food","Base Game","Scar","","Friends Aren't Food"],
+["scar--breaking-bones","Base Game","Scar","","Breaking Bones"],
+["scar--the-circle-of-life","Base Game","Scar","","The Circle of Life"],
+["scar--the-making-of-a-monarch","Base Game","Scar","","The Making of a Monarch"],
+["scar--scar-s-campaign-a-suspicious-stew","Base Game","Scar","","Scar's Campaign: A Suspicious Stew"],
+["buzz-lightyear--a-secret-mission-in-uncharted-space","Base Game","Buzz Lightyear","","A Secret Mission in Uncharted Space"],
+["buzz-lightyear--a-space-ranger-recruit","Base Game","Buzz Lightyear","","A Space Ranger Recruit"],
+["buzz-lightyear--a-space-ranger-reputation","Base Game","Buzz Lightyear","","A Space Ranger Reputation"],
+["buzz-lightyear--the-fragmented-past","Base Game","Buzz Lightyear","","The Fragmented Past"],
+["buzz-lightyear--the-definition-of-a-hero","Base Game","Buzz Lightyear","","The Definition of a Hero"],
+["buzz-lightyear--collect-em-all-green-little-men","Base Game","Buzz Lightyear","","Collect 'Em All: Green Little Men!"],
+["buzz-lightyear--collect-em-all-strangers-from-the-outside","Base Game","Buzz Lightyear","","Collect 'Em All: Strangers from the Outside!"],
+["buzz-lightyear--collect-em-all-attic-mode","Base Game","Buzz Lightyear","","Collect 'Em All: Attic Mode"],
+["buzz-lightyear--we-are-eternally-grateful","Base Game","Buzz Lightyear","","We Are Eternally Grateful!"],
+["woody--you-re-my-favorite-deputy","Base Game","Woody","","You're My Favorite Deputy"],
+["woody--failing-better","Base Game","Woody","","Failing Better"],
+["woody--a-bit-of-a-fixer-upper","Base Game","Woody","","A Bit of a Fixer Upper"],
+["woody--wanted-aliens","Base Game","Woody","","Wanted: Aliens"],
+["woody--the-illumination","Base Game","Woody","","The Illumination"],
+["stitch--the-mystery-of-the-stolen-socks","Base Game","Stitch","","The Mystery of the Stolen Socks"],
+["stitch--goodness-level-check","Base Game","Stitch","","Goodness Level Check"],
+["stitch--very-sleepy-stitch","Base Game","Stitch","","Very Sleepy Stitch"],
+["stitch--stitch-s-hobby","Base Game","Stitch","","Stitch's Hobby"],
+["stitch--making-music","Base Game","Stitch","","Making Music"],
+["olaf--the-great-blizzard","Base Game","Olaf","","The Great Blizzard"],
+["olaf--a-place-for-joy","Base Game","Olaf","","A Place For Joy"],
+["olaf--olaf-a-story-to-tell","Base Game","Olaf","","Olaf - A Story To Tell"],
+["olaf--the-role-of-a-lifetime","Base Game","Olaf","","The Role Of A Lifetime"],
+["olaf--olaf-presents-dreamlight-valley","Base Game","Olaf","","Olaf Presents \"Dreamlight Valley\""],
+["olaf--a-sticky-situation","Base Game","Olaf","","A Sticky Situation"],
+["olaf--a-hoot-and-a-half","Base Game","Olaf","","A Hoot and a Half"],
+["olaf--olaf-s-grand-exhibition","Base Game","Olaf","","Olaf's Grand Exhibition"],
+["olaf--grand-exhibition-diorama","Base Game","Olaf","","Grand Exhibition: Diorama"],
+["olaf--grand-exhibition-aquarium","Base Game","Olaf","","Grand Exhibition: Aquarium"],
+["olaf--grand-exhibition-habitat","Base Game","Olaf","","Grand Exhibition: Habitat"],
+["mirabel--the-golden-doorknob","Base Game","Mirabel","","The Golden Doorknob"],
+["mirabel--healing-house","Base Game","Mirabel","","Healing House"],
+["mirabel--a-taste-of-home","Base Game","Mirabel","","A Taste Of Home"],
+["mirabel--meddling-mirabel","Base Game","Mirabel","","Meddling Mirabel"],
+["mirabel--a-festival-of-friendship","Base Game","Mirabel","","A Festival Of Friendship"],
+["mirabel--a-letter-for-antonio","Base Game","Mirabel","","A Letter for Antonio"],
+["mirabel--once-upon-a-dance-pieces-of-the-hearts","Base Game","Mirabel","","Once Upon a Dance: Pieces of the Hearts"],
+["nala--eyes-in-the-dark","Base Game","Nala","","Eyes in the Dark"],
+["nala--staking-your-territory","Base Game","Nala","","Staking Your Territory"],
+["nala--fishy-business","Base Game","Nala","","Fishy Business"],
+["nala--heart-of-a-lioness","Base Game","Nala","","Heart of a Lioness"],
+["nala--here-and-there-and-back-again","Base Game","Nala","","Here and There and Back Again"],
+["simba--stars-to-guide-us","Base Game","Simba","","Stars to Guide Us"],
+["simba--hakuna-matata","Base Game","Simba","","Hakuna Matata"],
+["simba--the-great-gathering","Base Game","Simba","","The Great Gathering"],
+["simba--seed-of-memories","Base Game","Simba","","Seed of Memories"],
+["simba--the-dreamlight-grove","Base Game","Simba","","The Dreamlight Grove"],
+["fairy-godmother--miracles-take-time","Base Game","Fairy Godmother","","Miracles Take Time"],
+["fairy-godmother--forgotten-memories-friendship","Base Game","Fairy Godmother","","Forgotten Memories: Friendship"],
+["fairy-godmother--forgotten-memories-trust","Base Game","Fairy Godmother","","Forgotten Memories: Trust"],
+["fairy-godmother--forgotten-memories-nurturing","Base Game","Fairy Godmother","","Forgotten Memories: Nurturing"],
+["fairy-godmother--what-s-left-behind","Base Game","Fairy Godmother","","What's Left Behind"],
+["fairy-godmother--fire-alarm","Base Game","Fairy Godmother","","Fire Alarm"],
+["fairy-godmother--a-lost-book","Base Game","Fairy Godmother","","A Lost Book"],
+["fairy-godmother--bibbidi-bobbidi-oops","Base Game","Fairy Godmother","","Bibbidi Bobbidi Oops"],
+["fairy-godmother--a-magical-moment","Base Game","Fairy Godmother","","A Magical Moment"],
+["fairy-godmother--the-pumpkin-and-the-princess","Base Game","Fairy Godmother","","The Pumpkin and The Princess"],
+["vanellope-von-schwee--the-haunting-of-dreamlight-valley","Base Game","Vanellope von Schweetz","","The Haunting of Dreamlight Valley"],
+["vanellope-von-schwee--faith-trust-and-pixel-dust","Base Game","Vanellope von Schweetz","","Faith, Trust, and Pixel Dust"],
+["vanellope-von-schwee--extreme-biome-makeover","Base Game","Vanellope von Schweetz","","Extreme Biome Makeover"],
+["vanellope-von-schwee--ready-player-fun","Base Game","Vanellope von Schweetz","","Ready Player Fun"],
+["vanellope-von-schwee--boss-up","Base Game","Vanellope von Schweetz","","Boss Up"],
+["vanellope-von-schwee--fungeons-and-dragons","Base Game","Vanellope von Schweetz","","Fungeons and Dragons"],
+["vanellope-von-schwee--valley-visits","Base Game","Vanellope von Schweetz","","Valley Visits"],
+["vanellope-von-schwee--the-next-level","Base Game","Vanellope von Schweetz","","The Next Level"],
+["belle--into-the-west-wing","Base Game","Belle","","Into The West Wing!"],
+["belle--a-prince-in-disguise","Base Game","Belle","","A Prince In Disguise"],
+["belle--book-hunt","Base Game","Belle","","Book Hunt"],
+["belle--breaking-the-code","Base Game","Belle","","Breaking The Code"],
+["belle--the-best-mystery-solver-in-dreamlight-valley","Base Game","Belle","","The Best Mystery Solver In Dreamlight Valley"],
+["belle--chronicles-of-the-ancients","Base Game","Belle","","Chronicles Of The Ancients"],
+["the-beast--into-the-west-wing","Base Game","The Beast","","Into The West Wing!"],
+["the-beast--a-prince-in-disguise","Base Game","The Beast","","A Prince In Disguise"],
+["the-beast--the-beast-with-no-bite","Base Game","The Beast","","The Beast With No Bite"],
+["the-beast--be-our-friend","Base Game","The Beast","","Be Our Friend"],
+["the-beast--the-crown-or-the-claw","Base Game","The Beast","","The Crown Or The Claw"],
+["the-beast--a-gift-in-crimson","Base Game","The Beast","","A Gift In Crimson"],
+["the-beast--belle-s-enchanted-day","Base Game","The Beast","","Belle's Enchanted Day"],
+["once-upon-a-dance-dr--serenade-of-memory","Base Game","Once Upon a Dance (Dream Bundle)","","Serenade of Memory"],
+["once-upon-a-dance-dr--the-rising-rhapsody","Base Game","Once Upon a Dance (Dream Bundle)","","The Rising Rhapsody"],
+["once-upon-a-dance-dr--the-grand-enchanted-ball","Base Game","Once Upon a Dance (Dream Bundle)","","The Grand Enchanted Ball"],
+["the-forgotten--the-magic-in-everything","Base Game","The Forgotten","","The Magic In Everything"],
+["the-forgotten--acts-of-care","Base Game","The Forgotten","","Acts of Care"],
+["the-forgotten--poetic-license","Base Game","The Forgotten","","Poetic License"],
+["the-forgotten--a-forgotten-name","Base Game","The Forgotten","","A Forgotten Name"],
+["the-forgotten--shadows-on-the-wall","Base Game","The Forgotten","","Shadows on the Wall"],
+["the-forgotten--ship-of-gold","Base Game","The Forgotten","","Ship of Gold"],
+["the-forgotten--the-music-s-on-the-walls","Base Game","The Forgotten","","The Music's on the Walls"],
+["the-forgotten--continue","Base Game","The Forgotten","","Continue?"],
+["jack-skellington--something-comes-a-knocking","Base Game","Jack Skellington","","Something Comes A'Knocking"],
+["jack-skellington--the-pumpkin-king-returns","Base Game","Jack Skellington","","The Pumpkin King Returns"],
+["jack-skellington--the-scientific-method","Base Game","Jack Skellington","","The Scientific Method"],
+["jack-skellington--the-holiday-poll","Base Game","Jack Skellington","","The Holiday Poll"],
+["jack-skellington--dreamlight-day","Base Game","Jack Skellington","","Dreamlight Day"],
+["mike-wazowski--escape-claws","Base Game","Mike Wazowski","","Escape Claws"],
+["mike-wazowski--eye-on-the-prize","Base Game","Mike Wazowski","","Eye On The Prize"],
+["mike-wazowski--germs-abound","Base Game","Mike Wazowski","","Germs Abound"],
+["mike-wazowski--monstrously-good-taste","Base Game","Mike Wazowski","","Monstrously Good Taste"],
+["mike-wazowski--a-comedic-proposition","Base Game","Mike Wazowski","","A Comedic Proposition"],
+["mike-wazowski--have-your-people-talk-to-my-people","Base Game","Mike Wazowski","","Have Your People Talk To My People"],
+["sulley--escape-claws","Base Game","Sulley","","Escape Claws"],
+["sulley--eye-on-the-prize","Base Game","Sulley","","Eye On The Prize"],
+["sulley--monster-movie-night","Base Game","Sulley","","Monster Movie Night"],
+["sulley--villager-of-the-month","Base Game","Sulley","","Villager Of The Month"],
+["sulley--the-power-of-knowledge","Base Game","Sulley","","The Power Of Knowledge"],
+["sulley--the-scavenger-hunt","Base Game","Sulley","","The Scavenger Hunt"],
+["daisy-duck--you-have-mail","Base Game","Daisy Duck","","You Have Mail"],
+["daisy-duck--trouble-in-paradise","Base Game","Daisy Duck","","Trouble in Paradise"],
+["daisy-duck--dots-and-daisies","Base Game","Daisy Duck","","Dots and Daisies"],
+["daisy-duck--ask-daisy","Base Game","Daisy Duck","","Ask Daisy"],
+["daisy-duck--the-glittered-gala","Base Game","Daisy Duck","","The Glittered Gala"],
+["daisy-duck--once-upon-a-dance-essence-of-moments","Base Game","Daisy Duck","","Once Upon a Dance: Essence of Moments"],
+["mulan--a-defender-s-training","Base Game","Mulan","","A Defender's Training"],
+["mulan--protecting-the-camp","Base Game","Mulan","","Protecting the Camp"],
+["mulan--how-to-unlock-mulan-and-mushu","Base Game","Mulan","","How To Unlock Mulan And Mushu"],
+["mulan--a-daily-regime","Base Game","Mulan","","A Daily Regime"],
+["mulan--the-shadow-play","Base Game","Mulan","","The Shadow Play"],
+["mulan--the-art-of-fun","Base Game","Mulan","","The Art of Fun"],
+["mulan--training-games","Base Game","Mulan","","Training Games"],
+["mushu--a-new-recruit","Base Game","Mushu","","A New Recruit"],
+["mushu--the-dragon-army","Base Game","Mushu","","The Dragon Army"],
+["mushu--clearing-the-road","Base Game","Mushu","","Clearing The Road"],
+["mushu--how-to-unlock-mulan-and-mushu","Base Game","Mushu","","How To Unlock Mulan And Mushu"],
+["mushu--a-reminder-in-stone","Base Game","Mushu","","A Reminder in Stone"],
+["mushu--the-mushu-program","Base Game","Mushu","","The MUSHU Program"],
+["mushu--the-guardian-party","Base Game","Mushu","","The Guardian Party"],
+["mushu--the-tiny-villager-society","Base Game","Mushu","","The Tiny Villager Society"],
+["tiana--a-taste-for-literature","Base Game","Tiana","","A Taste for Literature"],
+["tiana--back-from-the-bayou","Base Game","Tiana","","Back from the Bayou"],
+["tiana--little-louis-s-big-break","Base Game","Tiana","","Little Louis's Big Break"],
+["tiana--dreamlight-gastronomy","Base Game","Tiana","","Dreamlight Gastronomy"],
+["tiana--villagers-on-parade","Base Game","Tiana","","Villagers on Parade"],
+["tiana--slow-and-steady","Base Game","Tiana","","Slow and Steady"],
+["timon--finding-old-friends","Base Game","Timon","","Finding Old Friends"],
+["timon--where-s-pumbaa","Base Game","Timon","","Where's Pumbaa?"],
+["timon--old-enemies","Base Game","Timon","","Old Enemies"],
+["timon--curious-about-critters","Base Game","Timon","","Curious About Critters"],
+["timon--the-timon-talk","Base Game","Timon","","The Timon Talk"],
+["timon--the-infestation-pt-1","Base Game","Timon","","The Infestation Pt. 1"],
+["timon--the-infestation-pt-3","Base Game","Timon","","The Infestation Pt. 3"],
+["timon--drawings","Base Game","Timon","","Drawings"],
+["pumbaa--relax","Base Game","Pumbaa","","Relax!"],
+["pumbaa--something-s-off","Base Game","Pumbaa","","Something's Off"],
+["pumbaa--fine-arts-for-warthogs","Base Game","Pumbaa","","Fine Arts For Warthogs"],
+["pumbaa--down-to-earth","Base Game","Pumbaa","","Down to Earth"],
+["pumbaa--the-infestation-pt-2","Base Game","Pumbaa","","The Infestation Pt. 2"],
+["sally--the-woven-bridge","Base Game","Sally","","The Woven Bridge"],
+["sally--uncanny-romance","Base Game","Sally","","Uncanny Romance"],
+["sally--decay-to-grow","Base Game","Sally","","Decay to Grow"],
+["sally--patchwork-party","Base Game","Sally","","Patchwork Party"],
+["sally--preposterous-premonitions","Base Game","Sally","","Preposterous Premonitions"],
+["aladdin--brave-the-storm","Base Game","Aladdin","","Brave the Storm"],
+["aladdin--monkey-business","Base Game","Aladdin","","Monkey Business"],
+["aladdin--carpet-diem","Base Game","Aladdin","","Carpet Diem"],
+["aladdin--good-as-gold","Base Game","Aladdin","","Good as Gold"],
+["aladdin--bring-your-own-carpet","Base Game","Aladdin","","Bring Your Own Carpet"],
+["aladdin--all-that-glitters","Base Game","Aladdin","","All That Glitters"],
+["aladdin--advanced-marketing","Base Game","Aladdin","","Advanced Marketing"],
+["jasmine--the-ancient-revealed","Base Game","Jasmine","","The Ancient Revealed"],
+["jasmine--breaking-through","Base Game","Jasmine","","Breaking Through"],
+["jasmine--wish-magic","Base Game","Jasmine","","Wish Magic"],
+["jasmine--the-enchanted-flower","Base Game","Jasmine","","The Enchanted Flower"],
+["jasmine--a-sandy-competition","Base Game","Jasmine","","A Sandy Competition"],
+["jasmine--hot-and-cold","Base Game","Jasmine","","Hot and Cold"],
+["jasmine--wild-wild-wishes","Base Game","Jasmine","","Wild Wild Wishes"],
+["jasmine--jasmine-s-campaign-forest-beautification","Base Game","Jasmine","","Jasmine's Campaign: Forest Beautification"],
+["alice--teeny-tiny-problems","Base Game","Alice","","Teeny, Tiny Problems"],
+["alice--leaving-wonderland","Base Game","Alice","","Leaving Wonderland"],
+["alice--books-with-no-pictures","Base Game","Alice","","Books With No Pictures"],
+["alice--mimsy-were-the-borogoves","Base Game","Alice","","Mimsy Were The Borogoves"],
+["alice--the-fractured-glass","Base Game","Alice","","The Fractured Glass"],
+["alice--a-very-merry-unbirthday","Base Game","Alice","","A Very Merry Unbirthday"],
+["alice--cat-tree-catastrophe","Base Game","Alice","","Cat Tree Catastrophe"],
+["cheshire-cat--wonders-of-wonderland","Base Game","Cheshire Cat","","Wonders of Wonderland"],
+["cheshire-cat--the-queen-s-maze","Base Game","Cheshire Cat","","The Queen's Maze"],
+["cheshire-cat--mannequin-madness","Base Game","Cheshire Cat","","Mannequin Madness"],
+["cheshire-cat--chaos-in-the-kitchen","Base Game","Cheshire Cat","","Chaos in the Kitchen"],
+["cheshire-cat--cat-tree-catastrophe","Base Game","Cheshire Cat","","Cat Tree Catastrophe"],
+["cheshire-cat--furniture-fluster","Base Game","Cheshire Cat","","Furniture Fluster"],
+["cheshire-cat--it-s-all-nonsense","Base Game","Cheshire Cat","","It's All Nonsense"],
+["cheshire-cat--the-uncrafting-station","Base Game","Cheshire Cat","","The Uncrafting Station"],
+["cheshire-cat--on-a-wild-cheshire-chase","Base Game","Cheshire Cat","","On A Wild Cheshire Chase"],
+["peter-pan--shadow-tag","Base Game","Peter Pan","","Shadow Tag"],
+["peter-pan--a-real-hideout","Base Game","Peter Pan","","A Real Hideout"],
+["peter-pan--the-new-lost-boys","Base Game","Peter Pan","","The New Lost Boys"],
+["peter-pan--the-valley-pirates","Base Game","Peter Pan","","The Valley Pirates"],
+["joy--emotional-rescue","Base Game","Joy","","Emotional Rescue"],
+["joy--dream-on","Base Game","Joy","","Dream On!"],
+["joy--capture-the-sun","Base Game","Joy","","Capture the Sun"],
+["joy--mood-swings","Base Game","Joy","","Mood Swings"],
+["joy--imagination-land","Base Game","Joy","","Imagination Land"],
+["joy--dream-a-little-dream","Base Game","Joy","","Dream A Little Dream"],
+["sadness--out-of-the-blue","Base Game","Sadness","","Out of the Blue"],
+["sadness--get-up-and-glow","Base Game","Sadness","","Get Up and Glow!"],
+["sadness--storm-s-a-brewin","Base Game","Sadness","","Storm's A-Brewin'"],
+["sadness--the-fortress-of-saditude","Base Game","Sadness","","The Fortress of Saditude"],
+["sadness--the-big-worry","Base Game","Sadness","","The Big Worry"],
+["sadness--create-a-bear","Base Game","Sadness","","Create A Bear"],
+["lumiere--the-haunting-of-the-beast-s-castle","Base Game","Lumiere","","The Haunting of the Beast's Castle"],
+["lumiere--belle-book-and-candle","Base Game","Lumiere","","Belle, Book, and Candle"],
+["lumiere--at-your-service","Base Game","Lumiere","","At Your Service"],
+["lumiere--here-there-and-everywhere","Base Game","Lumiere","","Here, There, And Everywhere"],
+["lumiere--spirit-hunters","Base Game","Lumiere","","Spirit Hunters"],
+["lumiere--long-lost-loves","Base Game","Lumiere","","Long Lost Loves"],
+["cogsworth--a-growing-mystery","Base Game","Cogsworth","","A Growing Mystery"],
+["cogsworth--a-guide-to-better-castle-keeping","Base Game","Cogsworth","","A Guide To Better Castle-Keeping"],
+["cogsworth--running-like-clockwork","Base Game","Cogsworth","","Running Like Clockwork"],
+["cogsworth--on-her-majesty-s-festive-service","Base Game","Cogsworth","","On Her Majesty's Festive Service"],
+["cogsworth--the-circle-of-friendship","Base Game","Cogsworth","","The Circle of Friendship"],
+["cogsworth--vote-for-cogsworth","Base Game","Cogsworth","","Vote for Cogsworth!"],
+["cogsworth--cogsworth-s-campaign-no-substitute-for-hard-work","Base Game","Cogsworth","","Cogsworth's Campaign: No Substitute for Hard Work"],
+["cinderella--cinderella-s-custom-creation","Base Game","Cinderella","","Cinderella's Custom Creation"],
+["cinderella--critter-chaos","Base Game","Cinderella","","Critter Chaos"],
+["cinderella--a-dream-come-true","Base Game","Cinderella","","A Dream Come True"],
+["cinderella--the-friendship-ball","Base Game","Cinderella","","The Friendship Ball"],
+["lady--the-jailbreak","Base Game","Lady","","The Jailbreak"],
+["lady--critters-and-compassion","Base Game","Lady","","Critters and Compassion"],
+["lady--canine-cuisine","Base Game","Lady","","Canine Cuisine"],
+["lady--a-little-off-the-top","Base Game","Lady","","A Little Off The Top"],
+["lady--getting-on-like-cats-and-dogs","Base Game","Lady","","Getting On Like Cats and Dogs"],
+["lady--portrait-of-a-lady","Base Game","Lady","","Portrait of a Lady"],
+["lady--the-spaghetti-incident","Base Game","Lady","","The Spaghetti Incident"],
+["lady--life-s-a-meat-ball","Base Game","Lady","","Life's A (Meat)Ball"],
+["lady--a-curious-dish","Base Game","Lady","","A Curious Dish"],
+["tramp--canine-courtship","Base Game","Tramp","","Canine Courtship"],
+["tramp--meatballs","Base Game","Tramp","","Meatballs"],
+["tramp--not-your-average-squeaky-toy","Base Game","Tramp","","Not Your Average Squeaky Toy"],
+["tramp--cleanliness-is-next-to-dogliness","Base Game","Tramp","","Cleanliness Is Next To Dogliness"],
+["tramp--and-how-did-that-make-you-feel","Base Game","Tramp","","And How Did That Make You Feel"],
+["tramp--canine-archaeology","Base Game","Tramp","","Canine Archaeology"],
+["pocahontas--the-three-sisters-garden","Base Game","Pocahontas","","The Three Sisters Garden"],
+["pocahontas--working-together","Base Game","Pocahontas","","Working Together"],
+["pocahontas--a-little-algae-problem","Base Game","Pocahontas","","A Little Algae Problem"],
+["pocahontas--a-raccoon-s-return","Base Game","Pocahontas","","A Raccoon's Return"],
+["hercules--speedrun-crash-course","Base Game","Hercules","","Speedrun Crash Course"],
+["hercules--thunderstruck","Base Game","Hercules","","Thunderstruck"],
+["hercules--the-grecian-urn","Base Game","Hercules","","The Grecian Urn"],
+["hercules--aquatic-musings","Base Game","Hercules","","Aquatic Musings"],
+["hercules--medicinal-mortality","Base Game","Hercules","","Medicinal Mortality"],
+["hercules--battle-of-the-coaches","Base Game","Hercules","","Battle of the Coaches"],
+["phil--moonlighting-as-a-hero","Base Game","Phil","","Moonlighting as a Hero"],
+["phil--a-real-godly-mess","Base Game","Phil","","A Real Godly Mess"],
+["phil--satyrical-theater","Base Game","Phil","","Satyrical Theater"],
+["phil--an-unlikely-hero","Base Game","Phil","","An Unlikely Hero"],
+["phil--sweet-sweet-retirement","Base Game","Phil","","Sweet Sweet Retirement"],
+["phil--coach-s-commission","Base Game","Phil","","Coach's Commission"],
+["ralph--bad-anon-valley-chapter","Base Game","Ralph","","Bad-Anon: Valley Chapter"],
+["ralph--mini-game-mayhem","Base Game","Ralph","","Mini-Game Mayhem"],
+["ralph--green-monster-inc","Base Game","Ralph","","Green Monster, Inc."],
+["ralph--ralph-breaks-the-valley","Base Game","Ralph","","Ralph Breaks the Valley"],
+["jafar--the-secrets-of-eternity-isles","A Rift in Time","Jafar","","The Secrets of Eternity Isles"],
+["jafar--the-flying-metal-nuisance","A Rift in Time","Jafar","","The Flying Metal Nuisance"],
+["jafar--the-sands-in-the-hourglass","A Rift in Time","Jafar","","The Sands In The Hourglass"],
+["jafar--your-eternal-reward","A Rift in Time","Jafar","","Your Eternal Reward"],
+["jafar--the-optics-of-a-second-chance","A Rift in Time","Jafar","","The Optics of a Second Chance"],
+["jafar--the-alchemical-revolution","A Rift in Time","Jafar","","The Alchemical Revolution"],
+["jafar--the-serpent-s-gift","A Rift in Time","Jafar","","The Serpent's Gift"],
+["jafar--the-trial-of-eternity","A Rift in Time","Jafar","","The Trial of Eternity"],
+["jafar--making-amends","A Rift in Time","Jafar","","Making Amends"],
+["rapunzel--the-ancient-door","A Rift in Time","Rapunzel","","The Ancient Door"],
+["rapunzel--the-sundial","A Rift in Time","Rapunzel","","The Sundial"],
+["rapunzel--the-tower","A Rift in Time","Rapunzel","","The Tower"],
+["rapunzel--the-housewarming","A Rift in Time","Rapunzel","","The Housewarming"],
+["rapunzel--i-ve-got-a-dreamlight","A Rift in Time","Rapunzel","","I've Got A Dreamlight"],
+["rapunzel--glowing-up","A Rift in Time","Rapunzel","","Glowing Up"],
+["rapunzel--home-is-where-the-art-is","A Rift in Time","Rapunzel","","Home Is Where The Art Is"],
+["rapunzel--all-the-right-notes","A Rift in Time","Rapunzel","","All The Right Notes"],
+["rapunzel--use-your-imagination-rapunzel","A Rift in Time","Rapunzel","","Use Your Imagination: Rapunzel"],
+["gaston--the-wanderer-of-the-dunes","A Rift in Time","Gaston","","The Wanderer Of The Dunes"],
+["gaston--the-wild-tangle-s-swarm","A Rift in Time","Gaston","","The Wild Tangle's Swarm"],
+["gaston--diamond-in-the-rough","A Rift in Time","Gaston","","Diamond in the Rough"],
+["gaston--center-of-attention","A Rift in Time","Gaston","","Center Of Attention"],
+["gaston--gaston-the-hero","A Rift in Time","Gaston","","Gaston The...Hero?"],
+["gaston--no-one-heroes-like-gaston","A Rift in Time","Gaston","","No One Heroes Like Gaston"],
+["gaston--dreamlight-valley-s-next-top-lefou","A Rift in Time","Gaston","","Dreamlight Valley's Next Top LeFou"],
+["gaston--hero-pose","A Rift in Time","Gaston","","Hero Pose"],
+["gaston--use-your-imagination-gaston","A Rift in Time","Gaston","","Use Your Imagination: Gaston"],
+["eve--directive-danger","A Rift in Time","EVE","","Directive: Danger!"],
+["eve--a-new-directive","A Rift in Time","EVE","","A New Directive"],
+["eve--lasers-and-crafts","A Rift in Time","EVE","","Lasers and Crafts"],
+["eve--directive-plant","A Rift in Time","EVE","","Directive: Plant"],
+["eve--when-things-go-boom","A Rift in Time","EVE","","When Things Go Boom"],
+["eve--does-not-compute","A Rift in Time","EVE","","Does Not Compute"],
+["eve--use-your-imagination-eve","A Rift in Time","EVE","","Use Your Imagination: EVE"],
+["oswald--the-spark-of-imagination","A Rift in Time","Oswald","","The Spark Of Imagination"],
+["oswald--oswald-s-many-dimensions","A Rift in Time","Oswald","","Oswald's Many Dimensions"],
+["oswald--an-alarming-development","A Rift in Time","Oswald","","An Alarming Development"],
+["oswald--a-cockamamie-contest","A Rift in Time","Oswald","","A Cockamamie Contest"],
+["oswald--erratic-transportation","A Rift in Time","Oswald","","Erratic Transportation"],
+["oswald--the-lesser-evil","A Rift in Time","Oswald","","The Lesser Evil"],
+["merida--welcome-to-storybook-vale","Storybook Vale","Merida","","Welcome to Storybook Vale"],
+["merida--a-new-chapter","Storybook Vale","Merida","","A New Chapter"],
+["merida--the-wolf-of-the-wilds","Storybook Vale","Merida","","The Wolf of the Wilds"],
+["merida--a-land-of-myths-and-legends","Storybook Vale","Merida","","A Land of Myths and Legends"],
+["merida--clan-dunbroch-s-rules-of-the-hunt","Storybook Vale","Merida","","Clan DunBroch's Rules of the Hunt"],
+["merida--archery-and-archrivals","Storybook Vale","Merida","","Archery and Archrivals"],
+["merida--change-your-fate","Storybook Vale","Merida","","Change Your Fate"],
+["merida--a-very-scottish-celebration","Storybook Vale","Merida","","A Very Scottish Celebration"],
+["flynn-rider--a-sheep-in-wolf-s-clothing","Storybook Vale","Flynn Rider","","A Sheep In Wolf's Clothing"],
+["flynn-rider--curiouser-and-curiouser","Storybook Vale","Flynn Rider","","Curiouser and Curiouser"],
+["flynn-rider--the-teapot-falls","Storybook Vale","Flynn Rider","","The Teapot Falls"],
+["flynn-rider--the-fallen-fortress","Storybook Vale","Flynn Rider","","The Fallen Fortress"],
+["flynn-rider--the-knights-of-the-round-table","Storybook Vale","Flynn Rider","","The Knights of the Round Table"],
+["flynn-rider--the-company-of-the-wolf","Storybook Vale","Flynn Rider","","The Company of the Wolf"],
+["flynn-rider--memory-lane","Storybook Vale","Flynn Rider","","Memory Lane"],
+["flynn-rider--an-old-fashioned-heist","Storybook Vale","Flynn Rider","","An Old-Fashioned Heist"],
+["flynn-rider--the-adventures-of-flynn-rider","Storybook Vale","Flynn Rider","","The Adventures of Flynn Rider"],
+["flynn-rider--a-romantic-reunion","Storybook Vale","Flynn Rider","","A Romantic Reunion"],
+["hades--guts-and-glory","Storybook Vale","Hades","","Guts and Glory"],
+["hades--a-moth-to-a-flame","Storybook Vale","Hades","","A Moth to a Flame"],
+["hades--the-promethean-flame","Storybook Vale","Hades","","The Promethean Flame"],
+["hades--the-marble-colossus","Storybook Vale","Hades","","The Marble Colossus"],
+["hades--losing-your-marbles","Storybook Vale","Hades","","Losing Your Marbles"],
+["hades--mount-olympus","Storybook Vale","Hades","","Mount Olympus"],
+["hades--a-long-awaited-invitation","Storybook Vale","Hades","","A Long-Awaited Invitation"],
+["hades--mythic-restoration","Storybook Vale","Hades","","Mythic Restoration"],
+["hades--yes-your-lugubriousness","Storybook Vale","Hades","","Yes, Your Lugubriousness"],
+["hades--your-own-personal-hades","Storybook Vale","Hades","","Your Own Personal Hades"],
+["hades--fine-i-ll-do-it-myself","Storybook Vale","Hades","","Fine, I'll Do It Myself"],
+["maleficent--the-mistress-of-all-evil","Storybook Vale","Maleficent","","The Mistress of All Evil"],
+["maleficent--a-long-awaited-invitation","Storybook Vale","Maleficent","","A Long-Awaited Invitation"],
+["maleficent--the-unwritten-realms-maleficent-s-gift","Storybook Vale","Maleficent","","The Unwritten Realms: Maleficent's Gift"],
+["maleficent--the-unwritten-realms-the-spinning-wheel","Storybook Vale","Maleficent","","The Unwritten Realms: The Spinning Wheel"],
+["maleficent--the-unwritten-realms-maleficent-s-demise","Storybook Vale","Maleficent","","The Unwritten Realms: Maleficent's Demise"],
+["maleficent--the-corvid-companion","Storybook Vale","Maleficent","","The Corvid Companion"],
+["maleficent--rekindling-the-fire","Storybook Vale","Maleficent","","Rekindling the Fire"],
+["maleficent--collateral-damage","Storybook Vale","Maleficent","","Collateral Damage"],
+["maleficent--the-two-flames-united","Storybook Vale","Maleficent","","The Two Flames United"],
+["trials--a-sheep-in-wolf-s-clothing","Storybook Vale","Trials","Fairy Tale Trials","A Sheep In Wolf's Clothing"],
+["trials--the-teapot-falls","Storybook Vale","Trials","Fairy Tale Trials","The Teapot Falls"],
+["trials--the-knights-of-the-round-table","Storybook Vale","Trials","Fairy Tale Trials","The Knights of the Round Table"],
+["trials--guts-and-glory","Storybook Vale","Trials","Mythic Trials","Guts and Glory"],
+["trials--the-promethean-flame","Storybook Vale","Trials","Mythic Trials","The Promethean Flame"],
+["trials--losing-your-marbles","Storybook Vale","Trials","Mythic Trials","Losing Your Marbles"],
+["lorekeeper--a-storm-of-stories","Storybook Vale","Lorekeeper","","A Storm of Stories"],
+["lorekeeper--a-hero-of-ink-and-paper","Storybook Vale","Lorekeeper","","A Hero of Ink and Paper"],
+["lorekeeper--the-ink-stained-world","Storybook Vale","Lorekeeper","","The Ink-Stained World"],
+["lorekeeper--the-trial-of-virtue","Storybook Vale","Lorekeeper","","The Trial of Virtue"],
+["lorekeeper--the-trial-of-truth","Storybook Vale","Lorekeeper","","The Trial of Truth"],
+["lorekeeper--the-trial-of-song","Storybook Vale","Lorekeeper","","The Trial of Song"],
+["aurora--the-tales-that-bind","Storybook Vale","Aurora","","The Tales That Bind"],
+["aurora--the-family-recipe","Storybook Vale","Aurora","","The Family Recipe"],
+["aurora--redeeming-literature","Storybook Vale","Aurora","","Redeeming Literature"],
+["aurora--the-princess-tour","Storybook Vale","Aurora","","The Princess Tour"],
+["aurora--dreams-and-dark-designs","Storybook Vale","Aurora","","Dreams and Dark Designs"],
+["snow-white--a-wishful-invitation","Wishblossom Ranch","Snow White","","A Wishful Invitation"],
+["snow-white--tales-of-a-broken-heart","Wishblossom Ranch","Snow White","","Tales of a Broken Heart"],
+["snow-white--handle-with-care","Wishblossom Ranch","Snow White","","Handle with Care"],
+["snow-white--making-peace","Wishblossom Ranch","Snow White","","Making Peace"],
+["snow-white--the-copycat","Wishblossom Ranch","Snow White","","The Copycat"],
+["snow-white--the-wishblossom-fair","Wishblossom Ranch","Snow White","","The Wishblossom Fair"],
+["snow-white--hold-your-horses-the-wishing-alps","Wishblossom Ranch","Snow White","","Hold Your Horses: The Wishing Alps"],
+["snow-white--hold-your-horses-glamour-gulch","Wishblossom Ranch","Snow White","","Hold Your Horses: Glamour Gulch"],
+["snow-white--hold-your-horses-pixie-acres","Wishblossom Ranch","Snow White","","Hold Your Horses: Pixie Acres"],
+["cruella-de-vil--the-decay-of-fashion","Wishblossom Ranch","Cruella de Vil","","The Decay of Fashion"],
+["cruella-de-vil--the-de-vil-crash","Wishblossom Ranch","Cruella de Vil","","The De Vil Crash"],
+["cruella-de-vil--the-skunk-rebellion","Wishblossom Ranch","Cruella de Vil","","The Skunk Rebellion"],
+["cruella-de-vil--automotive-appeal","Wishblossom Ranch","Cruella de Vil","","Automotive Appeal"],
+["cruella-de-vil--you-re-really-wearing-that","Wishblossom Ranch","Cruella de Vil","","You're Really Wearing THAT?"],
+["cruella-de-vil--stripes-are-in-this-season","Wishblossom Ranch","Cruella de Vil","","Stripes Are In This Season"],
+["cruella-de-vil--headdress-to-impress","Wishblossom Ranch","Cruella de Vil","","Headdress To Impress"],
+["tinker-bell--crystal-cavern-wishing-alps","Wishblossom Ranch","Tinker Bell","","Crystal Cavern: Wishing Alps"],
+["tinker-bell--crystal-caverns-glamour-gulch","Wishblossom Ranch","Tinker Bell","","Crystal Caverns: Glamour Gulch"],
+["tinker-bell--crystal-cavern-pixie-acres","Wishblossom Ranch","Tinker Bell","","Crystal Cavern: Pixie Acres"],
+["tinker-bell--the-decay","Wishblossom Ranch","Tinker Bell","","The Decay"],
+["tinker-bell--home-is-where-the-heart-is","Wishblossom Ranch","Tinker Bell","","Home Is Where The Heart Is"],
+["tinker-bell--uneasy-neighbours","Wishblossom Ranch","Tinker Bell","","Uneasy Neighbours"],
+["tinker-bell--tink-s-trinkets","Wishblossom Ranch","Tinker Bell","","Tink's Trinkets"],
+["tinker-bell--time-to-fly","Wishblossom Ranch","Tinker Bell","","Time to Fly"],
+["tigger--bounce-up-never-down","Wishblossom Ranch","Tigger","","Bounce Up, Never Down"],
+["tigger--the-balloon-family","Wishblossom Ranch","Tigger","","The BallOOn Family"],
+["tigger--fun-fun-fun","Wishblossom Ranch","Tigger","","Fun! Fun! Fun!"],
+["tigger--a-honey-of-a-problem","Wishblossom Ranch","Tigger","","A Honey of a Problem"],
+["tigger--terribly-twitchy-tigger","Wishblossom Ranch","Tigger","","Terribly Twitchy Tigger"],
+["tigger--woozle-bamboozle","Wishblossom Ranch","Tigger","","Woozle Bamboozle"],
+["tigger--a-tiggerific-day","Wishblossom Ranch","Tigger","","A Tiggerific Day"],
+["winnie-the-pooh--prologue-childhood-treasures","Honeyglow Woods","Winnie the Pooh","","Prologue: Childhood Treasures"],
+["winnie-the-pooh--chapter-1-all-you-need-is-honey","Honeyglow Woods","Winnie the Pooh","","Chapter 1: All You Need Is Honey"],
+["winnie-the-pooh--chapter-2-about-thought-fog-and-light","Honeyglow Woods","Winnie the Pooh","","Chapter 2: About Thought, Fog, and Light"],
+["winnie-the-pooh--chapter-3-a-very-satisfied-bear","Honeyglow Woods","Winnie the Pooh","","Chapter 3: A Very Satisfied Bear"],
+["winnie-the-pooh--interlude-the-misplaced-honey","Honeyglow Woods","Winnie the Pooh","","Interlude: The Misplaced Honey"],
+["winnie-the-pooh--chapter-10-most-grand-adventure","Honeyglow Woods","Winnie the Pooh","","Chapter 10: Most Grand Adventure"],
+["winnie-the-pooh--chapter-11-the-anti-monster-camp","Honeyglow Woods","Winnie the Pooh","","Chapter 11: The Anti-Monster Camp"],
+["winnie-the-pooh--chapter-12-old-plans-new-wind","Honeyglow Woods","Winnie the Pooh","","Chapter 12: Old Plans, New Wind"],
+["winnie-the-pooh--grown-up-things","Honeyglow Woods","Winnie the Pooh","","Grown-Up Things"],
+["winnie-the-pooh--the-backwards-day","Honeyglow Woods","Winnie the Pooh","","The Backwards Day"],
+["winnie-the-pooh--pooh-s-grown-up-job","Honeyglow Woods","Winnie the Pooh","","Pooh's Grown-Up Job"],
+["winnie-the-pooh--the-honey-disaster","Honeyglow Woods","Winnie the Pooh","","The Honey Disaster"],
+["winnie-the-pooh--the-new-expedition","Honeyglow Woods","Winnie the Pooh","","The New Expedition"],
+["eeyore--chapter-4-a-tail-tale","Honeyglow Woods","Eeyore","","Chapter 4: A Tail Tale"],
+["eeyore--chapter-5-the-big-red-monster","Honeyglow Woods","Eeyore","","Chapter 5: The Big Red Monster"],
+["eeyore--chapter-6-a-place-for-eeyore","Honeyglow Woods","Eeyore","","Chapter 6: A Place For Eeyore"],
+["eeyore--interlude-2-the-gloomy-hollow","Honeyglow Woods","Eeyore","","Interlude 2: The Gloomy Hollow"],
+["eeyore--a-gloomy-goofy-adventure","Honeyglow Woods","Eeyore","","A Gloomy Goofy Adventure"],
+["eeyore--tails-and-tribulations","Honeyglow Woods","Eeyore","","Tails and Tribulations"],
+["eeyore--the-shy-villagers-society","Honeyglow Woods","Eeyore","","The Shy Villagers Society"],
+["eeyore--eeyore-s-lost-and-found","Honeyglow Woods","Eeyore","","Eeyore's Lost and Found"],
+["piglet--chapter-7-a-voice-behind-the-door","Honeyglow Woods","Piglet","","Chapter 7: A Voice Behind The Door"],
+["piglet--chapter-8-the-little-big-forest","Honeyglow Woods","Piglet","","Chapter 8: The Little Big Forest"],
+["piglet--chapter-9-how-to-meet-a-best-friend-again","Honeyglow Woods","Piglet","","Chapter 9: How To Meet A Best Friend (Again)"],
+["piglet--interlude-3-the-shadowy-surprise","Honeyglow Woods","Piglet","","Interlude 3: The Shadowy Surprise"],
+["piglet--the-most-unexpected-friend","Honeyglow Woods","Piglet","","The Most Unexpected Friend"],
+["piglet--after-the-rain","Honeyglow Woods","Piglet","","After the Rain"],
+["piglet--collecting-little-wins","Honeyglow Woods","Piglet","","Collecting Little Wins"],
+["piglet--piglet-the-caretaker","Honeyglow Woods","Piglet","","Piglet the Caretaker"],
+["secret-potatoes--golden-potato","Secret Quests","Secret Potatoes","","Golden Potato"],
+["secret-potatoes--red-potato","Secret Quests","Secret Potatoes","","Red Potato"],
+["secret-potatoes--orange-potato","Secret Quests","Secret Potatoes","","Orange Potato"],
+["secret-potatoes--blue-potato","Secret Quests","Secret Potatoes","","Blue Potato"],
+["secret-potatoes--purple-potato","Secret Quests","Secret Potatoes","","Purple Potato"],
+["secret-potatoes--green-potato","Secret Quests","Secret Potatoes","","Green Potato"],
+["secret-potatoes--make-the-rainbow-potion","Secret Quests","Secret Potatoes","","Make the Rainbow Potion"],
+["secret-potatoes--get-the-rainbow-fox-companion","Secret Quests","Secret Potatoes","","Get the Rainbow Fox Companion"]
+];
+
+const LABEL={"":"To do",p:"In progress",d:"Done",l:"Not unlocked"};
+const CYCLE={"":"p",p:"d",d:"l",l:""};
+let S={}, filter="open", query="", qdoc=null, openSet=new Set(), first=true, editing=null;
+let queue=Promise.resolve(), pending=0, plateOpen=null, plateTyping=false, undoTimer={}, lockOpen=new Set();
+let T={}, tdoc=null, tpending=0, tqueue=Promise.resolve(), tloaded=false;
+
+const byChar=[];{const m=new Map();for(const r of Q){const k=r[1]+"|"+r[2];if(!m.has(k)){const g={exp:r[1],ch:r[2],key:k,rows:[]};m.set(k,g);byChar.push(g)}m.get(k).rows.push(r)}}
+const st=id=>(S[id]&&S[id].s)||"";
+const nt=id=>(S[id]&&S[id].n)||"";
+const $=id=>document.getElementById(id);
+
+/* ---------------- storage ---------------- */
+function setSync(state,text){const el=$("sync");el.textContent=text;el.setAttribute("data-state",state)}
+function writeCache(){try{localStorage.setItem(CACHE_KEY,JSON.stringify({S,T}))}catch(e){}}
+function loadCache(){try{const p=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");if(p){S=p.S||{};if(p.T){T=p.T;tloaded=true}}}catch(e){}}
+
+function write(id){
+  const v=S[id]||{};writeCache();
+  if(!qdoc)return;
+  pending++;setSync("saving","Saving");
+  queue=queue.then(async()=>{
+    try{await qdoc.update({[id]:v})}
+    catch(e){try{await qdoc.set({...S})}catch(e2){console.error(e2);setSync("error","Couldn't save");pending--;return}}
+    pending--; if(!pending&&!tpending) setSync("idle","Synced");
+  });
+}
+function change(id,patch){S={...S,[id]:{...(S[id]||{}),...patch}};if(!S[id].s)delete S[id].s;if(!S[id].n)delete S[id].n;write(id);render()}
+
+/* ---------------- progress ---------------- */
+function bar(d,p,t){const e=document.createElement("div");e.className="dv-bar";e.innerHTML=`<i class="d" style="width:${t?d/t*100:0}%"></i><i class="p" style="width:${t?p/t*100:0}%"></i>`;return e}
+function counts(rows){let d=0,p=0,l=0;for(const r of rows){const s=st(r[0]);if(s==="d")d++;else if(s==="p")p++;else if(s==="l")l++}return{d,p,l,t:rows.length}}
+
+function renderSummary(){
+  const c=counts(Q);
+  $("tot").innerHTML=`${Math.round(c.d/c.t*100)}% <small>${c.d} of ${c.t} done</small>`;
+  $("totbar").replaceWith(Object.assign(bar(c.d,c.p,c.t),{id:"totbar"}));
+  $("lg-d").textContent=`Done ${c.d}`;$("lg-p").textContent=`In progress ${c.p}`;$("lg-l").textContent=`Not unlocked ${c.l}`;
+  const R=$("regions");R.innerHTML="";
+  for(const e of [...new Set(Q.map(r=>r[1]))]){const rc=counts(Q.filter(r=>r[1]===e));const row=document.createElement("div");row.className="dv-region";
+    const n=document.createElement("span");n.textContent=e;const pc=document.createElement("span");pc.className="pct";pc.textContent=Math.round(rc.d/rc.t*100)+"%";
+    row.append(n,bar(rc.d,rc.p,rc.t),pc);R.append(row)}
+  const N=$("now");N.innerHTML="";
+  // Plate: in progress, plus notes on quests not yet started (paid Dream Bundle reminders excluded). Locked quests get their own section.
+  const items=Q.filter(r=>st(r[0])==="p"||(nt(r[0])&&!st(r[0])&&!/Dream Bundle/.test(nt(r[0]))));
+  $("plate-count").textContent=items.length?`${items.length} quest${items.length>1?"s":""}`:"";
+  if(!items.length){N.innerHTML='<li class="dv-card note"><span class="dv-pick"><b>Nothing in progress</b><span>Mark a quest "In progress" and it shows up here.</span></span></li>'}
+  for(const r of items)N.append(plateCard(r,r[2]+(nt(r[0])?" · "+nt(r[0]):"")));
+  renderLocked();
+}
+
+/* ---------------- locked ---------------- */
+const why=n=>n.replace(/^locked:\s*/i,"");
+function renderLocked(){
+  const box=$("locked"),L=$("locked-list");
+  const rows=Q.filter(r=>st(r[0])==="l");box.hidden=!rows.length;L.innerHTML="";
+  $("locked-count").textContent=rows.length?`${rows.length} quest${rows.length>1?"s":""}`:"";
+  const groups=new Map();for(const r of rows){const k=r[1]+"|"+r[2];if(!groups.has(k))groups.set(k,[]);groups.get(k).push(r)}
+  for(const[k,rs]of groups){
+    const reasons=[...new Set(rs.map(r=>why(nt(r[0]))).filter(Boolean))];const shared=reasons.length===1?reasons[0]:"";
+    const det=document.createElement("details");det.className="dv-lk";det.open=lockOpen.has(k)||rs.some(r=>r[0]===plateOpen);
+    det.ontoggle=()=>{det.open?lockOpen.add(k):lockOpen.delete(k)};
+    const sm=document.createElement("summary");const nm=document.createElement("b");nm.className="dv-chev";nm.textContent=rs[0][2];
+    const meta=document.createElement("span");meta.className="meta";meta.textContent=`${rs.length} quest${rs.length>1?"s":""}`+(shared?" · "+shared:"");
+    sm.append(nm,meta);det.append(sm);
+    const ul=document.createElement("ul");ul.className="dv-plate";for(const r of rs){const own=why(nt(r[0]));ul.append(plateCard(r,own&&own!==shared?own:""))}
+    det.append(ul);L.append(det)}
+}
+
+/* ---------------- plate cards: tap to pick a status ---------------- */
+function plateCard(r,sub){const id=r[0],open=plateOpen===id;
+  const li=document.createElement("li");li.className="dv-card"+(st(id)!=="p"?" note":"")+(st(id)==="l"?" lockd":"")+(open?" open":"");
+  const pick=document.createElement("button");pick.className="dv-pick";pick.id="pick-"+id;pick.setAttribute("aria-expanded",open);
+  pick.setAttribute("aria-label",`${r[4]}, ${r[2]}: ${LABEL[st(id)]}. Update`);
+  const b=document.createElement("b");b.textContent=r[4];pick.append(b);
+  if(sub){const s=document.createElement("span");s.textContent=sub;pick.append(s)}
+  // mousedown preventDefault keeps focus in the note box, so its blur can't redraw the card out from under the click
+  pick.onmousedown=e=>e.preventDefault();
+  pick.onclick=()=>{const v=$("plate-note-"+id);plateTyping=false;
+    if(v&&v.value.trim()!==nt(id))change(id,{n:v.value.trim()});
+    plateOpen=open?null:id;render()};
+  li.append(pick);
+  if(open){const acts=document.createElement("div");acts.className="dv-acts";
+    const inp=document.createElement("input");inp.className="pp-input";
+    for(const[k,t,c]of[["d","Done","d"],["p","In progress","p"],["l","Not unlocked","l"],["","To do","x"]]){
+      const o=document.createElement("button");o.className="dv-opt "+c;o.textContent=t;o.setAttribute("aria-pressed",st(id)===k);
+      o.onmousedown=e=>e.preventDefault();
+      o.onclick=()=>{plateTyping=false;const v=inp.value.trim();plateSet(r,v!==nt(id)?{s:k,n:v}:{s:k})};acts.append(o)}
+    inp.id="plate-note-"+id;inp.value=nt(id);inp.placeholder="Add a note";inp.setAttribute("aria-label",`Note for ${r[4]}`);
+    inp.onfocus=()=>{plateTyping=true};
+    inp.onkeydown=e=>{if(e.key==="Enter")inp.blur();if(e.key==="Escape"){inp.value=nt(id);inp.blur()}};
+    inp.onblur=()=>{if(!plateTyping)return;plateTyping=false;const v=inp.value.trim();if(v!==nt(id))change(id,{n:v})};
+    acts.append(inp);li.append(acts)}
+  return li}
+function plateSet(r,patch){const id=r[0],prev={s:st(id),n:nt(id)};
+  plateOpen=null;
+  if(patch.s===prev.s){if(patch.n!==undefined)change(id,{n:patch.n});else render();return}
+  // a "Locked: …" note is stale once the quest leaves Locked
+  if(prev.s==="l"&&patch.s!=="l"&&patch.n===undefined&&/^locked/i.test(prev.n))patch={...patch,n:""};
+  change(id,patch);
+  showUndo(`${r[4]} marked ${LABEL[patch.s]}.`,()=>change(id,prev));
+}
+function showUndo(msg,fn,el="undo"){const U=$(el);clearTimeout(undoTimer[el]);U.innerHTML="";
+  const t=document.createElement("span");t.textContent=msg;const b=document.createElement("button");b.textContent="Undo";
+  b.onclick=()=>{clearTimeout(undoTimer[el]);U.hidden=true;fn()};U.append(t,b);U.hidden=false;
+  undoTimer[el]=setTimeout(()=>{U.hidden=true},10000)}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&plateOpen&&!plateTyping){const id=plateOpen;plateOpen=null;renderSummary();$("pick-"+id)?.focus()}});
+
+/* ---------------- folding: remembered in this browser only ---------------- */
+let folds=new Set();try{folds=new Set(JSON.parse(localStorage.getItem(FOLD_KEY)||"[]"))}catch(e){}
+function saveFolds(){try{localStorage.setItem(FOLD_KEY,JSON.stringify([...folds]))}catch(e){}}
+function applyFold(sec){const f=folds.has(sec.dataset.fold);sec.classList.toggle("dv-folded",f);sec.querySelector(".dv-fold").setAttribute("aria-expanded",!f)}
+document.querySelectorAll("[data-fold]").forEach(sec=>{applyFold(sec);
+  sec.querySelector(".dv-fold").onclick=()=>{const k=sec.dataset.fold;folds.has(k)?folds.delete(k):folds.add(k);saveFolds();applyFold(sec)}});
+
+/* ---------------- to-do ---------------- */
+const TG=[["quest","Quests to finish"],["unlock","Villagers to unlock"],["friend","Friendship to raise"],["mine","Your own"]];
+const TGHINT={unlock:"Each realm door costs 15,000 Dreamlight. Dreamlight Duties in the pause menu are the quickest way to earn it.",
+  friend:"Talk to them every day, give gifts they love, and bring them along as your companion while you fish, mine or garden."};
+function tsave(fn){
+  writeCache();
+  if(!tdoc)return;
+  tpending++;setSync("saving","Saving");
+  tqueue=tqueue.then(async()=>{
+    try{await fn()}
+    catch(e){try{await tdoc.set({...T})}catch(e2){console.error(e2);setSync("error","Couldn't save");tpending--;return}}
+    tpending--; if(!tpending&&!pending) setSync("idle","Synced");
+  });
+}
+function tchange(id,v){T={...T};if(v)T[id]=v;else delete T[id];tsave(v?()=>tdoc.update({[id]:v}):()=>tdoc.set({...T}));renderTodo()}
+function renderTodo(){
+  const box=$("todo-groups");box.innerHTML="";
+  const items=Object.entries(T).filter(([,v])=>v&&v.t);let left=0;
+  for(const[g,label]of TG){
+    const rs=items.filter(([,v])=>(v.g||"mine")===g).sort((a,b)=>(a[1].o||0)-(b[1].o||0));if(!rs.length)continue;
+    const gl=rs.filter(([,v])=>!(v.d||(v.q&&st(v.q)==="d"))).length;
+    const det=document.createElement("details");det.className="dv-tg";det.open=!folds.has("tg-"+g);
+    det.ontoggle=()=>{det.open?folds.delete("tg-"+g):folds.add("tg-"+g);saveFolds()};
+    const sm=document.createElement("summary");const h=document.createElement("span");h.className="dv-label";h.textContent=label;
+    const gc=document.createElement("span");gc.className="dv-count";gc.textContent=gl?`${gl} left`:"all done";sm.append(h,gc);det.append(sm);
+    const sec=document.createElement("div");sec.className="dv-tgbody";det.append(sec);
+    if(TGHINT[g]){const p=document.createElement("p");p.className="dv-hint";p.textContent=TGHINT[g];sec.append(p)}
+    const ul=document.createElement("ul");ul.className="dv-tl";
+    for(const[id,v]of rs){
+      const qd=!!v.q&&st(v.q)==="d",done=!!v.d||qd;if(!done)left++;
+      const li=document.createElement("li");li.className="dv-ti"+(done?" done":"");
+      const lab=document.createElement("label");const cb=document.createElement("input");cb.type="checkbox";cb.checked=done;cb.disabled=qd;
+      cb.onchange=()=>tchange(id,{...v,d:cb.checked});
+      const tx=document.createElement("span");const b=document.createElement("b");b.textContent=v.t;tx.append(b);
+      const sub=qd?"Marked Done in the quest list.":v.h;if(sub){const s=document.createElement("small");s.textContent=sub;tx.append(s)}
+      lab.append(cb,tx);
+      const rm=document.createElement("button");rm.type="button";rm.className="dv-rm";rm.textContent="×";rm.setAttribute("aria-label",`Remove "${v.t}"`);
+      rm.onclick=()=>{tchange(id,null);showUndo(`Removed "${v.t}".`,()=>tchange(id,v),"todo-undo")};
+      li.append(lab,rm);ul.append(li)}
+    sec.append(ul);box.append(det)}
+  $("todo-count").textContent=items.length?`${left} left`:"";
+  if(!items.length){const p=document.createElement("p");p.className="dv-hint";p.textContent=tloaded?"Nothing on the list. Add something below.":"Loading the list…";box.append(p)}
+}
+$("todo-add").addEventListener("submit",e=>{e.preventDefault();const inp=$("todo-new"),t=inp.value.trim();if(!t)return;
+  tchange("m-"+Date.now().toString(36),{t,g:"mine",o:Date.now()});inp.value=""});
+
+/* ---------------- the full list ---------------- */
+function renderChips(){
+  const C=$("chips");C.innerHTML="";
+  for(const[k,t]of[["open","Unfinished"],["all","All"],["p","In progress"],["l","Not unlocked"],["d","Done"]]){
+    const b=document.createElement("button");b.className="pp-pill";b.textContent=t;b.setAttribute("aria-pressed",filter===k);b.onclick=()=>{filter=k;render()};C.append(b)}
+}
+function keep(r){const s=st(r[0]);
+  if(filter==="open"&&s==="d")return false;
+  if(["p","l","d"].includes(filter)&&s!==filter)return false;
+  if(query){const h=(r[2]+" "+r[4]+" "+r[3]).toLowerCase();if(!h.includes(query))return false}
+  return true}
+
+function renderList(){
+  const L=$("list");L.innerHTML="";let lastExp=null,shown=0;
+  for(const g of byChar){
+    const rows=g.rows.filter(keep);if(!rows.length)continue;shown++;
+    if(g.exp!==lastExp){const h=document.createElement("h3");h.className="dv-exp";h.textContent=g.exp;L.append(h);lastExp=g.exp}
+    const c=counts(g.rows);
+    const det=document.createElement("details");det.className="dv-group";
+    if(first&&g.rows.some(r=>st(r[0])==="p"))openSet.add(g.key);
+    det.open=openSet.has(g.key)||!!query;
+    det.ontoggle=()=>{det.open?openSet.add(g.key):openSet.delete(g.key)};
+    const sm=document.createElement("summary");
+    const nm=document.createElement("span");nm.className="name dv-chev";nm.textContent=g.ch;
+    const ct=document.createElement("span");ct.className="count"+(c.d===c.t?" full":"");ct.textContent=`${c.d}/${c.t}`;
+    sm.append(nm,bar(c.d,c.p,c.t),ct);det.append(sm);
+    const ol=document.createElement("ol");let sec=null;
+    for(const r of rows){
+      if(r[3]&&r[3]!==sec){sec=r[3];const s=document.createElement("li");s.className="dv-sec";s.textContent=sec;ol.append(s)}
+      const li=document.createElement("li");const s=st(r[0]);li.className="dv-row"+(s?" is-"+s:"");
+      const btn=document.createElement("button");btn.className="dv-st "+s;btn.textContent=LABEL[s];btn.setAttribute("aria-label",`${r[4]}: ${LABEL[s]}. Change status`);
+      btn.onclick=()=>change(r[0],{s:CYCLE[s]});
+      const qt=document.createElement("div");qt.className="dv-qt";const name=document.createElement("span");name.textContent=r[4];qt.append(name);
+      if(editing===r[0]){const inp=document.createElement("input");inp.className="pp-input";inp.id="note-"+r[0];inp.value=nt(r[0]);inp.placeholder="Add a note";
+        const done=()=>{editing=null;change(r[0],{n:inp.value.trim()})};
+        inp.onkeydown=e=>{if(e.key==="Enter")inp.blur();if(e.key==="Escape"){editing=null;render()}};inp.onblur=done;qt.append(inp);setTimeout(()=>inp.focus())}
+      else if(nt(r[0])){const n=document.createElement("small");n.textContent=nt(r[0]);qt.append(n)}
+      const nb=document.createElement("button");nb.className="dv-nb";nb.textContent=nt(r[0])?"Edit note":"Note";nb.onclick=()=>{editing=r[0];render()};
+      li.append(btn,qt,nb);ol.append(li)}
+    det.append(ol);L.append(det)}
+  if(!shown){L.innerHTML='<p class="pp-empty">No quests match. Try another filter or search.</p>'}
+  first=false;
+}
+function render(){renderSummary();renderTodo();renderChips();renderList()}
+$("q").addEventListener("input",e=>{query=e.target.value.trim().toLowerCase();renderList()});
+
+/* ---------------- Firestore ---------------- */
+function startFirebase(){
+  try{
+    firebase.initializeApp(window.PPFirebaseConfig);
+    const db=firebase.firestore();
+    qdoc=db.doc(QUEST_DOC);tdoc=db.doc(TODO_DOC);
+    qdoc.onSnapshot(snap=>{if(pending)return;S=snap.exists?{...snap.data()}:{};writeCache();if(!editing&&!plateTyping)render();setSync("idle","Synced")},
+      err=>{console.error(err);setSync("error","Offline — saved here")});
+    tdoc.onSnapshot(snap=>{if(tpending)return;tloaded=true;T=snap.exists?{...snap.data()}:{};writeCache();renderTodo()},
+      err=>{console.error(err);tloaded=true;renderTodo()});
+  }catch(err){
+    console.error("Firestore unavailable, working from the local copy:",err);
+    setSync("error","Offline");tloaded=true;renderTodo();
+  }
+}
+
+loadCache();
+render();
+startFirebase();
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>
