@@ -123,7 +123,9 @@ window.PPNav = (function(){
     /* Each quest family is its own section, with the parent quest as the
        section index. The URLs stay flat in /side-quests/ — the families only
        exist here, so a child like Classics sits under Reading in the nav
-       without moving. The hub gets the same families as wide tiles. */
+       without moving. The hub gets the same families as wide tiles.
+       Dreamlight Valley is the one exception: it lives in its own folder,
+       /side-quests/game-quest/ddv/, because Danni asked for it there. */
     {
       key: 'side-quests', label: 'Side Quests', href: '/side-quests/', nav: true,
       sections: [
@@ -136,7 +138,9 @@ window.PPNav = (function(){
         ]},
 
         { name:'Game Quest', href:'/side-quests/game-quest.html', indexLabel:'Game Quest',
-          note:'The backlog', pages:[] },
+          note:'The backlog', pages:[
+          { label:'Dreamlight Valley', href:'/side-quests/game-quest/ddv/', note:'Every DDV quest, the to-do list and what is still locked' }
+        ]},
 
         { name:'Reading Quest', href:'/side-quests/reading-quest.html', indexLabel:'Reading Quest',
           note:'The to-be-read pile, and everything read', pages:[
