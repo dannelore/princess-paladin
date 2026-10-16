@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Honeymoon Adventure &middot; Side Quests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/themes/side-quests.css">
+
+<style>
+  /* ======================================================================
+     HONEYMOON ADVENTURE
+
+     Twelve days around the British Isles, out of Southampton and back.
+     The itinerary itself is fixed and lives in ITINERARY in the script —
+     sail date, ports, times and the notes about getting ashore. What we
+     add on top (plans for each day, the packing checklist) is shared
+     through Firestore, so both phones see the same page.
+
+     Firestore: sidequest/honeymoon
+     ====================================================================== */
+
+  .hm-intro{
+    font-family: var(--font-serif); font-style: italic; font-size: 1.1rem;
+    color: var(--ink-soft); text-align: center; max-width: 620px;
+    margin: -18px auto 28px; line-height: 1.5;
+  }
+
+  /* ---------- layout: the voyage, with the countdown and map alongside ----------
+     A sidebar on wide screens, pinned while the days scroll past (pinAside
+     sets how far down). Narrower, it moves above the voyage: countdown and
+     map side by side, then stacked on a phone. */
+  .hm-layout{ --sidebar: 340px; grid-template-areas: "main aside"; margin-bottom: 8px; }
+  .hm-main{ grid-area: main; }
+  .hm-aside{ grid-area: aside; display: flex; flex-direction: column; gap: 18px; }
+  @media (min-width: 1041px){
+    .hm-aside{ position: sticky; top: 84px; }
+  }
+  @media (max-width: 1040px){
+    .hm-layout{
+      grid-template-columns: minmax(0, 1fr); grid-template-areas: "aside" "main";
+      max-width: calc(var(--content) + (var(--pad-x) * 2)); gap: 36px;
+    }
+    .hm-aside{ display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-items: start; gap: 20px; }
+  }
+  @media (max-width: 680px){
+    .hm-aside{ grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .hm-map{ padding: 14px; }
+  .hm-map svg{ display: block; width: 100%; height: auto; border-radius: 8px; }
+  .hm-map .sea{ fill: #DCE8EC; }
+  .hm-map .land{ fill: #F6F0E2; stroke: #B49A6E; stroke-width: .6; stroke-linejoin: round; }
+  .hm-map .route{ fill: none; stroke: var(--blade); stroke-width: 2.6; stroke-dasharray: 5 4; stroke-linecap: round; }
+  .hm-map .pin circle{ fill: var(--sea); stroke: #fff; stroke-width: 3; transition: fill .15s ease; }
+  .hm-map .pin.home circle{ fill: var(--pink-deep); }
+  .hm-map .pin .num{ font-family: var(--font-body); font-weight: 600; fill: #fff; font-size: 17px; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+  .hm-map .pin .lbl{
+    fill: var(--ink); font-family: var(--font-serif); font-weight: 600; font-size: 25px;
+    paint-order: stroke; stroke: rgba(255,253,249,.92); stroke-width: 6px; stroke-linejoin: round;
+  }
+  .hm-map .pin:hover circle, .hm-map .pin:focus-visible circle{ fill: var(--blade); }
+  .hm-map .pin.is-today circle{ fill: var(--blade); }
+  .hm-map .sea-lbl{ font-family: var(--font-serif); font-style: italic; font-size: 22px; fill: var(--sea-deep); opacity: .8; }
+  .hm-map-cap{ font-family: var(--font-serif); font-style: italic; font-size: .85rem; color: var(--ink-soft); text-align: center; margin: 10px 0 2px; }
+
+  .hm-summary{ display: flex; flex-direction: column; gap: 14px; }
+  .hm-count{ text-align: center; padding: 6px 0 2px; }
+  .hm-count-big{
+    display: block; font-family: var(--font-serif); font-weight: 600;
+    font-size: 3.6rem; line-height: 1; color: var(--accent-deep);
+  }
+  .hm-count-big.is-words{ font-size: 1.9rem; line-height: 1.15; }
+  .hm-count-sub{
+    display: block; margin-top: 6px; font-family: var(--font-body); font-size: .72rem;
+    font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--gold);
+  }
+
+  .hm-dates{
+    margin: 0; text-align: center; font-family: var(--font-serif); font-style: italic;
+    font-size: 1rem; color: var(--ink-soft); line-height: 1.4;
+  }
+
+  .hm-stats{
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;
+    margin: 0; padding: 0; list-style: none;
+  }
+  .hm-stats li{
+    background: var(--panel-tint); border: 1px solid var(--line); border-radius: var(--radius-sm);
+    padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 1px; text-align: center;
+  }
+  .hm-stats b{ font-family: var(--font-serif); font-weight: 600; font-size: 1.4rem; line-height: 1.1; color: var(--ink); }
+  .hm-stats span{ font-size: .66rem; color: var(--ink-soft); letter-spacing: .03em; line-height: 1.2; }
+  .hm-stats li.is-wide{ grid-column: 1 / -1; flex-direction: row; justify-content: center; align-items: baseline; gap: 8px; padding: 8px 12px; }
+  .hm-stats li.is-wide span{ font-size: .76rem; }
+
+  .hm-sync{ font-family: var(--font-body); font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); text-align: right; }
+  .hm-sync[data-state="saving"]{ color: var(--gold); }
+  .hm-sync[data-state="error"]{ color: var(--blade); }
+
+  /* ---------- the voyage: one card per day, on a dashed spine ---------- */
+  .hm-section-title{
+    font-family: var(--font-serif); font-weight: 600; font-size: 1.6rem;
+    text-align: center; margin: 0 0 6px;
+  }
+  .hm-section-note{
+    font-family: var(--font-serif); font-style: italic; color: var(--ink-soft);
+    text-align: center; margin: 0 0 24px;
+  }
+
+  .hm-voyage{ position: relative; display: flex; flex-direction: column; gap: 16px; margin-bottom: 44px; }
+  .hm-voyage::before{
+    content: ""; position: absolute; top: 20px; bottom: 20px; left: 37px;
+    border-left: 2px dashed rgba(47,97,120,.35);
+  }
+
+  .hm-day{
+    position: relative;
+    display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 18px;
+    scroll-margin-top: 110px;
+  }
+  .hm-badge{
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    width: 76px; height: 76px; border-radius: 50%;
+    background: var(--panel); border: 2px solid var(--sea); box-shadow: var(--lift);
+    text-align: center; line-height: 1.05;
+  }
+  .hm-badge small{ font-size: .6rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+  .hm-badge b{ font-family: var(--font-serif); font-size: 1.8rem; font-weight: 600; color: var(--sea-deep); }
+  .hm-badge i{ font-style: normal; font-size: .66rem; color: var(--ink-soft); }
+  .hm-day.is-home .hm-badge{ border-color: var(--pink-deep); }
+  .hm-day.is-sea  .hm-badge{ border-style: dashed; }
+  .hm-day.is-today .hm-badge{ background: var(--sea); }
+  .hm-day.is-today .hm-badge b, .hm-day.is-today .hm-badge small, .hm-day.is-today .hm-badge i{ color: #fff; }
+  .hm-day.is-past .hm-card{ opacity: .72; }
+
+  .hm-card{ padding: 20px 24px; }
+  .hm-day:not(.is-open) .hm-card{ padding-bottom: 18px; }
+  .hm-day.is-sea .hm-card{
+    background:
+      repeating-linear-gradient(-8deg, transparent 0 22px, rgba(47,97,120,.05) 22px 24px),
+      var(--panel);
+  }
+  /* The whole head opens and closes the day: the button's ::after stretches over it. */
+  .hm-card-head{
+    position: relative;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 4px 14px;
+  }
+  .hm-card h3{ font-family: var(--font-serif); font-weight: 600; font-size: 1.55rem; line-height: 1.15; margin: 0; }
+  .hm-fold{
+    font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0;
+    text-align: left; cursor: pointer;
+  }
+  .hm-fold::after{ content: ""; position: absolute; inset: -8px -10px; border-radius: var(--radius-sm); }
+  .hm-fold:focus-visible{ outline: none; }
+  .hm-fold:focus-visible::after{ outline: 2px solid var(--accent); }
+  .hm-card-head:hover h3{ color: var(--sea-deep); }
+  .hm-where{ font-size: .85rem; color: var(--ink-soft); margin: 2px 0 0; }
+  .hm-head-meta{ display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+  .hm-date{ font-family: var(--font-serif); font-style: italic; color: var(--gold-deep); font-size: 1rem; white-space: nowrap; }
+  .hm-chev{
+    width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+    border: 1px solid var(--line); color: var(--sea-deep); background: #fff;
+    transition: transform .2s ease;
+  }
+  .hm-chev svg{ width: 12px; height: 12px; }
+  .hm-day.is-open .hm-chev{ transform: rotate(180deg); }
+
+  .hm-voyage-tools{ display: flex; justify-content: center; margin: -12px 0 22px; }
+  .hm-voyage-tools button{
+    font-family: var(--font-body); font-size: .7rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--sea-deep); background: transparent; border: 1px solid var(--sea); border-radius: 999px;
+    padding: 6px 14px; cursor: pointer;
+  }
+  .hm-voyage-tools button:hover, .hm-voyage-tools button:focus-visible{ background: var(--sea); color: #fff; }
+  .hm-today-flag{
+    display: inline-block; margin-left: 8px; padding: 2px 9px; border-radius: 999px;
+    background: var(--blade); color: #fff; font-family: var(--font-body); font-style: normal;
+    font-size: .6rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; vertical-align: 2px;
+  }
+
+  .hm-times{ display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 12px; }
+  .hm-time{
+    display: inline-flex; align-items: baseline; gap: 6px;
+    padding: 5px 12px; border-radius: 999px; background: var(--accent-soft);
+    font-size: .85rem; color: var(--ink);
+  }
+  .hm-time small{ font-size: .64rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--sea-deep); }
+  .hm-chip{
+    display: inline-flex; align-items: center; padding: 5px 11px; border-radius: 999px;
+    border: 1px solid var(--line); font-size: .78rem; color: var(--ink-soft); background: #fff;
+  }
+  .hm-chip.ashore{ border-color: var(--sea); color: var(--sea-deep); font-weight: 500; }
+  .hm-chip.tz{ border-color: var(--gold); color: var(--gold-deep); }
+
+  .hm-blurb{ font-family: var(--font-serif); font-size: 1.08rem; line-height: 1.45; margin: 0 0 6px; }
+  .hm-note{ font-size: .86rem; color: var(--ink-soft); line-height: 1.5; margin: 0; }
+
+  /* plans for the day */
+  .hm-plans-wrap{ margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+  .hm-plans-head .hm-hint{ font-size: .74rem; color: var(--ink-soft); font-style: italic; }
+  .hm-plans-head{ display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .hm-plans-head h4{
+    margin: 0; font-family: var(--font-body); font-size: .7rem; font-weight: 600;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--gold);
+  }
+  .hm-tally{ font-size: .76rem; color: var(--ink-soft); }
+  .hm-tally b{ color: var(--sea-deep); }
+
+  .hm-plans{ list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .hm-plan{
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: var(--radius-sm);
+    border: 1px dashed var(--line-strong); background: rgba(255,255,255,.6);
+  }
+  .hm-plan.is-booked{ border-style: solid; border-color: var(--sea); background: var(--panel-tint); }
+  .hm-plan-text{ flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .hm-plan-title{ font-weight: 500; overflow-wrap: anywhere; }
+  .hm-plan-detail{ font-size: .8rem; color: var(--ink-soft); overflow-wrap: anywhere; }
+  .hm-plan-link{
+    align-self: flex-start; font-size: .8rem; color: var(--sea-deep); font-weight: 500;
+    text-decoration: underline; text-decoration-color: rgba(47,97,120,.35); text-underline-offset: 2px;
+    overflow-wrap: anywhere;
+  }
+  .hm-plan-link:hover{ text-decoration-color: currentColor; }
+
+  /* Priority: the numbered grip drags (mouse or touch) or moves with the arrow keys. */
+  .hm-grip{
+    flex-shrink: 0; display: flex; align-items: center; gap: 3px;
+    padding: 4px 6px 4px 2px; border: 0; border-radius: 6px; background: transparent;
+    color: var(--ink-soft); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
+  }
+  .hm-grip svg{ width: 8px; height: 14px; opacity: .55; }
+  .hm-grip span{
+    min-width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--accent-soft); color: var(--sea-deep);
+    font-family: var(--font-body); font-size: .7rem; font-weight: 600;
+  }
+  .hm-grip:hover svg, .hm-grip:focus-visible svg{ opacity: 1; }
+  .hm-grip:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
+  .hm-plans.is-single .hm-grip{ display: none; }
+  .hm-plan.is-dragging{
+    position: relative; z-index: 2; cursor: grabbing;
+    box-shadow: 0 8px 22px rgba(32,70,88,.22); background: #fff;
+  }
+  .hm-plan.is-dragging .hm-grip{ cursor: grabbing; }
+  .hm-plans.is-sorting .hm-plan:not(.is-dragging){ transition: transform .15s ease; }
+
+  .hm-plan.is-editing{ display: block; border-style: solid; border-color: var(--accent); background: #fff; }
+  .hm-toggle{
+    flex-shrink: 0; font-family: var(--font-body); font-size: .66rem; font-weight: 600;
+    letter-spacing: .1em; text-transform: uppercase;
+    padding: 5px 10px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--line-strong); background: #fff; color: var(--ink-soft);
+  }
+  .hm-toggle[aria-pressed="true"]{ background: var(--sea); border-color: var(--sea); color: #fff; }
+  .hm-x{
+    flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; border: 0; background: transparent;
+    color: var(--ink-soft); cursor: pointer; font-size: .95rem;
+  }
+  .hm-x:hover, .hm-x:focus-visible{ background: rgba(178,58,58,.1); color: var(--blade); }
+  .hm-x.edit:hover, .hm-x.edit:focus-visible{ background: var(--accent-soft); color: var(--sea-deep); }
+
+  .hm-add{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; }
+  .hm-add input[name="title"]{ grid-column: 1 / -1; }
+  .hm-add .hm-btns{ display: flex; gap: 6px; }
+  .hm-add input{
+    font-family: var(--font-body); font-size: .88rem; color: var(--ink);
+    background: #fff; border: 1px solid var(--line); border-radius: var(--radius-sm);
+    padding: 8px 11px; min-width: 0;
+  }
+  .hm-add input:focus{ outline: 2px solid var(--accent); outline-offset: 1px; }
+  @media (max-width: 620px){
+    .hm-add{ grid-template-columns: 1fr; }
+    .hm-add .pp-btn, .hm-add .hm-btns{ justify-self: start; }
+  }
+
+  @media (max-width: 620px){
+    .hm-voyage::before{ display: none; }
+    .hm-day{ grid-template-columns: 1fr; gap: 0; }
+    .hm-badge{
+      flex-direction: row; gap: 8px; width: auto; height: auto; border-radius: 999px;
+      justify-self: start; padding: 4px 14px; margin: 0 0 -14px 16px;
+    }
+    .hm-badge b{ font-size: 1.2rem; }
+    .hm-card{ padding: 26px 18px 18px; }
+    .hm-day:not(.is-open) .hm-card{ padding-bottom: 16px; }
+    .hm-card h3{ font-size: 1.35rem; }
+    .hm-plan{ gap: 6px; padding: 8px 6px; }
+  }
+
+  /* ---------- before we sail ---------- */
+  .hm-check{ max-width: 720px; margin: 0 auto 40px; }
+  .hm-check-bar{ height: 8px; border-radius: 999px; background: rgba(46,36,31,.08); overflow: hidden; margin: 0 0 16px; }
+  .hm-check-bar span{ display: block; height: 100%; width: 0; background: var(--sea); border-radius: inherit; transition: width .3s ease; }
+  .hm-checklist{ list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  .hm-checklist li{ display: flex; align-items: center; gap: 10px; padding: 6px 4px; border-bottom: 1px solid rgba(46,36,31,.06); }
+  .hm-checklist label{ flex: 1 1 auto; display: flex; align-items: center; gap: 10px; cursor: pointer; min-width: 0; }
+  .hm-checklist input{ width: 18px; height: 18px; accent-color: var(--sea); flex-shrink: 0; }
+  .hm-checklist .done span{ text-decoration: line-through; color: var(--ink-soft); }
+  .hm-check-add{ display: flex; gap: 8px; }
+  .hm-check-add input{
+    flex: 1 1 auto; min-width: 0; font-family: var(--font-body); font-size: .9rem;
+    background: #fff; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px 11px;
+  }
+  .hm-check-add input:focus{ outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  @media (prefers-reduced-motion: reduce){
+    .hm-check-bar span, .hm-chev, .hm-plans.is-sorting .hm-plan{ transition: none; }
+  }
+</style>
+</head>
+<body class="pp-sidequest pp-honeymoon" data-nav-eyebrow="Side Quests" data-nav-title="Honeymoon Adventure">
+
+<div class="pp-wrap">
+
+  <div class="pp-page-title">
+    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M31 13 C29.3 11.4 26.8 10.8 26.8 8.6 C26.8 7.2 27.9 6.2 29.1 6.2 C30 6.2 30.6 6.7 31 7.3 C31.4 6.7 32 6.2 32.9 6.2 C34.1 6.2 35.2 7.2 35.2 8.6 C35.2 10.8 32.7 11.4 31 13 Z" fill="#E87CA6"/>
+      <rect x="27.5" y="16" width="7" height="8" rx="1" fill="#6E2430"/>
+      <rect x="12" y="23" width="25" height="8" rx="1.5" fill="#F7F1E4" stroke="#9C7440" stroke-width="1.4"/>
+      <circle cx="17" cy="27" r="1.3" fill="#2F6178"/><circle cx="22" cy="27" r="1.3" fill="#2F6178"/><circle cx="27" cy="27" r="1.3" fill="#2F6178"/><circle cx="32" cy="27" r="1.3" fill="#2F6178"/>
+      <path d="M6 31 H42 L37 39 H11 Z" fill="#2F6178" stroke="#204658" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M4 43 Q8 40 12 43 T20 43 T28 43 T36 43 T44 43" stroke="#8FB4C2" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <h2>Honeymoon Adventure</h2>
+  </div>
+
+  <p class="hm-intro">
+    Twelve days around the British Isles &mdash; nine ports, five countries,
+    one sea day, and the best reason there is to go.
+  </p>
+
+</div>
+
+<div class="pp-layout hm-layout">
+
+  <!-- ---------------- the countdown + the map ---------------- -->
+  <aside class="hm-aside">
+    <section class="pp-panel hm-summary" aria-label="Trip summary">
+      <div class="hm-count" id="countdown">
+      </div>
+
+      <p class="hm-dates">Sunday, July 25 &ndash; Thursday, August 5, 2027</p>
+
+      <ul class="hm-stats">
+        <li><b>12</b><span>days</span></li>
+        <li><b id="statPorts"></b><span>ports of call</span></li>
+        <li><b id="statCountries"></b><span>countries</span></li>
+        <li><b id="statHours"></b><span>hours ashore</span></li>
+        <li class="is-wide"><b id="statBooked">0</b><span id="statBookedLabel">excursions booked</span></li>
+      </ul>
+
+      <span class="hm-sync" id="sync" data-state="idle">Connecting</span>
+    </section>
+
+    <section class="pp-panel hm-map" aria-label="Route map">
+      <svg viewBox="0 32 600 636" role="img" aria-labelledby="mapTitle">
+        <title id="mapTitle">Our route: Southampton, Amsterdam, Bruges, Newcastle, Edinburgh, Inverness, Skye, Belfast, Dublin, a day at sea, Le Havre for Paris, and back to Southampton.</title>
+        <rect class="sea" x="0" y="32" width="600" height="636"/>
+        <path class="land" d="M282.9,70.1L283.2,75.9L282.8,77.7L281.8,79.8L279,83.9L271.6,89.7L258.1,102.9L250,109.5L249,112.7L248.4,117.1L253.1,117.9L255,119.4L253.9,121.6L246.8,129.2L244.7,136.2L250.2,136L254.6,134.6L263.6,130.3L271.9,127L275.9,126.9L283.8,129.4L285.6,129.6L288.9,128.4L292.3,128.2L315.1,129L321.4,127.5L325.7,129.3L329.2,133.8L332.5,142L332.4,143.3L330.4,147.1L326.6,151.7L323.4,158.2L322.5,161.7L321.9,165.5L320.9,168.9L314.6,185.3L308.3,194.3L305.6,200.8L302.1,205.8L298.9,209L295.4,211.1L285.2,213.5L282.4,215L279,217.8L275.4,219.2L279.6,219L283.7,217.4L291.2,216.9L299.9,222.2L299.1,226.5L295.7,230L287.7,230.6L280.4,238.2L277,240.5L273.5,241.6L269.1,241.3L261,239.3L257.6,237.2L260.8,240.6L264.3,242.4L285.2,246.7L286.4,246.3L293,241.7L301.8,241.7L318.7,250L323.6,256.3L330.5,265.3L334.3,268.8L337.1,272L338.7,276.7L342.1,292.4L345.7,307.6L350.7,324L352.8,328.5L355.8,331.6L370.5,339L373.7,341.3L379.5,348.4L385,355.8L390.1,361.4L395.6,366L392.9,368.4L391,372.1L392.5,377.2L394.7,382L399.1,389.8L403.1,398.2L401.6,396.9L400.2,396.3L398,396.4L396,396L392.3,393.4L388.6,390.1L381.5,391.4L377.6,390.9L374.1,390.9L380.7,392.8L387.8,393L403.5,407L408.9,415.3L412,426.2L409.8,431.2L406.5,434.3L403.4,437.9L400.4,442L409.2,448L411,447.8L413,446.9L414.8,444.9L418,440L419.6,438.3L425,437.6L429.5,437.9L434.1,439L438.1,438.7L446.2,440.8L450.2,442.8L460.5,451.3L462.7,456L463.8,462.1L463.9,468.8L462.1,475L460.1,480.5L458.9,487.5L458.1,490.2L456.9,492.1L451.4,497.8L447.8,500L446.3,499L444.7,499.1L444.6,500.5L446.2,503.3L446.3,506.8L443.1,509.3L439.7,510.3L434.4,509L426.7,513.7L432.2,516.1L433.3,518.7L432,523.2L428.6,525.2L424.7,526.1L420.8,526.3L417.6,527.4L414.5,529.5L418.4,528.4L421.1,529.4L422.8,533.1L424.3,534.3L432,535.8L436.5,535.8L445.6,534.9L449.9,535L451.6,535.6L451.6,538.7L450.9,546.5L449.7,548L437.7,554.4L435.2,558.9L434.5,561.6L427.5,561.2L424.3,564L418.5,565.9L414.3,568L410,570.5L406.3,571.2L391.2,568.2L381.9,568.5L369.4,571.1L366.2,570.6L361.5,568.2L356.6,566.4L350.9,565.7L346,563.4L349.1,567.9L342.2,572.2L339.1,573L335.9,572.9L329.2,574.1L323,573.5L324,576.6L325.6,579.2L324.4,580.3L322.9,580.6L311.2,578.6L309.5,579L308.1,580.8L303.8,579.9L299.7,576.8L295.3,574.6L290.7,573.6L286.9,574L271.9,578.9L268.8,583.9L267.3,590.9L265.2,597.1L261.6,601.9L257.4,602.6L253.4,599.2L245.9,595.6L243.2,593L242.4,592.9L241.6,593.9L238.6,595L235.5,595L230.9,596L222.5,598.9L219.2,601L212.1,606.5L210.6,608L208,613.6L204,614.6L200.4,611.1L196.2,609.7L191.9,611.1L189.3,612.9L188.1,611.4L187.9,608.2L191.1,604.4L199.7,601.6L207.1,594.1L210.9,589.5L212.2,587L214.1,585.3L216.4,584.7L217.6,581.9L227.9,570.4L228.8,567.9L229.4,563.2L230.2,558.6L238.6,555.7L242.7,546.1L243.7,545.3L255.5,543.6L264.3,543.7L273,545.6L277.4,545.8L281.8,545L285.3,542.5L291.4,533.1L294.7,529L298.6,525.2L302.2,521L308.1,513L304.1,515.8L299.3,520.1L296.6,522.6L287.7,525.1L284,527.7L277.3,533.6L276.1,534.1L266,532.6L258.5,525.1L253.8,522L251.8,521.6L249.8,522.5L245.3,523.5L240.9,523.4L243.2,519.8L246.3,517.8L239.4,516.5L237.4,515.4L235.3,513L229.9,512.6L227.4,513.3L222.9,516.5L216.1,519.9L207.8,515.1L206.2,513L206.2,509L205,505.7L202.7,504.7L205.6,500.5L209.1,497.6L216.9,494.8L228.8,488.3L235.4,485.4L241.6,480.6L244.1,477.6L246,473.5L247.8,468.5L250.4,464.3L247.9,463.4L246.7,460.3L247.1,457.2L248.2,454.4L247.2,450.9L245.3,447.3L245.5,444.5L245.9,441.4L241.2,441.6L236.4,442.6L232.1,444.7L227.9,447.6L224.3,448.1L224.3,445.8L225.9,442.9L230,438.8L234.6,435.4L236.2,432.7L237.4,429.7L239.7,427.2L245.6,422.5L256.7,417.3L258.5,417L262.9,417.7L267.2,416.9L271,415L274.9,414.5L283.3,420L280.8,411.6L284.5,409.6L290,417.2L292,418L296.3,416.9L294.6,415.6L292.7,415.5L290.2,414.4L288.1,411.9L284.5,404.2L284.8,399.6L287.1,394.8L289.8,390.4L287.6,389.5L285.7,387.8L285.3,383.3L286,379.5L290.7,376L292,370.7L292.7,364.9L291.9,362.2L287.2,362.6L284.9,363.8L282.9,365.5L280.8,365.4L275,358.9L271.6,354L265.7,343.7L264.9,337.4L269.6,324L277,315.4L285.6,312.3L284,311.8L270.8,311.6L266.4,312.8L262.4,316.3L260.1,317.4L257.8,317.7L255.5,319.5L253.5,322L251.2,323.6L246.8,323.1L244.7,323.7L243.2,322.2L242,319.9L240.2,319.3L238.4,320L234.5,323.1L230.5,325L225.6,323L219.2,319.3L218,320.6L216.5,324.1L215.7,329.4L211.3,324.8L207.4,318.5L206,314.7L206,310.3L208,308.5L210.3,310.1L213.7,299.6L220.4,285.8L222.8,281.8L224.4,276.6L224.1,273L222.7,270.2L216.5,263.5L216.5,258L217.2,251.9L218.9,248.2L219.6,247.5L227.9,247.6L224.7,245.7L218.2,240.1L218.4,238.2L219.9,232.9L219.2,233.5L217.8,235.8L215.2,241.6L213.5,243L209,244.4L208.2,247.2L207.4,248L205.1,248.2L204.4,250.9L203.9,251.1L203.2,248.2L203.2,243.5L204.2,239.1L205.9,235.7L212.5,227.9L209.3,230.4L201.9,237.6L198.1,242.2L197.2,243.8L196.8,245.2L196.8,246.7L198.5,255L198,258.8L191.7,283.9L190.5,286.4L189.4,287.6L188.3,288L185.2,287.5L183.8,285.6L183.8,283.5L184.4,280.4L187,268.5L188.2,265.1L189.9,262L193.6,256.6L193.6,256.3L191,257.3L189.9,257L189.3,255.9L189.7,239.9L191.7,234.6L192.5,226.8L194.2,220.1L196.2,215.2L197.8,209L200.1,206.2L200.8,202L203.3,197.4L205.4,192.5L204.3,193L191.4,205.5L188.1,207.8L183.6,207.2L180.1,205.8L177.5,202.8L176.2,197.1L173,197L170.2,196L170.2,195.3L173.8,192.1L179.7,191L185.2,186L180.3,182.6L180.7,181.5L185,178.7L190.3,168.9L191.5,160L188.9,155.8L187.9,153.1L182.8,149.9L181.9,146L182.6,143.8L184.2,141.6L186.7,140L190.7,138.3L187.1,136.6L185.8,134.5L184.7,131.6L184.7,129.8L186.6,122.2L187.7,119L189.8,115L199.5,115.3L200.5,113.4L201.6,113.3L206.6,115L205.8,113.2L197.7,103.5L197,101.7L199.3,96.6L199.5,94.2L199.2,91.7L199.9,89.8L202.4,88.8L210.2,89L212.1,88.1L211.3,85.5L209.4,82.2L209.1,79.5L209.5,77L209.7,71.9L209.9,69.8L211.8,66.5L213.3,65.5L215.3,64.9L219.6,66L221.2,67.3L223.1,70.6L224.4,70.2L229.8,66.9L231.4,66.4L233.5,70.3L242.7,67.1L254.9,65.7L262.2,63.6L270,62.9L277.3,60.5L284.9,61.6L285.2,63L284.8,64.9ZM131.2,305.7L134.1,306.2L136.8,304.1L139.9,297.4L142,297.1L144.5,297.5L149.1,296.7L157.5,293.7L161.2,293.6L166.5,295.1L170.3,295.1L173.8,299.9L175.7,307.4L180,314.8L185.8,321.2L185.9,325L183.9,327.2L179.6,329.7L179.7,332.5L182.4,331.1L184.8,330.5L190.7,331.1L192.8,334L194.1,338.1L194.9,341.6L194.4,345.4L192.9,344.1L191.3,340.8L189.5,339.2L187.4,338.4L188.3,343L187.9,349.2L188.9,349.8L191.7,349.9L189.8,356.1L186,357.9L181.6,358.6L180.5,360.8L179.7,363.6L177.5,367.8L174.5,370.3L170.7,369.8L167,367.8L168.6,370.2L169.3,372.5L166.6,373.2L163.6,372.8L162.3,374.3L162.2,377.2L163.2,380.9L165.1,383.6L166.6,389.6L167.9,396.1L169.8,400.2L170.2,405.1L169.9,407.5L170.3,411.8L169.5,413.3L170.1,417.4L172.5,425.9L173.4,430.5L174.1,440.6L172.5,444.5L170.3,448L168.9,452.3L167.8,456.9L167.1,464.3L162.3,472.9L160.3,475.1L157.9,476.4L163.1,482.4L158.8,485.1L154.2,486L149.1,484.5L146.1,484.6L143.1,486.6L142,487.8L141.1,487.1L139.2,482.3L137.7,487.3L134.8,488.9L129.8,488.6L121.5,490L118.3,491.4L116.9,493.6L115.9,496.3L114.5,497.8L113.1,498.6L106.6,500.5L105.4,501.3L102.3,505.5L98.4,507.9L95.2,508.7L92.4,506.2L91.2,504.8L89.8,503.9L85.4,504.2L86.8,504.9L87.7,506.6L88.1,509.9L87.6,513.2L85.4,514.7L82.9,515L78.7,518.4L73.2,519.3L70.3,522.4L52.3,527.6L51.3,527.6L48.8,526.3L46.1,525.8L43.4,526.2L35.9,529.1L32.2,528.5L36.9,521.3L43.2,517.6L43.8,516.6L41.7,516.2L29.9,518.7L25.7,520.9L21.6,521.5L23.4,518.2L28.8,513.7L31.6,511.5L33.5,510.6L35.4,508L41,505L22.9,511.2L18.2,510.4L17.1,508.8L13.4,509.5L12,505.3L17.4,498.9L20.6,496.2L24.5,494.7L28.1,492.6L29.5,490L27.7,489.1L16.7,489.8L11.5,489.2L11.8,487.1L12.8,484.8L18.2,480.9L21.2,480.3L23.8,480.7L26.4,481.6L28.4,483L34.6,482.2L32,479.7L31.6,474.5L29.6,472.8L32.2,470.5L35,469L39.8,464L41.5,463.3L51.1,462.1L61.3,459.6L71.5,455.9L66.2,453.9L63.7,451.2L59.7,456.7L56.8,458.7L48.7,459.8L46.1,459.1L42.5,457.5L41.3,458.2L40.2,459.4L34.8,462L29.2,462.6L35.8,457.8L44.1,449.7L46,447.1L48.7,442.6L47.9,440.6L46.1,439.4L52.1,430.1L54.3,428.5L58.2,428.1L61.1,426.6L62.3,426.6L63.4,426.1L66,423.3L62.1,421.6L58.2,420.6L45.8,421.6L44.2,421.3L42.6,420.5L41.7,419.3L40.9,416L40.1,415.4L37.3,415.4L34.6,416.4L32.6,416.3L30.7,414.8L33.8,411.6L29.9,410.8L26,411.5L22.6,410.5L22.6,408.4L24.1,406.4L22.1,404.4L21.7,401.9L23.8,400.7L26,401.2L30.7,399.3L36.5,398.4L31.5,396.7L29.5,395.2L29.3,392.8L29.7,390.8L35.6,387.3L41.8,385.9L41.3,383.6L41.8,381.2L35.5,380.4L29.3,382.1L30,377.4L31.5,373.2L31.8,370.5L31.5,367.5L28.5,368.7L28.1,364.5L26.9,361.7L22.6,363.6L22.8,359.8L24,357.1L26.3,355.9L28.5,356.5L32.6,356.5L36.6,354.3L42.4,353.9L51.6,354.5L57.9,360.2L59.5,359.2L62.1,355.6L63.3,355.2L72.8,356.8L78.7,358.8L80.3,358.1L79.4,354.2L77.4,351.5L79.9,347.8L83,345.4L85.2,344.1L90,342.6L92,341.1L93.5,336.4L95.6,332.5L83.5,334.5L72.1,330L74,326.7L76.4,324.8L80.6,323.3L81,321.7L83,320.2L86.5,316.5L85.3,311.6L86,308L88.5,305.7L89.3,302.3L90.4,299.8L95.5,298.9L100.4,296.6L102.2,296.8L108,296.3L110,297.2L109.4,293.1L113.1,292.6L114.4,293.4L115.1,296.3L116.7,298.2L117.1,301.4L116,303.9L114.3,305.8L115.9,307.7L113.3,311.2L116.1,309.7L120,306.2L119.9,303.4L119.2,299.9L118,296.7L118.6,293.2L120.8,290.9L126.6,289.8L124.2,285.8L126.3,285.5L128.8,286.3L132.1,289.5L135.6,291.9L139.4,293.8L135.7,297.8L131.4,300.4L129.7,303.3ZM221.5,705L221.3,704.3L222.8,699.3L229.9,694.8L247.5,689.8L255,690.5L260.4,689.6L266.7,686.5L269.4,683.8L278.3,682.2L286.8,685.1L294.7,695.8L298.5,699.4L307.6,693.1L321.3,693.3L324.1,696.8L325.2,693.9L327.7,690.4L329.7,691.9L330.8,694.1L345.2,693.5L347.4,692.9L343.5,690.4L340.5,684.3L339.8,661.7L335.8,655.4L331.2,645.2L329.1,639.2L328.9,637.1L329.6,634.1L335.2,634.2L339.5,635L347.8,632.7L351.9,634.3L351.6,639L352.8,645L354.3,647.8L356.3,651.1L363,650.8L370.2,652.7L379.4,653L392.7,656.4L398.3,654.4L403.8,650.3L414.3,647.6L415.2,646.2L409.2,646.8L403.5,644.2L402.8,641.3L403.5,638.8L405.7,633L421.8,623.8L433.2,621L445.1,616L451.1,610.7L455.2,603.9L456.5,602.5L458.1,601.2L456.5,598.7L457.6,572.7L458.8,568L461.1,564.1L464.7,561.1L470.1,557.8L489.9,553.3L492.9,551.5L509.1,541.5L518.9,536.4L523.6,534.8L526.4,533.9L532.6,533.4L537.3,535.3L543.5,536.1L548.3,533.7L552,535.8L556.2,534.3L553,533.3L548,530.9L541.2,532.9L536.3,530.4L532.5,530.2L529.9,528.3L527.4,525L529.2,522.9L531,522.1L538.2,521.7L543.6,523.1L553.1,530.1L555.5,530L558.1,529.2L556.7,527.2L554.3,526.3L550.8,524.4L548,521.7L554.6,520.9L553.6,519.5L552.8,517.1L545.9,508.9L547.1,506.6L548.8,501.7L551,497.8L552.7,496.7L555.7,493.9L561.8,485.4L565.9,478.6L568.8,470.5L573.1,447.9L574.4,444.1L576.5,439.8L579.1,440.6L580.9,441.8L587.3,438.6L598.5,430.2L601.7,422.9L604.9,419.5L605,419.5L605,705ZM605,56.9L604.4,55L604.6,48.1L605,44.7L605,56.9ZM605,16.1L602.5,20.5L598.6,23.2L591.5,23.6L590,18.9L592,2.3L593.9,-5L605,-5ZM589.2,417L582.2,421.6L581.7,420.9L586.1,416.9ZM605,409.5L597.3,412.1L597.3,412.1L593.8,412.7L592.2,411.8L600.6,409.3L605,408.7L605,409.5ZM305.2,645L303.8,648.8L300.3,647.5L300.1,646.5L304,644.3L304.8,644.3ZM323.6,660L323.8,662.9L322.2,663.6L320.9,662.6L318.1,662.6L315.4,663.2L316,658L321.1,658.7ZM234.3,361.8L226.8,369.8L223.7,368.4L221.2,369.1L220.4,368.8L221.9,366L223.6,359.2L226.8,356.6L230.7,349.5L233.8,347.6L235,347.8L235.7,348.5L237.2,356.3L235,359.2ZM152.5,204.2L150.4,204.7L150.2,203.6L154,199L156.3,198.3L157.1,198.8L155.5,201.4ZM208.4,280L203.8,280L202.1,279.4L200.1,277.8L197.8,268.8L198.7,265.6L199.6,264.1L200.5,262.8L203.1,262.3L205.5,264L206.4,265.6L208.4,271.8L208.9,277ZM183.5,220.5L168.6,224.2L163.5,223.9L163,222L164,220.8L168.2,219.7L169.9,210.6L163.6,206.4L163.2,205.3L163.8,203.3L164.4,202.4L168.3,200.3L169.9,199.8L171.3,200.1L174.1,202.6L177.2,207.6L181.2,208.4L184,210.6ZM170.3,248.1L171.7,256.6L173,261.9L173,263.8L171.8,266.3L165.8,269.6L163.8,269.6L163.8,268.8L165.1,265.4L163.9,261.6L164.4,258.6L163.9,258.1L162.7,258.5L158.3,263.2L156.8,263.7L156.7,262.7L157.7,258.8L157.9,256.3L158.5,254.7L159.7,253.2L161.2,252L162.3,251.9L163.5,253.1L167.1,249.8ZM176.2,255.8L175.4,256.5L173.6,256.4L172.9,255.3L172.5,253.6L172.5,250.6L173.6,248.5L178.4,245.2L176.2,244.1L176.1,243.3L177.5,240.5L182.7,236.3L184,235.5L185.4,235.6L182.7,243.1ZM280.8,50.2L278.6,51.1L276.6,51.1L273.2,46.9L272,43.8L272.3,41.8L273.7,41.2L276.9,42.2L278.5,45.7L278.6,47.9L279,48.8L281,49.7ZM242.4,416.1L243.9,417.3L247.9,417.1L246.6,419.7L242.3,422.6L239.3,425.4L235.8,427.8L234.1,425.1L232.1,425.2L229.1,419.9L228.6,412.1L232.5,410.1L238,410.2ZM303.7,18.5L299.5,18.6L301.7,14.3L304.2,13.2L309.1,13.7L308.3,15.6ZM289.6,53.9L289.2,54.2L287.9,52.8L285.6,48.1L289.2,47.2L290.8,47.8L290.2,49.8ZM284.8,33.1L284.4,34.9L287.2,34.9L291.2,36.4L293.8,36.7L295.8,38.5L294.7,42L293.4,43L292,43.2L287.2,39.7L280.8,41.2L279.4,40.7L278.6,39.8L278.3,38.5L278.3,36L277.9,35.3L275.7,37.7L274.6,37.4L274.1,36.3L273.8,33.9L274.1,30.6L275.4,25.8L277.7,24.8L281.2,25.5L285.1,28.1L286.3,29.7L286.3,31.1ZM297,21.8L293.8,23.6L292.4,22L292.2,17.4L288.3,15.3L286.4,14.1L285.1,11.8L285.3,11L287.9,10L292.2,14.3L293.9,17.9L297,18.9L297.4,19.4ZM167.8,81L163,93.3L161.2,93.6L159.5,96.7L154.5,100.1L158.9,100.1L160.1,101.3L160.1,103.7L159.3,105.1L153.6,110.7L149.7,112.9L145.5,118.8L143.4,118.8L141.2,122.5L139.5,124.1L138.5,124.1L137.3,123.4L134.8,119.8L139.5,116.1L140,114.2L143.2,112L143,111.4L137.7,108.4L135.7,106.4L136,105.4L138.4,103.1L137.2,102.8L136.4,101.6L135.1,101.1L134.5,99.9L134.4,96.9L134.7,93.7L136.3,92.4L136.8,90.9L137.5,90.6L139.8,91.3L142.2,93.7L144.9,92.8L148.1,93.3L148.2,92.6L145.8,86.6L146.2,85.4L147.5,83.9L154.9,79.6L164,72.2L166.3,71.1L167,72.1L167.9,75.9ZM164.7,178.5L163.6,179.3L162.3,179.2L160.8,178L159.1,174.8L163.1,172.5L164.8,173.8L165.4,175.4L165.4,177ZM169.8,141.2L169.7,144.3L169,147.9L169.9,151.7L170.1,154.4L171.7,155.3L172.6,156.5L179.6,158L186.2,157.5L187.4,158.7L187.5,160.5L186.4,162.4L182.8,166L178.4,171.7L177.1,172.9L175.6,173L174.6,172.4L173.8,162.1L169.1,163.5L165.2,163.3L163.1,162.1L161.6,159.8L158.7,153.5L150,151L147.5,147.7L146.7,145.5L147.1,144.4L148.9,141.9L151.2,142.7L152.6,142.2L153.4,141L153.4,140.1L152.2,137.9L152.2,137.2L161.1,134.4L161.8,129.9L163.8,129.6L165.9,131L169,135.6ZM130.2,128.8L134.4,132.7L131,139.2L125.9,139.2L118.7,134.5L118.7,133.6L119.2,132.1L120.3,130.9L121.5,130.7L123.3,131.5L125.8,130.2L127.8,130.7ZM128.6,168.1L127,168.5L125,168.1L123.7,167L122.4,162.9L122.2,160.2L122.7,155.4L122.6,149.8L126.9,149.6L128,150.4L128.6,167.4ZM28,379L27.9,380.8L25,378.5L23.7,376.1L16.2,374.9L19.3,372.5L20.9,373.1L26.3,373.2L27.7,374.3ZM122.3,178.3L119.1,179.3L117.9,178.8L117.6,177.9L118.4,175.5L121,174.7L122.7,176L123,177.1ZM359.1,575.5L355.9,577.6L355,579.9L354.1,580.8L352.1,581.5L350.1,581.6L342.3,576.8L340.5,577L342.2,574.7L347.2,573L349.9,570.6L356.2,572.9ZM580.9,431.8L577.1,436.2L574.8,434.9L574.3,434L575.4,430.5L580.9,424.8ZM545.9,513.2L549.6,516.4L550.3,517.4L550.6,518.6L546,519.8L541,515.9L537.8,516.8L536.6,514.9L536.6,513.7L540,512.7Z"/>
+        <g id="route"><path class="route" d="M346.6 563.2C347.2 564.2 347.8 567.1 350.3 569.1C352.8 571.0 355.9 573.2 361.5 575.0C367.1 576.7 372.0 580.4 383.9 579.7C395.7 578.9 420.2 574.5 432.3 570.2C444.4 566.0 446.6 561.4 456.5 554.3C466.5 547.2 478.0 539.0 491.9 527.5C505.9 516.0 527.3 494.9 540.4 485.2C553.4 475.6 565.2 472.0 570.2 469.4"/><path class="route" d="M570.2 469.4C566.5 472.0 555.9 477.6 547.8 485.2C539.8 492.9 526.7 506.8 521.7 515.5C516.8 524.2 518.6 533.9 518.0 537.6"/><path class="route" d="M518.0 537.6C515.5 534.4 511.2 535.4 503.1 518.5C495.0 501.6 483.2 463.5 469.6 436.2C455.9 408.8 439.8 376.1 421.1 354.4C402.5 332.7 370.4 313.7 357.8 306.1C345.1 298.5 347.2 308.2 345.1 308.7"/><path class="route" d="M345.1 308.7C346.6 305.5 355.7 300.1 354.0 289.8C352.4 279.5 342.9 255.7 335.4 246.9C328.0 238.0 318.6 237.2 309.3 236.9C300.1 236.5 284.8 243.5 279.9 244.9"/><path class="route" d="M279.9 244.9C284.8 243.0 303.2 237.6 309.3 233.5C315.5 229.4 312.4 228.5 316.8 220.1C321.1 211.6 331.7 197.1 335.4 182.8C339.1 168.6 344.7 145.6 339.1 134.6C333.5 123.7 314.3 118.6 301.9 117.2C289.4 115.8 274.3 124.4 264.6 126.3C254.8 128.1 246.9 128.0 243.4 128.3"/><path class="route" d="M243.4 128.3C246.9 127.3 257.3 125.7 264.6 122.1C271.9 118.4 282.3 117.5 287.0 106.6C291.6 95.8 295.0 65.9 292.5 56.9C290.1 47.9 285.7 52.8 272.0 52.6C258.4 52.4 224.2 51.2 210.6 55.5C196.9 59.8 195.7 69.2 190.1 78.3C184.5 87.5 179.8 100.8 177.0 110.1C174.2 119.5 174.8 128.3 173.3 134.6C171.8 140.9 168.9 145.6 168.1 147.8"/><path class="route" d="M168.1 147.8C168.6 145.4 173.4 137.5 171.4 133.2C169.5 128.9 161.8 118.9 156.5 122.1C151.2 125.2 141.3 140.7 139.8 151.9C138.2 163.2 144.1 176.6 147.2 189.6C150.3 202.7 155.0 216.8 158.4 230.2C161.8 243.6 163.7 258.5 167.7 270.0C171.7 281.6 178.9 290.3 182.6 299.6C186.3 308.8 190.8 319.7 190.1 325.5C189.3 331.3 180.1 333.0 178.1 334.5"/><path class="route" d="M178.1 334.5C180.4 333.4 188.1 323.6 191.9 327.5C195.8 331.3 202.5 345.2 201.2 357.6C200.0 370.0 189.6 391.8 184.5 401.9C179.3 412.0 172.7 415.4 170.3 418.1"/><path class="route" d="M170.3 418.1C172.0 421.1 178.7 423.0 180.7 436.2C182.8 449.4 184.2 477.2 182.6 497.4C181.1 517.6 172.0 536.5 171.4 557.3C170.8 578.0 165.8 609.5 178.9 621.6C191.9 633.8 225.5 631.3 249.7 630.3C273.9 629.3 302.5 615.6 324.2 615.8C346.0 616.1 367.0 627.1 380.1 632.0C393.2 636.9 399.1 643.1 402.9 645.3"/><path class="route" d="M402.9 645.3C400.3 639.9 394.2 623.9 387.6 612.9C381.0 602.0 369.6 587.0 363.4 579.7C357.1 572.4 353.1 571.8 350.3 569.1C347.5 566.3 347.2 564.2 346.6 563.2"/></g>
+        <g id="pins"><a class="pin home" href="#d1" data-pin="southampton" aria-label="Day 1 and 12: Southampton"><circle cx="346.6" cy="563.2" r="18.7"/><path transform="translate(346.6 563.2) scale(1.7)" d="M0 4.2c-1.6-1.5-4.4-2.6-4.4-4.9c0-1.4 1-2.3 2.2-2.3c.9 0 1.6.5 2.2 1.2c.6-.7 1.3-1.2 2.2-1.2c1.2 0 2.2.9 2.2 2.3c0 2.3-2.8 3.4-4.4 4.9z" fill="#fff"/><text class="lbl" x="319.4" y="571.7" text-anchor="end">Southampton</text></a><a class="pin" href="#d2" data-pin="amsterdam" aria-label="Day 2: Amsterdam"><circle cx="570.2" cy="469.4" r="17"/><text class="num" x="570.2" y="469.4">2</text><text class="lbl" x="544.7" y="454.1" text-anchor="end">Amsterdam</text></a><a class="pin" href="#d3" data-pin="bruges" aria-label="Day 3: Bruges"><circle cx="518" cy="537.6" r="17"/><text class="num" x="518" y="537.6">3</text><text class="lbl" x="518" y="585.2" text-anchor="middle">Bruges</text></a><a class="pin" href="#d4" data-pin="newcastle" aria-label="Day 4: Newcastle"><circle cx="345.1" cy="308.7" r="17"/><text class="num" x="345.1" y="308.7">4</text><text class="lbl" x="370.6" y="317.2" text-anchor="start">Newcastle</text></a><a class="pin" href="#d5" data-pin="edinburgh" aria-label="Day 5: Edinburgh"><circle cx="279.9" cy="244.9" r="17"/><text class="num" x="279.9" y="244.9">5</text><text class="lbl" x="305.4" y="234.7" text-anchor="start">Edinburgh</text></a><a class="pin" href="#d6" data-pin="inverness" aria-label="Day 6: Inverness"><circle cx="243.4" cy="128.3" r="17"/><text class="num" x="243.4" y="128.3">6</text><text class="lbl" x="268.9" y="158.9" text-anchor="start">Inverness</text></a><a class="pin" href="#d7" data-pin="portree" aria-label="Day 7: Skye"><circle cx="168.1" cy="147.8" r="17"/><text class="num" x="168.1" y="147.8">7</text><text class="lbl" x="142.6" y="156.3" text-anchor="end">Skye</text></a><a class="pin" href="#d8" data-pin="belfast" aria-label="Day 8: Belfast"><circle cx="178.1" cy="334.5" r="17"/><text class="num" x="178.1" y="334.5">8</text><text class="lbl" x="203.6" y="337.9" text-anchor="start">Belfast</text></a><a class="pin" href="#d9" data-pin="dublin" aria-label="Day 9: Dublin"><circle cx="170.3" cy="418.1" r="17"/><text class="num" x="170.3" y="418.1">9</text><text class="lbl" x="144.8" y="426.6" text-anchor="end">Dublin</text></a><a class="pin" href="#d11" data-pin="paris" aria-label="Day 11: Le Havre"><circle cx="402.9" cy="645.3" r="17"/><text class="num" x="402.9" y="645.3">11</text><text class="lbl" x="428.4" y="653.8" text-anchor="start">Le Havre</text></a><text class="sea-lbl" x="90.4" y="653.3">day 10 · at sea</text></g>
+      </svg>
+      <p class="hm-map-cap">Tap a port to jump to its day.</p>
+    </section>
+  </aside>
+
+  <main class="hm-main">
+    <!-- ---------------- the voyage ---------------- -->
+    <h2 class="hm-section-title">The Voyage</h2>
+    <p class="hm-section-note">Times are local, as the ship keeps them. Open a day to add ideas, put them in order, and mark them booked once they are.</p>
+    <div class="hm-voyage-tools"><button type="button" id="foldAll">Open every day</button></div>
+
+    <div class="hm-voyage" id="voyage"></div>
+
+    <!-- ---------------- before we sail ---------------- -->
+    <section class="pp-panel hm-check" aria-labelledby="checkTitle">
+      <h2 class="pp-panel-title" id="checkTitle">Before We Sail</h2>
+      <div class="hm-check-bar" aria-hidden="true"><span id="checkBar"></span></div>
+      <ul class="hm-checklist" id="checklist"></ul>
+      <form class="hm-check-add" id="checkAdd">
+        <input name="text" type="text" placeholder="Add something to do before we go" autocomplete="off" aria-label="New checklist item">
+        <button class="pp-btn pp-btn-sm" type="submit">Add</button>
+      </form>
+    </section>
+  </main>
+
+</div>
+
+<div class="pp-wrap">
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-firebase.js"></script>
+<script>
+"use strict";
+
+const DOC_PATH  = "sidequest/honeymoon";
+
+/* Day 1. Every other date on the page counts on from here. */
+const SAIL_DATE = new Date(2027, 6, 25);
+const CACHE_KEY = "pp_honeymoon";
+/* Which days are open is per-phone, so it stays out of the shared doc. */
+const OPEN_KEY  = "pp_honeymoon_open";
+
+/* ---------------- the itinerary ----------------
+   Fixed. Times are 24-hour local time; null means "---" on the booking.
+   ukPlus is how far local time runs ahead of the UK that day. `pin` names
+   the matching marker on the map. */
+const ITINERARY = [
+  { id:"d1",  day:"Sun", name:"London", via:"Southampton", country:"United Kingdom", region:"England",
+    arrive:null, depart:"16:00", kind:"embark", pin:"southampton", currency:"£",
+    blurb:"All aboard. We sail out of Southampton Water at four.",
+    note:"Southampton is about 80 miles from London — roughly 1½ hours by train from Waterloo." },
+  { id:"d2",  day:"Mon", name:"Amsterdam", via:"IJmuiden", country:"Netherlands",
+    arrive:"12:00", depart:"20:00", pin:"amsterdam", currency:"€", ukPlus:1,
+    blurb:"Canals, gabled houses and an afternoon in the city.",
+    note:"The ship docks at IJmuiden on the coast; central Amsterdam is about 30–40 minutes away." },
+  { id:"d3",  day:"Tue", name:"Brussels / Bruges", via:"Zeebrugge", country:"Belgium",
+    arrive:"07:00", depart:"17:00", pin:"bruges", currency:"€", ukPlus:1,
+    blurb:"Bruges for the canals and chocolate, or Brussels for the Grand-Place.",
+    note:"Bruges is about 20 minutes from Zeebrugge; Brussels is nearer 1½ hours each way." },
+  { id:"d4",  day:"Wed", name:"Newcastle", via:"Tyne", country:"United Kingdom", region:"England",
+    arrive:"11:00", depart:"20:00", pin:"newcastle", currency:"£",
+    blurb:"The Tyne bridges, the Quayside, and Northumberland's castles not far off.",
+    note:"Ships berth at North Shields; central Newcastle is about 25 minutes away." },
+  { id:"d5",  day:"Thu", name:"Edinburgh", via:"Newhaven", country:"United Kingdom", region:"Scotland",
+    arrive:"07:00", depart:"18:00", pin:"edinburgh", currency:"£", tender:true,
+    blurb:"The castle, the Royal Mile, and Arthur's Seat if our legs are up to it.",
+    note:"Newhaven is on Edinburgh's waterfront, about 15 minutes from the Old Town. Expect to tender in." },
+  { id:"d6",  day:"Fri", name:"Inverness", via:"Invergordon", country:"United Kingdom", region:"Scotland",
+    arrive:"07:00", depart:"18:00", pin:"inverness", currency:"£",
+    blurb:"Highlands day — Loch Ness, Urquhart Castle, Culloden.",
+    note:"Invergordon is about 40 minutes from Inverness by road." },
+  { id:"d7",  day:"Sat", name:"Portree", via:"Isle of Skye", country:"United Kingdom", region:"Scotland",
+    arrive:"09:30", depart:"17:30", pin:"portree", currency:"£", tender:true,
+    blurb:"Painted harbour houses, the Old Man of Storr and the Quiraing.",
+    note:"A tender port — the ship anchors in the bay and boats run us into the harbour." },
+  { id:"d8",  day:"Sun", name:"Belfast", country:"United Kingdom", region:"Northern Ireland",
+    arrive:"09:00", depart:"21:00", pin:"belfast", currency:"£",
+    blurb:"Titanic Belfast by the docks, or north to the Giant's Causeway.",
+    note:"Our longest day in port. The Causeway coast is about 1½ hours north." },
+  { id:"d9",  day:"Mon", name:"Dublin", via:"Dún Laoghaire", country:"Ireland",
+    arrive:"07:00", depart:"20:00", pin:"dublin", currency:"€",
+    blurb:"Trinity College, Temple Bar, and a proper pint at the Guinness Storehouse.",
+    note:"Dún Laoghaire is about 25 minutes from the city centre on the DART train." },
+  { id:"d10", day:"Tue", name:"At Sea", arrive:null, depart:null, kind:"sea",
+    blurb:"Nowhere to be. Sleep in, find the spa, order dessert first.",
+    note:"Round the bottom of Ireland and Cornwall, and into the English Channel." },
+  { id:"d11", day:"Wed", name:"Paris", via:"Le Havre", country:"France",
+    arrive:"06:30", depart:"20:00", pin:"paris", currency:"€", ukPlus:1,
+    blurb:"Paris, or the Normandy coast — Honfleur and the cliffs at Étretat are close by.",
+    note:"Paris is 2½–3 hours from Le Havre each way, so a Paris day is a long one." },
+  { id:"d12", day:"Thu", name:"London", via:"Southampton", country:"United Kingdom", region:"England",
+    arrive:"05:00", depart:null, kind:"home", pin:"southampton", currency:"£",
+    blurb:"Back where we started, and off to the airport.",
+    note:"Heathrow is about 1½ hours from Southampton by road." }
+];
+
+const PLAN_HINTS = {
+  d1:"Train to Southampton, a hotel the night before…",
+  d10:"Spa, trivia, a very long lunch…",
+  d12:"Flight number, transfer to the airport…"
+};
+
+const DEFAULT_CHECKLIST = [
+  "Passports — valid for the whole trip",
+  "UK ETA (Electronic Travel Authorisation) for each of us",
+  "Travel insurance",
+  "Flights to and from London",
+  "Getting to Southampton — train, transfer, or a hotel the night before",
+  "Tell the bank we're travelling",
+  "A little cash — pounds and euros",
+  "Plug adapters — UK/Ireland and European",
+  "Shore excursions booked",
+  "Something lovely for formal night"
+];
+
+const $   = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+let state = { plans:{}, checklist:null };
+let docRef = null, saving = false, pending = false, saveTimer = null;
+/* UI only: the plan being edited ({day, id}) and the drag in progress. While
+   either is live, render leaves that day's list alone so a snapshot from the
+   other phone can't pull the rug out from under it. */
+let editing = null, drag = null;
+
+/* ---------------- shape ---------------- */
+function migrate(){
+  if(!state.plans || typeof state.plans !== "object") state.plans = {};
+  ITINERARY.forEach(d => { if(!Array.isArray(state.plans[d.id])) state.plans[d.id] = []; });
+  /* Seed the checklist only the very first time — an emptied list stays empty. */
+  if(!Array.isArray(state.checklist)){
+    state.checklist = DEFAULT_CHECKLIST.map(text => ({ id: uid(), text: text, done: false }));
+  }
+}
+
+/* ---------------- time + dates ---------------- */
+function mins(t){ const p = t.split(":"); return parseInt(p[0],10) * 60 + parseInt(p[1],10); }
+
+function clock(t){
+  if(!t) return "—";
+  const p = t.split(":"), h = parseInt(p[0],10);
+  return ((h + 11) % 12 + 1) + ":" + p[1] + (h < 12 ? " AM" : " PM");
+}
+
+function hoursLabel(h){
+  const whole = Math.floor(h), half = h - whole >= .5;
+  return (whole || !half ? whole : "") + (half ? "½" : "");
+}
+
+function ashore(d){ return d.arrive && d.depart ? (mins(d.depart) - mins(d.arrive)) / 60 : 0; }
+
+function dayDate(i){
+  return new Date(SAIL_DATE.getFullYear(), SAIL_DATE.getMonth(), SAIL_DATE.getDate() + i);
+}
+
+function today(){ const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+
+function fmtDate(d){ return d.toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" }); }
+
+/* ---------------- websites ----------------
+   Typed as "viator.com/…" or a full link. Only http(s) ever reaches an href;
+   cleanUrl returns "" for blank and null for something that isn't a website. */
+function cleanUrl(raw){
+  let s = String(raw == null ? "" : raw).trim();
+  if(!s) return "";
+  if(!/^[a-z][a-z0-9+.-]*:/i.test(s)) s = "https://" + s;
+  try{
+    const u = new URL(s);
+    return /^https?:$/.test(u.protocol) && u.hostname.includes(".") ? u.href : null;
+  }catch(e){ return null; }
+}
+
+function siteLabel(url){
+  try{ return new URL(url).hostname.replace(/^www\./, ""); }catch(e){ return "Website"; }
+}
+
+/* ---------------- open / closed days ---------------- */
+function readOpen(){
+  try{ const a = JSON.parse(localStorage.getItem(OPEN_KEY)); return Array.isArray(a) ? a : []; }catch(e){ return []; }
+}
+
+function writeOpen(){
+  const ids = ITINERARY.filter(d => $(d.id).classList.contains("is-open")).map(d => d.id);
+  try{ localStorage.setItem(OPEN_KEY, JSON.stringify(ids)); }catch(e){}
+}
+
+function setOpen(id, open, remember){
+  const card = $(id);
+  if(!card) return;
+  card.classList.toggle("is-open", open);
+  card.querySelector(".hm-fold").setAttribute("aria-expanded", open ? "true" : "false");
+  card.querySelector(".hm-card-body").hidden = !open;
+  if(remember !== false) writeOpen();
+  syncFoldAll();
+}
+
+function syncFoldAll(){
+  const allOpen = ITINERARY.every(d => $(d.id).classList.contains("is-open"));
+  $("foldAll").textContent = allOpen ? "Close every day" : "Open every day";
+  $("foldAll").dataset.open = allOpen ? "1" : "";
+}
+
+/* ---------------- the voyage (built once, filled by render) ---------------- */
+function buildVoyage(){
+  $("voyage").innerHTML = ITINERARY.map((d, i) => {
+    const sea = d.kind === "sea";
+    const where = sea ? "" : [d.via ? "via " + d.via : "", d.region, d.country].filter(Boolean).join(" · ");
+
+    const times = [];
+    if(!sea){
+      times.push(`<span class="hm-time"><small>Arrive</small>${clock(d.arrive)}</span>`);
+      times.push(`<span class="hm-time"><small>Depart</small>${clock(d.depart)}</span>`);
+    }
+    const h = ashore(d);
+    if(h) times.push(`<span class="hm-chip ashore">${hoursLabel(h)} hrs ashore</span>`);
+    if(d.kind === "embark") times.push(`<span class="hm-chip ashore">All aboard</span>`);
+    if(d.kind === "home") times.push(`<span class="hm-chip">Disembark &middot; flight home</span>`);
+    if(d.tender) times.push(`<span class="hm-chip">Tender port</span>`);
+    if(d.ukPlus) times.push(`<span class="hm-chip tz">UK time +${d.ukPlus} hr</span>`);
+    if(d.currency) times.push(`<span class="hm-chip">${d.currency === "£" ? "£ pounds" : "€ euros"}</span>`);
+
+    const cls = ["hm-day"];
+    if(sea) cls.push("is-sea");
+    if(d.kind === "embark" || d.kind === "home") cls.push("is-home");
+
+    return `<article class="${cls.join(" ")}" id="${d.id}" data-i="${i}">
+      <div class="hm-badge" aria-hidden="true"><small>Day</small><b>${i + 1}</b><i>${d.day}</i></div>
+      <div class="pp-panel hm-card">
+        <div class="hm-card-head">
+          <div>
+            <h3><button class="hm-fold" type="button" data-fold="${d.id}" aria-expanded="false"
+                        aria-controls="${d.id}-body">${esc(d.name)}</button></h3>
+            ${where ? `<p class="hm-where">${esc(where)}</p>` : ""}
+          </div>
+          <div class="hm-head-meta">
+            <span class="hm-date" data-date></span>
+            <span class="hm-tally" data-tally></span>
+          </div>
+          <span class="hm-chev" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M2 4.5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </div>
+        <div class="hm-card-body" id="${d.id}-body" hidden>
+          <div class="hm-times">${times.join("")}</div>
+          <p class="hm-blurb">${esc(d.blurb)}</p>
+          <p class="hm-note">${esc(d.note)}</p>
+          <div class="hm-plans-wrap">
+            <div class="hm-plans-head"><h4>Our plans</h4><span class="hm-hint" data-hint></span></div>
+            <ul class="hm-plans" data-plans="${d.id}"></ul>
+            <form class="hm-add" data-add="${d.id}" novalidate>
+              ${planFields({}, `New plan for day ${i + 1}`, PLAN_HINTS[d.id])}
+              <button class="pp-btn pp-btn-sm" type="submit">Add</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </article>`;
+  }).join("");
+}
+
+/* The three inputs a plan has, shared by the add form and the edit form. */
+function planFields(p, label, hint){
+  return `<input name="title" type="text" autocomplete="off" aria-label="${esc(label)}"
+                 value="${esc(p.title)}" placeholder="${esc(hint || "A tour, a sight, somewhere to eat…")}">
+          <input name="detail" type="text" autocomplete="off" aria-label="Details"
+                 value="${esc(p.detail)}" placeholder="Time, price, confirmation #">
+          <input name="url" type="text" inputmode="url" autocomplete="off" spellcheck="false" aria-label="Website"
+                 value="${esc(p.url)}" placeholder="Website (optional)">`;
+}
+
+/* ---------------- render ---------------- */
+function render(){
+  renderCountdown();
+  renderDays();
+  renderStats();
+  renderChecklist();
+}
+
+function renderCountdown(){
+  const box = $("countdown");
+  const diff = Math.round((SAIL_DATE - today()) / 864e5);
+  if(diff > 0){
+    box.innerHTML = `<span class="hm-count-big">${diff}</span>
+      <span class="hm-count-sub">${diff === 1 ? "day" : "days"} until we sail</span>`;
+  }else if(diff > -ITINERARY.length){
+    const d = ITINERARY[-diff];
+    box.innerHTML = `<span class="hm-count-big is-words">${diff === 0 ? "We sail today" : esc(d.name)}</span>
+      <span class="hm-count-sub">Day ${1 - diff} of ${ITINERARY.length}</span>`;
+  }else{
+    box.innerHTML = `<span class="hm-count-big is-words">Home again</span>
+      <span class="hm-count-sub">What a trip</span>`;
+  }
+}
+
+function renderDays(){
+  const t = today().getTime();
+  document.querySelectorAll(".hm-pin-today").forEach(p => p.classList.remove("is-today", "hm-pin-today"));
+
+  ITINERARY.forEach((d, i) => {
+    const card = $(d.id);
+    const date = dayDate(i);
+    const isToday = date.getTime() === t;
+    card.classList.toggle("is-today", isToday);
+    card.classList.toggle("is-past", date.getTime() < t);
+    card.querySelector("[data-date]").innerHTML =
+      esc(fmtDate(date)) + (isToday ? `<span class="hm-today-flag">Today</span>` : "");
+    if(isToday && d.pin){
+      const pin = document.querySelector(`.pin[data-pin="${d.pin}"]`);
+      if(pin) pin.classList.add("is-today", "hm-pin-today");
+    }
+
+    const plans = state.plans[d.id] || [];
+    const booked = plans.filter(p => p.booked).length, ideas = plans.length - booked;
+    card.querySelector("[data-tally]").innerHTML = plans.length
+      ? [booked ? `<b>${booked} booked</b>` : "", ideas ? `${ideas} idea${ideas === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ")
+      : "";
+    card.querySelector("[data-hint]").textContent = plans.length > 1 ? "Drag the numbers to reorder" : "";
+
+    if((editing && editing.day === d.id) || (drag && drag.day === d.id)) return;
+    const ul = card.querySelector("[data-plans]");
+    ul.classList.toggle("is-single", plans.length < 2);
+    ul.innerHTML = plans.map((p, n) => planRow(d.id, p, n)).join("");
+  });
+}
+
+function planRow(day, p, n){
+  const url = cleanUrl(p.url);
+  return `<li class="hm-plan${p.booked ? " is-booked" : ""}" data-id="${esc(p.id)}">
+    <button class="hm-grip" type="button" data-grip="${esc(p.id)}" data-day="${day}"
+            aria-label="Priority ${n + 1}: ${esc(p.title)}. Drag, or use the up and down arrow keys, to move it.">
+      <svg viewBox="0 0 8 14" aria-hidden="true" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="6" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="6" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="6" cy="12" r="1.3"/></svg>
+      <span>${n + 1}</span>
+    </button>
+    <button class="hm-toggle" type="button" data-toggle="${esc(p.id)}" data-day="${day}"
+            aria-pressed="${p.booked ? "true" : "false"}">${p.booked ? "Booked" : "Idea"}</button>
+    <span class="hm-plan-text">
+      <span class="hm-plan-title">${esc(p.title)}</span>
+      ${p.detail ? `<span class="hm-plan-detail">${esc(p.detail)}</span>` : ""}
+      ${url ? `<a class="hm-plan-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(siteLabel(url))} ↗</a>` : ""}
+    </span>
+    <button class="hm-x edit" type="button" data-edit="${esc(p.id)}" data-day="${day}"
+            aria-label="Edit ${esc(p.title)}">✎</button>
+    <button class="hm-x" type="button" data-remove="${esc(p.id)}" data-day="${day}"
+            aria-label="Remove ${esc(p.title)}">✕</button>
+  </li>`;
+}
+
+function editRow(day, p){
+  return `<li class="hm-plan is-editing" data-id="${esc(p.id)}">
+    <form class="hm-add" data-edit-form="${esc(p.id)}" data-day="${day}" novalidate>
+      ${planFields(p, "Plan")}
+      <span class="hm-btns">
+        <button class="pp-btn pp-btn-sm" type="submit">Save</button>
+        <button class="pp-btn pp-btn-sm pp-btn-quiet" type="button" data-cancel-edit>Cancel</button>
+      </span>
+    </form>
+  </li>`;
+}
+
+function findPlan(day, id){ return (state.plans[day] || []).find(x => x.id === id); }
+
+/* Read the plan form; null (with the field flagged) if the website won't do. */
+function readPlanForm(form){
+  const title = form.elements.title.value.trim();
+  if(!title){ form.elements.title.focus(); return null; }
+  const url = cleanUrl(form.elements.url.value);
+  if(url === null){
+    form.elements.url.setCustomValidity("That doesn't look like a website — try something like viator.com");
+    form.elements.url.reportValidity();
+    return null;
+  }
+  return { title: title, detail: form.elements.detail.value.trim(), url: url };
+}
+
+function movePlan(day, id, to){
+  const list = state.plans[day] || [];
+  const from = list.findIndex(x => x.id === id);
+  if(from < 0 || to < 0 || to >= list.length || to === from) return false;
+  list.splice(to, 0, list.splice(from, 1)[0]);
+  return true;
+}
+
+function renderStats(){
+  const ports = ITINERARY.filter(d => d.pin && !d.kind);
+  $("statPorts").textContent = ports.length;
+  $("statCountries").textContent = new Set(ITINERARY.filter(d => d.country).map(d => d.country)).size;
+  $("statHours").textContent = hoursLabel(ITINERARY.reduce((sum, d) => sum + ashore(d), 0));
+  let booked = 0;
+  ITINERARY.forEach(d => (state.plans[d.id] || []).forEach(p => { if(p.booked) booked++; }));
+  $("statBooked").textContent = booked;
+  $("statBookedLabel").textContent = booked === 1 ? "excursion booked" : "excursions booked";
+}
+
+function renderChecklist(){
+  const list = state.checklist || [];
+  const done = list.filter(c => c.done).length;
+  $("checkBar").style.width = list.length ? (done / list.length * 100) + "%" : "0";
+  $("checkTitle").textContent = list.length ? `Before We Sail · ${done} of ${list.length}` : "Before We Sail";
+  $("checklist").innerHTML = list.map(c => `
+    <li class="${c.done ? "done" : ""}">
+      <label><input type="checkbox" data-check="${esc(c.id)}"${c.done ? " checked" : ""}><span>${esc(c.text)}</span></label>
+      <button class="hm-x" type="button" data-uncheck="${esc(c.id)}" aria-label="Remove ${esc(c.text)}">✕</button>
+    </li>`).join("");
+}
+
+/* ---------------- storage ---------------- */
+function writeCache(){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(state)); }catch(e){} }
+
+function setSync(s, text){ const el = $("sync"); el.textContent = text; el.setAttribute("data-state", s); }
+
+function save(){
+  writeCache();
+  render();
+  if(!docRef) return;
+  setSync("saving", "Saving");
+  pending = true;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    pending = false;
+    saving = true;
+    docRef.set({ plans: state.plans, checklist: state.checklist, updated: Date.now() })
+      .then(() => setSync("idle", "Synced"))
+      .catch(e => { console.error(e); setSync("error", "Couldn't save"); })
+      .finally(() => { saving = false; });
+  }, 500);
+}
+
+function loadCache(){
+  try{
+    const raw = localStorage.getItem(CACHE_KEY);
+    if(raw){ const p = JSON.parse(raw); if(p && typeof p === "object") state = p; }
+  }catch(e){}
+  migrate();
+}
+
+function startFirebase(){
+  try{
+    firebase.initializeApp(window.PPFirebaseConfig);
+    docRef = firebase.firestore().doc(DOC_PATH);
+    docRef.onSnapshot(snap => {
+      if(saving || pending) return;
+      const data = snap.data();
+      if(data){
+        state = { plans: data.plans, checklist: data.checklist };
+        migrate();
+        writeCache();
+        render();
+        setSync("idle", "Synced");
+      }else{
+        /* First visit ever: put the seeded checklist in the shared doc. */
+        save();
+      }
+    }, err => { console.error(err); setSync("error", "Offline — saved here"); });
+  }catch(err){
+    console.error("Firestore unavailable, working from the local copy:", err);
+    setSync("error", "Offline");
+  }
+}
+
+/* ---------------- events ---------------- */
+document.addEventListener("submit", e => {
+  const form = e.target;
+  if(form.matches("[data-add]")){
+    e.preventDefault();
+    const f = readPlanForm(form);
+    if(!f) return;
+    state.plans[form.dataset.add].push({
+      id: uid(), title: f.title, detail: f.detail, url: f.url, booked: false, added: Date.now()
+    });
+    form.reset();
+    form.elements.title.focus();
+    save();
+  }else if(form.matches("[data-edit-form]")){
+    e.preventDefault();
+    const f = readPlanForm(form);
+    if(!f) return;
+    const p = findPlan(form.dataset.day, form.dataset.editForm);
+    editing = null;
+    if(p){ p.title = f.title; p.detail = f.detail; p.url = f.url; save(); } else render();
+    const back = document.querySelector(`[data-edit="${CSS.escape(form.dataset.editForm)}"]`);
+    if(back) back.focus();
+  }else if(form.id === "checkAdd"){
+    e.preventDefault();
+    const text = form.elements.text.value.trim();
+    if(!text) return;
+    state.checklist.push({ id: uid(), text: text, done: false });
+    form.reset();
+    form.elements.text.focus();
+    save();
+  }
+});
+
+document.addEventListener("click", e => {
+  const fold = e.target.closest("[data-fold]");
+  if(fold){
+    setOpen(fold.dataset.fold, fold.getAttribute("aria-expanded") !== "true");
+    return;
+  }
+  if(e.target.closest("#foldAll")){
+    const open = !$("foldAll").dataset.open;
+    ITINERARY.forEach(d => setOpen(d.id, open, false));
+    writeOpen();
+    return;
+  }
+  /* A map pin (or any #dN link) opens the day it jumps to. */
+  const jump = e.target.closest('a[href^="#d"]');
+  if(jump){
+    setOpen(jump.getAttribute("href").slice(1), true);
+    return;
+  }
+  const ed = e.target.closest("[data-edit]");
+  if(ed){
+    const p = findPlan(ed.dataset.day, ed.dataset.edit);
+    if(!p) return;
+    if(editing){ editing = null; render(); }   /* only one open editor at a time */
+    editing = { day: ed.dataset.day, id: p.id };
+    const li = document.querySelector(`[data-plans="${ed.dataset.day}"] [data-id="${CSS.escape(p.id)}"]`);
+    if(li) li.outerHTML = editRow(ed.dataset.day, p);
+    const input = document.querySelector(`[data-edit-form="${CSS.escape(p.id)}"] input[name="title"]`);
+    if(input){ input.focus(); input.select(); }
+    return;
+  }
+  const cancel = e.target.closest("[data-cancel-edit]");
+  if(cancel){
+    const id = editing && editing.id;
+    editing = null;
+    render();
+    const back = id && document.querySelector(`[data-edit="${CSS.escape(id)}"]`);
+    if(back) back.focus();
+    return;
+  }
+  const tog = e.target.closest("[data-toggle]");
+  if(tog){
+    const p = (state.plans[tog.dataset.day] || []).find(x => x.id === tog.dataset.toggle);
+    if(p){ p.booked = !p.booked; save(); }
+    return;
+  }
+  const rm = e.target.closest("[data-remove]");
+  if(rm){
+    const list = state.plans[rm.dataset.day] || [];
+    const p = list.find(x => x.id === rm.dataset.remove);
+    if(p && confirm(`Remove "${p.title}"?`)){
+      state.plans[rm.dataset.day] = list.filter(x => x !== p);
+      save();
+    }
+    return;
+  }
+  const un = e.target.closest("[data-uncheck]");
+  if(un){
+    const c = state.checklist.find(x => x.id === un.dataset.uncheck);
+    if(c && confirm(`Remove "${c.text}" from the list?`)){
+      state.checklist = state.checklist.filter(x => x !== c);
+      save();
+    }
+  }
+});
+
+/* ---------------- reordering ----------------
+   Drag the numbered grip (pointer events, so it works for a finger too), or
+   focus it and use the arrow keys. The list order is the priority. */
+document.addEventListener("pointerdown", e => {
+  const grip = e.target.closest("[data-grip]");
+  if(!grip || drag || editing || (e.pointerType === "mouse" && e.button !== 0)) return;
+  e.preventDefault();
+  const li = grip.closest(".hm-plan"), ul = li.parentElement;
+  grip.setPointerCapture(e.pointerId);
+  drag = { day: grip.dataset.day, li: li, ul: ul, grip: grip,
+           grab: e.clientY - li.getBoundingClientRect().top,
+           before: [...ul.children].map(x => x.dataset.id).join() };
+  li.classList.add("is-dragging");
+  ul.classList.add("is-sorting");
+});
+
+document.addEventListener("pointermove", e => {
+  if(!drag) return;
+  const li = drag.li, ul = drag.ul;
+  li.style.transform = "";
+  /* Swap past a neighbour once the pointer crosses its middle. */
+  let prev = li.previousElementSibling, next = li.nextElementSibling;
+  while(prev && e.clientY < midY(prev)){ ul.insertBefore(li, prev); prev = li.previousElementSibling; }
+  while(next && e.clientY > midY(next)){ ul.insertBefore(next, li); next = li.nextElementSibling; }
+  li.style.transform = `translateY(${e.clientY - drag.grab - li.getBoundingClientRect().top}px)`;
+});
+
+function midY(el){ const r = el.getBoundingClientRect(); return r.top + r.height / 2; }
+
+function endDrag(){
+  if(!drag) return;
+  const d = drag;
+  drag = null;
+  d.li.style.transform = "";
+  d.li.classList.remove("is-dragging");
+  d.ul.classList.remove("is-sorting");
+  const order = [...d.ul.children].map(x => x.dataset.id);
+  if(order.join() === d.before){ render(); return; }
+  const byId = {};
+  (state.plans[d.day] || []).forEach(p => { byId[p.id] = p; });
+  const moved = order.map(id => byId[id]).filter(Boolean);
+  /* Anything added from the other phone mid-drag keeps its place at the end. */
+  (state.plans[d.day] || []).forEach(p => { if(!order.includes(p.id)) moved.push(p); });
+  state.plans[d.day] = moved;
+  save();
+  const g = document.querySelector(`[data-grip="${CSS.escape(d.li.dataset.id)}"]`);
+  if(g && document.activeElement === d.grip) g.focus();
+}
+document.addEventListener("pointerup", endDrag);
+document.addEventListener("pointercancel", endDrag);
+
+document.addEventListener("keydown", e => {
+  const grip = e.target.closest && e.target.closest("[data-grip]");
+  if(!grip || drag) return;
+  const list = state.plans[grip.dataset.day] || [];
+  const at = list.findIndex(x => x.id === grip.dataset.grip);
+  const to = { ArrowUp: at - 1, ArrowDown: at + 1, Home: 0, End: list.length - 1 }[e.key];
+  if(to === undefined) return;
+  e.preventDefault();
+  if(movePlan(grip.dataset.day, grip.dataset.grip, to)){
+    save();
+    const g = document.querySelector(`[data-grip="${CSS.escape(grip.dataset.grip)}"]`);
+    if(g) g.focus();
+  }
+});
+
+document.addEventListener("input", e => {
+  if(e.target.name === "url") e.target.setCustomValidity("");
+});
+
+document.addEventListener("change", e => {
+  const box = e.target.closest("[data-check]");
+  if(!box) return;
+  const c = state.checklist.find(x => x.id === box.dataset.check);
+  if(c){ c.done = box.checked; save(); }
+});
+
+/* ---------------- the sidebar ----------------
+   Pinned just under the nav ribbon when it fits the window; on a shorter
+   window it scrolls up only as far as it must to keep the map in view. */
+function pinAside(){
+  const aside = document.querySelector(".hm-aside");
+  if(getComputedStyle(aside).position !== "sticky"){ aside.style.top = ""; return; }
+  const rib = document.querySelector(".pp-ribbon");
+  const under = (rib && getComputedStyle(rib).position === "sticky" ? rib.offsetHeight : 0) + 20;
+  aside.style.top = Math.min(under, window.innerHeight - aside.offsetHeight - 16) + "px";
+}
+window.addEventListener("resize", pinAside);
+window.addEventListener("load", pinAside);
+if(window.ResizeObserver) new ResizeObserver(pinAside).observe(document.querySelector(".hm-aside"));
+
+buildVoyage();
+loadCache();
+render();
+readOpen().forEach(id => { if($(id)) setOpen(id, true, false); });
+/* During the trip, today's day is always open; so is a day linked to directly. */
+const todayCard = document.querySelector(".hm-day.is-today");
+if(todayCard) setOpen(todayCard.id, true, false);
+if(/^#d\d+$/.test(location.hash) && $(location.hash.slice(1))) setOpen(location.hash.slice(1), true, false);
+syncFoldAll();
+window.addEventListener("hashchange", () => {
+  if(/^#d\d+$/.test(location.hash) && $(location.hash.slice(1))) setOpen(location.hash.slice(1), true);
+});
+startFirebase();
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>

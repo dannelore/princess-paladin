@@ -52,15 +52,15 @@ window.PPNav = (function(){
   /* ------------------------------------------------------------------
      THE SITE MAP
      `nav:false` keeps a folder out of the ribbon but still lists it on
-     the links page. The Bach is the only one of those — it's a party
-     site with its own look and it doesn't belong in the site nav.
+     the links page. The Archive is the only one of those — finished
+     quests live there, reached from the home page, not the site nav.
      ------------------------------------------------------------------ */
   var DIRECTORY = [
     {
       key: 'home', label: 'Home', href: '/', nav: true,
       sections: [
         { name:'Home', href:'/', indexLabel:'Home',
-          note:'Hero, nav cards, comfort show roulette', pages:[] }
+          note:'Welcome, wedding countdown, folder cards', pages:[] }
       ]
     },
 
@@ -123,7 +123,7 @@ window.PPNav = (function(){
     /* Each quest family is its own section, with the parent quest as the
        section index. The URLs stay flat in /side-quests/ — the families only
        exist here, so a child like Classics sits under Reading in the nav
-       without moving. The hub gets the same families as wide tiles.
+       without moving. The hub shows the same families as cards.
        Dreamlight Valley is the one exception: it lives in its own folder,
        /side-quests/game-quest/ddv/, because Danni asked for it there. */
     {
@@ -132,10 +132,11 @@ window.PPNav = (function(){
         { name:'Side Quests', href:'/side-quests/', indexLabel:'Side Quests',
           note:'The tile grid', pages:[] },
 
+        { name:'Honeymoon Adventure', href:'/side-quests/honeymoon-adventure.html', indexLabel:'Honeymoon Adventure',
+          note:'Twelve days around the British Isles', pages:[] },
+
         { name:'Bucket Quest', href:'/side-quests/bucket-quest.html', indexLabel:'Bucket Quest',
-          note:'Couples bucket list and its timeline', pages:[
-          { label:'Wedding Quest', href:'/side-quests/wedding-quest.html', note:'The traditional planning checklist, editable' }
-        ]},
+          note:'Couples bucket list and its timeline', pages:[] },
 
         { name:'Game Quest', href:'/side-quests/game-quest.html', indexLabel:'Game Quest',
           note:'The backlog', pages:[
@@ -144,13 +145,23 @@ window.PPNav = (function(){
 
         { name:'Reading Quest', href:'/side-quests/reading-quest.html', indexLabel:'Reading Quest',
           note:'The to-be-read pile, and everything read', pages:[
-          { label:'Classics Quest', href:'/side-quests/classics-quest.html', note:'A hundred classics, A to Z' }
+          { label:'Classics Quest', href:'/side-quests/classics-quest.html', note:'A hundred classics, A to Z' },
+          { label:'Library Quest',  href:'/side-quests/library-quest.html',  note:'Every book we own, on the way to a thousand' }
         ]},
 
         { name:'Couch Quest', href:'/side-quests/couch-quest.html', indexLabel:'Couch Quest',
           note:'Watch list', pages:[
           { label:'Spooky Quest',  href:'/side-quests/spooky-quest.html',  note:'1 September – 31 October' },
-          { label:'Watch History', href:'/side-quests/watch-history.html', note:'Both watch lists, in the order you finished them' }
+          { label:'Watch History', href:'/side-quests/watch-history.html', note:'Every watch list, in the order you finished them' }
+        ]},
+
+        /* Holiday Quest sits with Couch Quest on the hub, but gets a section
+           of its own here so Plans and Gifts are one tap from the dropdown.
+           All three are tabs on one page, picked by the #hash. */
+        { name:'Holiday Quest', href:'/side-quests/holiday-quest.html', indexLabel:'Watch list',
+          note:'1 November – 31 December', pages:[
+          { label:'Plans', href:'/side-quests/holiday-quest.html#plans', note:'Holiday plans — password' },
+          { label:'Gifts', href:'/side-quests/holiday-quest.html#gifts', note:'Gift lists, with a secret one each — password' }
         ]}
       ]
     },
@@ -165,12 +176,17 @@ window.PPNav = (function(){
       ]
     },
 
-    /* Out of the ribbon on purpose — see the note at the top of DIRECTORY. */
+    /* Out of the ribbon on purpose — see the note at the top of DIRECTORY.
+       Archived quests keep their original URLs, so links people saved
+       still work; they're only listed here. */
     {
-      key: 'bach', label: 'The Bach', href: '/bach/', nav: false,
+      key: 'archive', label: 'Archive', href: '/archive/', nav: false,
       sections: [
+        { name:'Archive', href:'/archive/', indexLabel:'The Archive',
+          note:'Finished quests, kept as they were', pages:[] },
+
         { name:'The Bach', href:'/bach/', indexLabel:'The Bach',
-          note:'Party plan', pages:[
+          note:'Party plan, Oct 9–11 2026', pages:[
           { label:'Drag Show',    href:'/bach/dragshow.html',    note:'' },
           { label:'Smarty Pants', href:'/bach/smartypants.html', note:'' }
         ]}
@@ -216,6 +232,22 @@ window.PPNav = (function(){
   }
 
   function here(){ return normalize(location.pathname); }
+
+  /* Holiday Quest's Plans and Gifts are tabs on one page, so their links
+     differ only by #hash. A link with a hash is current when the hash
+     matches; the plain link is current when no hash link is. */
+  function hashOf(href){
+    var i = String(href || '').indexOf('#');
+    return i < 0 ? '' : String(href).slice(i);
+  }
+  function isHere(href, siblings){
+    if(normalize(href) !== here()) return false;
+    var h = hashOf(href);
+    if(h) return location.hash === h;
+    return !(siblings || []).some(function(p){
+      return normalize(p.href) === here() && hashOf(p.href) && location.hash === hashOf(p.href);
+    });
+  }
 
   /* Every destination in a folder, section indexes included, in menu order. */
   function pagesOf(folder){
@@ -266,7 +298,8 @@ window.PPNav = (function(){
     var path = here(), found = null;
     DIRECTORY.forEach(function(f){
       pagesOf(f).forEach(function(p){
-        if(normalize(p.href) === path) found = p;
+        /* the first match wins, and a #tab link never names the page */
+        if(!found && !hashOf(p.href) && normalize(p.href) === path) found = p;
       });
     });
     return found;
@@ -334,12 +367,11 @@ window.PPNav = (function(){
     var sec = currentSection(folder);
     if(!sec || !(sec.pages || []).length) return '';
 
-    var path = here();
     var rows = [indexPage(sec)].concat(sec.pages);
     var html = '';
 
     rows.forEach(function(p){
-      var on = normalize(p.href) === path;
+      var on = isHere(p.href, rows);
       html += '<a href="' + esc(withWho(p.href)) + '"' +
               (on ? ' aria-current="page"' : '') + '>' + esc(p.label) + '</a>';
     });
@@ -478,6 +510,10 @@ window.PPNav = (function(){
     }
     sub.setAttribute('aria-label', 'Section navigation');
     sub.innerHTML = rows;
+
+    /* A tab switch on the same page only changes the #hash, so the
+       highlighted link has to follow it. */
+    window.addEventListener('hashchange', function(){ sub.innerHTML = subnavHTML(); });
   }
 
   if(document.readyState === 'loading'){

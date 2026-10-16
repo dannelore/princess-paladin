@@ -1119,7 +1119,7 @@ function render(){
        than leaving a broken-image box on the shelf. */
     const art = item.cover
       ? `<img class="rq-cover" src="${esc(item.cover)}" alt="" loading="lazy"
-              onerror="this.outerHTML='<div class=\'rq-nocover\'>${esc(item.letter)}</div>'">`
+              onerror="this.outerHTML='<div class=&quot;rq-nocover&quot;>${esc(item.letter)}</div>'">`
       : `<div class="rq-nocover">${esc(item.letter)}</div>`;
 
     const cls = item.status === "read" ? " is-read" : item.status === "dnf" ? " is-dnf" : "";
@@ -1154,7 +1154,7 @@ function openDetail(id){
     <div class="rq-detail-head">
       ${item.cover
         ? `<img class="rq-detail-cover" src="${esc(item.cover)}" alt=""
-                onerror="this.outerHTML='<div class=\'rq-detail-nocover\'>${esc(item.letter)}</div>'">`
+                onerror="this.outerHTML='<div class=&quot;rq-detail-nocover&quot;>${esc(item.letter)}</div>'">`
         : `<div class="rq-detail-nocover">${esc(item.letter)}</div>`}
       <div style="flex:1 1 auto;min-width:0;">
         <h2>${esc(item.title)}</h2>

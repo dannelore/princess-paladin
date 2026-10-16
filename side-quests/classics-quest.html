@@ -1423,7 +1423,7 @@ function render(){
        than leaving a broken-image box on the shelf. */
     const art = item.cover
       ? `<img class="clq-cover" src="${esc(item.cover)}" alt="" loading="lazy"
-              onerror="this.outerHTML='<div class=\'clq-nocover\'>${esc(item.letter)}</div>'">`
+              onerror="this.outerHTML='<div class=&quot;clq-nocover&quot;>${esc(item.letter)}</div>'">`
       : `<div class="clq-nocover">${esc(item.letter)}</div>`;
 
     const cls = item.status === "read" ? " is-read" : item.status === "dnf" ? " is-dnf" : "";
@@ -1456,7 +1456,7 @@ function openDetail(id){
     <div class="clq-detail-head">
       ${item.cover
         ? `<img class="clq-detail-cover" src="${esc(item.cover)}" alt=""
-                onerror="this.outerHTML='<div class=\'clq-detail-nocover\'>${esc(item.letter)}</div>'">`
+                onerror="this.outerHTML='<div class=&quot;clq-detail-nocover&quot;>${esc(item.letter)}</div>'">`
         : `<div class="clq-detail-nocover">${esc(item.letter)}</div>`}
       <div style="flex:1 1 auto;min-width:0;">
         <h2>${esc(item.title)}</h2>

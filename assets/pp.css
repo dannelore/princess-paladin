@@ -67,6 +67,12 @@
   --dusk-deep:   #523862;
   --pumpkin:     #C96A2E;   /* spooky quest */
   --pumpkin-deep:#A4501C;
+  --pine:        #2F5D46;   /* holiday quest */
+  --pine-deep:   #224636;
+  --cranberry:   #A3263A;
+  --cranberry-deep:#7E1B2C;
+  --sea:         #2F6178;   /* honeymoon adventure */
+  --sea-deep:    #204658;
 
   /* --- quest-log currency --- */
   --quest-gold:   #C9A227;

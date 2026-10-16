@@ -509,9 +509,31 @@
   @media (prefers-reduced-motion: reduce){
     html{scroll-behavior:auto;}
   }
+
+  /* ---------- ARCHIVED BANNER ---------- */
+  .archived{
+    margin:0;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:.25rem .6rem;
+    padding:.55rem 1rem;
+    background:var(--wax);
+    color:var(--parchment);
+    font-family:'IM Fell English SC', serif;
+    font-size:.85rem;
+    letter-spacing:.05em;
+    text-align:center;
+  }
+  .archived a{color:var(--parchment);text-decoration:underline;text-underline-offset:3px;}
 </style>
 </head>
 <body>
+
+  <p class="archived">
+    <span>Quest complete — thank you for adventuring with us.</span>
+    <a href="/archive/">This page now lives in the Princess &amp; Paladin Archive</a>
+  </p>
 
   <nav class="quicknav">
     <a href="#day0"><svg class="icon die" viewBox="0 0 24 24"><polygon points="12 2 22 8.5 22 17.5 12 22 2 17.5 2 8.5"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="8.5" x2="22" y2="8.5"/></svg> Session Zero</a>

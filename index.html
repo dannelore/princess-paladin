@@ -11,12 +11,210 @@
 <link rel="stylesheet" href="/assets/pp.css">
 <link rel="stylesheet" href="/assets/themes/home.css">
 <style>
-  /* Home-only: the welcome panel sits a little roomier than the default */
-  .welcome-text p{
+  /* Home-only */
+
+  /* ---- top row: welcome + wedding countdown ---- */
+  .home-top{
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: var(--gap);
+    margin-bottom: var(--gap);
+  }
+  @media (max-width: 760px){
+    .home-top{ grid-template-columns: 1fr; }
+  }
+
+  .home-welcome h2{
+    font-size: 1.6rem;
+    margin-bottom: 10px;
+  }
+  .home-welcome p{
     font-size: 1rem;
     line-height: 1.75;
+    margin: 0 0 12px;
+  }
+  .home-welcome p:last-child{ margin-bottom: 0; }
+
+  .home-countdown{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 4px;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(232,124,166,0.16), transparent 65%),
+      var(--panel);
+  }
+  .home-countdown svg{ width: 30px; height: 30px; color: var(--accent-deep); margin-bottom: 4px; }
+  .home-countdown-num{
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 3.6rem;
+    line-height: 1;
+    color: var(--burgundy);
+  }
+  .home-countdown-unit{
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--ink);
+  }
+  .home-countdown-date{ margin: 6px 0 0; }
+
+  /* ---- seasonal callout: hidden until its dates come round ---- */
+  .home-season{ margin-bottom: var(--gap); }
+  .home-season[hidden]{ display: none; }
+  .home-season svg{ width: 30px; height: 30px; flex-shrink: 0; color: var(--pumpkin); }
+  .home-season-text{ display: flex; flex-direction: column; gap: 2px; }
+  .home-season-text small{
+    font-family: var(--font-body);
+    font-style: normal;
+    font-weight: 400;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+  .home-season-go{ margin-left: auto; font-style: normal; font-size: 1.3rem; }
+  .home-season-holiday svg{ color: var(--pine); }
+
+  /* ---- the folder cards ---- */
+  .home-heading{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 8px 0 18px;
+  }
+  .home-heading::before,
+  .home-heading::after{
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line-gold);
+  }
+
+  .home-folders{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 18px;
+    margin-bottom: var(--gap);
+  }
+
+  /* Each card wears its folder's colour, so the front page previews
+     where you're about to land. */
+  .home-folder{
+    --hairline: var(--accent);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 22px 22px 20px;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+  .home-folder:hover,
+  .home-folder:focus-within{
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: var(--lift-lg);
+  }
+  .home-folder.f-quest    { --accent: var(--quest-gold); --accent-deep: var(--gold-deep);  --accent-soft: rgba(201,162,39,0.16); }
+  .home-folder.f-princess { --accent: var(--pink);       --accent-deep: var(--pink-deep);  --accent-soft: rgba(232,124,166,0.16); }
+  .home-folder.f-paladin  { --accent: var(--blade);      --accent-deep: var(--burgundy);   --accent-soft: rgba(178,58,58,0.12); }
+  .home-folder.f-castle   { --accent: var(--sage);       --accent-deep: var(--sage-deep);  --accent-soft: rgba(143,163,126,0.18); }
+  .home-folder.f-side     { --accent: var(--dusk);       --accent-deep: var(--dusk-deep);  --accent-soft: rgba(107,74,120,0.14); }
+  .home-folder.f-holiday  { --accent: var(--cranberry);  --accent-deep: var(--cranberry-deep); --accent-soft: rgba(163,38,58,0.12); }
+  .home-folder.f-templates{ --accent: var(--gold);       --accent-deep: var(--gold-deep);  --accent-soft: rgba(156,116,64,0.14); }
+
+  .home-folder-head{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: var(--ink);
+  }
+  .home-folder-head:hover{ text-decoration: none; }
+  .home-folder-head:hover h3{ color: var(--accent-deep); }
+
+  .home-folder-icon{
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    transition: transform .22s ease;
+  }
+  .home-folder-icon svg{ width: 24px; height: 24px; }
+  .home-folder:hover .home-folder-icon{ transform: scale(1.06) rotate(-3deg); }
+
+  .home-folder h3{
+    font-size: 1.3rem;
+    margin: 0;
+    transition: color .15s ease;
+  }
+  .home-folder-note{
+    font-size: 0.86rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
     margin: 0;
   }
+
+  .home-folder-links{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: auto 0 0;
+    padding: 12px 0 0;
+    list-style: none;
+    border-top: 1px dashed var(--line);
+  }
+  .home-folder-links a{
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 4px 11px;
+    border-radius: 999px;
+    color: var(--accent-deep);
+    background: var(--accent-soft);
+    transition: background .15s ease, color .15s ease;
+  }
+  .home-folder-links a:hover,
+  .home-folder-links a:focus-visible{
+    background: var(--accent-deep);
+    color: #fff;
+    text-decoration: none;
+  }
+
+  /* Seven cards leave one alone on the last row, so Templates runs the full
+     width there instead, laid out as a single line. */
+  .home-folder.f-templates{ grid-column: 1 / -1; }
+  @media (min-width: 640px){
+    .home-folder.f-templates{
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 18px;
+      padding: 16px 22px;
+    }
+    .home-folder.f-templates .home-folder-links{
+      margin: 0;
+      padding: 0;
+      border-top: 0;
+    }
+  }
+
+  /* ---- the way into the archive: quiet on purpose ---- */
+  .home-archive{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1rem;
+    color: var(--ink-soft);
+    margin: 8px 0 0;
+  }
+  .home-archive svg{ width: 16px; height: 16px; color: var(--gold); }
 </style>
 </head>
 <body class="pp-home">
@@ -43,6 +241,7 @@
   </div>
   <nav class="pp-nav" aria-label="Main navigation">
     <a href="/" aria-current="page">Home</a>
+    <a href="/quest-log/">Quest Log</a>
     <a href="/dannelore/">Princess</a>
     <a href="/vmprman/">Paladin</a>
     <a href="/castle/">Castle Keep</a>
@@ -53,66 +252,200 @@
   <p class="pp-tagline">where creativity and chaos meet organization and overthinking</p>
 </header>
 
-<main class="pp-layout">
+<main class="pp-wrap">
 
-  <div class="pp-col">
-    <section class="pp-panel">
-      <div class="welcome-text">
-        <p>This is Danni &amp; Brendon's little corner of the internet — built mostly so we can find our own lists from any device, not because we think anyone else needs to see it. If you're here for The Bach, though, that part actually is for you.</p>
-      </div>
+  <div class="home-top">
+    <section class="pp-panel home-welcome">
+      <h2>Welcome home</h2>
+      <p>This is Danni &amp; Brendon's little corner of the internet — the lists, plans and half-finished schemes we want to reach from any device.</p>
+      <p>Nobody else really needs to see it, but if you've wandered in anyway: hello, mind the dragons.</p>
     </section>
 
-    <a class="pp-parchment" href="https://princessandpaladin.com/bach/">
-      Click here for information about the Joint Bachelor(ette) Party
-    </a>
+    <!-- The number is filled in by the script below. Without it the panel
+         still reads sensibly, just without the count. -->
+    <div class="pp-panel home-countdown" id="countdown">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="15" r="6"/>
+        <path d="M9 4h6l-1.5 3.5h-3Z"/>
+      </svg>
+      <span class="home-countdown-num" id="countdown-num">&hearts;</span>
+      <span class="home-countdown-unit" id="countdown-unit">until we say I do</span>
+      <span class="pp-label home-countdown-date">January 15, 2027</span>
+    </div>
   </div>
 
-  <aside class="pp-col">
-    <a class="pp-panel pp-linkbox" href="https://princessandpaladin.com/bach/">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 3h6l-1 8a2 2 0 0 1-4 0L9 3Z"/>
-        <path d="M12 11v7M9 21h6"/>
-      </svg>
-      The Bach
-    </a>
-    <a class="pp-panel pp-linkbox" href="/dannelore/index.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 18 L5.5 11 L9 15 L12 8 L15 15 L18.5 11 L20 18 Z"/>
-        <path d="M4 18h16"/>
-      </svg>
-      Princess
-    </a>
-    <a class="pp-panel pp-linkbox" href="https://princessandpaladin.com/vmprman/index.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 3 L14 5.5 L14 15 L12 18 L10 15 L10 5.5 Z"/>
-        <path d="M7 11.5h10"/>
-        <path d="M12 18v3"/>
-      </svg>
-      Paladin
-    </a>
-    <a class="pp-panel pp-linkbox" href="https://princessandpaladin.com/side-quests/index.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="9"/>
-        <path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/>
-      </svg>
-      Side Quests
-    </a>
-    <a class="pp-panel pp-linkbox" href="/castle/">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 21V10l3-2V6h2v2l3-2v3l3-2v3l3-2v2l3 2v11Z"/>
-        <path d="M4 21h16"/>
-      </svg>
-      Castle Keeping
-    </a>
-    <a class="pp-panel pp-linkbox" href="https://princessandpaladin.com/templates/">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M7 3h7l4 4v14H7Z"/>
-        <path d="M14 3v4h4"/>
-        <path d="M9.5 12h5M9.5 16h5"/>
-      </svg>
-      Templates
-    </a>
-  </aside>
+  <!-- Seasonal callouts. Each one stays hidden until today falls between its
+       data-from and data-to (MM-DD). To add one, copy the block and change
+       the dates, link and words. -->
+  <a class="pp-parchment home-season" href="/side-quests/spooky-quest.html"
+     data-from="09-01" data-to="10-31" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 7.5c-5 0-8.5 3-8.5 6.5S7 20.5 12 20.5s8.5-3 8.5-6.5S17 7.5 12 7.5Z"/>
+      <path d="M12 7.5c-2 0-3.2 3-3.2 6.5s1.2 6.5 3.2 6.5 3.2-3 3.2-6.5S14 7.5 12 7.5Z"/>
+      <path d="M12 7.5V4.5c0-1 .8-1.5 2-1.5"/>
+    </svg>
+    <span class="home-season-text">
+      It's spooky season — the Spooky Quest watch list is open.
+      <small data-season-left></small>
+    </span>
+    <span class="home-season-go" aria-hidden="true">&rarr;</span>
+  </a>
+
+  <a class="pp-parchment home-season home-season-holiday" href="/side-quests/holiday-quest.html"
+     data-from="11-01" data-to="12-31" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 2.5 L17.5 10 H14.5 L19 16.5 H5 L9.5 10 H6.5 Z"/>
+      <path d="M12 16.5V21"/>
+    </svg>
+    <span class="home-season-text">
+      It's holiday season — the watch list, plans and gifts are in Holiday Quest.
+      <small data-season-left></small>
+    </span>
+    <span class="home-season-go" aria-hidden="true">&rarr;</span>
+  </a>
+
+  <h2 class="home-heading pp-label">Where to?</h2>
+
+  <div class="home-folders">
+
+    <article class="pp-panel home-folder f-quest">
+      <a class="home-folder-head" href="/quest-log/">
+        <span class="home-folder-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 6h10M10 12h10M10 18h10"/>
+            <path d="M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5L7.5 17"/>
+          </svg>
+        </span>
+        <h3>Quest Log</h3>
+      </a>
+      <p class="home-folder-note">Dailies, to-dos and projects, with pets to raise and monsters to beat along the way.</p>
+      <ul class="home-folder-links">
+        <li><a href="/quest-log/">Danni's board</a></li>
+        <li><a href="/vmprman/quest-log/">Brendon's board</a></li>
+        <li><a href="/quest-log/pets.html">Pets</a></li>
+        <li><a href="/quest-log/monsters.html">Monsters</a></li>
+      </ul>
+    </article>
+
+    <article class="pp-panel home-folder f-princess">
+      <a class="home-folder-head" href="/dannelore/">
+        <span class="home-folder-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 18 L5.5 11 L9 15 L12 8 L15 15 L18.5 11 L20 18 Z"/>
+            <path d="M4 18h16"/>
+          </svg>
+        </span>
+        <h3>Princess</h3>
+      </a>
+      <p class="home-folder-note">Danni's corner — routines, the writing room, and whatever else needs a home outside her head.</p>
+      <ul class="home-folder-links">
+        <li><a href="/dannelore/self-care/">Self-Care</a></li>
+        <li><a href="/dannelore/rp/">Writing Room</a></li>
+      </ul>
+    </article>
+
+    <article class="pp-panel home-folder f-paladin">
+      <a class="home-folder-head" href="/vmprman/">
+        <span class="home-folder-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3 L14 5.5 L14 15 L12 18 L10 15 L10 5.5 Z"/>
+            <path d="M7 11.5h10"/>
+            <path d="M12 18v3"/>
+          </svg>
+        </span>
+        <h3>Paladin</h3>
+      </a>
+      <p class="home-folder-note">Brendon's corner of the castle.</p>
+      <ul class="home-folder-links">
+        <li><a href="/vmprman/quest-log/">Quest Log</a></li>
+      </ul>
+    </article>
+
+    <article class="pp-panel home-folder f-castle">
+      <a class="home-folder-head" href="/castle/">
+        <span class="home-folder-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 21V10l3-2V6h2v2l3-2v3l3-2v3l3-2v2l3 2v11Z"/>
+            <path d="M4 21h16"/>
+          </svg>
+        </span>
+        <h3>Castle Keep</h3>
+      </a>
+      <p class="home-folder-note">Running the household — what we're eating, how to cook it, and who's cleaning what.</p>
+      <ul class="home-folder-links">
+        <li><a href="/castle/meal-planner.html">Meal Planner</a></li>
+        <li><a href="/castle/recipe-book.html">Recipe Book</a></li>
+        <li><a href="/castle/cleaning-schedule.html">Cleaning</a></li>
+      </ul>
+    </article>
+
+    <article class="pp-panel home-folder f-side">
+      <a class="home-folder-head" href="/side-quests/">
+        <span class="home-folder-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/>
+          </svg>
+        </span>
+        <h3>Side Quests</h3>
+      </a>
+      <p class="home-folder-note">Everything we want to do, read, watch and play — and the record of what we already have.</p>
+      <ul class="home-folder-links">
+        <li><a href="/side-quests/bucket-quest.html">Bucket</a></li>
+        <li><a href="/side-quests/reading-quest.html">Reading</a></li>
+        <li><a href="/side-quests/couch-quest.html">Couch</a></li>
+        <li><a href="/side-quests/game-quest.html">Games</a></li>
+        <li><a href="/side-quests/honeymoon-adventure.html">Honeymoon</a></li>
+      </ul>
+    </article>
+
+    <article class="pp-panel home-folder f-holiday">
+      <a class="home-folder-head" href="/side-quests/holiday-quest.html">
+        <span class="home-folder-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="4" y="9" width="16" height="12" rx="1.5"/>
+            <path d="M3 9h18M12 9v12"/>
+            <path d="M12 9c-2-4-6-4-6-1.5S10 9 12 9c2 0 6-.5 6-1.5S14 5 12 9Z"/>
+          </svg>
+        </span>
+        <h3>Holiday Quest</h3>
+      </a>
+      <p class="home-folder-note">The holiday watch list, our plans, and the gift lists &mdash; plans and gifts sit behind your password.</p>
+      <ul class="home-folder-links">
+        <li><a href="/side-quests/holiday-quest.html#plans">Plans &#128274;</a></li>
+        <li><a href="/side-quests/holiday-quest.html#gifts">Gifts &#128274;</a></li>
+        <li><a href="/side-quests/holiday-quest.html">Watch list</a></li>
+      </ul>
+    </article>
+
+    <article class="pp-panel home-folder f-templates">
+      <a class="home-folder-head" href="/templates/">
+        <span class="home-folder-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M7 3h7l4 4v14H7Z"/>
+            <path d="M14 3v4h4"/>
+            <path d="M9.5 12h5M9.5 16h5"/>
+          </svg>
+        </span>
+        <h3>Templates</h3>
+      </a>
+      <p class="home-folder-note">The shared pieces the rest of the site is built from, and a directory of every page.</p>
+      <ul class="home-folder-links">
+        <li><a href="/templates/">Components</a></li>
+        <li><a href="/templates/links/">Link Directory</a></li>
+      </ul>
+    </article>
+
+  </div>
+
+  <p class="home-archive">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="4" rx="1"/>
+      <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/>
+      <path d="M10 12h4"/>
+    </svg>
+    <span>Finished quests are kept in <a href="/archive/">the Archive</a>.</span>
+  </p>
 
 </main>
 
@@ -124,6 +457,51 @@
 
 <script>
   document.getElementById('updated').textContent = 'last updated ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+  (function(){
+    var now = new Date();
+    /* Whole days between two calendar dates, ignoring the time of day and
+       daylight-saving jumps. */
+    function dayNum(y, m, d){ return Math.round(Date.UTC(y, m, d) / 86400000); }
+    var today = dayNum(now.getFullYear(), now.getMonth(), now.getDate());
+
+    /* ---- wedding countdown ---- */
+    var WEDDING = dayNum(2027, 0, 15);
+    var diff = WEDDING - today;
+    var num  = document.getElementById('countdown-num');
+    var unit = document.getElementById('countdown-unit');
+    if(diff > 0){
+      num.textContent  = diff;
+      unit.textContent = (diff === 1 ? 'day' : 'days') + ' until we say I do';
+    } else if(diff === 0){
+      num.textContent  = 'Today';
+      unit.textContent = 'is the day we say I do';
+    } else {
+      num.textContent  = -diff;
+      unit.textContent = (diff === -1 ? 'day' : 'days') + ' married';
+    }
+
+    /* ---- seasonal callouts ---- */
+    var mmdd = String(now.getMonth() + 1).padStart(2, '0') + '-' +
+               String(now.getDate()).padStart(2, '0');
+    document.querySelectorAll('[data-from][data-to]').forEach(function(el){
+      var from = el.getAttribute('data-from'), to = el.getAttribute('data-to');
+      /* A season that runs over New Year (12-01 to 01-15) wraps round. */
+      var on = from <= to ? (mmdd >= from && mmdd <= to)
+                          : (mmdd >= from || mmdd <= to);
+      if(!on) return;
+      el.hidden = false;
+
+      var left = el.querySelector('[data-season-left]');
+      if(left){
+        var parts = to.split('-');
+        var year  = now.getFullYear() + (to < mmdd ? 1 : 0);
+        /* Today counts, same as the Spooky Quest banner. */
+        var n = dayNum(year, +parts[0] - 1, +parts[1]) - today + 1;
+        left.textContent = n + (n === 1 ? ' day' : ' days') + ' left this season';
+      }
+    });
+  })();
 </script>
 
 <script src="/assets/pp-nav.js" defer></script>

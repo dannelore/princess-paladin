@@ -516,16 +516,24 @@ function renderBanner(){
   const sub = $("bannerSub");
   if(!el) return;
 
-  const seen = state.items.filter(i => (i.years || []).includes(SEASON.year)).length;
-  const total = state.items.length;
+  const seen = state.items.filter(seenThisYear).length;
+
+  /* The total only counts what's free to me — on a service we subscribe to,
+     same test as the "Free to me" filter — so it's a list we can actually
+     finish. Anything already watched this year stays in, rented or not, so
+     the count can never read more than the total. */
+  const total = state.items.filter(i =>
+    seenThisYear(i) || (i.streams || []).some(isSubbed)).length;
 
   if(SEASON.inSeason){
     el.classList.remove("is-off");
     ttl.textContent = "Spooky season is here — " + SEASON.daysLeft +
       (SEASON.daysLeft === 1 ? " day left" : " days left");
     sub.textContent = total
-      ? seen + " of " + total + " watched this year"
-      : "Nothing on the list yet.";
+      ? seen + " of " + total + " watched this year · counting what's free to me"
+      : state.items.length
+        ? "Nothing on the list is free to me right now."
+        : "Nothing on the list yet.";
   }else{
     el.classList.add("is-off");
     ttl.textContent = SEASON.daysTo + (SEASON.daysTo === 1 ? " day" : " days") +

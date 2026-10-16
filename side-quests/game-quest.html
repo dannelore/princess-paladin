@@ -578,8 +578,8 @@ function render(){
 
   $("grid").innerHTML = rows.map(item => {
     const art = item.image
-      ? `<img class="cq-poster" src="${esc(item.image)}" alt="" loading="lazy"
-           onerror="this.outerHTML='<div class=&quot;cq-poster-none&quot;>${esc(item.title)}</div>'">`
+      ? `<img class="cq-poster" src="${esc(item.image)}" alt="" loading="lazy" data-fallback="${esc(item.title)}"
+           onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'cq-poster-none',textContent:this.dataset.fallback}))">`
       : `<div class="cq-poster-none">${esc(item.title)}</div>`;
     const who = item.who;
     const whoBadge = who !== "together" ? `<span class="cq-who" data-who="${who}">${esc(WHO_LABEL[who])}</span>` : "";

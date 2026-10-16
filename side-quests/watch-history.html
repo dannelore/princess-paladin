@@ -16,9 +16,9 @@
   /* ======================================================================
      WATCH HISTORY
 
-     One chronological record of everything you've finished, drawn from BOTH
-     trackers at once — sidequest/couch-list and sidequest/spooky-list. It
-     reads those two documents and writes to neither; editing still happens on
+     One chronological record of everything you've finished, drawn from ALL
+     THREE trackers at once — sidequest/couch-list, sidequest/spooky-list and
+     sidequest/holiday-list. It reads those documents and writes to none; editing still happens on
      the tracker the title lives on, and every row links back to it.
 
      A series contributes one row PER SEASON, because a season is the thing
@@ -63,6 +63,7 @@
     color: var(--gold);
   }
   .wh-stat.spooky b{ color: var(--pumpkin-deep); }
+  .wh-stat.holiday b{ color: var(--cranberry-deep); }
 
   /* ---- year and month headings ---- */
   .wh-year{
@@ -135,6 +136,8 @@
      October rows read as a block from across the page. */
   .wh-card.is-spooky{ border-color: rgba(201,106,46,.55); }
   .wh-card.is-spooky:hover{ border-color: var(--pumpkin); }
+  .wh-card.is-holiday{ border-color: rgba(163,38,58,.5); }
+  .wh-card.is-holiday:hover{ border-color: var(--cranberry); }
 
   .wh-postwrap{ position: relative; }
   .wh-poster{
@@ -173,6 +176,7 @@
     border-radius: 50%;
     box-shadow: 0 1px 4px rgba(46,36,31,.35);
   }
+  .wh-pumpkin.is-holiday{ background: var(--pine); }
   /* A rewatch takes the same corner as the tradition badge — a rewatch of a
      tradition is the more specific fact, so it wins the spot. */
   .wh-again{
@@ -266,8 +270,9 @@
 
   <p class="wh-intro">
     Everything the two of you have finished, in the order you finished it.
-    Couch Quest and Spooky Quest both feed this page &mdash; anything watched off
-    the spooky list carries a pumpkin. A title on both lists appears once.
+    Couch Quest, Spooky Quest and Holiday Quest all feed this page &mdash; anything
+    watched off the spooky list carries a pumpkin, and off the holiday list a tree.
+    A title on more than one list appears once.
   </p>
 
   <div class="wh-stats" id="stats"></div>
@@ -276,9 +281,10 @@
     <div class="cq-pick">
       <label for="fSource">List</label>
       <select id="fSource">
-        <option value="all">Both lists</option>
+        <option value="all">All lists</option>
         <option value="couch">Couch Quest</option>
         <option value="spooky">Spooky Quest</option>
+        <option value="holiday">Holiday Quest</option>
       </select>
     </div>
     <div class="cq-pick">
@@ -300,7 +306,7 @@
     <span class="cq-count" id="count"></span>
   </div>
 
-  <div id="timeline"><p class="wh-state" id="state">Reading both lists&hellip;</p></div>
+  <div id="timeline"><p class="wh-state" id="state">Reading the lists&hellip;</p></div>
 
   <footer class="pp-footer">
     <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
@@ -318,13 +324,15 @@
 
 const firebaseConfig = window.PPFirebaseConfig;
 
-/* The two trackers this page reads. Adding a third watch list later means
-   adding a line here and nothing else. */
+/* The trackers this page reads. `spooky` and `holiday` mark the seasonal
+   lists, which get their own badge and border. */
 const SOURCES = [
-  { key:"couch",  label:"Couch Quest",  doc:"sidequest/couch-list",
-    page:"/side-quests/couch-quest.html",  cache:"pp_couch_list",  spooky:false },
-  { key:"spooky", label:"Spooky Quest", doc:"sidequest/spooky-list",
-    page:"/side-quests/spooky-quest.html", cache:"pp_spooky_list", spooky:true  }
+  { key:"couch",   label:"Couch Quest",   doc:"sidequest/couch-list",
+    page:"/side-quests/couch-quest.html",   cache:"pp_couch_list",   spooky:false, holiday:false },
+  { key:"spooky",  label:"Spooky Quest",  doc:"sidequest/spooky-list",
+    page:"/side-quests/spooky-quest.html",  cache:"pp_spooky_list",  spooky:true,  holiday:false },
+  { key:"holiday", label:"Holiday Quest", doc:"sidequest/holiday-list",
+    page:"/side-quests/holiday-quest.html", cache:"pp_holiday_list", spooky:false, holiday:true  }
 ];
 
 const WHO_LABEL = { together:"Together", danni:"D only", brendon:"B only", family:"Family" };
@@ -361,6 +369,7 @@ function rowsFor(item, source){
     sourceLabel: source.label,
     page: source.page,
     spooky: source.spooky,
+    holiday: source.holiday,
     title: item.title || "Untitled",
     image: item.image || "",
     who: item.who || "together",
@@ -422,7 +431,7 @@ function dedupeKey(e){
 }
 
 function merge(a, b){
-  const spookySide = a.spooky ? a : b;
+  const seasonal = [a, b].find(x => x.spooky) || [a, b].find(x => x.holiday);
   const dated = [a, b].filter(x => x.date);
 
   /* Earliest real date wins; a "started" date only stands in if neither has a
@@ -437,10 +446,11 @@ function merge(a, b){
   return Object.assign({}, keep, {
     again: a.again || b.again,
     spooky: a.spooky || b.spooky,
+    holiday: a.holiday || b.holiday,
     tradition: a.tradition || b.tradition,
-    /* Clicking through should land on the spooky tracker when it's on one,
+    /* Clicking through should land on a seasonal tracker when it's on one,
        since that's the list with the extra machinery on it. */
-    page: (a.spooky || b.spooky) ? spookySide.page : keep.page,
+    page: seasonal ? seasonal.page : keep.page,
     sourceLabel: labels.join(" + "),
     image: keep.image || a.image || b.image,
     bothLists: labels.length > 1
@@ -504,6 +514,7 @@ function visible(){
 function renderStats(rows){
   const thisYear = new Date().getFullYear();
   const spooky = rows.filter(e => e.spooky).length;
+  const holiday = rows.filter(e => e.holiday).length;
   const titles = new Set(rows.map(e => e.title.trim().toLowerCase())).size;
   const inYear = rows.filter(e => { const p = parts(e.date); return p && p.y === thisYear; }).length;
 
@@ -511,7 +522,8 @@ function renderStats(rows){
     <div class="pp-panel pp-panel-tight wh-stat"><b>${rows.length}</b><span>Entries</span></div>
     <div class="pp-panel pp-panel-tight wh-stat"><b>${titles}</b><span>Titles</span></div>
     <div class="pp-panel pp-panel-tight wh-stat"><b>${inYear}</b><span>In ${thisYear}</span></div>
-    <div class="pp-panel pp-panel-tight wh-stat spooky"><b>${spooky}</b><span>Spooky season</span></div>`;
+    <div class="pp-panel pp-panel-tight wh-stat spooky"><b>${spooky}</b><span>Spooky season</span></div>
+    <div class="pp-panel pp-panel-tight wh-stat holiday"><b>${holiday}</b><span>Holiday season</span></div>`;
 }
 
 /* ---------------- the spine ---------------- */
@@ -527,7 +539,7 @@ function render(){
   if(!rows.length){
     box.innerHTML = `<p class="wh-state">${
       entries.length ? "Nothing matches those filters."
-                     : "Nothing finished yet. Tick something off on either tracker and it lands here."
+                     : "Nothing finished yet. Tick something off on any tracker and it lands here."
     }</p>`;
     return;
   }
@@ -568,14 +580,15 @@ function render(){
     const day = p ? (e.started ? "From " + p.d : String(p.d)) : "";
     const full = p ? (e.started ? "Started " + fmtDate(e.date) : fmtDate(e.date)) : "no date";
 
-    html += `<a class="wh-card${e.spooky ? " is-spooky" : ""}" href="${esc(e.page)}"
+    html += `<a class="wh-card${e.spooky ? " is-spooky" : e.holiday ? " is-holiday" : ""}" href="${esc(e.page)}"
                 title="${esc(e.title + " — " + full + " — " + e.sourceLabel)}">
       <div class="wh-postwrap">
         ${e.image
-          ? `<img class="wh-poster" src="${esc(e.image)}" alt="" loading="lazy"
-                  onerror="this.outerHTML='<div class=\'wh-noposter\'>${esc(e.title)}</div>'">`
+          ? `<img class="wh-poster" src="${esc(e.image)}" alt="" loading="lazy" data-fallback="${esc(e.title)}"
+                  onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'wh-noposter',textContent:this.dataset.fallback}))">`
           : `<div class="wh-noposter">${esc(e.title)}</div>`}
-        ${e.spooky ? `<span class="wh-pumpkin" aria-label="Spooky season">&#127875;</span>` : ""}
+        ${e.spooky ? `<span class="wh-pumpkin" aria-label="Spooky season">&#127875;</span>`
+          : e.holiday ? `<span class="wh-pumpkin is-holiday" aria-label="Holiday season">&#127876;</span>` : ""}
         ${e.again ? `<span class="wh-again" aria-label="Rewatch">&#8635;</span>`
                   : (e.tradition ? `<span class="wh-trad">Tradition</span>` : "")}
         ${day ? `<span class="wh-day">${esc(day)}</span>` : ""}
