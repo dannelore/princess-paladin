@@ -108,6 +108,15 @@
   .dv-vchip.rare{ border-style: dashed; border-color: var(--gold); }
   .dv-vchip.rare[aria-pressed="true"]{ border-style: solid; }
   .dv-cr .rare-note{ font-size: .8rem; color: var(--gold-deep); margin: 0; line-height: 1.4; }
+  .dv-nowgroups{ display: flex; flex-direction: column; gap: 16px; }
+  .dv-nowgrp{ display: flex; flex-direction: column; }
+  .dv-nowgrp>.dv-label{ margin-bottom: 4px; }
+  .dv-nowgrp.limited>.dv-label{ color: var(--gold-deep); }
+  .dv-nowrow{ display: grid; grid-template-columns: minmax(0,11rem) minmax(0,1fr); gap: 6px 14px; align-items: start; padding: 9px 0; border-top: 1px solid var(--line); }
+  .dv-nowrow b{ font-weight: 600; display: block; }
+  .dv-nowrow small{ display: block; font-size: .8rem; color: var(--ink-soft); line-height: 1.35; }
+  .dv-nowrow small.when{ color: var(--gold-deep); }
+  @media (max-width: 560px){ .dv-nowrow{ grid-template-columns: 1fr; } }
 
   .dv{
     --dv-done: var(--sage-deep);  --dv-done-soft: rgba(109,130,89,.16);
@@ -293,6 +302,11 @@
     </div>
 
     <div class="dv-pane" id="pane-critters" role="tabpanel" aria-labelledby="tab-critters" hidden>
+      <section class="pp-panel dv-panel" data-fold="cnow" aria-label="Out right now">
+        <button class="dv-fold" aria-expanded="true"><span class="dv-label">Out right now, not befriended yet</span><span class="dv-count" id="cn-count"></span></button>
+        <p class="dv-hint" id="cn-when"></p>
+        <div class="dv-nowgroups" id="cn-list"></div>
+      </section>
       <section class="pp-panel dv-summary" aria-label="Critter progress">
         <div class="dv-big">
           <p class="dv-label">Critters befriended</p>
@@ -372,29 +386,30 @@ const OWNED = ["Base Game","A Rift in Time"];
 const NOT_VILLAGERS = ["Introductory","Once Upon a Dance (Dream Bundle)","The Forgotten","Trials","Lorekeeper","Secret Potatoes"];
 const MAX_LEVEL = 10;
 
-/* Tameable critters: { type, area, biome, food, feeds, variants: [{ name, rare }] }.
+/* Tameable critters: { type, area, biome, food, feeds, variants: [{ name, rare, when }] }.
+   `when` is only on limited colours; renderNow() explains its fields.
    Variant ids are the slug of the name ("Black Squirrel" -> "black-squirrel"),
    which are the field names in ddv-critters, so never rename one. */
 const CRITTER_SOURCE = "Critter list from the Dreamlight Valley Wiki, checked Oct 16, 2026. Feedings are the usual minimum. Event and Premium Shop companions aren't included.";
 const CRITTERS = [
-  {"type":"Squirrel","area":"Base Game","biome":"Plaza","food":"Peanut (any foraged fruit also counts)","feeds":2,"variants":[{"name":"Black Squirrel","rare":""},{"name":"Classic Squirrel","rare":""},{"name":"Gray Squirrel","rare":""},{"name":"Red Squirrel","rare":""},{"name":"White Squirrel","rare":"Rare: Sundays only"}]},
-  {"type":"Rabbit","area":"Base Game","biome":"Peaceful Meadow","food":"Carrot (vegetables/grains also count)","feeds":2,"variants":[{"name":"Black Rabbit","rare":""},{"name":"Brown Rabbit","rare":""},{"name":"Calico Rabbit","rare":"Rare: Thursdays only"},{"name":"Classic Rabbit","rare":""},{"name":"White Rabbit","rare":""}]},
-  {"type":"Sea Turtle","area":"Base Game","biome":"Dazzle Beach","food":"Seaweed (any seafood also counts)","feeds":3,"variants":[{"name":"Black Sea Turtle","rare":"Rare: Mondays only"},{"name":"Brown Sea Turtle","rare":""},{"name":"Classic Sea Turtle","rare":""},{"name":"Purple Sea Turtle","rare":""},{"name":"White Sea Turtle","rare":""}]},
-  {"type":"Raccoon","area":"Base Game","biome":"Forest of Valor","food":"Blueberry (other berries also count)","feeds":3,"variants":[{"name":"Black Raccoon","rare":""},{"name":"Blue Raccoon","rare":"Rare: Wednesdays only"},{"name":"Classic Raccoon","rare":""},{"name":"Red Raccoon","rare":""},{"name":"White Raccoon","rare":""}]},
-  {"type":"Crocodile","area":"Base Game","biome":"Glade of Trust","food":"Lobster (Glade of Trust fish also count)","feeds":4,"variants":[{"name":"Blue Crocodile","rare":""},{"name":"Classic Crocodile","rare":""},{"name":"Golden Crocodile","rare":""},{"name":"Pink Crocodile","rare":"Rare: Saturdays only"},{"name":"Red Crocodile","rare":""},{"name":"White Crocodile","rare":"Rare: Sundays only"}]},
-  {"type":"Sunbird","area":"Base Game","biome":"Sunlit Plateau","food":"Flowers in its colours (Emerald: green/yellow; Golden: orange/yellow; Orchid: pink/purple; Red: blue/red; Turquoise: green/pink)","feeds":4,"variants":[{"name":"Emerald Sunbird","rare":""},{"name":"Golden Sunbird","rare":""},{"name":"Orchid Sunbird","rare":"Rare: Fridays only"},{"name":"Red Sunbird","rare":""},{"name":"Turquoise Sunbird","rare":""}]},
-  {"type":"Fox","area":"Base Game","biome":"Frosted Heights","food":"White Sturgeon (Frosted Heights fish also count)","feeds":5,"variants":[{"name":"Black Fox","rare":""},{"name":"Blue Fox","rare":""},{"name":"Classic Fox","rare":""},{"name":"Red Fox","rare":"Rare: Saturdays only"},{"name":"White Fox","rare":""}]},
-  {"type":"Raven","area":"Base Game","biome":"Forgotten Lands","food":"Any 5-star meal (3-4 star meals also count)","feeds":5,"variants":[{"name":"Blue Raven","rare":""},{"name":"Brown Raven","rare":"Rare: Tuesdays only"},{"name":"Classic Raven","rare":""},{"name":"Red Raven","rare":""},{"name":"White Raven","rare":""}]},
-  {"type":"Capybara","area":"A Rift in Time","biome":"Wild Tangle","food":"Cabbage","feeds":3,"variants":[{"name":"Black and White Capybara","rare":""},{"name":"Blue Striped Capybara","rare":""},{"name":"Classic Capybara","rare":""},{"name":"Gray Spotted Capybara","rare":""},{"name":"Red and White Striped Capybara","rare":"Rare: Saturdays only"},{"name":"Toon Capybara","rare":"Limited: only after Oswald's quest 'The Spark of Imagination' (needs 4 feeds)"}]},
-  {"type":"Cobra","area":"A Rift in Time","biome":"Glittering Dunes","food":"Egg (dairy & oil ingredients also count)","feeds":3,"variants":[{"name":"Blue and Red Striped Cobra","rare":""},{"name":"Classic Cobra","rare":""},{"name":"Green and White Striped Cobra","rare":"Rare: Thursdays only"},{"name":"Pink Spotted Cobra","rare":""},{"name":"Toon Cobra","rare":"Limited: only after Oswald's quest 'The Spark of Imagination' (needs 4 feeds)"},{"name":"Yellow and Purple Striped Cobra","rare":""}]},
-  {"type":"Monkey","area":"A Rift in Time","biome":"Ancient's Landing","food":"Any 5-star dessert (3-star+ meals also count)","feeds":null,"variants":[{"name":"Beige Monkey","rare":""},{"name":"Black and Brown Monkey","rare":""},{"name":"Black and Gray Monkey","rare":"Rare: Tuesdays only"},{"name":"Classic Monkey","rare":""},{"name":"Red and Beige Monkey","rare":""},{"name":"Toon Monkey","rare":"Limited: only after Oswald's quest 'The Spark of Imagination' (needs 4 feeds)"}]},
+  {"type":"Squirrel","area":"Base Game","biome":"Plaza","food":"Peanut (any foraged fruit also counts)","feeds":2,"variants":[{"name":"Black Squirrel","rare":""},{"name":"Classic Squirrel","rare":""},{"name":"Gray Squirrel","rare":""},{"name":"Red Squirrel","rare":""},{"name":"White Squirrel","rare":"Rare: Sundays only","when":{"d":[0]}}]},
+  {"type":"Rabbit","area":"Base Game","biome":"Peaceful Meadow","food":"Carrot (vegetables/grains also count)","feeds":2,"variants":[{"name":"Black Rabbit","rare":""},{"name":"Brown Rabbit","rare":""},{"name":"Calico Rabbit","rare":"Rare: Thursdays only","when":{"d":[4]}},{"name":"Classic Rabbit","rare":""},{"name":"White Rabbit","rare":""}]},
+  {"type":"Sea Turtle","area":"Base Game","biome":"Dazzle Beach","food":"Seaweed (any seafood also counts)","feeds":3,"variants":[{"name":"Black Sea Turtle","rare":"Rare: Mondays only","when":{"d":[1]}},{"name":"Brown Sea Turtle","rare":""},{"name":"Classic Sea Turtle","rare":""},{"name":"Purple Sea Turtle","rare":""},{"name":"White Sea Turtle","rare":""}]},
+  {"type":"Raccoon","area":"Base Game","biome":"Forest of Valor","food":"Blueberry (other berries also count)","feeds":3,"variants":[{"name":"Black Raccoon","rare":""},{"name":"Blue Raccoon","rare":"Rare: Wednesdays only","when":{"d":[3]}},{"name":"Classic Raccoon","rare":""},{"name":"Red Raccoon","rare":""},{"name":"White Raccoon","rare":""}]},
+  {"type":"Crocodile","area":"Base Game","biome":"Glade of Trust","food":"Lobster (Glade of Trust fish also count)","feeds":4,"variants":[{"name":"Blue Crocodile","rare":""},{"name":"Classic Crocodile","rare":""},{"name":"Golden Crocodile","rare":""},{"name":"Pink Crocodile","rare":"Rare: Saturdays only","when":{"d":[6]}},{"name":"Red Crocodile","rare":""},{"name":"White Crocodile","rare":"Rare: Sundays only","when":{"d":[0]}}]},
+  {"type":"Sunbird","area":"Base Game","biome":"Sunlit Plateau","food":"Flowers in its colours (Emerald: green/yellow; Golden: orange/yellow; Orchid: pink/purple; Red: blue/red; Turquoise: green/pink)","feeds":4,"variants":[{"name":"Emerald Sunbird","rare":""},{"name":"Golden Sunbird","rare":""},{"name":"Orchid Sunbird","rare":"Rare: Fridays only","when":{"d":[5]}},{"name":"Red Sunbird","rare":""},{"name":"Turquoise Sunbird","rare":""}]},
+  {"type":"Fox","area":"Base Game","biome":"Frosted Heights","food":"White Sturgeon (Frosted Heights fish also count)","feeds":5,"variants":[{"name":"Black Fox","rare":""},{"name":"Blue Fox","rare":""},{"name":"Classic Fox","rare":""},{"name":"Red Fox","rare":"Rare: Saturdays only","when":{"d":[6]}},{"name":"White Fox","rare":""}]},
+  {"type":"Raven","area":"Base Game","biome":"Forgotten Lands","food":"Any 5-star meal (3-4 star meals also count)","feeds":5,"variants":[{"name":"Blue Raven","rare":""},{"name":"Brown Raven","rare":"Rare: Tuesdays only","when":{"d":[2]}},{"name":"Classic Raven","rare":""},{"name":"Red Raven","rare":""},{"name":"White Raven","rare":""}]},
+  {"type":"Capybara","area":"A Rift in Time","biome":"Wild Tangle","food":"Cabbage","feeds":3,"variants":[{"name":"Black and White Capybara","rare":""},{"name":"Blue Striped Capybara","rare":""},{"name":"Classic Capybara","rare":""},{"name":"Gray Spotted Capybara","rare":""},{"name":"Red and White Striped Capybara","rare":"Rare: Saturdays only","when":{"d":[6]}},{"name":"Toon Capybara","rare":"Limited: only after Oswald's quest 'The Spark of Imagination' (needs 4 feeds)","when":{"q":"oswald--the-spark-of-imagination"}}]},
+  {"type":"Cobra","area":"A Rift in Time","biome":"Glittering Dunes","food":"Egg (dairy & oil ingredients also count)","feeds":3,"variants":[{"name":"Blue and Red Striped Cobra","rare":""},{"name":"Classic Cobra","rare":""},{"name":"Green and White Striped Cobra","rare":"Rare: Thursdays only","when":{"d":[4]}},{"name":"Pink Spotted Cobra","rare":""},{"name":"Toon Cobra","rare":"Limited: only after Oswald's quest 'The Spark of Imagination' (needs 4 feeds)","when":{"q":"oswald--the-spark-of-imagination"}},{"name":"Yellow and Purple Striped Cobra","rare":""}]},
+  {"type":"Monkey","area":"A Rift in Time","biome":"Ancient's Landing","food":"Any 5-star dessert (3-star+ meals also count)","feeds":null,"variants":[{"name":"Beige Monkey","rare":""},{"name":"Black and Brown Monkey","rare":""},{"name":"Black and Gray Monkey","rare":"Rare: Tuesdays only","when":{"d":[2]}},{"name":"Classic Monkey","rare":""},{"name":"Red and Beige Monkey","rare":""},{"name":"Toon Monkey","rare":"Limited: only after Oswald's quest 'The Spark of Imagination' (needs 4 feeds)","when":{"q":"oswald--the-spark-of-imagination"}}]},
   {"type":"Baby Dragon","area":"Storybook Vale","biome":"Everafter","food":"Pure Ice or Magma (any gem also counts)","feeds":null,"variants":[{"name":"Blue Baby Dragon","rare":""},{"name":"Green Baby Dragon","rare":""},{"name":"Purple Baby Dragon","rare":""},{"name":"Red Baby Dragon","rare":""},{"name":"Teal Baby Dragon","rare":""}]},
-  {"type":"Pegasus","area":"Storybook Vale","biome":"Mythopia","food":"Any 4-star+ vegetable meal","feeds":null,"variants":[{"name":"Black Pegasus","rare":""},{"name":"Blue Pegasus","rare":""},{"name":"Peach Pegasus","rare":""},{"name":"Pink Pegasus","rare":""},{"name":"Yellow Pegasus","rare":"Limited: Tue-Sat, 6 PM-12 AM only"}]},
-  {"type":"Owl","area":"Storybook Vale","biome":"The Bind","food":"Barley (any grain also counts)","feeds":null,"variants":[{"name":"Brown Owl","rare":""},{"name":"Dark Owl","rare":"Limited: weekends only"},{"name":"White Owl","rare":"Limited: daily 3-8 PM only"},{"name":"Purple Owl","rare":"Limited: daily 12-9 AM only"}]},
-  {"type":"Goose","area":"Wishblossom Ranch","biome":"Wishing Alps","food":"Red Currants (other berries also count)","feeds":1,"variants":[{"name":"Black Goose","rare":""},{"name":"Blue Goose","rare":"Limited: daily 6-8 PM only"},{"name":"Golden Goose","rare":"Limited: daily 7-8 AM and 7-8 PM only"},{"name":"Goose","rare":""},{"name":"True North Goose","rare":""}]},
-  {"type":"Skunk","area":"Wishblossom Ranch","biome":"Glamour Gulch","food":"Button Mushroom or Pincushion Peach","feeds":2,"variants":[{"name":"Brown Skunk","rare":""},{"name":"Patterned Skunk","rare":"Limited: only in heavy clouds or rain"},{"name":"Skunk","rare":""},{"name":"White Skunk","rare":""}]},
-  {"type":"Sweet Bee","area":"Wishblossom Ranch","biome":"Pixie Acres","food":"Honey Coral (any flower also counts)","feeds":3,"variants":[{"name":"Blue Sweet Bee","rare":"Limited: only in clear or lightly cloudy weather"},{"name":"Pink Sweet Bee","rare":""},{"name":"Sweet Bee","rare":""},{"name":"White Sweet Bee","rare":"Limited: nights only, from 8 PM"}]},
-  {"type":"Hedgehog","area":"Honeyglow Woods","biome":"Honeyglow Woods","food":"Pufflebud Pods or Golden Honey (any fruit also counts)","feeds":3,"variants":[{"name":"Classic Hedgehog","rare":""},{"name":"Green Hedgehog","rare":""},{"name":"Orange Hedgehog","rare":"Limited: Sun/Wed/Sat, 12 PM-12 AM only"},{"name":"Yellow Hedgehog","rare":""}]}
+  {"type":"Pegasus","area":"Storybook Vale","biome":"Mythopia","food":"Any 4-star+ vegetable meal","feeds":null,"variants":[{"name":"Black Pegasus","rare":""},{"name":"Blue Pegasus","rare":""},{"name":"Peach Pegasus","rare":""},{"name":"Pink Pegasus","rare":""},{"name":"Yellow Pegasus","rare":"Limited: Tue-Sat, 6 PM-12 AM only","when":{"d":[2,3,4,5,6],"h":[[18,24]]}}]},
+  {"type":"Owl","area":"Storybook Vale","biome":"The Bind","food":"Barley (any grain also counts)","feeds":null,"variants":[{"name":"Brown Owl","rare":""},{"name":"Dark Owl","rare":"Limited: weekends only","when":{"d":[0,6]}},{"name":"White Owl","rare":"Limited: daily 3-8 PM only","when":{"h":[[15,20]]}},{"name":"Purple Owl","rare":"Limited: daily 12-9 AM only","when":{"h":[[0,9]]}}]},
+  {"type":"Goose","area":"Wishblossom Ranch","biome":"Wishing Alps","food":"Red Currants (other berries also count)","feeds":1,"variants":[{"name":"Black Goose","rare":""},{"name":"Blue Goose","rare":"Limited: daily 6-8 PM only","when":{"h":[[18,20]]}},{"name":"Golden Goose","rare":"Limited: daily 7-8 AM and 7-8 PM only","when":{"h":[[7,8],[19,20]]}},{"name":"Goose","rare":""},{"name":"True North Goose","rare":""}]},
+  {"type":"Skunk","area":"Wishblossom Ranch","biome":"Glamour Gulch","food":"Button Mushroom or Pincushion Peach","feeds":2,"variants":[{"name":"Brown Skunk","rare":""},{"name":"Patterned Skunk","rare":"Limited: only in heavy clouds or rain","when":{"w":"heavy clouds or rain"}},{"name":"Skunk","rare":""},{"name":"White Skunk","rare":""}]},
+  {"type":"Sweet Bee","area":"Wishblossom Ranch","biome":"Pixie Acres","food":"Honey Coral (any flower also counts)","feeds":3,"variants":[{"name":"Blue Sweet Bee","rare":"Limited: only in clear or lightly cloudy weather","when":{"w":"clear or lightly cloudy skies"}},{"name":"Pink Sweet Bee","rare":""},{"name":"Sweet Bee","rare":""},{"name":"White Sweet Bee","rare":"Limited: nights only, from 8 PM","when":{"h":[[20,24],[0,7]]}}]},
+  {"type":"Hedgehog","area":"Honeyglow Woods","biome":"Honeyglow Woods","food":"Pufflebud Pods or Golden Honey (any fruit also counts)","feeds":3,"variants":[{"name":"Classic Hedgehog","rare":""},{"name":"Green Hedgehog","rare":""},{"name":"Orange Hedgehog","rare":"Limited: Sun/Wed/Sat, 12 PM-12 AM only","when":{"d":[0,3,6],"h":[[12,24]]}},{"name":"Yellow Hedgehog","rare":""}]}
 ];
 const FOLD_KEY  = "pp_ddv_folds";
 
@@ -1309,13 +1324,75 @@ function renderCritters(){
       grid.append(card)}
     body.append(grid);L.append(det)}
   $("c-foot").textContent=CRITTER_SOURCE;
+  renderNow();
 }
+
+/* ---------------- critters out right now ----------------
+   The game runs on the console's own clock, so this device's clock is the
+   best guess. `when` on a variant: d = days (0 = Sunday), h = [from, to)
+   hour windows, w = weather it needs, q = quest id that must be Done. */
+const DAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const fmtHour=h=>{h%=24;return h===0?"midnight":h===12?"noon":`${h%12} ${h<12?"AM":"PM"}`};
+function outNow(x,now){
+  const w=x.when;if(!w)return true;
+  if(w.q&&st(w.q)!=="d")return false;
+  if(w.d&&!w.d.includes(now.getDay()))return false;
+  if(w.h){const t=now.getHours()+now.getMinutes()/60;if(!w.h.some(([a,b])=>t>=a&&t<b))return false}
+  return true;
+}
+// "today only", "until 8 PM", or both, for a variant that's out now
+function closes(x,now){
+  const w=x.when,bits=[];
+  if(w.d&&w.d.length<7)bits.push(w.d.length===1?`${DAYS[w.d[0]]}s only`:"today");
+  if(w.h){const t=now.getHours()+now.getMinutes()/60,win=w.h.find(([a,b])=>t>=a&&t<b);if(win)bits.push(`until ${fmtHour(win[1])}`)}
+  return bits.join(", ");
+}
+function renderNow(){
+  const now=new Date(),L=$("cn-list");L.innerHTML="";
+  $("cn-when").textContent=`As of ${DAYS[now.getDay()]} ${now.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})} on this device. Only expansions you own.`;
+  const missing=[];
+  for(const c of CRITTERS){if(!OWNED.includes(c.area))continue;
+    for(const x of c.variants)if(!C.data[slug(x.name)])missing.push({c,x})}
+  // day or hour windows make a colour "limited"; a quest unlock alone doesn't
+  const timed=x=>!!x.when&&!!(x.when.d||x.when.h),weathery=x=>!!x.when&&!!x.when.w;
+  const limited=missing.filter(({x})=>timed(x)&&!weathery(x)&&outNow(x,now));
+  const always=missing.filter(({x})=>!timed(x)&&!weathery(x)&&outNow(x,now));
+  const weather=missing.filter(({x})=>weathery(x)&&outNow(x,now));
+  const n=limited.length+always.length;
+  $("cn-count").textContent=n?plural(n,"colour"):"";
+  const group=(label,items,cls,note)=>{
+    if(!items.length)return;
+    const g=document.createElement("div");g.className="dv-nowgrp"+(cls?" "+cls:"");
+    const h=document.createElement("p");h.className="dv-label";h.textContent=label;g.append(h);
+    const byType=new Map();for(const it of items){if(!byType.has(it.c))byType.set(it.c,[]);byType.get(it.c).push(it.x)}
+    for(const[c,xs]of byType){
+      const row=document.createElement("div");row.className="dv-nowrow";
+      const who=document.createElement("div");const b=document.createElement("b");b.textContent=c.type;
+      const s=document.createElement("small");s.textContent=`${c.biome} · ${c.food}`;who.append(b,s);
+      const right=document.createElement("div");const chips=document.createElement("div");chips.className="dv-vchips";
+      for(const x of xs){const id=slug(x.name);const btn=document.createElement("button");btn.className="dv-vchip"+(x.when?" rare":"");
+        btn.setAttribute("aria-pressed","false");btn.textContent=x.name.replace(new RegExp("\\s+"+c.type+"$","i"),"")||x.name;
+        btn.setAttribute("aria-label",`${x.name}: mark befriended`);btn.onclick=()=>C.set(id,true);chips.append(btn)}
+      right.append(chips);
+      const notes=xs.map(x=>note&&note(x)).filter(Boolean);
+      if(notes.length){const w=document.createElement("small");w.className="when";w.textContent=notes.join(" · ");right.append(w)}
+      row.append(who,right);g.append(row)}
+    L.append(g);
+  };
+  group("Limited, out now",limited,"limited",x=>`${x.name}: ${closes(x,now)}`);
+  group("Out any time",always);
+  group("If the weather's right",weather,"",x=>`${x.name}: needs ${x.when.w}`);
+  if(!L.childNodes.length){const p=document.createElement("p");p.className="dv-hint";p.textContent="You've befriended everything that's out right now.";L.append(p)}
+}
+// keep the clock-based list current while the tab is open
+setInterval(()=>{if(!$("pane-critters").hidden)renderNow()},60000);
 
 /* ---------------- tabs: #quests (default), #friendship, #critters ---------------- */
 const TABS=["quests","friendship","critters"];
 function showTab(t,remember){
   if(!TABS.includes(t))t="quests";
   for(const x of TABS){$("tab-"+x).setAttribute("aria-selected",x===t);$("tab-"+x).tabIndex=x===t?0:-1;$("pane-"+x).hidden=x!==t}
+  if(t==="critters")renderNow();
   if(remember)history.replaceState(null,"",t==="quests"?location.pathname+location.search:"#"+t);
 }
 TABS.forEach((t,i)=>{const b=$("tab-"+t);b.onclick=()=>showTab(t,true);
