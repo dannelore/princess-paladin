@@ -262,11 +262,16 @@
   .dv-qt input{ margin-top: 4px; font-size: .85rem; padding: 5px 9px; }
   .dv-nb{ font: inherit; font-size: .8rem; border: 0; background: none; color: var(--ink-soft); cursor: pointer; padding: 4px 6px; border-radius: 6px; }
   .dv-nb:hover{ color: var(--accent-deep); }
+  a.dv-nb{ text-decoration: none; }
+  .dv-links{ display: flex; align-items: center; gap: 2px; }
+  .dv-acts .dv-guide{ font-size: .82rem; color: var(--accent-deep); flex: 1 1 100%; }
   .dv-foot{ font-family: var(--font-serif); font-style: italic; font-size: .9rem; color: var(--ink-soft); text-align: center; max-width: 640px; margin: 4px auto 0; }
   @media (max-width: 560px){
     .dv-panel{ padding: 20px 18px; }
     .dv-group>summary{ grid-template-columns: minmax(0,1fr) 4rem 3rem; padding: 12px; }
     .dv-st{ width: 5.9rem; }
+    .dv-row{ grid-template-columns: auto minmax(0,1fr); row-gap: 0; }
+    .dv-links{ grid-column: 2; margin-left: -6px; }
   }
   @media (prefers-reduced-motion: reduce){ .dv *{ transition: none !important; } }
 </style>
@@ -368,7 +373,7 @@
     </div>
 
     <main id="list"></main>
-    <p class="dv-foot">Quest list from IGN's Disney Dreamlight Valley quests page (updated Sep 25, 2026). Tap a status to change it: blank, In progress, Done, Not unlocked. Or tap a quest under "On your plate" to pick its status directly. Not connected to the game save, so everything here is ticked off by hand.</p>
+    <p class="dv-foot">Quest list from IGN's Disney Dreamlight Valley quests page (updated Sep 25, 2026). Tap a status to change it: blank, In progress, Done, Not unlocked. Or tap a quest under "On your plate" to pick its status directly. Not connected to the game save, so everything here is ticked off by hand. Guide links open that quest on the Dreamlight Valley Wiki.</p>
     </div>
   </div>
 
@@ -1088,6 +1093,16 @@ function renderLocked(){
     det.append(ul);L.append(det)}
 }
 
+/* ---------------- guide links ----------------
+   The wiki's search "Go" jumps straight to the quest's page when the title
+   matches (it ignores IGN's capitalisation), and lists results when not. */
+function guideLink(r,text,cls){
+  const a=document.createElement("a");a.className=cls;a.textContent=text;a.target="_blank";a.rel="noopener";
+  a.href="https://dreamlightvalleywiki.com/index.php?title=Special%3ASearch&go=Go&search="+encodeURIComponent(r[4]);
+  a.setAttribute("aria-label",`How to do ${r[4]}, on the Dreamlight Valley Wiki (opens in a new tab)`);
+  return a;
+}
+
 /* ---------------- plate cards: tap to pick a status ---------------- */
 function plateCard(r,sub){const id=r[0],open=plateOpen===id;
   const li=document.createElement("li");li.className="dv-card"+(st(id)!=="p"?" note":"")+(st(id)==="l"?" lockd":"")+(open?" open":"");
@@ -1111,7 +1126,7 @@ function plateCard(r,sub){const id=r[0],open=plateOpen===id;
     inp.onfocus=()=>{plateTyping=true};
     inp.onkeydown=e=>{if(e.key==="Enter")inp.blur();if(e.key==="Escape"){inp.value=nt(id);inp.blur()}};
     inp.onblur=()=>{if(!plateTyping)return;plateTyping=false;const v=inp.value.trim();if(v!==nt(id))change(id,{n:v})};
-    acts.append(inp);li.append(acts)}
+    acts.append(inp,guideLink(r,"How to do it, on the wiki ↗","dv-guide"));li.append(acts)}
   return li}
 function plateSet(r,patch){const id=r[0],prev={s:st(id),n:nt(id)};
   plateOpen=null;
@@ -1246,7 +1261,8 @@ function renderList(){
         inp.onkeydown=e=>{if(e.key==="Enter")inp.blur();if(e.key==="Escape"){editing=null;render()}};inp.onblur=done;qt.append(inp);setTimeout(()=>inp.focus())}
       else if(nt(r[0])){const n=document.createElement("small");n.textContent=nt(r[0]);qt.append(n)}
       const nb=document.createElement("button");nb.className="dv-nb";nb.textContent=nt(r[0])?"Edit note":"Note";nb.onclick=()=>{editing=r[0];render()};
-      li.append(btn,qt,nb);ol.append(li)}
+      const links=document.createElement("div");links.className="dv-links";links.append(guideLink(r,"Guide","dv-nb"),nb);
+      li.append(btn,qt,links);ol.append(li)}
     det.append(ol);L.append(det)}
   if(!shown){L.innerHTML='<p class="pp-empty">No quests match. Try another filter or search.</p>'}
   first=false;
