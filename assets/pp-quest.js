@@ -284,7 +284,7 @@ function settleHunger(state, ctx){
     guard++;
     const k = ctx.dateKey(cursor);
     if(!ctx.isVacation(k)){
-      const ratio = dayCompletionRatio(state, k, ctx.isScheduled, ctx.isDone);
+      const ratio = dayCompletionRatio(state, k, ctx.isOwed, ctx.isDone);
       pets.forEach(p => {
         const before = p.hunger == null ? 100 : p.hunger;
         const after = before - drainFor(p, ratio, buffs);
@@ -302,7 +302,7 @@ function liveHunger(state, pet, ctx){
   const base = pet.hunger == null ? 100 : pet.hunger;
   if(ctx.isVacation(ctx.todayKey)) return Math.round(base);
   const buffs = legendBuffs(state);
-  const ratio = dayCompletionRatio(state, ctx.todayKey, ctx.isScheduled, ctx.isDone);
+  const ratio = dayCompletionRatio(state, ctx.todayKey, ctx.isOwed, ctx.isDone);
   return Math.round(Math.max(0, Math.min(100, base - drainFor(pet, ratio, buffs))));
 }
 
@@ -327,7 +327,7 @@ function feed(state, pet, amount, ctx){
     return;
   }
   const buffs = legendBuffs(state);
-  const ratio = dayCompletionRatio(state, ctx.todayKey, ctx.isScheduled, ctx.isDone);
+  const ratio = dayCompletionRatio(state, ctx.todayKey, ctx.isOwed, ctx.isDone);
   const drain = drainFor(pet, ratio, buffs);
   const liveNow   = Math.max(0, Math.min(100, base - drain));
   const liveAfter = Math.max(0, Math.min(100, liveNow + amount));
@@ -1020,6 +1020,7 @@ function isScheduled(task, d){
   const date = (typeof d === 'string') ? fromKey(d) : d;
   const r = task.repeat || { type:'weekdays', days:[0,1,2,3,4,5,6] };
   if(r.type === 'weekdays') return (r.days || []).includes(date.getDay());
+  if(r.type === 'window') return !!windowDays(task, date);
   if(r.type === 'ndays'){
     const diff = daysBetween(fromKey(r.anchor || TODAY_KEY), date);
     return diff >= 0 && diff % Math.max(1, r.n || 1) === 0;
@@ -1036,6 +1037,63 @@ function isScheduled(task, d){
   return false;
 }
 
+/* ---------- window dailies ----------
+   Done once a week, on any day from `start` to `end` (weekday numbers that
+   wrap past Saturday, so Fri→Sun is start:5, end:0). One tick covers the
+   whole window, and the payout shrinks the later in the window it lands —
+   full on the first day, down to WINDOW_LATE_SHARE on the last. */
+const WINDOW_LATE_SHARE = 0.5;
+
+function keyOf(d){ return (typeof d === 'string') ? d : dateKey(d); }
+
+/* Date keys of the window containing d, first day first — or null when d is
+   outside the window, or the task isn't a window daily at all. */
+function windowDays(task, d){
+  const r = task.repeat;
+  if(!r || r.type !== 'window') return null;
+  const date = (typeof d === 'string') ? fromKey(d) : d;
+  const len = ((r.end - r.start + 7) % 7) + 1;
+  const offset = (date.getDay() - r.start + 7) % 7;
+  if(offset >= len) return null;
+  const first = addDays(date, -offset);
+  return Array.from({ length: len }, (_, i) => dateKey(addDays(first, i)));
+}
+
+/* The completions key holding a daily's record for day d. Every other daily
+   keeps one record per day; a window daily keeps one per window, on whichever
+   day it was done (or had subtasks ticked), so checking, unchecking and
+   subtask progress all land on the same record from any day in the window. */
+function completionKey(state, task, d){
+  const own = keyOf(d);
+  const days = windowDays(task, d);
+  if(!days) return own;
+  const rec = k => (state.completions[k] || {})[task.id] || {};
+  return days.find(k => rec(k).done)
+      || days.find(k => Object.keys(rec(k).subs || {}).length)
+      || own;
+}
+function isDoneOn(state, task, d){
+  const rec = (state.completions[completionKey(state, task, d)] || {})[task.id];
+  return !!(rec && rec.done);
+}
+
+/* Whether a daily counts toward day d's completion — hunger, perfect days.
+   A window daily isn't owed until its last day, since leaving it until
+   Saturday is the whole point; once done it counts on every day it covers. */
+function isOwed(state, task, d){
+  if(!isScheduled(task, d)) return false;
+  const days = windowDays(task, d);
+  if(!days) return true;
+  return keyOf(d) === days[days.length - 1] || isDoneOn(state, task, d);
+}
+
+/* Payout share for doing it on day d: 1 everywhere except inside a window. */
+function windowShare(task, d){
+  const days = windowDays(task, d);
+  if(!days || days.length < 2) return 1;
+  return 1 - WINDOW_LATE_SHARE * days.indexOf(keyOf(d)) / (days.length - 1);
+}
+
 function repeatSummary(task){
   const r = task.repeat || {};
   if(r.type === 'weekdays'){
@@ -1046,6 +1104,7 @@ function repeatSummary(task){
     if(days.length === 2 && days.includes(0) && days.includes(6)) return 'weekends';
     return days.slice().sort().map(i => WEEKDAYS[i]).join('');
   }
+  if(r.type === 'window') return `once ${DOW_FULL[r.start].slice(0,3)}–${DOW_FULL[r.end].slice(0,3)}`;
   if(r.type === 'ndays') return r.n === 1 ? 'every day' : `every ${r.n} days`;
   if(r.type === 'monthly-date') return `day ${r.dom} monthly`;
   if(r.type === 'monthly-nth'){
@@ -1061,10 +1120,8 @@ function makeCtx(state){
     dateKey, fromKey, addDays,
     isVacation: k => isVacation(state, k),
     isScheduled: (t, k) => isScheduled(t, k),
-    isDone: (t, k) => {
-      const rec = (state.completions[k] || {})[t.id];
-      return !!(rec && rec.done);
-    }
+    isOwed: (t, k) => isOwed(state, t, k),
+    isDone: (t, k) => isDoneOn(state, t, k)
   };
 }
 
@@ -1087,6 +1144,7 @@ function ageMultiplier(state, task, column, viewDate){
 }
 
 function getStreak(state, task, viewDate){
+  if(task.repeat && task.repeat.type === 'window') return windowStreak(state, task, viewDate);
   let streak = 0, guard = 0;
   let d = addDays(viewDate, -1);
   while(d >= MIN_DATE && guard < 400){
@@ -1101,6 +1159,27 @@ function getStreak(state, task, viewDate){
   return streak;
 }
 
+/* A window daily's streak counts whole windows, not days: the run of windows
+   done back to back before the one viewDate sits in. A window with a
+   vacation day in it that went undone is skipped rather than breaking it.
+   It looks back as far as completions go, not just to MIN_DATE — two weeks
+   of history would cap a weekly streak at two. */
+function windowStreak(state, task, viewDate){
+  const current = windowDays(task, viewDate) || [];
+  const oldest = Object.keys(state.completions || {}).sort()[0] || TODAY_KEY;
+  let streak = 0, guard = 0;
+  let d = addDays(viewDate, -1);
+  while(dateKey(d) >= oldest && guard < 800){
+    guard++;
+    const days = windowDays(task, d);
+    if(!days || days.includes(current[0])){ d = addDays(d, -1); continue; }
+    if(isDoneOn(state, task, d)) streak++;
+    else if(!days.some(k => isVacation(state, k))) break;
+    d = addDays(fromKey(days[0]), -1);
+  }
+  return streak;
+}
+
 function taskValue(state, task, column, viewDate){
   const rate = state.rates[column] || SEED_RATES[column];
   const streak = column === 'dailies' ? getStreak(state, task, viewDate) : 0;
@@ -1109,6 +1188,7 @@ function taskValue(state, task, column, viewDate){
     * (task.difficulty || 3)
     * ageMultiplier(state, task, column, viewDate)
     * (1 + Math.min(streak, STREAK_CAP_DAYS) * STREAK_PER_DAY)
+    * (column === 'dailies' ? windowShare(task, viewDate) : 1)
     * buffs.payout;
   return Math.max(1, Math.round(raw));
 }
@@ -1241,7 +1321,8 @@ return {
   defaultMonsterState, makeMonsterStore, splitReward, pickRewardItem,
   rewardItemIds, REWARD_ITEM_MAX,
   hasCollected, collectorCount, markCollected,
-  isScheduled, repeatSummary, makeCtx, isVacation, vacationActive,
+  isScheduled, repeatSummary, makeCtx,
+  windowDays, completionKey, isDoneOn, isOwed, windowShare, WINDOW_LATE_SHARE, isVacation, vacationActive,
   ageMultiplier, getStreak, taskValue, subtaskValue, bonusValue,
   addCurrency, removeCurrency, spendCurrency, ledgerWeek, recalibrate,
   addAccountXP, undoAccountXP,

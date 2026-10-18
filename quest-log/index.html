@@ -1019,6 +1019,7 @@
           <option value="ndays">Repeat every N days</option>
           <option value="monthly-date">Repeat monthly on a date</option>
           <option value="monthly-nth">Repeat monthly on a weekday</option>
+          <option value="window">Once a week, any day in a window</option>
         </select>
         <div class="repeat-detail on" id="repeatWeekdays">
           <div style="width:100%;">
@@ -1036,6 +1037,13 @@
           <span class="field-label">day</span>
           <input type="number" id="dailiesDom" min="1" max="31" value="1" style="width:70px;">
           <span class="field-label">of each month</span>
+        </div>
+        <div class="repeat-detail" id="repeatWindow">
+          <span class="field-label">any day from</span>
+          <select class="mini-select" id="dailiesWinStart"></select>
+          <span class="field-label">to</span>
+          <select class="mini-select" id="dailiesWinEnd"></select>
+          <span class="field-label" style="width:100%;">Pays in full on the first day, half on the last.</span>
         </div>
         <div class="repeat-detail" id="repeatMonthlyNth">
           <select class="mini-select" id="dailiesNth">
@@ -1334,10 +1342,11 @@ function value(task, col){ return PQ.taskValue(S(), task, col, viewDate); }
 function subValue(task, col){ return PQ.subtaskValue(S(), task, col, viewDate); }
 function bonusOf(task, col){ return PQ.bonusValue(S(), task, col, viewDate); }
 
-function isDailyDone(task, d){
-  const rec = (S().completions[PQ.dateKey(d)] || {})[task.id];
-  return !!(rec && rec.done);
-}
+/* Window dailies keep one record per window rather than per day, so every
+   lookup goes through PQ.completionKey — it hands back the plain date key
+   for every other daily. */
+function isDailyDone(task, d){ return PQ.isDoneOn(S(), task, d); }
+function dailyKey(task, d){ return PQ.completionKey(S(), task, d); }
 function taskRecord(k, taskId){
   if(!S().completions[k]) S().completions[k] = {};
   if(!S().completions[k][taskId]) S().completions[k][taskId] = { subs:{}, done:false };
@@ -1366,7 +1375,7 @@ document.getElementById('celebrateClose').onclick = () => {
 
 function checkPerfectDay(d){
   if(PQ.isVacation(S(), d)) return;
-  const scheduled = S().dailies.filter(t => PQ.isScheduled(t, d));
+  const scheduled = S().dailies.filter(t => PQ.isOwed(S(), t, d));
   if(!scheduled.length || !scheduled.every(t => isDailyDone(t, d))) return;
   queueCelebration('perfectday-' + PQ.dateKey(d), '🌷', 'Perfect day',
     `Every daily done for ${d.toLocaleDateString('en-US',{weekday:'long', month:'short', day:'numeric'})}.`);
@@ -1378,7 +1387,7 @@ function checkPerfectWeek(d){
   for(let i=0;i<7;i++){
     const day = PQ.addDays(mon, i);
     if(PQ.isVacation(S(), day)) continue;
-    const sch = S().dailies.filter(t => PQ.isScheduled(t, day));
+    const sch = S().dailies.filter(t => PQ.isOwed(S(), t, day));
     if(!sch.length) continue;
     if(!sch.every(t => isDailyDone(t, day))) return;
   }
@@ -1396,8 +1405,9 @@ function checkStreakMilestone(task){
     if(prefix) PQ.addFragment(S(), 'prefix', prefix);
     if(streak >= 30) S().petTokens = (S().petTokens || 0) + 1;
   }
-  queueCelebration(key, '🔥', `${streak} days`,
-    `"${task.title}" has held for ${streak} days straight.` + (streak >= 30 ? ' A new companion is waiting.' : ''));
+  const unit = (task.repeat && task.repeat.type === 'window') ? 'weeks' : 'days';
+  queueCelebration(key, '🔥', `${streak} ${unit}`,
+    `"${task.title}" has held for ${streak} ${unit} straight.` + (streak >= 30 ? ' A new companion is waiting.' : ''));
 }
 
 /* Called after every completion. Handles XP, pet growth and monster damage,
@@ -1511,8 +1521,15 @@ const repeatPanels = {
   'weekdays':     document.getElementById('repeatWeekdays'),
   'ndays':        document.getElementById('repeatNdays'),
   'monthly-date': document.getElementById('repeatMonthlyDate'),
-  'monthly-nth':  document.getElementById('repeatMonthlyNth')
+  'monthly-nth':  document.getElementById('repeatMonthlyNth'),
+  'window':       document.getElementById('repeatWindow')
 };
+/* Window ends default to Friday → Sunday. */
+['dailiesWinStart','dailiesWinEnd'].forEach((id, i) => {
+  const sel = document.getElementById(id);
+  [1,2,3,4,5,6,0].forEach(dow => sel.add(new Option(PQ.DOW_FULL[dow], dow)));
+  sel.value = i ? '0' : '5';
+});
 function syncRepeatPanels(){
   Object.entries(repeatPanels).forEach(([k, el]) => el.classList.toggle('on', k === repeatSelect.value));
 }
@@ -1524,6 +1541,7 @@ function readRepeat(){
   if(type === 'weekdays')     return { type, days: dailyDays.get() };
   if(type === 'ndays')        return { type, n: Math.max(1, parseInt(document.getElementById('dailiesN').value) || 1), anchor: document.getElementById('dailiesAnchor').value || PQ.TODAY_KEY };
   if(type === 'monthly-date') return { type, dom: Math.min(31, Math.max(1, parseInt(document.getElementById('dailiesDom').value) || 1)) };
+  if(type === 'window')       return { type, start: parseInt(document.getElementById('dailiesWinStart').value), end: parseInt(document.getElementById('dailiesWinEnd').value) };
   return { type, nth: parseInt(document.getElementById('dailiesNth').value), dow: parseInt(document.getElementById('dailiesNthDow').value) };
 }
 function writeRepeat(r){
@@ -1533,6 +1551,7 @@ function writeRepeat(r){
   if(r.type === 'weekdays')          dailyDays.set(r.days);
   else if(r.type === 'ndays'){       document.getElementById('dailiesN').value = r.n; document.getElementById('dailiesAnchor').value = r.anchor; }
   else if(r.type === 'monthly-date') document.getElementById('dailiesDom').value = r.dom;
+  else if(r.type === 'window'){      document.getElementById('dailiesWinStart').value = r.start; document.getElementById('dailiesWinEnd').value = r.end; }
   else {                             document.getElementById('dailiesNth').value = r.nth; document.getElementById('dailiesNthDow').value = r.dow; }
 }
 
@@ -2120,7 +2139,7 @@ function buildCard(task, column, opts){
 
 /* ============ DAILIES ============ */
 function toggleDailySub(task, subId){
-  const rec = taskRecord(PQ.dateKey(viewDate), task.id);
+  const rec = taskRecord(dailyKey(task, viewDate), task.id);
   if(!rec.subGrants) rec.subGrants = {};
   if(rec.subs[subId]){
     delete rec.subs[subId];
@@ -2133,7 +2152,7 @@ function toggleDailySub(task, subId){
   saveAndRender();
 }
 function toggleDaily(task){
-  const rec = taskRecord(PQ.dateKey(viewDate), task.id);
+  const rec = taskRecord(dailyKey(task, viewDate), task.id);
   const subs = task.subs || [];
   if(rec.done){
     rec.done = false;
@@ -2168,7 +2187,7 @@ function renderDailies(){
   const done = scheduled.filter(t => isDailyDone(t, viewDate));
   const offSchedule = dailiesShowAll ? mine.filter(t => !PQ.isScheduled(t, viewDate)) : [];
 
-  const rec = id => (S().completions[PQ.dateKey(viewDate)] || {})[id] || { subs:{} };
+  const rec = task => (S().completions[dailyKey(task, viewDate)] || {})[task.id] || { subs:{} };
 
   if(!open.length && !offSchedule.length){
     list.innerHTML = `<div class="empty-note">${
@@ -2178,7 +2197,7 @@ function renderDailies(){
   }
 
   open.forEach(task => list.appendChild(buildCard(task, 'dailies', {
-    done:false, draggable:true, streak: PQ.getStreak(S(), task, viewDate), subState: rec(task.id).subs || {},
+    done:false, draggable:true, streak: PQ.getStreak(S(), task, viewDate), subState: rec(task).subs || {},
     onToggle: () => toggleDaily(task), onToggleSub: id => toggleDailySub(task, id)
   })));
 
@@ -2189,12 +2208,12 @@ function renderDailies(){
      look at scheduled tasks. The dashed border is the visual tell. */
   offSchedule.forEach(task => list.appendChild(buildCard(task, 'dailies', {
     done: isDailyDone(task, viewDate), offSchedule:true, streak:0,
-    subState: rec(task.id).subs || {},
+    subState: rec(task).subs || {},
     onToggle: () => toggleDaily(task), onToggleSub: id => toggleDailySub(task, id)
   })));
 
   done.forEach(task => doneList.appendChild(buildCard(task, 'dailies', {
-    done:true, streak: PQ.getStreak(S(), task, viewDate), subState: rec(task.id).subs || {},
+    done:true, streak: PQ.getStreak(S(), task, viewDate), subState: rec(task).subs || {},
     onToggle: () => toggleDaily(task), onToggleSub: id => toggleDailySub(task, id)
   })));
 
