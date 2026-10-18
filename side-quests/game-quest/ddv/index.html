@@ -139,11 +139,11 @@
     font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; width: 100%;
     text-align: left; cursor: pointer; display: flex; align-items: baseline; gap: 10px;
   }
-  .dv-fold::after, .dv-tg>summary::after{
+  .dv-fold::after{
     content: ""; margin-left: auto; align-self: center; flex: none; width: 7px; height: 7px;
     border-right: 2px solid var(--gold); border-bottom: 2px solid var(--gold); transform: rotate(45deg); transition: transform .15s;
   }
-  .dv-folded .dv-fold::after, .dv-tg:not([open])>summary::after{ transform: rotate(-45deg); }
+  .dv-folded .dv-fold::after{ transform: rotate(-45deg); }
   .dv-panel.dv-folded>:not(.dv-fold){ display: none !important; }
 
   /* ---- progress ---- */
@@ -165,11 +165,10 @@
   @media (max-width: 640px){ .dv-summary{ grid-template-columns: 1fr; } .dv-region{ grid-template-columns: 7.5rem minmax(0,1fr) 2.6rem; } }
 
   /* ---- to-do ---- */
-  .dv-tgroups{ display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,320px),1fr)); gap: 16px 30px; align-items: start; }
-  .dv-tg{ min-width: 0; }
-  .dv-tg>summary{ list-style: none; display: flex; align-items: baseline; gap: 10px; padding: 2px 0 6px; cursor: pointer; }
-  .dv-tg>summary::-webkit-details-marker{ display: none; }
-  .dv-tgbody{ display: flex; flex-direction: column; gap: 6px; }
+  .dv-tmeta{ display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-bottom: 2px; }
+  .dv-tag{ font-family: var(--font-body); font-size: .64rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
+  .dv-opens{ font-size: .74rem; font-weight: 500; color: var(--gold-deep); background: rgba(156,116,64,.12); border-radius: 999px; padding: 2px 9px; }
+  .dv-ti small a{ color: var(--accent-deep); }
   .dv-tl{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
   .dv-ti{ display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items: start; padding: 9px 0; border-top: 1px solid var(--line); }
   .dv-ti label{ display: grid; grid-template-columns: auto minmax(0,1fr); gap: 10px; align-items: start; cursor: pointer; min-width: 0; }
@@ -1068,12 +1067,15 @@ function renderSummary(){
     row.append(n,bar(rc.d,rc.p,rc.t),pc);R.append(row)}
   const N=$("now");N.innerHTML="";
   // Plate: in progress, plus notes on quests not yet started (paid Dream Bundle reminders excluded). Locked quests get their own section.
-  const items=Q.filter(r=>st(r[0])==="p"||(nt(r[0])&&!st(r[0])&&!/Dream Bundle/.test(nt(r[0]))));
+  const items=Q.filter(onPlate);
   $("plate-count").textContent=items.length?`${items.length} quest${items.length>1?"s":""}`:"";
   if(!items.length){N.innerHTML='<li class="dv-card note"><span class="dv-pick"><b>Nothing in progress</b><span>Mark a quest "In progress" and it shows up here.</span></span></li>'}
   for(const r of items)N.append(plateCard(r,r[2]+(nt(r[0])?" · "+nt(r[0]):"")));
   renderLocked();
 }
+
+// In progress, or not started but carrying a note (paid Dream Bundle reminders excluded)
+function onPlate(r){const s=st(r[0]),n=nt(r[0]);return s==="p"||(!s&&!!n&&!/Dream Bundle/.test(n))}
 
 /* ---------------- locked ---------------- */
 const why=n=>n.replace(/^locked:\s*/i,"");
@@ -1149,10 +1151,16 @@ function applyFold(sec){const f=folds.has(sec.dataset.fold);sec.classList.toggle
 document.querySelectorAll("[data-fold]").forEach(sec=>{applyFold(sec);
   sec.querySelector(".dv-fold").onclick=()=>{const k=sec.dataset.fold;folds.has(k)?folds.delete(k):folds.add(k);saveFolds();applyFold(sec)}});
 
-/* ---------------- to-do ---------------- */
-const TG=[["quest","Quests to finish"],["unlock","Villagers to unlock"],["friend","Friendship to raise"],["mine","Your own"]];
-const TGHINT={unlock:"Each realm door costs 15,000 Dreamlight. Dreamlight Duties in the pause menu are the quickest way to earn it.",
-  friend:"Talk to them every day, give gifts they love, and bring them along as your companion while you fish, mine or garden."};
+/* ---------------- to-do ----------------
+   One list, ranked by how many future quests each to-do opens up, so the
+   ones that unblock the most come first. Besides the stored to-dos, it adds
+   its own for anything new it can read from the quest list (a friendship
+   level or unlock a locked quest is waiting on, or a quest on your plate),
+   so the list keeps up as you play. An added one that's removed is stored
+   with no text, so it stays gone. */
+const TAG={quest:"Quest",unlock:"Unlock",friend:"Friendship",mine:"Yours"};
+const TAG_ORDER=["quest","unlock","friend","mine"];
+const FRIEND_TIP="Talk to them every day, give gifts they love, and bring them along as your companion.";
 function tsave(fn){
   writeCache();
   if(!tdoc)return;
@@ -1164,41 +1172,94 @@ function tsave(fn){
   });
 }
 function tchange(id,v){T={...T};if(v)T[id]=v;else delete T[id];tsave(v?()=>tdoc.update({[id]:v}):()=>tdoc.set({...T}));renderTodo()}
-/* A to-do ticks itself off when its linked quest is Done (q) or its
-   villager reaches the level in the friendship tracker (f: {k, l}).
+/* A to-do ticks itself off when its linked quest is Done (q), its villager
+   reaches the level in the friendship tracker (f: {k, l}), or, for a
+   friendship or unlock to-do, once no locked quest is waiting on it.
    Returns the reason, or "" while it still needs doing by hand. */
 function autoDone(v){
   if(v.q&&st(v.q)==="d")return "Marked Done in the quest list.";
   if(v.f&&lvl(v.f.k)>=v.f.l)return `Level ${v.f.l} reached in the friendship tracker.`;
+  if((v.f||v.u)&&!v.q&&!opens(v).length)return "Nothing locked is waiting on this any more.";
   return "";
+}
+const lockedRows=()=>Q.filter(r=>st(r[0])==="l");
+const reqLevel=r=>{const m=/friendship level (\d+)/i.exec(nt(r[0]));return m?+m[1]:0};
+/* The quests a to-do helps open:
+   f (villager level)  their locked quests needing that level or less, plus
+                       quests waiting to "progress further with" them
+   u (villagers)       every unfinished quest of theirs, plus locked quests
+                       whose note says "unlock <name>"
+   q (a quest)         that character's unfinished quests after it */
+function opens(v){
+  const out=new Set();
+  if(v.f){const vl=VILLAGERS.find(x=>x.k===v.f.k);if(vl){
+    for(const r of vl.rows)if(st(r[0])==="l"&&reqLevel(r)&&reqLevel(r)<=v.f.l)out.add(r);
+    const with_="with "+vl.name.split(" ")[0].toLowerCase();
+    for(const r of lockedRows())if(nt(r[0]).toLowerCase().includes(with_))out.add(r)}}
+  if(v.u)for(const name of v.u){
+    for(const r of Q)if(r[2]===name&&st(r[0])!=="d")out.add(r);
+    for(const r of lockedRows())if(nt(r[0]).toLowerCase().includes("unlock "+name.toLowerCase()))out.add(r)}
+  if(v.q){const i=Q.findIndex(r=>r[0]===v.q);if(i>=0)
+    for(let j=i+1;j<Q.length;j++){const r=Q[j];if(r[1]===Q[i][1]&&r[2]===Q[i][2]&&st(r[0])!=="d")out.add(r)}}
+  return [...out];
+}
+function autoTodos(){
+  const out=[],have=Object.values(T).filter(v=>v&&v.t),gone=id=>!!T[id];
+  for(const vl of VILLAGERS){
+    const L=lvl(vl.k),reqs=vl.rows.filter(r=>st(r[0])==="l").map(reqLevel).filter(n=>n>L);
+    if(!reqs.length||have.some(v=>v.f&&v.f.k===vl.k&&v.f.l>L))continue;
+    const n=Math.min(...reqs),id=`a-f-${vl.k}-${n}`;
+    if(!gone(id))out.push([id,{t:`${vl.name} to level ${n}`,h:FRIEND_TIP,g:"friend",f:{k:vl.k,l:n}}]);
+  }
+  const names=new Set();
+  for(const r of lockedRows()){const m=/unlock ([^,]+?)\s*(?:,|$)/i.exec(why(nt(r[0])));if(m)names.add(m[1])}
+  for(const name of names){
+    if(have.some(v=>v.t.toLowerCase().includes("unlock "+name.toLowerCase())))continue;
+    const id="a-u-"+slug(name);
+    if(!gone(id))out.push([id,{t:`Unlock ${name}`,h:"The Guide link shows where to find them.",g:"unlock",u:[name]}]);
+  }
+  for(const r of Q){
+    if(!onPlate(r)||have.some(v=>v.q===r[0]))continue;
+    const id="a-q-"+r[0];
+    // "Cinderella's Custom Creation" already says whose it is
+    const title=r[4].startsWith(r[2])?r[4]:`${r[2]}'s ${r[4]}`;
+    if(!gone(id))out.push([id,{t:`${st(r[0])==="p"?"Finish":"Start"} ${title}`,g:"quest",q:r[0]}]);
+  }
+  return out;
 }
 function renderTodo(){
   const box=$("todo-groups");box.innerHTML="";
-  const items=Object.entries(T).filter(([,v])=>v&&v.t);let left=0;
-  for(const[g,label]of TG){
-    const rs=items.filter(([,v])=>(v.g||"mine")===g).sort((a,b)=>(a[1].o||0)-(b[1].o||0));if(!rs.length)continue;
-    const gl=rs.filter(([,v])=>!(v.d||autoDone(v))).length;
-    const det=document.createElement("details");det.className="dv-tg";det.open=!folds.has("tg-"+g);
-    det.ontoggle=()=>{det.open?folds.delete("tg-"+g):folds.add("tg-"+g);saveFolds()};
-    const sm=document.createElement("summary");const h=document.createElement("span");h.className="dv-label";h.textContent=label;
-    const gc=document.createElement("span");gc.className="dv-count";gc.textContent=gl?`${gl} left`:"all done";sm.append(h,gc);det.append(sm);
-    const sec=document.createElement("div");sec.className="dv-tgbody";det.append(sec);
-    if(TGHINT[g]){const p=document.createElement("p");p.className="dv-hint";p.textContent=TGHINT[g];sec.append(p)}
-    const ul=document.createElement("ul");ul.className="dv-tl";
-    for(const[id,v]of rs){
-      const auto=autoDone(v),done=!!v.d||!!auto;if(!done)left++;
-      const li=document.createElement("li");li.className="dv-ti"+(done?" done":"");
-      const lab=document.createElement("label");const cb=document.createElement("input");cb.type="checkbox";cb.checked=done;cb.disabled=!!auto;
-      cb.onchange=()=>tchange(id,{...v,d:cb.checked});
-      const tx=document.createElement("span");const b=document.createElement("b");b.textContent=v.t;tx.append(b);
-      const sub=auto||v.h;if(sub){const s=document.createElement("small");s.textContent=sub;tx.append(s)}
-      lab.append(cb,tx);
-      const rm=document.createElement("button");rm.type="button";rm.className="dv-rm";rm.textContent="×";rm.setAttribute("aria-label",`Remove "${v.t}"`);
-      rm.onclick=()=>{tchange(id,null);showUndo(`Removed "${v.t}".`,()=>tchange(id,v),"todo-undo")};
-      li.append(lab,rm);ul.append(li)}
-    sec.append(ul);box.append(det)}
-  $("todo-count").textContent=items.length?`${left} left`:"";
-  if(!items.length){const p=document.createElement("p");p.className="dv-hint";p.textContent=tloaded?"Nothing on the list. Add something below.":"Loading the list…";box.append(p)}
+  const stored=new Set(Object.keys(T));
+  const all=[...Object.entries(T).filter(([,v])=>v&&v.t),...autoTodos()].map(([id,v])=>{
+    const auto=autoDone(v),done=!!v.d||!!auto,qs=done?[]:opens(v);return{id,v,auto,done,qs}});
+  all.sort((a,b)=>(a.done-b.done)||(b.qs.length-a.qs.length)||
+    (TAG_ORDER.indexOf(a.v.g||"mine")-TAG_ORDER.indexOf(b.v.g||"mine"))||((a.v.o||0)-(b.v.o||0)));
+  const ul=document.createElement("ul");ul.className="dv-tl";let left=0;
+  for(const{id,v,auto,done,qs}of all){
+    if(!done)left++;
+    const added=!stored.has(id);
+    const li=document.createElement("li");li.className="dv-ti"+(done?" done":"");
+    const lab=document.createElement("label");const cb=document.createElement("input");cb.type="checkbox";cb.checked=done;cb.disabled=!!auto;
+    cb.onchange=()=>tchange(id,{...v,d:cb.checked});
+    const tx=document.createElement("span");
+    const meta=document.createElement("span");meta.className="dv-tmeta";
+    const tag=document.createElement("span");tag.className="dv-tag";tag.textContent=(TAG[v.g]||TAG.mine)+(added?" · added for you":"");meta.append(tag);
+    if(qs.length){const o=document.createElement("span");o.className="dv-opens";o.textContent=`Opens ${plural(qs.length,"quest")}`;
+      o.title=qs.map(r=>`${r[2]}: ${r[4]}`).join("\n");meta.append(o)}
+    const b=document.createElement("b");b.textContent=v.t;tx.append(meta,b);
+    const sub=auto||v.h,row=v.q&&!done&&Q.find(r=>r[0]===v.q),uname=v.u&&!done&&v.u[0];
+    if(sub||row||uname){const s=document.createElement("small");if(sub)s.append(sub+" ");
+      if(row)s.append(guideLink(row,"Guide",""));
+      else if(uname){const a=guideLink(["","","","",uname],"Guide","");a.setAttribute("aria-label",`How to unlock ${uname}, on the Dreamlight Valley Wiki (opens in a new tab)`);s.append(a)}
+      tx.append(s)}
+    lab.append(cb,tx);
+    const rm=document.createElement("button");rm.type="button";rm.className="dv-rm";rm.textContent="×";rm.setAttribute("aria-label",`Remove "${v.t}"`);
+    // a removed added-for-you to-do is remembered as dismissed, so it doesn't come straight back
+    rm.onclick=()=>{tchange(id,added?{x:1}:null);showUndo(`Removed "${v.t}".`,()=>tchange(id,added?null:v),"todo-undo")};
+    li.append(lab,rm);ul.append(li)}
+  box.append(ul);
+  $("todo-count").textContent=all.length?`${left} left, most quests opened first`:"";
+  if(!all.length){const p=document.createElement("p");p.className="dv-hint";p.textContent=tloaded?"Nothing on the list. Add something below.":"Loading the list…";box.append(p)}
 }
 $("todo-add").addEventListener("submit",e=>{e.preventDefault();const inp=$("todo-new"),t=inp.value.trim();if(!t)return;
   tchange("m-"+Date.now().toString(36),{t,g:"mine",o:Date.now()});inp.value=""});
