@@ -303,6 +303,21 @@
         <div class="dv-regions" id="f-regions"></div>
       </section>
       <p class="dv-undo" id="f-undo" aria-live="polite" hidden></p>
+      <div class="dv-tools pp-field">
+        <input id="f-q" type="search" placeholder="Search villagers" aria-label="Search villagers">
+        <div class="dv-chips" id="f-chips"></div>
+        <div class="dv-sels">
+          <label class="dv-sel">Expansion <select id="f-exp"><option value="all">All</option><option value="owned">Ones I own</option></select></label>
+          <label class="dv-sel">Sort <select id="f-sort">
+            <option value="game">Game order</option>
+            <option value="az">Name A&ndash;Z</option>
+            <option value="hi">Highest level</option>
+            <option value="lo">Lowest level</option>
+            <option value="locked">Most locked quests</option>
+          </select></label>
+          <span class="dv-count" id="f-count"></span>
+        </div>
+      </div>
       <div id="f-list" class="dv-pane"></div>
     </div>
 
@@ -1373,19 +1388,60 @@ function openQuests(v,rows){
   render();
   showUndo(`${plural(rows.length,"quest")} for ${v.name} moved to To do.`,()=>{for(const[id,p]of prev){S={...S,[id]:{...p}};write(id)}render()},"f-undo");
 }
+/* Friendship filters and sort, remembered in this browser only.
+   Sorting is within each expansion panel, like the quest list. */
+const F_LIST_KEY="pp_ddv_friends_list";
+const F_FILTERS=[["all","All"],["notmax",`Not level ${MAX_LEVEL}`],["waiting","Quests locked"],["ready","Ready to open"],["unmet","Level 0"],["best",`Level ${MAX_LEVEL}`]];
+let fFilter="all",fExp="all",fSort="game",fQuery="";
+try{const p=JSON.parse(localStorage.getItem(F_LIST_KEY)||"null");if(p){fFilter=p.filter||"all";fExp=p.exp||"all";fSort=p.sort||"game"}}catch(e){}
+function saveFriendPrefs(){try{localStorage.setItem(F_LIST_KEY,JSON.stringify({filter:fFilter,exp:fExp,sort:fSort}))}catch(e){}}
+{const sel=$("f-exp");for(const e of EXPS){if(!VILLAGERS.some(v=>v.exp===e))continue;const o=document.createElement("option");o.value=e;o.textContent=e;sel.append(o)}
+  if(![...sel.options].some(o=>o.value===fExp))fExp="all";
+  if(!F_FILTERS.some(([k])=>k===fFilter))fFilter="all";
+  sel.value=fExp;$("f-sort").value=fSort;
+  sel.onchange=()=>{fExp=sel.value;saveFriendPrefs();renderFriends()};
+  $("f-sort").onchange=e=>{fSort=e.target.value;saveFriendPrefs();renderFriends()};
+  $("f-q").addEventListener("input",e=>{fQuery=e.target.value.trim().toLowerCase();renderFriends()})}
+const lockedCount=v=>v.rows.filter(r=>st(r[0])==="l").length;
+function friendKeep(v,info){
+  const L=lvl(v.k);
+  if(fExp!=="all"&&(fExp==="owned"?!OWNED.includes(v.exp):v.exp!==fExp))return false;
+  if(fQuery&&!v.name.toLowerCase().includes(fQuery))return false;
+  if(fFilter==="notmax")return L<MAX_LEVEL;
+  if(fFilter==="waiting")return lockedCount(v)>0;
+  if(fFilter==="ready")return info.ready.length>0;
+  if(fFilter==="unmet")return L===0;
+  if(fFilter==="best")return L>=MAX_LEVEL;
+  return true;
+}
+const F_SORTS={
+  az:(a,b)=>a.name.localeCompare(b.name),
+  hi:(a,b)=>lvl(b.k)-lvl(a.k),
+  lo:(a,b)=>lvl(a.k)-lvl(b.k),
+  locked:(a,b)=>lockedCount(b)-lockedCount(a)
+};
 function renderFriends(){
   const best=VILLAGERS.filter(v=>lvl(v.k)>=MAX_LEVEL).length,met=VILLAGERS.filter(v=>lvl(v.k)>0).length;
   $("f-tot").innerHTML=`${best} <small>of ${VILLAGERS.length} at level ${MAX_LEVEL}</small>`;
   $("f-bar").replaceWith(Object.assign(bar(best,met-best,VILLAGERS.length),{id:"f-bar"}));
+  const chips=$("f-chips");chips.innerHTML="";
+  for(const[k,t]of F_FILTERS){const b=document.createElement("button");b.className="pp-pill";b.textContent=t;b.setAttribute("aria-pressed",fFilter===k);
+    b.onclick=()=>{fFilter=k;saveFriendPrefs();renderFriends()};chips.append(b)}
+  const narrowed=fFilter!=="all"||!!fQuery;let shown=0;
   const R=$("f-regions"),L=$("f-list");R.innerHTML="";L.innerHTML="";
   for(const e of EXPS){
-    const vs=VILLAGERS.filter(v=>v.exp===e);if(!vs.length)continue;
-    const b=vs.filter(v=>lvl(v.k)>=MAX_LEVEL).length,m=vs.filter(v=>lvl(v.k)>0).length;
-    R.append(regionRow(e,b,m-b,vs.length,`${b}/${vs.length}`));
-    const{det,body}=expPanel("fx-"+e,e,`${b} of ${vs.length} at level ${MAX_LEVEL}`+(OWNED.includes(e)?"":" · not owned"),OWNED.includes(e));
+    const all=VILLAGERS.filter(v=>v.exp===e);if(!all.length)continue;
+    const b=all.filter(v=>lvl(v.k)>=MAX_LEVEL).length,m=all.filter(v=>lvl(v.k)>0).length;
+    R.append(regionRow(e,b,m-b,all.length,`${b}/${all.length}`));
+    const vs=all.map(v=>({...v,info:friendInfo(v)})).filter(v=>friendKeep(v,v.info));
+    if(F_SORTS[fSort])vs.sort(F_SORTS[fSort]);
+    if(!vs.length)continue;shown+=vs.length;
+    const{det,body}=expPanel("fx-"+e,e,`${b} of ${all.length} at level ${MAX_LEVEL}`+(OWNED.includes(e)?"":" · not owned"),OWNED.includes(e));
+    // a filter or search shows its matches open, without changing the remembered fold
+    if(narrowed){det.ontoggle=null;det.open=true}
     const ul=document.createElement("ul");ul.className="dv-vl";
     for(const v of vs){
-      const lv=lvl(v.k),info=friendInfo(v);
+      const lv=lvl(v.k),info=v.info;
       const li=document.createElement("li");li.className="dv-v";
       const who=document.createElement("div");const nm=document.createElement("b");nm.textContent=v.name;who.append(nm);
       const hint=document.createElement("small");hint.textContent=info.text;if(info.ready.length)hint.className="ready";who.append(hint);
@@ -1398,6 +1454,8 @@ function renderFriends(){
       const num=document.createElement("span");num.className="dv-lvnum";num.textContent=lv?`Lv ${lv}`:"—";
       ctl.append(pips,num);li.append(who,ctl);ul.append(li)}
     body.append(ul);L.append(det)}
+  $("f-count").textContent=plural(shown,"villager");
+  if(!shown){const p=document.createElement("p");p.className="pp-empty";p.textContent="No villagers match. Try another filter or search.";L.append(p)}
 }
 
 /* ---------------- critters ---------------- */
