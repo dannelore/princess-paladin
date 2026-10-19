@@ -1070,8 +1070,9 @@ function write(id){
 function change(id,patch){S={...S,[id]:{...(S[id]||{}),...patch}};if(!S[id].s)delete S[id].s;if(!S[id].n)delete S[id].n;write(id);render()}
 
 /* A character's quests come one after another, so finishing one means the ones
-   before it (in the same section) are done too. Secret Potatoes come in any order. */
-const UNORDERED=["Secret Potatoes"];
+   before it (in the same section) are done too. Secret Potatoes, and Snow White's and
+   Tinker Bell's quests, can be done in any order. */
+const UNORDERED=["Secret Potatoes","Snow White","Tinker Bell"];
 function doneBefore(r){
   if(UNORDERED.includes(r[2]))return[];
   const rows=byChar.find(g=>g.exp===r[1]&&g.ch===r[2]).rows,prev=[];
