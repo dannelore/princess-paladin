@@ -180,7 +180,7 @@
   .dv-rm:hover{ color: var(--blade); }
   /* these sit in .pp-field for its input styling, which also stacks them in a column */
   .dv-add{ display: flex; flex-direction: row; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .dv-add input{ flex: 1 1 200px; min-width: 0; }
+  .dv-add input{ flex: 1 1 140px; min-width: 0; }
 
   /* ---- on your plate + locked ---- */
   .dv-plate{ list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill,minmax(230px,1fr)); gap: 8px; align-items: start; }
@@ -357,7 +357,7 @@
       <button class="dv-fold" aria-expanded="true"><span class="dv-label">To-do</span><span class="dv-count" id="todo-count"></span></button>
       <div class="dv-tgroups" id="todo-groups"></div>
       <p class="dv-undo" id="todo-undo" aria-live="polite" hidden></p>
-      <form class="dv-add pp-field" id="todo-add"><input id="todo-new" maxlength="140" placeholder="Add your own to-do" aria-label="Add your own to-do"><button class="pp-btn pp-btn-sm" type="submit">Add</button></form>
+      <form class="dv-add pp-field" id="todo-add"><input id="todo-new" maxlength="140" placeholder="Add your own to-do" aria-label="Add your own to-do"><button class="pp-btn pp-btn-sm" type="submit">Add</button><button class="pp-btn pp-btn-sm pp-btn-quiet" type="button" id="todo-refresh" aria-label="Refresh: clear finished to-dos and rebuild the suggestions">Refresh</button></form>
     </section>
 
     <section class="pp-panel dv-panel" data-fold="plate" aria-label="On your plate">
@@ -1302,6 +1302,21 @@ function renderTodo(){
   $("todo-count").textContent=all.length?`${left} left, most quests opened first`:"";
   if(!all.length){const p=document.createElement("p");p.className="dv-hint";p.textContent=tloaded?"Nothing on the list. Add something below.":"Loading the list…";box.append(p)}
 }
+/* Refresh clears out everything finished and rebuilds the added-for-you
+   suggestions from where the quests and friendships stand now. Your own
+   unfinished to-dos stay, and so do dismissals. An added one ticked off by
+   hand that would come straight back is kept as dismissed instead. */
+$("todo-refresh").onclick=()=>{
+  const before=T,cleared=[];
+  T={...T};
+  for(const[id,v]of Object.entries(before))if(v&&v.t&&(v.d||autoDone(v))){delete T[id];cleared.push(id)}
+  const back=new Set(autoTodos().map(([id])=>id));
+  for(const id of cleared)if(back.has(id))T[id]={x:1};
+  if(!cleared.length){renderTodo();const U=$("todo-undo");clearTimeout(undoTimer["todo-undo"]);U.textContent="Nothing finished to clear. Suggestions are up to date.";U.hidden=false;
+    undoTimer["todo-undo"]=setTimeout(()=>{U.hidden=true},6000);return}
+  tsave(()=>tdoc.set({...T}));renderTodo();
+  showUndo(`Cleared ${plural(cleared.length,"finished to-do")}.`,()=>{T=before;tsave(()=>tdoc.set({...T}));renderTodo()},"todo-undo");
+};
 $("todo-add").addEventListener("submit",e=>{e.preventDefault();const inp=$("todo-new"),t=inp.value.trim();if(!t)return;
   tchange("m-"+Date.now().toString(36),{t,g:"mine",o:Date.now()});inp.value=""});
 
