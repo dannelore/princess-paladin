@@ -212,6 +212,7 @@
   .dv-opt[aria-pressed="true"].x{ background: var(--dv-lock-soft); }
   .dv-acts input{ flex: 1 1 100%; min-width: 0; font-size: .85rem; padding: 6px 9px; }
   .dv-undo{ display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; font-size: .88rem; color: var(--ink-soft); }
+  .dv-toast{ position: sticky; bottom: 12px; z-index: 2; margin-top: 10px; padding: 8px 12px; background: var(--white); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 4px 14px rgba(46,36,31,.12); }
   .dv-undo button{ font: inherit; font-weight: 600; color: var(--accent-deep); background: none; border: 0; padding: 2px 4px; cursor: pointer; border-radius: 4px; }
   .dv-lklist{ display: flex; flex-direction: column; border-top: 1px solid var(--line); }
   .dv-lk{ border-bottom: 1px solid var(--line); }
@@ -387,7 +388,8 @@
     </div>
 
     <main id="list"></main>
-    <p class="dv-foot">Quest list from IGN's Disney Dreamlight Valley quests page (updated Sep 25, 2026). Tap a status to change it: blank, In progress, Done, Not unlocked. Or tap a quest under "On your plate" to pick its status directly. Not connected to the game save, so everything here is ticked off by hand. Guide links open that quest on the Dreamlight Valley Wiki.</p>
+    <p class="dv-undo dv-toast" id="l-undo" aria-live="polite" hidden></p>
+    <p class="dv-foot">Quest list from IGN's Disney Dreamlight Valley quests page (updated Sep 25, 2026). Tap a status to change it: blank, In progress, Done, Not unlocked. Marking a quest Done also marks the character's earlier quests Done. Or tap a quest under "On your plate" to pick its status directly. Not connected to the game save, so everything here is ticked off by hand. Guide links open that quest on the Dreamlight Valley Wiki.</p>
     </div>
   </div>
 
@@ -547,7 +549,7 @@ const Q=[
 ["remy--the-price-of-fame","Base Game","Remy","","The Price of Fame"],
 ["remy--the-unknown-flavor","Base Game","Remy","","The Unknown Flavor"],
 ["remy--a-three-course-thank-you","Base Game","Remy","","A Three-Course-Thank You"],
-["remy--ancient-landing-s-fine-dining","Base Game","Remy","","Ancient Landing's Fine Dining"],
+["remy--ancient-landing-s-fine-dining","Base Game","Remy","Eternity Isle","Ancient's Landing Fine Dining"],
 ["ursula--lair-sweet-lair","Base Game","Ursula","","Lair Sweet Lair"],
 ["ursula--magic-moments","Base Game","Ursula","","Magic Moments"],
 ["ursula--the-ritual","Base Game","Ursula","","The Ritual"],
@@ -1067,6 +1069,28 @@ function write(id){
 }
 function change(id,patch){S={...S,[id]:{...(S[id]||{}),...patch}};if(!S[id].s)delete S[id].s;if(!S[id].n)delete S[id].n;write(id);render()}
 
+/* A character's quests come one after another, so finishing one means the ones
+   before it (in the same section) are done too. Secret Potatoes come in any order. */
+const UNORDERED=["Secret Potatoes"];
+function doneBefore(r){
+  if(UNORDERED.includes(r[2]))return[];
+  const rows=byChar.find(g=>g.exp===r[1]&&g.ch===r[2]).rows,prev=[];
+  for(const x of rows.slice(0,rows.indexOf(r))){const id=x[0];
+    if(x[3]!==r[3]||st(id)==="d")continue;
+    prev.push([id,{s:st(id),n:nt(id)}]);
+    S={...S,[id]:{...(S[id]||{}),s:"d"}};
+    if(/^locked/i.test(nt(id)))delete S[id].n; // a "Locked: …" note is stale once it's done
+    write(id)}
+  return prev;
+}
+function restore(prev){for(const[id,p]of prev){const v={};if(p.s)v.s=p.s;if(p.n)v.n=p.n;S={...S,[id]:v};write(id)}render()}
+// Mark done, with the earlier quests, and offer to undo the lot
+function markDone(r,patch,undoEl){const id=r[0],was={s:st(id),n:nt(id)},prev=doneBefore(r);
+  change(id,patch);
+  const also=prev.length?` ${plural(prev.length,"earlier quest")} too.`:"";
+  if(undoEl==="undo"||also)showUndo(`${r[4]} marked Done.${also}`,()=>restore([[id,was],...prev]),undoEl);
+}
+
 /* ---------------- progress ---------------- */
 function bar(d,p,t){const e=document.createElement("div");e.className="dv-bar";e.innerHTML=`<i class="d" style="width:${t?d/t*100:0}%"></i><i class="p" style="width:${t?p/t*100:0}%"></i>`;return e}
 function counts(rows){let d=0,p=0,l=0;for(const r of rows){const s=st(r[0]);if(s==="d")d++;else if(s==="p")p++;else if(s==="l")l++}return{d,p,l,t:rows.length}}
@@ -1150,6 +1174,7 @@ function plateSet(r,patch){const id=r[0],prev={s:st(id),n:nt(id)};
   if(patch.s===prev.s){if(patch.n!==undefined)change(id,{n:patch.n});else render();return}
   // a "Locked: …" note is stale once the quest leaves Locked
   if(prev.s==="l"&&patch.s!=="l"&&patch.n===undefined&&/^locked/i.test(prev.n))patch={...patch,n:""};
+  if(patch.s==="d")return markDone(r,patch,"undo");
   change(id,patch);
   showUndo(`${r[4]} marked ${LABEL[patch.s]}.`,()=>change(id,prev));
 }
@@ -1330,7 +1355,7 @@ function renderList(){
       if(r[3]&&r[3]!==sec){sec=r[3];const s=document.createElement("li");s.className="dv-sec";s.textContent=sec;ol.append(s)}
       const li=document.createElement("li");const s=st(r[0]);li.className="dv-row"+(s?" is-"+s:"");
       const btn=document.createElement("button");btn.className="dv-st "+s;btn.textContent=LABEL[s];btn.setAttribute("aria-label",`${r[4]}: ${LABEL[s]}. Change status`);
-      btn.onclick=()=>change(r[0],{s:CYCLE[s]});
+      btn.onclick=()=>CYCLE[s]==="d"?markDone(r,{s:"d"},"l-undo"):change(r[0],{s:CYCLE[s]});
       const qt=document.createElement("div");qt.className="dv-qt";const name=document.createElement("span");name.textContent=r[4];qt.append(name);
       if(editing===r[0]){const inp=document.createElement("input");inp.className="pp-input";inp.id="note-"+r[0];inp.value=nt(r[0]);inp.placeholder="Add a note";
         const done=()=>{editing=null;change(r[0],{n:inp.value.trim()})};
