@@ -142,6 +142,18 @@
     .bars{ order:4; max-width:100%; flex-basis:100%; }
   }
 
+  /* On a phone each of these took a line of its own. Smaller, the portrait,
+     party and name share one line, and the coins and buttons the next. */
+  @media (max-width:760px){
+    .pet-slot{ width:46px; border-width:2px; box-shadow:0 0 0 2px var(--accent), 0 3px 8px rgba(180,90,120,0.2); }
+    .party-strip a{ width:26px; }
+    .identity{ min-width:0; flex:1 1 110px; }
+    .identity .level-tag{ white-space:nowrap; }
+    .identity .name{ font-size:19px; }
+    .panel-btns{ gap:6px; }
+    .panel-btn{ font-size:12.5px; padding:5px 11px; }
+  }
+
   /* ===== DATE STRIP ===== */
   .date-strip{
     max-width:1300px; margin:18px auto 0; padding:0 24px;
@@ -621,12 +633,13 @@
     position:fixed; top:0; right:0;
     width:400px; max-width:92vw; height:100%;
     background:var(--cream);
-    box-shadow:-6px 0 24px rgba(74,59,65,0.2);
     transform:translateX(100%);
     transition:transform .3s cubic-bezier(.4,0,.2,1);
     z-index:100; display:flex; flex-direction:column;
   }
-  .side-panel.open{ transform:translateX(0); }
+  /* The shadow only while open — parked off-screen, it fell back across the
+     right edge of the page as a grey smudge. */
+  .side-panel.open{ transform:translateX(0); box-shadow:-6px 0 24px rgba(74,59,65,0.2); }
 
   .panel-header{
     display:flex; align-items:center; justify-content:space-between;
