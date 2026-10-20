@@ -568,8 +568,27 @@ h1,h2,h3,h4{
   /* On a phone the nav, the status row and the section links together come
      to most of the screen. Pinned, they left a sliver for the quest board
      underneath — so a ribbon carrying a status row scrolls away instead. */
-  .pp-ribbon:has(.pp-ribbon-extra){ position: static; }
-  .pp-ribbon-extra{ gap: 10px 12px; padding-top: 10px; }
+  .pp-ribbon:has(.pp-ribbon-extra){ position: static; margin-bottom: 10px; }
+  .pp-ribbon-extra{ gap: 8px 10px; padding-top: 8px; }
+
+  /* Scrolling away wasn't enough: the ribbon still filled the first screen
+     before the board began. On the quest-log pages everything in it shrinks
+     — the folder pills to two rows, the section links to one. */
+  .pp-ribbon:has(.pp-ribbon-extra) .pp-ribbon-inner{ padding-top: 8px; padding-bottom: 8px; gap: 8px; }
+  .pp-ribbon:has(.pp-ribbon-extra) .pp-ribbon-mark svg{ width: 22px; height: 22px; }
+  .pp-ribbon:has(.pp-ribbon-extra) .pp-ribbon-title{ font-size: 1rem; }
+  .pp-ribbon:has(.pp-ribbon-extra) .pp-nav{ gap: 4px; }
+  .pp-ribbon:has(.pp-ribbon-extra) .pp-nav a{
+    font-size: 0.6rem; letter-spacing: 0.06em; padding: 4px 9px;
+  }
+  .pp-ribbon:has(.pp-ribbon-extra) .pp-navitem.has-menu > a{ padding-right: 20px; }
+  .pp-ribbon:has(.pp-ribbon-extra) .pp-navcaret{ width: 18px; }
+  .pp-ribbon:has(.pp-ribbon-extra) .pp-ribbon-sections{
+    flex-wrap: nowrap; justify-content: space-between; gap: 2px; padding-top: 6px;
+  }
+  .pp-ribbon:has(.pp-ribbon-extra) .pp-ribbon-sections a{
+    font-size: 0.62rem; letter-spacing: 0.05em; padding: 4px 8px; white-space: nowrap;
+  }
 }
 
 
