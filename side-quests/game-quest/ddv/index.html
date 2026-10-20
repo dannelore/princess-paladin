@@ -184,7 +184,7 @@
   .dv-rm:hover{ color: var(--blade); }
   /* these sit in .pp-field for its input styling, which also stacks them in a column */
   .dv-add{ display: flex; flex-direction: row; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .dv-add input{ flex: 1 1 200px; min-width: 0; }
+  .dv-add input{ flex: 1 1 140px; min-width: 0; }
 
   /* ---- on your plate + locked ---- */
   .dv-plate{ list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill,minmax(230px,1fr)); gap: 8px; align-items: start; }
@@ -216,6 +216,7 @@
   .dv-opt[aria-pressed="true"].x{ background: var(--dv-lock-soft); }
   .dv-acts input{ flex: 1 1 100%; min-width: 0; font-size: .85rem; padding: 6px 9px; }
   .dv-undo{ display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; font-size: .88rem; color: var(--ink-soft); }
+  .dv-toast{ position: sticky; bottom: 12px; z-index: 2; margin-top: 10px; padding: 8px 12px; background: var(--white); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 4px 14px rgba(46,36,31,.12); }
   .dv-undo button{ font: inherit; font-weight: 600; color: var(--accent-deep); background: none; border: 0; padding: 2px 4px; cursor: pointer; border-radius: 4px; }
   .dv-lklist{ display: flex; flex-direction: column; border-top: 1px solid var(--line); }
   .dv-lk{ border-bottom: 1px solid var(--line); }
@@ -360,7 +361,7 @@
       <button class="dv-fold" aria-expanded="true"><span class="dv-label">To-do</span><span class="dv-count" id="todo-count"></span></button>
       <div class="dv-tgroups" id="todo-groups"></div>
       <p class="dv-undo" id="todo-undo" aria-live="polite" hidden></p>
-      <form class="dv-add pp-field" id="todo-add"><input id="todo-new" maxlength="140" placeholder="Add your own to-do" aria-label="Add your own to-do"><button class="pp-btn pp-btn-sm" type="submit">Add</button></form>
+      <form class="dv-add pp-field" id="todo-add"><input id="todo-new" maxlength="140" placeholder="Add your own to-do" aria-label="Add your own to-do"><button class="pp-btn pp-btn-sm" type="submit">Add</button><button class="pp-btn pp-btn-sm pp-btn-quiet" type="button" id="todo-refresh" aria-label="Refresh: clear finished to-dos and rebuild the suggestions">Refresh</button></form>
     </section>
 
     <section class="pp-panel dv-panel" data-fold="plate" aria-label="On your plate">
@@ -391,7 +392,8 @@
     </div>
 
     <main id="list"></main>
-    <p class="dv-foot">Quest list from IGN's Disney Dreamlight Valley quests page, checked against the Dreamlight Valley Wiki on Oct 19, 2026. Tap a status to change it: blank, In progress, Done, Not unlocked. Or tap a quest under "On your plate" to pick its status directly. Not connected to the game save, so everything here is ticked off by hand. Guide links open that quest on the Dreamlight Valley Wiki.</p>
+    <p class="dv-undo dv-toast" id="l-undo" aria-live="polite" hidden></p>
+    <p class="dv-foot">Quest list from IGN's Disney Dreamlight Valley quests page, checked against the Dreamlight Valley Wiki on Oct 19, 2026. Tap a status to change it: blank, In progress, Done, Not unlocked. Marking a quest Done also marks the character's earlier quests Done. Or tap a quest under "On your plate" to pick its status directly. Not connected to the game save, so everything here is ticked off by hand. Guide links open that quest on the Dreamlight Valley Wiki.</p>
     </div>
   </div>
 
@@ -494,7 +496,7 @@ const Q=[
 ["scrooge-mcduck--village-project-gear-loose-and-fancy-free","Base Game","Scrooge McDuck","Eternity Isle","Village Project: Gear Loose and Fancy Free"],
 ["scrooge-mcduck--ghost-town","Base Game","Scrooge McDuck","Wishblossom Ranch","Ghost Town"],
 ["scrooge-mcduck--water-tower-of-terror","Base Game","Scrooge McDuck","Wishblossom Ranch","Water Tower of Terror"],
-["scrooge-mcduck--dreamlight-parks-fest-dig-it","Base Game","Scrooge McDuck","","Dreamlight Parks Fest: Dig It"],
+["scrooge-mcduck--dreamlight-parks-fest-dig-it","Base Game","Scrooge McDuck","Events & extras","Dreamlight Parks Fest: Dig It"],
 ["merlin--friendship-is-everything","Base Game","Merlin","Main Story","Friendship is Everything"],
 ["merlin--with-great-power","Base Game","Merlin","Main Story","With Great Power..."],
 ["merlin--secrets-schemes","Base Game","Merlin","Main Story","Secrets & Schemes"],
@@ -552,7 +554,7 @@ const Q=[
 ["maui--a-tale-of-stone-and-fire","Base Game","Maui","","A Tale of Stone and Fire"],
 ["maui--demigod-of-the-wind-and-sun","Base Game","Maui","","Demigod of the Wind and Sun"],
 ["maui--the-heart-of-dreamlight-valley","Base Game","Maui","","The Heart of Dreamlight Valley"],
-["maui--training-games-the-shapeshifter","Base Game","Maui","","Training Games: The Shapeshifter"],
+["maui--training-games-the-shapeshifter","Base Game","Maui","Events & extras","Training Games: The Shapeshifter"],
 ["remy--an-important-night-at-the-restaurant","Base Game","Remy","","An Important Night at the Restaurant"],
 ["remy--a-restaurant-makeover","Base Game","Remy","","A Restaurant Makeover"],
 ["remy--remy-s-recipe-book","Base Game","Remy","","Remy's Recipe Book"],
@@ -564,7 +566,7 @@ const Q=[
 ["ursula--magic-moments","Base Game","Ursula","","Magic Moments"],
 ["ursula--the-ritual","Base Game","Ursula","","The Ritual"],
 ["ursula--a-deal-with-ursula","Base Game","Ursula","","A Deal With Ursula"],
-["ursula--villager-of-the-month-ursula","Base Game","Ursula","","Villager of the Month: Ursula"],
+["ursula--villager-of-the-month-ursula","Base Game","Ursula","Events & extras","Villager of the Month: Ursula"],
 ["kristoff--lost-in-the-dark-grove","Base Game","Kristoff","","Lost in the Dark Grove"],
 ["kristoff--leaving-the-woods-behind","Base Game","Kristoff","","Leaving the Woods Behind"],
 ["kristoff--village-project-a-mountain-man-s-stall","Base Game","Kristoff","","Village Project: A Mountain Man's Stall"],
@@ -577,7 +579,7 @@ const Q=[
 ["donald-duck--the-dreamlight-fountain","Base Game","Donald Duck","","The Dreamlight Fountain"],
 ["donald-duck--the-sock-stealing-space-alien-strikes-again","Base Game","Donald Duck","","The Sock-Stealing Space Alien Strikes Again!"],
 ["donald-duck--built-to-destroy","Base Game","Donald Duck","","Built to Destroy!"],
-["donald-duck--villager-of-the-month-donald","Base Game","Donald Duck","","Villager of the Month: Donald"],
+["donald-duck--villager-of-the-month-donald","Base Game","Donald Duck","Events & extras","Villager of the Month: Donald"],
 ["mother-gothel--the-curse","Base Game","Mother Gothel","","The Curse"],
 ["mother-gothel--my-kingdom-for-a-scroll","Base Game","Mother Gothel","","My Kingdom For A Scroll"],
 ["mother-gothel--shine-a-light","Base Game","Mother Gothel","","Shine a Light"],
@@ -614,7 +616,7 @@ const Q=[
 ["scar--the-circle-of-life","Base Game","Scar","","The Circle of Life"],
 ["scar--the-making-of-a-monarch","Base Game","Scar","","The Making of a Monarch"],
 ["scar--scar-s-campaign-a-suspicious-stew","Base Game","Scar","","Scar's Campaign: A Suspicious Stew"],
-["scar--a-holiday-treat-for-scar","Base Game","Scar","","A Holiday Treat for Scar"],
+["scar--a-holiday-treat-for-scar","Base Game","Scar","Events & extras","A Holiday Treat for Scar"],
 ["buzz-lightyear--a-secret-mission-in-uncharted-space","Base Game","Buzz Lightyear","","A Secret Mission in Uncharted Space"],
 ["buzz-lightyear--a-space-ranger-recruit","Base Game","Buzz Lightyear","","A Space Ranger Recruit"],
 ["buzz-lightyear--a-space-ranger-reputation","Base Game","Buzz Lightyear","","A Space Ranger Reputation"],
@@ -624,7 +626,7 @@ const Q=[
 ["buzz-lightyear--collect-em-all-strangers-from-the-outside","Base Game","Buzz Lightyear","","Collect 'Em All: Strangers from the Outside!"],
 ["buzz-lightyear--collect-em-all-attic-mode","Base Game","Buzz Lightyear","","Collect 'Em All: Attic Mode"],
 ["buzz-lightyear--we-are-eternally-grateful","Base Game","Buzz Lightyear","","We Are Eternally Grateful!"],
-["buzz-lightyear--training-games-the-space-ranger","Base Game","Buzz Lightyear","","Training Games: The Space Ranger"],
+["buzz-lightyear--training-games-the-space-ranger","Base Game","Buzz Lightyear","Events & extras","Training Games: The Space Ranger"],
 ["woody--you-re-my-favorite-deputy","Base Game","Woody","","You're My Favorite Deputy"],
 ["woody--failing-better","Base Game","Woody","","Failing Better"],
 ["woody--a-bit-of-a-fixer-upper","Base Game","Woody","","A Bit of a Fixer Upper"],
@@ -646,20 +648,20 @@ const Q=[
 ["olaf--grand-exhibition-diorama","Base Game","Olaf","","Grand Exhibition: Diorama"],
 ["olaf--grand-exhibition-aquarium","Base Game","Olaf","","Grand Exhibition: Aquarium"],
 ["olaf--grand-exhibition-habitat","Base Game","Olaf","","Grand Exhibition: Habitat"],
-["olaf--a-holiday-treat-for-olaf","Base Game","Olaf","","A Holiday Treat for Olaf"],
+["olaf--a-holiday-treat-for-olaf","Base Game","Olaf","Events & extras","A Holiday Treat for Olaf"],
 ["mirabel--the-golden-doorknob","Base Game","Mirabel","","The Golden Doorknob"],
 ["mirabel--healing-house","Base Game","Mirabel","","Healing House"],
 ["mirabel--a-taste-of-home","Base Game","Mirabel","","A Taste Of Home"],
 ["mirabel--meddling-mirabel","Base Game","Mirabel","","Meddling Mirabel"],
 ["mirabel--a-festival-of-friendship","Base Game","Mirabel","","A Festival Of Friendship"],
 ["mirabel--a-letter-for-antonio","Base Game","Mirabel","","A Letter for Antonio"],
-["mirabel--dreamlight-parks-fest-critter-snaps","Base Game","Mirabel","","Dreamlight Parks Fest: Critter Snaps"],
+["mirabel--dreamlight-parks-fest-critter-snaps","Base Game","Mirabel","Events & extras","Dreamlight Parks Fest: Critter Snaps"],
 ["nala--eyes-in-the-dark","Base Game","Nala","","Eyes in the Dark"],
 ["nala--staking-your-territory","Base Game","Nala","","Staking Your Territory"],
 ["nala--fishy-business","Base Game","Nala","","Fishy Business"],
 ["nala--heart-of-a-lioness","Base Game","Nala","","The Heart of a Lioness"],
 ["nala--here-and-there-and-back-again","Base Game","Nala","","Here and There and Back Again"],
-["nala--training-games-the-lioness","Base Game","Nala","","Training Games: The Lioness"],
+["nala--training-games-the-lioness","Base Game","Nala","Events & extras","Training Games: The Lioness"],
 ["simba--stars-to-guide-us","Base Game","Simba","","Stars to Guide Us"],
 ["simba--hakuna-matata","Base Game","Simba","","Hakuna Matata"],
 ["simba--the-great-gathering","Base Game","Simba","","The Great Gathering"],
@@ -685,7 +687,7 @@ const Q=[
 ["vanellope-von-schwee--the-next-level","Base Game","Vanellope von Schweetz","","Vanellope: The Next Level"],
 ["vanellope-von-schwee--press-start","Base Game","Vanellope von Schweetz","","Press Start"],
 ["vanellope-von-schwee--questination-unknown","Base Game","Vanellope von Schweetz","","Questination Unknown"],
-["vanellope-von-schwee--a-holiday-treat-for-vanellope","Base Game","Vanellope von Schweetz","","A Holiday Treat for Vanellope"],
+["vanellope-von-schwee--a-holiday-treat-for-vanellope","Base Game","Vanellope von Schweetz","Events & extras","A Holiday Treat for Vanellope"],
 ["belle--into-the-west-wing","Base Game","Belle","","Into The West Wing!"],
 ["belle--a-prince-in-disguise","Base Game","Belle","","A Prince In Disguise"],
 ["belle--book-hunt","Base Game","Belle","","Book Hunt"],
@@ -716,7 +718,7 @@ const Q=[
 ["mike-wazowski--monstrously-good-taste","Base Game","Mike Wazowski","","Monstrously Good Taste"],
 ["mike-wazowski--a-comedic-proposition","Base Game","Mike Wazowski","","A Comedic Proposition"],
 ["mike-wazowski--have-your-people-talk-to-my-people","Base Game","Mike Wazowski","","Have Your People Talk To My People"],
-["mike-wazowski--villager-of-the-month-mike","Base Game","Mike Wazowski","","Villager of the Month: Mike"],
+["mike-wazowski--villager-of-the-month-mike","Base Game","Mike Wazowski","Events & extras","Villager of the Month: Mike"],
 ["sulley--monster-movie-night","Base Game","Sulley","","Monster Movie Night"],
 ["sulley--villager-of-the-month","Base Game","Sulley","","Villager Of The Month"],
 ["sulley--the-power-of-knowledge","Base Game","Sulley","","The Power Of Knowledge"],
@@ -743,9 +745,9 @@ const Q=[
 ["mushu--the-mushu-program","Base Game","Mushu","","The MUSHU Program"],
 ["mushu--the-guardian-party","Base Game","Mushu","","The Guardian Party"],
 ["mushu--the-tiny-villager-society","Base Game","Mushu","","The Tiny Villagers Society"],
-["mushu--the-red-pouch-hunt","Base Game","Mushu","","The Red Pouch Hunt"],
-["mushu--cooking-sesame-balls","Base Game","Mushu","","Cooking Sesame Balls"],
-["mushu--mushu-s-pinata-extravaganza","Base Game","Mushu","","Mushu's Piñata Extravaganza"],
+["mushu--the-red-pouch-hunt","Base Game","Mushu","Events & extras","The Red Pouch Hunt"],
+["mushu--cooking-sesame-balls","Base Game","Mushu","Events & extras","Cooking Sesame Balls"],
+["mushu--mushu-s-pinata-extravaganza","Base Game","Mushu","Events & extras","Mushu's Piñata Extravaganza"],
 ["tiana--a-taste-for-literature","Base Game","Tiana","","A Taste for Literature"],
 ["tiana--back-from-the-bayou","Base Game","Tiana","","Back from the Bayou"],
 ["tiana--little-louis-s-big-break","Base Game","Tiana","","Little Louis's Big Break"],
@@ -892,7 +894,7 @@ const Q=[
 ["rapunzel--home-is-where-the-art-is","A Rift in Time","Rapunzel","","Home Is Where The Art Is"],
 ["rapunzel--all-the-right-notes","A Rift in Time","Rapunzel","","All The Right Notes"],
 ["rapunzel--use-your-imagination-rapunzel","A Rift in Time","Rapunzel","","Use Your Imagination: Rapunzel"],
-["rapunzel--rapunzel-s-challenge","A Rift in Time","Rapunzel","","Rapunzel's Challenge"],
+["rapunzel--rapunzel-s-challenge","A Rift in Time","Rapunzel","Events & extras","Rapunzel's Challenge"],
 ["gaston--the-wanderer-of-the-dunes","A Rift in Time","Gaston","","The Wanderer Of The Dunes"],
 ["gaston--the-wild-tangle-s-swarm","A Rift in Time","Gaston","","The Wild Tangle's Swarm"],
 ["gaston--diamond-in-the-rough","A Rift in Time","Gaston","","Diamond in the Rough"],
@@ -902,7 +904,7 @@ const Q=[
 ["gaston--dreamlight-valley-s-next-top-lefou","A Rift in Time","Gaston","","Dreamlight Valley's Next Top LeFou"],
 ["gaston--hero-pose","A Rift in Time","Gaston","","Hero Pose"],
 ["gaston--use-your-imagination-gaston","A Rift in Time","Gaston","","Use Your Imagination: Gaston"],
-["gaston--gaston-s-challenge","A Rift in Time","Gaston","","Gaston's Challenge"],
+["gaston--gaston-s-challenge","A Rift in Time","Gaston","Events & extras","Gaston's Challenge"],
 ["eve--directive-danger","A Rift in Time","EVE","","Directive: Danger!"],
 ["eve--a-new-directive","A Rift in Time","EVE","","A New Directive"],
 ["eve--lasers-and-crafts","A Rift in Time","EVE","","Lasers and Crafts"],
@@ -910,7 +912,7 @@ const Q=[
 ["eve--when-things-go-boom","A Rift in Time","EVE","","When Things Go Boom"],
 ["eve--does-not-compute","A Rift in Time","EVE","","Does Not Compute"],
 ["eve--use-your-imagination-eve","A Rift in Time","EVE","","Use Your Imagination: EVE"],
-["eve--eve-s-challenge","A Rift in Time","EVE","","EVE's Challenge"],
+["eve--eve-s-challenge","A Rift in Time","EVE","Events & extras","EVE's Challenge"],
 ["oswald--the-spark-of-imagination","A Rift in Time","Oswald","","The Spark Of Imagination"],
 ["oswald--oswald-s-many-dimensions","A Rift in Time","Oswald","","Oswald's Many Dimensions"],
 ["oswald--an-alarming-development","A Rift in Time","Oswald","","An Alarming Development"],
@@ -1116,6 +1118,31 @@ function write(id){
 }
 function change(id,patch){S={...S,[id]:{...(S[id]||{}),...patch}};if(!S[id].s)delete S[id].s;if(!S[id].n)delete S[id].n;write(id);render()}
 
+/* A character's quests come one after another, so finishing one means the ones
+   before it (in the same section) are done too. Secret Potatoes, Snow White's and
+   Tinker Bell's quests, and the Dream Bundles can be done in any order. Seasonal and
+   side quests (Holiday Treats, Villager of the Month, Training Games…) sit in an
+   "Events & extras" section of their own, so finishing one doesn't tick the story. */
+const UNORDERED=["Secret Potatoes","Snow White","Tinker Bell"];
+function doneBefore(r){
+  if(UNORDERED.includes(r[2])||/\(Dream Bundle\)$/.test(r[2]))return[];
+  const rows=byChar.find(g=>g.exp===r[1]&&g.ch===r[2]).rows,prev=[];
+  for(const x of rows.slice(0,rows.indexOf(r))){const id=x[0];
+    if(x[3]!==r[3]||st(id)==="d")continue;
+    prev.push([id,{s:st(id),n:nt(id)}]);
+    S={...S,[id]:{...(S[id]||{}),s:"d"}};
+    if(/^locked/i.test(nt(id)))delete S[id].n; // a "Locked: …" note is stale once it's done
+    write(id)}
+  return prev;
+}
+function restore(prev){for(const[id,p]of prev){const v={};if(p.s)v.s=p.s;if(p.n)v.n=p.n;S={...S,[id]:v};write(id)}render()}
+// Mark done, with the earlier quests, and offer to undo the lot
+function markDone(r,patch,undoEl){const id=r[0],was={s:st(id),n:nt(id)},prev=doneBefore(r);
+  change(id,patch);
+  const also=prev.length?` ${plural(prev.length,"earlier quest")} too.`:"";
+  if(undoEl==="undo"||also)showUndo(`${r[4]} marked Done.${also}`,()=>restore([[id,was],...prev]),undoEl);
+}
+
 /* ---------------- progress ---------------- */
 function bar(d,p,t){const e=document.createElement("div");e.className="dv-bar";e.innerHTML=`<i class="d" style="width:${t?d/t*100:0}%"></i><i class="p" style="width:${t?p/t*100:0}%"></i>`;return e}
 function counts(rows){let d=0,p=0,l=0;for(const r of rows){const s=st(r[0]);if(s==="d")d++;else if(s==="p")p++;else if(s==="l")l++}return{d,p,l,t:rows.length}}
@@ -1199,6 +1226,7 @@ function plateSet(r,patch){const id=r[0],prev={s:st(id),n:nt(id)};
   if(patch.s===prev.s){if(patch.n!==undefined)change(id,{n:patch.n});else render();return}
   // a "Locked: …" note is stale once the quest leaves Locked
   if(prev.s==="l"&&patch.s!=="l"&&patch.n===undefined&&/^locked/i.test(prev.n))patch={...patch,n:""};
+  if(patch.s==="d")return markDone(r,patch,"undo");
   change(id,patch);
   showUndo(`${r[4]} marked ${LABEL[patch.s]}.`,()=>change(id,prev));
 }
@@ -1325,6 +1353,21 @@ function renderTodo(){
   $("todo-count").textContent=all.length?`${left} left, most quests opened first`:"";
   if(!all.length){const p=document.createElement("p");p.className="dv-hint";p.textContent=tloaded?"Nothing on the list. Add something below.":"Loading the list…";box.append(p)}
 }
+/* Refresh clears out everything finished and rebuilds the added-for-you
+   suggestions from where the quests and friendships stand now. Your own
+   unfinished to-dos stay, and so do dismissals. An added one ticked off by
+   hand that would come straight back is kept as dismissed instead. */
+$("todo-refresh").onclick=()=>{
+  const before=T,cleared=[];
+  T={...T};
+  for(const[id,v]of Object.entries(before))if(v&&v.t&&(v.d||autoDone(v))){delete T[id];cleared.push(id)}
+  const back=new Set(autoTodos().map(([id])=>id));
+  for(const id of cleared)if(back.has(id))T[id]={x:1};
+  if(!cleared.length){renderTodo();const U=$("todo-undo");clearTimeout(undoTimer["todo-undo"]);U.textContent="Nothing finished to clear. Suggestions are up to date.";U.hidden=false;
+    undoTimer["todo-undo"]=setTimeout(()=>{U.hidden=true},6000);return}
+  tsave(()=>tdoc.set({...T}));renderTodo();
+  showUndo(`Cleared ${plural(cleared.length,"finished to-do")}.`,()=>{T=before;tsave(()=>tdoc.set({...T}));renderTodo()},"todo-undo");
+};
 $("todo-add").addEventListener("submit",e=>{e.preventDefault();const inp=$("todo-new"),t=inp.value.trim();if(!t)return;
   tchange("m-"+Date.now().toString(36),{t,g:"mine",o:Date.now()});inp.value=""});
 
@@ -1379,7 +1422,7 @@ function renderList(){
       if(r[3]&&r[3]!==sec){sec=r[3];const s=document.createElement("li");s.className="dv-sec";s.textContent=sec;ol.append(s)}
       const li=document.createElement("li");const s=st(r[0]);li.className="dv-row"+(s?" is-"+s:"");
       const btn=document.createElement("button");btn.className="dv-st "+s;btn.textContent=LABEL[s];btn.setAttribute("aria-label",`${r[4]}: ${LABEL[s]}. Change status`);
-      btn.onclick=()=>change(r[0],{s:CYCLE[s]});
+      btn.onclick=()=>CYCLE[s]==="d"?markDone(r,{s:"d"},"l-undo"):change(r[0],{s:CYCLE[s]});
       const qt=document.createElement("div");qt.className="dv-qt";const name=document.createElement("span");name.textContent=r[4];qt.append(name);
       if(editing===r[0]){const inp=document.createElement("input");inp.className="pp-input";inp.id="note-"+r[0];inp.value=nt(r[0]);inp.placeholder="Add a note";
         const done=()=>{editing=null;change(r[0],{n:inp.value.trim()})};

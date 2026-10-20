@@ -564,6 +564,12 @@ h1,h2,h3,h4{
   .pp-ribbon-inner{ gap: 12px; }
   .pp-ribbon .pp-nav{ flex: 1 1 100%; justify-content: center; }
   .pp-ribbon-title{ font-size: 1.1rem; }
+
+  /* On a phone the nav, the status row and the section links together come
+     to most of the screen. Pinned, they left a sliver for the quest board
+     underneath — so a ribbon carrying a status row scrolls away instead. */
+  .pp-ribbon:has(.pp-ribbon-extra){ position: static; }
+  .pp-ribbon-extra{ gap: 10px 12px; padding-top: 10px; }
 }
 
 
@@ -1126,6 +1132,10 @@ h1,h2,h3,h4{
   box-shadow: var(--lift);
 }
 .coin .dot{ width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+@media (max-width: 760px){
+  .currency{ gap: 6px; }
+  .coin{ font-size: 14px; padding: 4px 10px; }
+}
 .coin.gold{ color: var(--quest-gold); }
 .coin.gold .dot{ background: var(--quest-gold); }
 .coin.copper{ color: var(--quest-copper); }

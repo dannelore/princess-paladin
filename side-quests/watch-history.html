@@ -364,6 +364,9 @@ function fmtDate(d){
    what carries a finish date. Prefer the date you FINISHED on; fall back to
    the start date and say so, rather than dropping the row. */
 function rowsFor(item, source){
+  /* Mid-rewatch, the first viewing is tucked away in item.firstRun (see
+     startRewatch in pp-watchlist.js) — that's the one that belongs here. */
+  if(item.firstRun) item = Object.assign({}, item, item.firstRun);
   const base = {
     source: source.key,
     sourceLabel: source.label,

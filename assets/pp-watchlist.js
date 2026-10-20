@@ -457,6 +457,7 @@ function startFirebase(){
 }
 
 function save(){
+  state.items.forEach(it => { if(it.firstRun && it.status === "watched") finishRewatch(it); });
   writeCache();
   renderStreamFilter();
   extraRenderSteps.forEach(fn => fn());
@@ -927,7 +928,8 @@ function cardBits(item){
     onNothing: onNothing,
     whoBadge: `<span class="cq-who" data-who="${who}">${esc(WHO_LABEL[who])}</span>`,
     pri: avg ? `<span class="cq-pri" data-tier="${priTier(avg)}">${esc(priLabel(avg))}</span>` : "",
-    rewatch: item.rewatch ? `<span class="cq-rewatch">Rewatch</span>` : "",
+    rewatch: item.firstRun ? `<span class="cq-rewatch">Rewatching</span>`
+           : item.rewatch  ? `<span class="cq-rewatch">Rewatch</span>` : "",
     streams: streams ? `<div class="cq-streams">${streams}</div>` : "",
     unavail: onNothing
       ? `<span class="cq-unavail" title="Not on anything we have">Unavailable</span>` : "",
@@ -1226,11 +1228,24 @@ function openDetail(id){
   const log = document.createElement("div");
   log.className = "cq-block";
   const dates = rewatchDates(item);
+  const what = item.type === "movie" ? "minutes" : "episodes";
+  const again = item.firstRun
+    ? `<div class="cq-step" style="margin-top:4px;">
+         <button id="rwStop">Stop rewatching</button>
+         <span class="cq-steplabel">Rewatching from the beginning. The ${what} and dates above are this rewatch; the first watch is saved and comes back when it's finished.</span>
+       </div>`
+    : item.status === "watched"
+      ? `<div class="cq-step" style="margin-top:4px;">
+           <button id="rwStart">Rewatch from the beginning</button>
+           <span class="cq-steplabel">Clears the ${what} to track it again. The first watch is kept.</span>
+         </div>`
+      : "";
   log.innerHTML = `
     <div class="cq-block-head">
       <span class="cq-block-name">Rewatches</span>
-      <span class="cq-block-count">${dates.length || "none yet"}</span>
+      <span class="cq-block-count">${item.firstRun ? "one on the go" + (dates.length ? " · " + dates.length + " before" : "") : (dates.length || "none yet")}</span>
     </div>
+    ${again}
     ${dates.map(d => `
       <div class="cq-rewatch-row">
         <span>Rewatched ${esc(fmtDate(d))}</span>
@@ -1241,7 +1256,9 @@ function openDetail(id){
       <input id="rwDate" type="date">
       <button class="pp-btn pp-btn-quiet pp-btn-sm" id="rwAdd">Log it</button>
     </div>
-    <p class="cq-hint" style="margin:6px 0 0;">Each viewing after the first. The original finish date above stays as it is.</p>`;
+    <p class="cq-hint" style="margin:6px 0 0;">${item.firstRun
+      ? "For a viewing you didn't track. It doesn't touch the rewatch above."
+      : "Each viewing after the first. The original finish date above stays as it is."}</p>`;
   body.appendChild(log);
 
   PPProgress.draw($("detail"));
@@ -1317,6 +1334,94 @@ function removeRewatch(itemId, date){
   item.rewatches = item.rewatches.filter(d => d !== date);
   save();
   openDetail(itemId);
+}
+
+/* ---------------- rewatching from the beginning ----------------
+   Starting a rewatch tucks the first viewing away in item.firstRun (its
+   status, minutes, episodes and dates) and clears the live ones, so the
+   rewatch is tracked exactly like a first watch: episode chips, minutes,
+   Started and Finished dates. Once it's finished, the day it finished is
+   logged as a rewatch and the first viewing's dates come back, so the record
+   of the first watch never changes. Stopping part-way puts everything back
+   as it was. Watch History reads item.firstRun while a rewatch is on. */
+function isoToday(){
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+function startRewatch(itemId){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item || item.firstRun) return;
+  item.firstRun = {
+    status: item.status,
+    watchedMin: item.watchedMin || 0,
+    startDate: item.startDate || "",
+    endDate: item.endDate || "",
+    seasons: (item.seasons || []).map(s => Object.assign({}, s, Array.isArray(s.watchedEps) ? { watchedEps: s.watchedEps.slice() } : {}))
+  };
+  item.watchedMin = 0;
+  delete item.startDate;
+  delete item.endDate;
+  (item.seasons || []).forEach(s => {
+    emptySeason(s);
+    delete s.startDate;
+    delete s.endDate;
+    if(seasonCards) s.status = "want";
+  });
+  /* dated today, which the Started box can change */
+  const first = (item.seasons || [])[0];
+  if(item.type === "movie" || !first) item.startDate = isoToday();
+  else{
+    first.startDate = isoToday();
+    if(seasonCards) first.status = "watching";
+  }
+  item.status = "watching";
+  item.rewatch = true;
+  save();
+}
+
+/* Gives up on a rewatch: the first viewing comes back exactly as it was,
+   apart from episode counts and posters, which keep whatever the season
+   check has found since. */
+function stopRewatch(itemId){
+  const item = state.items.find(x => x.id === itemId);
+  if(!item || !item.firstRun) return;
+  const fr = item.firstRun;
+  item.status = fr.status;
+  item.watchedMin = fr.watchedMin;
+  putDates(item, fr);
+  item.seasons = (item.seasons || []).map(s => {
+    const old = (fr.seasons || []).find(o => o.number === s.number);
+    if(!old) return s;
+    const back = Object.assign({}, old, { episodes: s.episodes }, s.image ? { image: s.image } : {});
+    if(Array.isArray(back.watchedEps)) back.watchedEps = back.watchedEps.filter(i => i <= back.episodes);
+    back.watched = Array.isArray(back.watchedEps) ? back.watchedEps.length : Math.min(back.watched || 0, back.episodes || 0);
+    return back;
+  });
+  delete item.firstRun;
+  save();
+}
+
+/* A finished rewatch keeps its ticks (it did watch everything) but hands the
+   dates back to the first viewing, and is logged on the day it finished. */
+function finishRewatch(item){
+  const fr = item.firstRun;
+  const done = itemEnd(item) || isoToday();
+  if(!Array.isArray(item.rewatches)) item.rewatches = [];
+  if(item.rewatches.indexOf(done) === -1){ item.rewatches.push(done); item.rewatches.sort(); }
+  putDates(item, fr);
+  (item.seasons || []).forEach(s => {
+    const old = (fr.seasons || []).find(o => o.number === s.number);
+    if(old) putDates(s, old);   /* a season that aired mid-rewatch keeps its dates: that was its first watch */
+  });
+  delete item.firstRun;
+}
+
+function putDates(target, from){
+  ["startDate", "endDate"].forEach(k => {
+    if(from[k]) target[k] = from[k];
+    else delete target[k];
+  });
 }
 
 function clearDates(itemId, seasonNo){
@@ -1590,6 +1695,14 @@ $("detailBody").onclick = e => {
   }
 
   if(e.target.id === "svcCheck"){ refreshServices(openId); return; }
+
+  if(e.target.id === "rwStart"){ startRewatch(openId); return; }
+  if(e.target.id === "rwStop"){
+    const t = totals(item);
+    if(t.done && !confirm(`Stop rewatching "${item.title}"? What's ticked off on this rewatch will be lost.`)) return;
+    stopRewatch(openId);
+    return;
+  }
 
   if(e.target.id === "rwAdd"){
     const box = $("rwDate");
