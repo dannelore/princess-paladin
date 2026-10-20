@@ -565,28 +565,27 @@ h1,h2,h3,h4{
   .pp-ribbon .pp-nav{ flex: 1 1 100%; justify-content: center; }
   .pp-ribbon-title{ font-size: 1.1rem; }
 
-  /* On a phone the nav, the status row and the section links together come
-     to most of the screen. Pinned, they left a sliver for the quest board
-     underneath — so a ribbon carrying a status row scrolls away instead. */
-  .pp-ribbon:has(.pp-ribbon-extra){ position: static; margin-bottom: 10px; }
+  /* On a phone the ribbon came to a third of the screen or more — on the
+     quest log, the whole of it — and pinned there it left a sliver for the
+     page underneath. So below 760px it scrolls away with the page, and
+     everything in it shrinks: the folder pills to two rows, the section
+     links to a single quiet row where they fit. */
+  .pp-ribbon{ position: static; margin-bottom: 10px; }
   .pp-ribbon-extra{ gap: 8px 10px; padding-top: 8px; }
-
-  /* Scrolling away wasn't enough: the ribbon still filled the first screen
-     before the board began. On the quest-log pages everything in it shrinks
-     — the folder pills to two rows, the section links to one. */
-  .pp-ribbon:has(.pp-ribbon-extra) .pp-ribbon-inner{ padding-top: 8px; padding-bottom: 8px; gap: 8px; }
-  .pp-ribbon:has(.pp-ribbon-extra) .pp-ribbon-mark svg{ width: 22px; height: 22px; }
-  .pp-ribbon:has(.pp-ribbon-extra) .pp-ribbon-title{ font-size: 1rem; }
-  .pp-ribbon:has(.pp-ribbon-extra) .pp-nav{ gap: 4px; }
-  .pp-ribbon:has(.pp-ribbon-extra) .pp-nav a{
+  .pp-ribbon .pp-ribbon-inner{ padding-top: 8px; padding-bottom: 8px; gap: 8px; }
+  .pp-ribbon .pp-ribbon-mark svg{ width: 22px; height: 22px; }
+  .pp-ribbon .pp-ribbon-title{ font-size: 1rem; }
+  .pp-ribbon .pp-nav{ gap: 4px; }
+  .pp-ribbon .pp-nav a{
     font-size: 0.6rem; letter-spacing: 0.06em; padding: 4px 9px;
   }
-  .pp-ribbon:has(.pp-ribbon-extra) .pp-navitem.has-menu > a{ padding-right: 20px; }
-  .pp-ribbon:has(.pp-ribbon-extra) .pp-navcaret{ width: 18px; }
+  .pp-ribbon .pp-navitem.has-menu > a{ padding-right: 20px; }
+  .pp-ribbon .pp-navcaret{ width: 18px; }
+  .pp-ribbon .pp-ribbon-sections{ gap: 2px; padding-top: 6px; }
   .pp-ribbon:has(.pp-ribbon-extra) .pp-ribbon-sections{
-    flex-wrap: nowrap; justify-content: space-between; gap: 2px; padding-top: 6px;
+    flex-wrap: nowrap; justify-content: space-between;
   }
-  .pp-ribbon:has(.pp-ribbon-extra) .pp-ribbon-sections a{
+  .pp-ribbon .pp-ribbon-sections a{
     font-size: 0.62rem; letter-spacing: 0.05em; padding: 4px 8px; white-space: nowrap;
   }
 }
