@@ -1067,6 +1067,11 @@ const Q=[
 ["dapper-wall-e-dream--strut-your-stuff","Dream Bundles","Dapper WALL-E (Dream Bundle)","","Strut Your Stuff"],
 ["dapper-wall-e-dream--sprouting-a-story","Dream Bundles","Dapper WALL-E (Dream Bundle)","","Sprouting a Story"]
 ];
+/* Paid Dream Bundles Danni doesn't own are left out of the tracker entirely, so
+   they don't count against her progress. Take a name out of this list once
+   it's bought and its quests come back, with any saved progress. */
+const NOT_OWNED_BUNDLES = ["Once Upon a Dance (Dream Bundle)","Dapper WALL-E (Dream Bundle)"];
+for(let i=Q.length-1;i>=0;i--)if(NOT_OWNED_BUNDLES.includes(Q[i][2]))Q.splice(i,1);
 
 const LABEL={"":"To do",p:"In progress",d:"Done",l:"Not unlocked"};
 const CYCLE={"":"p",p:"d",d:"l",l:""};
