@@ -1108,8 +1108,8 @@ const FRIEND_REQ={
   "oogie-boogie--let-the-games-begin":0,"oogie-boogie--oogie-boogie-s-big-game":0
 };
 /* What else a quest needs first, from the same wiki pages: villagers to have
-   met (by key) or quests to have finished (by id). Only ones that aren't
-   already a given for this save. */
+   met (by key), at a level ("pumbaa@10"), or quests to have finished (by
+   id). Only ones that aren't already a given for this save. */
 const NEEDS={
   "cinderella--critter-chaos":["alice","cheshire-cat"],
   "cinderella--the-friendship-ball":["cogsworth","lumiere"],
@@ -1129,7 +1129,9 @@ const NEEDS={
   "timon--where-s-pumbaa":["pumbaa--relax"],
   "pumbaa--something-s-off":["timon"],
   "timon--the-timon-talk":["pumbaa--fine-arts-for-warthogs"],
-  "timon--the-infestation-pt-1":["merlin--a-creepy-crawly-mystery","pumbaa--down-to-earth","timon--the-timon-talk"],
+  "merlin--a-creepy-crawly-mystery":["pumbaa@10","timon@9","pumbaa--down-to-earth","timon--the-timon-talk"],
+  "timon--the-infestation-pt-1":["merlin--a-creepy-crawly-mystery"],
+  "merlin--the-infestation-finale":["timon--the-infestation-pt-1"],
   "pumbaa--the-infestation-pt-2":["timon--the-infestation-pt-1"],
   "timon--the-infestation-pt-3":["pumbaa--the-infestation-pt-2"],
   "sadness--out-of-the-blue":["joy--emotional-rescue"],
@@ -1225,8 +1227,13 @@ function change(id,patch){S={...S,[id]:{...(S[id]||{}),...patch}};if(!S[id].s)de
    side quests (Holiday Treats, Villager of the Month, Training Games…) sit in an
    "Events & extras" section of their own, so finishing one doesn't tick the story. */
 const UNORDERED=["Secret Potatoes","Snow White","Tinker Bell"];
+/* Sections whose quests don't follow on from each other: Merlin's side
+   stories (the Night Mite pair waits on Timon and Pumbaa, Islands in the
+   Sky doesn't). */
+const LOOSE=["Merlin|Side Story"];
+const loose=r=>UNORDERED.includes(r[2])||/\(Dream Bundle\)$/.test(r[2])||LOOSE.includes(r[2]+"|"+r[3]);
 function doneBefore(r){
-  if(UNORDERED.includes(r[2])||/\(Dream Bundle\)$/.test(r[2]))return[];
+  if(loose(r))return[];
   const rows=byChar.find(g=>g.exp===r[1]&&g.ch===r[2]).rows,prev=[];
   for(const x of rows.slice(0,rows.indexOf(r))){const id=x[0];
     if(x[3]!==r[3]||st(id)==="d")continue;
@@ -1399,8 +1406,9 @@ function blockers(r){
   if(s==="p"||s==="d")return out;
   if(vl&&!metV(vl))out.push({u:vl.k});
   for(const x of NEEDS[r[0]]||[]){
-    if(x.includes("--")){if(st(x)!=="d")out.push({q:x})}
-    else{const o=vByKey(x);if(o&&!metV(o))out.push({u:x})}}
+    if(x.includes("--")){if(st(x)!=="d")out.push({q:x});continue}
+    const[k,l]=x.split("@"),o=vByKey(k);if(!o)continue;
+    if(!metV(o))out.push({u:k});else if(l&&lvl(k)<+l)out.push({f:k,l:+l})}
   if(s==="l"){let read=false,m;
     if((m=/friendship level (\d+)/i.exec(note))){read=true;if(vl&&lvl(vl.k)<+m[1])out.push({f:vl.k,l:+m[1]})}
     if((m=/unlock ([^,]+?)\s*(?:,|$)/i.exec(note))){read=true;const o=vByName(m[1]);if(!o)out.push({u:m[1]});else if(!metV(o))out.push({u:o.k})}
@@ -1411,11 +1419,11 @@ function blockers(r){
   return out;
 }
 function plan(){
-  // storylines, in order; UNORDERED characters and Dream Bundles are one quest each
+  // storylines, in order; loose() quests are one quest each
   const lines=[];
-  for(const g of byChar){const free=UNORDERED.includes(g.ch)||/\(Dream Bundle\)$/.test(g.ch),m=new Map();
+  for(const g of byChar){const m=new Map();
     for(const r of g.rows){if(!playable(r)||st(r[0])==="d")continue;
-      const k=free?r[0]:r[3];if(!m.has(k)){m.set(k,[]);lines.push(m.get(k))}m.get(k).push(r)}}
+      const k=loose(r)?r[0]:r[3];if(!m.has(k)){m.set(k,[]);lines.push(m.get(k))}m.get(k).push(r)}}
   const B=new Map(),line=new Map();
   for(const L of lines)for(const r of L){B.set(r,blockers(r));line.set(r,L)}
   // quests waiting on r directly: the next in its storyline, and anything
