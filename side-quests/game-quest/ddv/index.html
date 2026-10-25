@@ -1073,6 +1073,27 @@ const Q=[
 const NOT_OWNED_BUNDLES = ["Once Upon a Dance (Dream Bundle)","Dapper WALL-E (Dream Bundle)"];
 for(let i=Q.length-1;i>=0;i--)if(NOT_OWNED_BUNDLES.includes(Q[i][2]))Q.splice(i,1);
 
+/* Friendship level a villager's quest needs before it starts, by quest id,
+   from the Dreamlight Valley Wiki (Oct 25, 2026). 0 means no friendship
+   level (story or realm quests). Jasmine's Campaign is left out: it starts
+   during Cogsworth's level 10 quest, not on a Jasmine level.
+   The to-do list only suggests a villager's quest below level 10 when it's
+   listed here, so it never suggests one that isn't open yet. */
+const FRIEND_REQ={
+  "daisy-duck--the-glittered-gala":10,
+  "mulan--training-treasures":0,"mulan--a-daily-regime":2,"mulan--the-shadow-play":4,"mulan--the-art-of-fun":7,"mulan--training-games":10,
+  "mushu--a-reminder-in-stone":2,"mushu--the-mushu-program":4,"mushu--the-guardian-party":7,"mushu--the-tiny-villager-society":10,
+  "sally--patchwork-party":7,"sally--preposterous-premonitions":10,
+  "aladdin--good-as-gold":2,"aladdin--bring-your-own-carpet":4,"aladdin--all-that-glitters":7,"aladdin--advanced-marketing":10,
+  "jasmine--a-sandy-competition":4,"jasmine--hot-and-cold":7,"jasmine--wild-wild-wishes":10,
+  "peter-pan--a-real-hideout":4,"peter-pan--the-new-lost-boys":7,"peter-pan--the-valley-pirates":10,
+  "cinderella--critter-chaos":4,"cinderella--a-dream-come-true":7,"cinderella--the-friendship-ball":10,
+  "pocahontas--working-together":4,"pocahontas--a-little-algae-problem":7,"pocahontas--a-raccoon-s-return":10,
+  "ralph--mini-game-mayhem":4,"ralph--green-monster-inc":7,"ralph--ralph-breaks-the-valley":10,
+  "jafar--the-secrets-of-eternity-isles":0,"jafar--the-flying-metal-nuisance":0,"jafar--the-sands-in-the-hourglass":0,"jafar--your-eternal-reward":0,"jafar--the-optics-of-a-second-chance":2,"jafar--the-alchemical-revolution":4,"jafar--the-serpent-s-gift":7,"jafar--the-trial-of-eternity":10,"jafar--making-amends":10,
+  "oswald--an-alarming-development":4,"oswald--a-cockamamie-contest":7,"oswald--erratic-transportation":10,"oswald--the-lesser-evil":0
+};
+
 const LABEL={"":"To do",p:"In progress",d:"Done",l:"Not unlocked"};
 const CYCLE={"":"p",p:"d",d:"l",l:""};
 let S={}, filter="open", query="", qdoc=null, openSet=new Set(), first=true, editing=null;
@@ -1281,9 +1302,13 @@ function autoDone(v){
   return "";
 }
 const lockedRows=()=>Q.filter(r=>st(r[0])==="l");
-const reqLevel=r=>{const m=/friendship level (\d+)/i.exec(nt(r[0]));return m?+m[1]:0};
+// from a "Locked: … friendship level N" note, else FRIEND_REQ
+const reqLevel=r=>{const m=/friendship level (\d+)/i.exec(nt(r[0]));return m?+m[1]:FRIEND_REQ[r[0]]||0};
+// locked, or not started but FRIEND_REQ says the villager isn't high enough yet
+const waits=(r,L)=>{const s=st(r[0]);return s==="l"||(!s&&L>0&&FRIEND_REQ[r[0]]>L)};
 /* The quests a to-do helps open:
-   f (villager level)  their locked quests needing that level or less, plus
+   f (villager level)  their locked quests (or ones FRIEND_REQ says still
+                       wait on friendship) needing that level or less, plus
                        quests waiting to "progress further with" them
    u (villagers)       every unfinished quest of theirs, plus locked quests
                        whose note says "unlock <name>"
@@ -1291,7 +1316,7 @@ const reqLevel=r=>{const m=/friendship level (\d+)/i.exec(nt(r[0]));return m?+m[
 function opens(v){
   const out=new Set();
   if(v.f){const vl=VILLAGERS.find(x=>x.k===v.f.k);if(vl){
-    for(const r of vl.rows)if(st(r[0])==="l"&&reqLevel(r)&&reqLevel(r)<=v.f.l)out.add(r);
+    for(const r of vl.rows)if(waits(r,lvl(vl.k))&&reqLevel(r)&&reqLevel(r)<=v.f.l)out.add(r);
     const with_="with "+vl.name.split(" ")[0].toLowerCase();
     for(const r of lockedRows())if(nt(r[0]).toLowerCase().includes(with_))out.add(r)}}
   if(v.u)for(const name of v.u){
@@ -1304,7 +1329,7 @@ function opens(v){
 function autoTodos(){
   const out=[],have=Object.values(T).filter(v=>v&&v.t),gone=id=>!!T[id];
   for(const vl of VILLAGERS){
-    const L=lvl(vl.k),reqs=vl.rows.filter(r=>st(r[0])==="l").map(reqLevel).filter(n=>n>L);
+    const L=lvl(vl.k),reqs=vl.rows.filter(r=>waits(r,L)).map(reqLevel).filter(n=>n>L);
     if(!reqs.length||have.some(v=>v.f&&v.f.k===vl.k&&v.f.l>L))continue;
     const n=Math.min(...reqs),id=`a-f-${vl.k}-${n}`;
     if(!gone(id))out.push([id,{t:`${vl.name} to level ${n}`,h:FRIEND_TIP,g:"friend",f:{k:vl.k,l:n}}]);
@@ -1324,7 +1349,7 @@ function autoTodos(){
     if(!gone(id))out.push([id,{t:`${st(r[0])==="p"?"Finish":"Start"} ${title}`,g:"quest",q:r[0]}]);
   }
   // The next quest in each storyline: the first one not Done in its section,
-  // if nothing's holding it back. Villagers not met yet (level 0), events and
+  // if nothing's holding it back (see nextReady). Villagers not met yet (level 0), events and
   // expansions not owned are skipped. Mark one Not unlocked and it drops off.
   for(const g of byChar){
     const vl=VILLAGERS.find(x=>x.name===g.ch);
@@ -1350,9 +1375,12 @@ function playable(r){
   const e=SECTION_EXP[r[3]]||r[1];return OWNED.includes(e)||!EXP_PACKS.includes(e);
 }
 /* true if the quest is free to start, a hint if it's locked only on a
-   friendship level the villager has now reached, or false. */
+   friendship level the villager has now reached, or false. A villager's
+   quest not started counts as free once they're at the level FRIEND_REQ
+   gives, or at level 10 if it isn't listed there. */
 function nextReady(r,vl){
-  const s=st(r[0]);if(!s)return true;
+  const s=st(r[0]);
+  if(!s){if(!vl)return true;const need=FRIEND_REQ[r[0]];return lvl(vl.k)>=(need===undefined?MAX_LEVEL:need)}
   if(s!=="l"||!vl)return false;
   const need=reqLevel(r);
   if(!need||lvl(vl.k)<need||/,/.test(why(nt(r[0]))))return false;
