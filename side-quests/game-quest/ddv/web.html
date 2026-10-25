@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quest Web &middot; Dreamlight Valley</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/themes/side-quests.css">
+
+<style>
+  /* ======================================================================
+     THE QUEST WEB
+
+     Who opens what in Danni's Dreamlight Valley: which villagers a quest
+     needs (and at what friendship level), which quests wait on another
+     character's quest, which wait on "more progress" with someone, and
+     which quests bring a villager to the Valley.
+
+     Read-only. The links come from ddv-data.js (NEEDS, PROGRESS, UNLOCKS)
+     plus the "Locked: …" notes on the tracker; progress and friendship
+     levels come from the same Firestore documents the tracker writes.
+
+     One dot per character, an arrow from whoever's needed to whoever's
+     waiting. Tap a dot for the quest-by-quest detail. The selection is in
+     the #hash, so a character can be linked to directly.
+     ====================================================================== */
+
+  .qw [hidden]{ display: none !important; }
+  .qw{
+    --qw-needs: var(--dusk);
+    --qw-quest: var(--gold);
+    --qw-unlock: var(--pink-deep);
+    --qw-prog: var(--ink-soft);
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .qw-intro{
+    font-family: var(--font-serif); font-style: italic; font-size: 1.02rem; color: var(--ink-soft);
+    text-align: center; max-width: 640px; margin: -18px auto 0; line-height: 1.5;
+  }
+  .qw-intro a, .qw-foot a{ color: var(--accent-deep); }
+  .qw button:focus-visible, .qw input:focus-visible, .qw [tabindex]:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- search and toggles (in .pp-field for its input styling) ---- */
+  .qw-tools{ display: flex; flex-direction: row; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .qw-tools input{ flex: 1 1 240px; min-width: 0; width: auto; }
+  .qw-chips{ display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* ---- the web ---- */
+  .qw-graph{ position: relative; padding: 0; overflow: hidden; }
+  #web{ display: block; width: 100%; height: auto; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; }
+  .qw-graph.zoomed #web{ touch-action: none; }
+  #web.panning{ cursor: grabbing; }
+  .qw-zoom{ position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .qw-zoom button{
+    font: inherit; font-size: 1.05rem; line-height: 1; width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--white); color: var(--ink); box-shadow: var(--lift);
+  }
+  .qw-zoom button:hover{ border-color: var(--accent); color: var(--accent-deep); }
+  .qw-caption{ margin: 0; padding: 10px 16px 12px; border-top: 1px solid var(--line); font-size: .88rem; color: var(--ink-soft); line-height: 1.45; }
+  .qw-caption b{ color: var(--ink); font-weight: 600; }
+  .qw-caption a{ color: var(--accent-deep); }
+
+  .qw-edge{ fill: none; stroke-linecap: round; opacity: .5; transition: opacity .15s; }
+  .qw-edge.needs{ stroke: var(--qw-needs); }
+  .qw-edge.quest{ stroke: var(--qw-quest); }
+  .qw-edge.unlock{ stroke: var(--qw-unlock); }
+  .qw-edge.progress{ stroke: var(--qw-prog); stroke-dasharray: 5 5; }
+  .qw-edge.done{ opacity: .18; }
+  svg.focus .qw-edge.lit{ opacity: 1; }
+  .qw-node{ cursor: pointer; transition: opacity .15s; }
+  .qw-node circle{ fill: var(--white); stroke: var(--dusk); stroke-width: 2; }
+  .qw-node.unmet circle{ fill: #F6EFE0; stroke: var(--gold); stroke-dasharray: 4 3; }
+  .qw-node.story circle{ fill: var(--panel-tint); stroke: var(--line-strong); }
+  .qw-node.sel circle{ fill: var(--accent); stroke: var(--accent-deep); stroke-dasharray: none; }
+  .qw-node text{ font-family: var(--font-body); font-size: 13px; fill: var(--ink); paint-order: stroke; stroke: rgba(255,255,255,.85); stroke-width: 3.5px; stroke-linejoin: round; pointer-events: none; }
+  .qw-node.sel text, .qw-node.near text{ font-weight: 600; }
+  .qw-node:hover circle{ stroke-width: 3; }
+  svg.focus .qw-node:not(.sel):not(.near){ opacity: .22; }
+  svg.focus .qw-edge:not(.lit){ opacity: .06; }
+  svg.focus .qw-edge.lit.done{ opacity: .3; }
+
+  .qw-legend{ display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 0 16px 14px; font-size: .8rem; color: var(--ink-soft); }
+  .qw-legend span{ display: inline-flex; align-items: center; gap: 6px; }
+  .qw-legend svg{ flex: none; }
+
+  /* ---- detail ---- */
+  .qw-detail{ display: flex; flex-direction: column; gap: 14px; padding: 22px 24px; }
+  .qw-detail h3{ font-family: var(--font-serif); font-weight: 600; font-size: 1.6rem; margin: 0; line-height: 1.1; }
+  .qw-meta{ margin: -8px 0 0; font-size: .88rem; color: var(--ink-soft); }
+  .qw-label{ font-family: var(--font-body); font-size: .7rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--dusk-deep); margin: 6px 0 0; }
+  .qw-empty{ margin: 0; font-family: var(--font-serif); font-style: italic; color: var(--ink-soft); }
+  .qw-list{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .qw-list>li{ padding: 9px 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 5px; }
+  .qw-list>li.hit{ background: var(--accent-soft); border-radius: 8px; padding-left: 8px; padding-right: 8px; }
+  .qw-q{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+  .qw-q b{ font-weight: 600; }
+  .qw-q a{ color: inherit; text-decoration-color: var(--line-strong); text-underline-offset: 2px; }
+  .qw-q a:hover{ color: var(--accent-deep); }
+  .qw-st{ font-size: .7rem; font-weight: 500; letter-spacing: .04em; border-radius: 999px; padding: 1px 8px; background: var(--accent-soft); color: var(--ink-soft); }
+  .qw-st.d{ background: rgba(109,130,89,.16); color: var(--sage-deep); }
+  .qw-st.p{ background: rgba(232,124,166,.16); color: var(--pink-deep); }
+  .qw-st.l{ background: rgba(46,36,31,.07); }
+  .qw-why{ display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: .84rem; color: var(--ink-soft); }
+  .qw-who{
+    font: inherit; font-size: .8rem; padding: 3px 10px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--white); color: var(--ink);
+  }
+  .qw-who:hover{ border-color: var(--accent); color: var(--accent-deep); }
+  .qw-who.needs{ border-left: 3px solid var(--qw-needs); }
+  .qw-who.quest{ border-left: 3px solid var(--qw-quest); }
+  .qw-who.unlock{ border-left: 3px solid var(--qw-unlock); }
+  .qw-who.progress{ border-left: 3px dashed var(--qw-prog); }
+  .qw-who.unmet{ background: #F6EFE0; }
+  .qw-top{ display: grid; grid-template-columns: repeat(auto-fill,minmax(min(100%,220px),1fr)); gap: 8px; }
+  .qw-top button{
+    font: inherit; text-align: left; cursor: pointer; padding: 10px 12px; border-radius: var(--radius-sm);
+    border: 1px solid var(--line); background: var(--white); color: var(--ink); display: flex; flex-direction: column; gap: 2px;
+  }
+  .qw-top button:hover{ border-color: var(--accent); }
+  .qw-top button b{ font-weight: 600; }
+  .qw-top button span{ font-size: .82rem; color: var(--ink-soft); }
+  .qw-top button.unmet{ background: #F6EFE0; border-style: dashed; border-color: var(--gold); }
+  .qw-back{ font: inherit; font-size: .85rem; align-self: flex-start; color: var(--accent-deep); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .qw-foot{ font-family: var(--font-serif); font-style: italic; font-size: .9rem; color: var(--ink-soft); text-align: center; max-width: 640px; margin: 4px auto 0; }
+  @media (max-width: 560px){
+    .qw-detail{ padding: 20px 18px; }
+    .qw-node text{ font-size: 21px; stroke-width: 5px; }
+  }
+  @media (prefers-reduced-motion: reduce){ .qw *{ transition: none !important; } }
+</style>
+</head>
+<body class="pp-sidequest" data-nav-eyebrow="Dreamlight Valley" data-nav-title="Quest Web">
+
+<div class="pp-wrap">
+
+  <div class="pp-page-title">
+    <h2>The Quest Web</h2>
+  </div>
+
+  <div class="qw">
+    <p class="qw-intro">Who opens what in the Valley: the villagers each quest needs, the quests that wait on someone else's, and the quests that bring a villager home. Back to <a href="./">the quest tracker</a>.</p>
+
+    <div class="qw-tools pp-field">
+      <input id="find" type="search" list="find-list" placeholder="Find a character or quest" aria-label="Find a character or quest" autocomplete="off">
+      <datalist id="find-list"></datalist>
+      <div class="qw-chips">
+        <button class="pp-pill" type="button" id="t-done" aria-pressed="false">Hide finished</button>
+        <button class="pp-pill" type="button" id="t-prog" aria-pressed="false">&ldquo;Progress with&rdquo; links</button>
+      </div>
+    </div>
+
+    <section class="pp-panel qw-graph" id="graph" aria-label="The web">
+      <svg id="web" role="group" aria-label="Characters, with arrows from whoever is needed to whoever's quest is waiting. Choose one for the detail below."></svg>
+      <div class="qw-zoom">
+        <button type="button" id="z-in" aria-label="Zoom in">+</button>
+        <button type="button" id="z-out" aria-label="Zoom out">&minus;</button>
+        <button type="button" id="z-fit" aria-label="Show the whole web">&#8634;</button>
+      </div>
+      <div class="qw-legend" aria-hidden="true">
+        <span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--dusk)" stroke-width="2.5"/></svg>needs them met</span>
+        <span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--gold)" stroke-width="2.5"/></svg>needs their quest</span>
+        <span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--pink-deep)" stroke-width="2.5"/></svg>their quest brings them</span>
+        <span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--ink-soft)" stroke-width="2" stroke-dasharray="5 4"/></svg>more of their story</span>
+        <span><svg width="14" height="14"><circle cx="7" cy="7" r="5.5" fill="#F6EFE0" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="3 2"/></svg>not met yet</span>
+      </div>
+      <p class="qw-caption" id="caption"></p>
+    </section>
+
+    <section class="pp-panel qw-detail" id="detail" aria-live="polite"></section>
+
+    <p class="qw-foot">Requirements from the Dreamlight Valley Wiki, checked Oct 25, 2026, plus the &ldquo;Locked&rdquo; notes on the tracker. Only the Base Game and A Rift in Time. Quest names link to the wiki.</p>
+  </div>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-firebase.js"></script>
+<script src="ddv-data.js"></script>
+<script>
+"use strict";
+
+const $=id=>document.getElementById(id);
+const NS="http://www.w3.org/2000/svg";
+let S={},FD={};   // quest progress and friendship levels, as the tracker stores them
+const st=id=>(S[id]&&S[id].s)||"";
+const nt=id=>(S[id]&&S[id].n)||"";
+const lvl=k=>+FD[k]||0;
+const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const plural=(n,w)=>`${n} ${w}${n===1?"":"s"}`;
+const ROW=new Map(Q.map(r=>[r[0],r]));
+const STATUS={"":"To do",p:"In progress",d:"Done",l:"Locked"};
+let hideDone=false,showProg=false,sel=null,hit=null;
+
+/* ---------------- characters ----------------
+   One per villager (by key), plus the storylines that aren't villagers
+   (Introductory, The Forgotten…), by the slug of their name. Only the
+   expansions Danni owns. */
+const CH=new Map();
+for(const v of VILLAGERS)CH.set(v.k,{k:v.k,name:v.name,v,rows:v.rows});
+for(const g of byChar){
+  if(/\(Dream Bundle\)$/.test(g.ch)||VILLAGERS.some(v=>v.name===g.ch))continue;
+  const k=slug(g.ch);if(!CH.has(k))CH.set(k,{k,name:g.ch,v:null,rows:[]});CH.get(k).rows.push(...g.rows)}
+for(const[k,c]of CH)if(!c.rows.some(r=>OWNED.includes(r[1])))CH.delete(k);
+const ownerOf=new Map();for(const c of CH.values())for(const r of c.rows)ownerOf.set(r[0],c.k);
+const met=c=>!c.v||lvl(c.k)>0||c.rows.some(r=>st(r[0])==="d");
+const SHORT={"fairy-godmother":"Godmother","mother-gothel":"Gothel","cheshire-cat":"Cheshire","the-beast":"Beast","scrooge-mcduck":"Scrooge","vanellope-von-schwee":"Vanellope","peter-pan":"Peter Pan","oogie-boogie":"Oogie","jack-skellington":"Jack","the-forgotten":"Forgotten"};
+const short=c=>SHORT[c.k]||c.name.split(" ")[0];
+const byNameOrFirst=n=>{n=n.trim().toLowerCase();for(const c of CH.values())if(c.name.toLowerCase()===n||c.name.split(" ")[0].toLowerCase()===n)return c};
+// "Oswald's A Cockamamie Contest" or "The Guardian Party" -> that quest's row
+function questNamed(text){
+  const t=text.trim().toLowerCase(),rows=Q.filter(r=>ownerOf.has(r[0])&&t.endsWith(r[4].toLowerCase()));
+  return rows.find(r=>t.startsWith(r[2].split(" ")[0].toLowerCase()))||rows.find(r=>t===r[4].toLowerCase());
+}
+
+/* ---------------- links ----------------
+   Every reason one character holds up another, quest by quest:
+     {kind, from, to, q, …}  q is the quest that waits (or, for an unlock,
+                             the quest that brings the villager)
+     needs     from must be met (l: at that friendship level)
+     quest     from's quest p comes first
+     progress  more of from's story first
+     unlock    from's quest q brings villager `to` to the Valley */
+function buildLinks(){
+  const out=[],seen=new Set();
+  const add=o=>{if(!CH.has(o.from)||!CH.has(o.to)||!ownerOf.has(o.q))return;
+    const key=[o.kind,o.from,o.to,o.q,o.p||""].join("|");if(seen.has(key))return;seen.add(key);out.push(o)};
+  for(const[q,list]of Object.entries(NEEDS))for(const x of list){
+    if(x.includes("--")){if(ownerOf.has(x))add({kind:"quest",from:ownerOf.get(x),to:ownerOf.get(q),q,p:x})}
+    else{const[k,l]=x.split("@");add({kind:"needs",from:k,to:ownerOf.get(q),q,l:l?+l:0})}}
+  for(const[q,list]of Object.entries(PROGRESS))for(const k of list)add({kind:"progress",from:k,to:ownerOf.get(q),q});
+  for(const[q,list]of Object.entries(UNLOCKS))for(const k of list)add({kind:"unlock",from:ownerOf.get(q),to:k,q});
+  // the tracker's own notes: "Locked: unlock Mulan, Tiana friendship level 7"
+  for(const r of Q){const n=nt(r[0]);if(!/^locked/i.test(n)||!ownerOf.has(r[0]))continue;
+    const why=n.replace(/^locked:\s*/i,""),to=ownerOf.get(r[0]);let m;
+    if((m=/unlock ([^,]+?)\s*(?:,|$)/i.exec(why))){const c=byNameOrFirst(m[1]);if(c)add({kind:"needs",from:c.k,to,q:r[0],l:0})}
+    if((m=/starts during (.+?)\s*(?:,|$)/i.exec(why))){const p=questNamed(m[1]);if(p)add({kind:"quest",from:ownerOf.get(p[0]),to,q:r[0],p:p[0]})}
+    if((m=/progress further with ([^,]+?)\s*(?:,|$)/i.exec(why))){const c=byNameOrFirst(m[1]);if(c)add({kind:"progress",from:c.k,to,q:r[0]})}}
+  return out;
+}
+let LINKS=[];
+const linkDone=o=>st(o.q)==="d";
+const shown=o=>(showProg||o.kind!=="progress")&&!(hideDone&&linkDone(o));
+
+/* ---------------- layout ----------------
+   A force layout (Fruchterman–Reingold), worked out once from every link
+   so the web keeps its shape when the toggles change. It starts from a
+   circle in quest-list order, so it comes out the same on every load. */
+let W=1000,H=760,NODES=[],EDGES=[];
+function layout(){
+  const narrow=matchMedia("(max-width: 600px)").matches;
+  W=narrow?700:1000;H=narrow?980:760;
+  const pairs=new Map();
+  for(const o of LINKS){if(o.from===o.to)continue;const k=o.from+">"+o.to;pairs.set(k,(pairs.get(k)||0)+1)}
+  const keys=new Set();for(const k of pairs.keys())for(const x of k.split(">"))keys.add(x);
+  NODES=[...CH.values()].filter(c=>keys.has(c.k)).map(c=>({c,x:0,y:0,deg:0}));
+  const at=new Map(NODES.map(n=>[n.c.k,n]));
+  const E=[...pairs].map(([k,w])=>{const[a,b]=k.split(">");at.get(a).deg+=w;at.get(b).deg+=w;return{a:at.get(a),b:at.get(b),w}});
+  const n=NODES.length,area=W*H,k=Math.sqrt(area/n)*1.05;
+  NODES.forEach((d,i)=>{const a=2*Math.PI*i/n;d.x=W/2+W*.4*Math.cos(a);d.y=H/2+H*.4*Math.sin(a)});
+  let t=W/10;
+  for(let it=0;it<800;it++){
+    for(const d of NODES){d.dx=0;d.dy=0}
+    for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const a=NODES[i],b=NODES[j];
+      let dx=a.x-b.x,dy=a.y-b.y;const d=Math.hypot(dx,dy)||.01,f=k*k/d;dx/=d;dy/=d;a.dx+=dx*f;a.dy+=dy*f;b.dx-=dx*f;b.dy-=dy*f}
+    for(const e of E){let dx=e.a.x-e.b.x,dy=e.a.y-e.b.y;const d=Math.hypot(dx,dy)||.01,f=d*d/k*Math.min(1.6,.6+.15*e.w);
+      dx/=d;dy/=d;e.a.dx-=dx*f;e.a.dy-=dy*f;e.b.dx+=dx*f;e.b.dy+=dy*f}
+    for(const d of NODES){d.dx+=(W/2-d.x)*.02*k/10;d.dy+=(H/2-d.y)*.02*k/10;
+      const m=Math.hypot(d.dx,d.dy)||1,s=Math.min(m,t);
+      d.x=Math.max(40,Math.min(W-40,d.x+d.dx/m*s));d.y=Math.max(30,Math.min(H-34,d.y+d.dy/m*s))}
+    t=Math.max(1,t*.992);
+  }
+  // the phone layout is drawn smaller, so its dots are bigger
+  for(const d of NODES)d.r=(7+Math.min(9,Math.sqrt(d.deg)*1.4))*(narrow?1.35:1);
+  // then nudge apart any dots (with their labels) still sitting on each other
+  for(let it=0;it<60;it++)for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const a=NODES[i],b=NODES[j];
+    const min=a.r+b.r+(narrow?34:26),dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy)||.01;if(d>=min)continue;
+    const push=(min-d)/2,ux=d>.01?dx/d:1,uy=d>.01?dy/d:0;
+    a.x=Math.max(40,Math.min(W-40,a.x+ux*push));a.y=Math.max(30,Math.min(H-34,a.y+uy*push));
+    b.x=Math.max(40,Math.min(W-40,b.x-ux*push));b.y=Math.max(30,Math.min(H-34,b.y-uy*push))}
+}
+
+/* ---------------- drawing ---------------- */
+const svg=$("web");
+let view={x:0,y:0,w:W,h:H};
+function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.append(e);return e}
+const KIND_RANK={unlock:3,quest:2,needs:1,progress:0};
+function draw(){
+  svg.innerHTML="";
+  const defs=el("defs",{},svg);
+  for(const[kind,col]of[["needs","var(--dusk)"],["quest","var(--gold)"],["unlock","var(--pink-deep)"],["progress","var(--ink-soft)"]]){
+    const m=el("marker",{id:"arrow-"+kind,viewBox:"0 0 10 10",refX:"9",refY:"5",markerWidth:"7",markerHeight:"7",orient:"auto-start-reverse",markerUnits:"userSpaceOnUse"},defs);
+    el("path",{d:"M0,0 L10,5 L0,10 z",fill:col},m)}
+  const gE=el("g",{},svg),gN=el("g",{},svg);
+  const at=new Map(NODES.map(n=>[n.c.k,n]));
+  // one arrow per pair, coloured by the strongest reason; finished when every reason is
+  const pairs=new Map();
+  for(const o of LINKS){if(o.from===o.to||!shown(o))continue;const k=o.from+">"+o.to;
+    if(!pairs.has(k))pairs.set(k,{a:at.get(o.from),b:at.get(o.to),links:[]});pairs.get(k).links.push(o)}
+  EDGES=[];
+  for(const p of pairs.values()){if(!p.a||!p.b)continue;
+    const kind=p.links.reduce((a,o)=>KIND_RANK[o.kind]>KIND_RANK[a]?o.kind:a,"progress");
+    const done=p.links.every(linkDone),w=new Set(p.links.map(o=>o.q)).size;
+    const{a,b}=p;const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1;
+    // bend a little, so A->B and B->A don't sit on top of each other
+    const mx=(a.x+b.x)/2-dy*.12,my=(a.y+b.y)/2+dx*.12;
+    const ex=b.x-(b.x-mx)/Math.hypot(b.x-mx,b.y-my)*(b.r+3),ey=b.y-(b.y-my)/Math.hypot(b.x-mx,b.y-my)*(b.r+3);
+    const path=el("path",{class:`qw-edge ${kind}${done?" done":""}`,d:`M${a.x.toFixed(1)},${a.y.toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}`,
+      "stroke-width":(1.2+Math.min(3.3,w*.55)).toFixed(2),"marker-end":`url(#arrow-${kind})`},gE);
+    EDGES.push({p,path})}
+  for(const n of NODES){const c=n.c;
+    const g=el("g",{class:"qw-node"+(c.v?(met(c)?"":" unmet"):" story"),transform:`translate(${n.x.toFixed(1)},${n.y.toFixed(1)})`,tabindex:"0",role:"button",
+      "aria-label":`${c.name}${c.v&&!met(c)?", not met yet":""}`},gN);
+    el("circle",{r:n.r.toFixed(1)},g);
+    const tx=el("text",{y:(n.r+(W<1000?20:14)).toFixed(1),"text-anchor":"middle"},g);tx.textContent=short(c);
+    g.addEventListener("click",()=>{if(!moved)select(sel===c.k?null:c.k)});
+    g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();select(sel===c.k?null:c.k)}});
+    n.g=g}
+  highlight();setView(view);
+}
+function highlight(){
+  svg.classList.toggle("focus",!!sel);
+  const near=new Set();
+  for(const{p,path}of EDGES){const lit=!!sel&&(p.a.c.k===sel||p.b.c.k===sel);path.classList.toggle("lit",lit);if(lit){near.add(p.a.c.k);near.add(p.b.c.k)}}
+  for(const n of NODES){n.g.classList.toggle("sel",n.c.k===sel);n.g.classList.toggle("near",near.has(n.c.k)&&n.c.k!==sel)}
+  // selected and its neighbours draw on top
+  const s=NODES.find(n=>n.c.k===sel);if(s)s.g.parentNode.append(s.g);
+}
+
+/* ---------------- pan and zoom ----------------
+   The +/- buttons, the mouse wheel, a drag, or a pinch. Until it's zoomed
+   in, a one-finger swipe on a phone scrolls the page as usual. */
+function setView(v){
+  const minW=W/6;v.w=Math.max(minW,Math.min(W,v.w));v.h=v.w*H/W;
+  v.x=Math.max(-W*.1,Math.min(W*1.1-v.w,v.x));v.y=Math.max(-H*.1,Math.min(H*1.1-v.h,v.y));
+  if(v.w>=W){v.x=0;v.y=0}
+  view=v;svg.setAttribute("viewBox",`${v.x.toFixed(1)} ${v.y.toFixed(1)} ${v.w.toFixed(1)} ${v.h.toFixed(1)}`);
+  $("graph").classList.toggle("zoomed",v.w<W-1);
+}
+function zoomAt(f,cx,cy){
+  if(cx===undefined){cx=view.x+view.w/2;cy=view.y+view.h/2}
+  const w=view.w*f,h=w*H/W;setView({x:cx-(cx-view.x)*w/view.w,y:cy-(cy-view.y)*h/view.h,w,h});
+}
+function toUser(e){const r=svg.getBoundingClientRect();return{x:view.x+(e.clientX-r.left)/r.width*view.w,y:view.y+(e.clientY-r.top)/r.height*view.h}}
+$("z-in").onclick=()=>zoomAt(1/1.4);$("z-out").onclick=()=>zoomAt(1.4);$("z-fit").onclick=()=>setView({x:0,y:0,w:W,h:H});
+svg.addEventListener("wheel",e=>{e.preventDefault();const u=toUser(e);zoomAt(e.deltaY>0?1.15:1/1.15,u.x,u.y)},{passive:false});
+const ptrs=new Map();let moved=false,pinch0=null,drag0=null;
+svg.addEventListener("pointerdown",e=>{ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});moved=false;
+  if(ptrs.size===1)drag0={x:e.clientX,y:e.clientY,v:{...view}};
+  if(ptrs.size===2){const[p,q]=[...ptrs.values()];pinch0={d:Math.hypot(p.x-q.x,p.y-q.y),v:{...view},c:toUser({clientX:(p.x+q.x)/2,clientY:(p.y+q.y)/2})}}});
+svg.addEventListener("pointermove",e=>{if(!ptrs.has(e.pointerId))return;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  const r=svg.getBoundingClientRect();
+  if(ptrs.size===2&&pinch0){const[p,q]=[...ptrs.values()],d=Math.hypot(p.x-q.x,p.y-q.y)||1,w=pinch0.v.w*pinch0.d/d,h=w*H/W,c=pinch0.c;
+    setView({x:c.x-(c.x-pinch0.v.x)*w/pinch0.v.w,y:c.y-(c.y-pinch0.v.y)*h/pinch0.v.h,w,h});moved=true;return}
+  if(ptrs.size===1&&drag0){const dx=e.clientX-drag0.x,dy=e.clientY-drag0.y;
+    if(Math.hypot(dx,dy)>5){moved=true;svg.classList.add("panning");if(e.pointerType==="mouse"||view.w<W-1)svg.setPointerCapture?.(e.pointerId)}
+    if(moved&&(e.pointerType==="mouse"||view.w<W-1))setView({...drag0.v,x:drag0.v.x-dx/r.width*view.w,y:drag0.v.y-dy/r.height*view.h})}});
+const up=e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pinch0=null;if(!ptrs.size){drag0=null;svg.classList.remove("panning")}};
+svg.addEventListener("pointerup",up);svg.addEventListener("pointercancel",up);
+svg.addEventListener("click",e=>{if(!moved&&e.target===svg&&sel)select(null)});
+
+/* ---------------- the detail panel ---------------- */
+function wikiLink(r){
+  const a=document.createElement("a");a.textContent=r[4];a.target="_blank";a.rel="noopener";
+  a.href="https://dreamlightvalleywiki.com/index.php?title=Special%3ASearch&go=Go&search="+encodeURIComponent(r[4]);
+  a.setAttribute("aria-label",`${r[4]}, on the Dreamlight Valley Wiki (opens in a new tab)`);return a}
+function statusPill(id){const s=st(id),p=document.createElement("span");p.className="qw-st "+s;p.textContent=STATUS[s];return p}
+function questLine(r,mine){
+  const d=document.createElement("div");d.className="qw-q";const b=document.createElement("b");b.append(wikiLink(r));
+  d.append(b);if(!mine){const o=document.createElement("span");o.textContent=r[2];o.style.color="var(--ink-soft)";o.style.fontSize=".84rem";d.append(o)}
+  d.append(statusPill(r[0]));return d}
+function who(k,kind,text){
+  const c=CH.get(k),b=document.createElement("button");b.type="button";b.className="qw-who "+kind+(c.v&&!met(c)?" unmet":"");
+  b.textContent=text||c.name;b.onclick=()=>select(k);return b}
+// what a link says, seen from the quest that waits
+function reason(o){
+  const c=CH.get(o.from);
+  if(o.kind==="needs")return who(o.from,"needs",o.l?`${c.name} at level ${o.l}`:`${c.name}${c.v&&!met(c)?" (not met)":""}`);
+  if(o.kind==="quest")return who(o.from,"quest",`${c.name}'s ${ROW.get(o.p)[4]}`);
+  if(o.kind==="progress")return who(o.from,"progress",`more of ${c.name}'s story`);
+}
+function section(label,items,empty){
+  const box=document.createDocumentFragment();const h=document.createElement("p");h.className="qw-label";h.textContent=label;box.append(h);
+  if(!items.length){const p=document.createElement("p");p.className="qw-empty";p.textContent=empty;box.append(p);return box}
+  const ul=document.createElement("ul");ul.className="qw-list";for(const li of items)ul.append(li);box.append(ul);return box}
+function renderDetail(){
+  const D=$("detail");D.innerHTML="";
+  const L=LINKS.filter(shown);
+  if(!sel)return renderOverview(D,L);
+  const c=CH.get(sel);
+  const back=document.createElement("button");back.type="button";back.className="qw-back";back.textContent="← Everyone";back.onclick=()=>select(null);
+  const h=document.createElement("h3");h.textContent=c.name;
+  const meta=document.createElement("p");meta.className="qw-meta";
+  const done=c.rows.filter(r=>st(r[0])==="d").length;
+  meta.textContent=(c.v?(met(c)?(lvl(c.k)?`Friendship level ${lvl(c.k)}`:"Met (level not set on the tracker)"):"Not met yet"):"Storyline")+` · ${done} of ${plural(c.rows.length,"quest")} done`;
+  D.append(back,h,meta);
+
+  // how they arrive
+  const into=L.filter(o=>o.kind==="unlock"&&o.to===sel);
+  D.append(section(c.v?"Comes to the Valley with":"Comes with",into.map(o=>{const li=document.createElement("li");li.append(questLine(ROW.get(o.q),o.from===sel));
+    if(o.from!==sel){const w=document.createElement("div");w.className="qw-why";w.append("A quest of ",who(o.from,"unlock"));li.append(w)}return li}),
+    c.v?"Nothing on record. Most villagers arrive through their own first quests.":"Nothing on record."));
+
+  // their quests, and what each waits on
+  const wait=new Map();for(const o of L)if(o.to===sel&&o.kind!=="unlock"&&o.from!==sel){if(!wait.has(o.q))wait.set(o.q,[]);wait.get(o.q).push(o)}
+  D.append(section("Their quests wait on",[...wait].sort((a,b)=>c.rows.findIndex(r=>r[0]===a[0])-c.rows.findIndex(r=>r[0]===b[0])).map(([q,os])=>{
+    const li=document.createElement("li");li.dataset.q=q;li.append(questLine(ROW.get(q),true));
+    const w=document.createElement("div");w.className="qw-why";for(const o of os.sort((a,b)=>KIND_RANK[b.kind]-KIND_RANK[a.kind]))w.append(reason(o));li.append(w);return li}),
+    hideDone?"Nothing still to do waits on anyone else.":"None of their quests wait on anyone else."));
+
+  // who waits on them, by character
+  const need=new Map();for(const o of L)if(o.from===sel&&o.to!==sel&&o.kind!=="unlock"){if(!need.has(o.to))need.set(o.to,[]);need.get(o.to).push(o)}
+  D.append(section("They're needed for",[...need].sort((a,b)=>new Set(b[1].map(o=>o.q)).size-new Set(a[1].map(o=>o.q)).size).map(([k,os])=>{
+    const li=document.createElement("li");const top=document.createElement("div");top.className="qw-why";top.append(who(k,os[0].kind));li.append(top);
+    // one line per quest, with every reason it waits on them
+    const byQ=new Map();for(const o of os){if(!byQ.has(o.q))byQ.set(o.q,[]);byQ.get(o.q).push(o)}
+    for(const[qid,qs]of byQ){const q=questLine(ROW.get(qid),true);
+      const why=document.createElement("span");why.style.fontSize=".82rem";why.style.color="var(--ink-soft)";
+      why.textContent=qs.map(o=>o.kind==="needs"?(o.l?`needs ${short(c)} at level ${o.l}`:`needs ${short(c)} met`):o.kind==="quest"?`after ${ROW.get(o.p)[4]}`:"after more of their story").join(" · ");
+      q.append(why);li.append(q)}
+    return li}),
+    hideDone?"Nobody's unfinished quests wait on them.":"No other character's quests wait on them."));
+
+  // who they bring
+  const out=L.filter(o=>o.kind==="unlock"&&o.from===sel&&o.to!==sel);
+  if(out.length)D.append(section("Their quests bring",out.map(o=>{const li=document.createElement("li");li.append(questLine(ROW.get(o.q),true));
+    const w=document.createElement("div");w.className="qw-why";w.append("Brings ",who(o.to,"unlock"));li.append(w);return li}),""));
+
+  if(hit){const li=D.querySelector(`li[data-q="${CSS.escape(hit)}"]`);if(li){li.classList.add("hit");li.scrollIntoView({block:"nearest"})}}
+}
+// nothing chosen: who holds up the most
+function renderOverview(D,L){
+  const h=document.createElement("h3");h.textContent="Who holds up the most";
+  const meta=document.createElement("p");meta.className="qw-meta";meta.textContent=`Other characters' ${hideDone?"unfinished ":""}quests that wait on each one. Tap a dot in the web, or a name below.`;
+  D.append(h,meta);
+  const count=new Map();
+  for(const o of L){if(o.from===o.to||o.kind==="unlock")continue;if(!count.has(o.from))count.set(o.from,new Set());count.get(o.from).add(o.q)}
+  const top=[...count].map(([k,s])=>({c:CH.get(k),n:s.size})).sort((a,b)=>b.n-a.n||a.c.name.localeCompare(b.c.name));
+  const mk=list=>{const g=document.createElement("div");g.className="qw-top";
+    for(const{c,n}of list){const b=document.createElement("button");b.type="button";if(c.v&&!met(c))b.classList.add("unmet");
+      const nm=document.createElement("b");nm.textContent=c.name;const s=document.createElement("span");s.textContent=`${plural(n,"quest")} ${n===1?"waits":"wait"} on them`+(c.v&&!met(c)?" · not met yet":"");
+      b.append(nm,s);b.onclick=()=>select(c.k);g.append(b)}return g};
+  const unmet=top.filter(x=>x.c.v&&!met(x.c));
+  if(unmet.length){const l=document.createElement("p");l.className="qw-label";l.textContent="Not met yet";D.append(l,mk(unmet))}
+  const l=document.createElement("p");l.className="qw-label";l.textContent="Everyone";D.append(l,mk(top.filter(x=>!(x.c.v&&!met(x.c))).slice(0,18)));
+}
+function caption(){
+  const C=$("caption");C.innerHTML="";
+  if(!sel){C.textContent=`${plural(NODES.length,"character")}, ${plural(new Set(LINKS.filter(shown).map(o=>o.q)).size,"quest")} with a link. Arrows point from whoever's needed to whoever's waiting.`;return}
+  const c=CH.get(sel),L=LINKS.filter(shown);
+  const waits=new Set(L.filter(o=>o.to===sel&&o.from!==sel&&o.kind!=="unlock").map(o=>o.q)).size;
+  const needed=new Set(L.filter(o=>o.from===sel&&o.to!==sel&&o.kind!=="unlock").map(o=>o.q)).size;
+  const b=document.createElement("b");b.textContent=c.name;
+  C.append(b,`: ${plural(waits,"quest")} of theirs wait on others, and ${plural(needed,"quest")} of others' wait on them. `);
+  const a=document.createElement("a");a.href="#detail";a.textContent="Details below";C.append(a);
+}
+
+/* ---------------- choosing ---------------- */
+function select(k,q){
+  sel=k&&CH.has(k)?k:null;hit=q||null;
+  history.replaceState(null,"",sel?"#"+sel:location.pathname+location.search);
+  highlight();renderDetail();caption();
+}
+function fillFind(){
+  const dl=$("find-list");dl.innerHTML="";
+  const opts=[...NODES.map(n=>n.c.name).sort()];
+  const qs=new Set(LINKS.map(o=>o.q));for(const q of qs){const r=ROW.get(q);opts.push(`${r[4]} (${r[2]})`)}
+  for(const t of opts){const o=document.createElement("option");o.value=t;dl.append(o)}
+}
+$("find").addEventListener("change",e=>{const v=e.target.value.trim();if(!v)return;
+  const c=[...CH.values()].find(c=>c.name.toLowerCase()===v.toLowerCase());
+  if(c&&NODES.some(n=>n.c===c)){select(c.k);e.target.value="";return}
+  const m=/^(.*) \(([^)]*)\)$/.exec(v);
+  if(m){const r=Q.find(r=>r[4]===m[1]&&r[2]===m[2]&&ownerOf.has(r[0]));
+    // a quest: show the character whose quest waits, or, if it's the one doing the bringing, them
+    if(r){const o=LINKS.find(o=>o.q===r[0]);select(o&&o.kind!=="unlock"?o.to:ownerOf.get(r[0]),r[0]);e.target.value=""}}});
+for(const[id,set]of[["t-done",v=>hideDone=v],["t-prog",v=>showProg=v]]){const b=$(id);
+  b.onclick=()=>{const v=b.getAttribute("aria-pressed")!=="true";b.setAttribute("aria-pressed",v);set(v);draw();renderDetail();caption()}}
+
+/* ---------------- data ---------------- */
+let laidOut="";
+function refresh(){
+  LINKS=buildLinks();
+  // lay out again only if the set of characters changed (a new "Locked" note)
+  const keys=[...new Set(LINKS.filter(o=>o.from!==o.to).flatMap(o=>[o.from,o.to]))].sort().join(",")+"|"+matchMedia("(max-width: 600px)").matches;
+  if(keys!==laidOut){laidOut=keys;layout();view={x:0,y:0,w:W,h:H}}
+  if(sel&&!CH.has(sel))sel=null;
+  draw();fillFind();renderDetail();caption();
+}
+matchMedia("(max-width: 600px)").addEventListener("change",refresh);
+try{const p=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");if(p){S=p.S||{};FD=p.F||{}}}catch(e){}
+sel=CH.has(location.hash.slice(1))?location.hash.slice(1):null;
+refresh();
+try{
+  firebase.initializeApp(window.PPFirebaseConfig);
+  const db=firebase.firestore();
+  db.doc(QUEST_DOC).onSnapshot(s=>{S=s.exists?{...s.data()}:{};refresh()},err=>console.error(err));
+  db.doc(FRIENDS_DOC).onSnapshot(s=>{FD=s.exists?{...s.data()}:{};refresh()},err=>console.error(err));
+}catch(err){console.error("Firestore unavailable, showing the copy saved on this device:",err)}
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>
