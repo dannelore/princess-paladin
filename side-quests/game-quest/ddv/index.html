@@ -182,6 +182,7 @@
   .dv-ti.done b{ text-decoration: line-through; color: var(--ink-soft); font-weight: 400; }
   .dv-rm{ font: inherit; font-size: 1.1rem; line-height: 1; border: 0; background: none; color: var(--ink-soft); cursor: pointer; padding: 0 6px 4px; border-radius: 6px; }
   .dv-rm:hover{ color: var(--blade); }
+  .dv-nb.dv-more{ margin-top: 6px; color: var(--accent-deep); font-weight: 500; }
   /* these sit in .pp-field for its input styling, which also stacks them in a column */
   .dv-add{ display: flex; flex-direction: row; gap: 8px; flex-wrap: wrap; align-items: center; }
   .dv-add input{ flex: 1 1 140px; min-width: 0; }
@@ -1075,10 +1076,9 @@ for(let i=Q.length-1;i>=0;i--)if(NOT_OWNED_BUNDLES.includes(Q[i][2]))Q.splice(i,
 
 /* Friendship level a villager's quest needs before it starts, by quest id,
    from the Dreamlight Valley Wiki (Oct 25, 2026). 0 means no friendship
-   level (story or realm quests). Jasmine's Campaign is left out: it starts
-   during Cogsworth's level 10 quest, not on a Jasmine level.
-   The to-do list only suggests a villager's quest below level 10 when it's
-   listed here, so it never suggests one that isn't open yet. */
+   level (story or realm quests). A villager's quest that isn't listed is
+   treated as needing level 10, so the to-do list never suggests one that
+   isn't open yet. */
 const FRIEND_REQ={
   "daisy-duck--the-glittered-gala":10,
   "mulan--training-treasures":0,"mulan--a-daily-regime":2,"mulan--the-shadow-play":4,"mulan--the-art-of-fun":7,"mulan--training-games":10,
@@ -1091,8 +1091,27 @@ const FRIEND_REQ={
   "pocahontas--working-together":4,"pocahontas--a-little-algae-problem":7,"pocahontas--a-raccoon-s-return":10,
   "ralph--mini-game-mayhem":4,"ralph--green-monster-inc":7,"ralph--ralph-breaks-the-valley":10,
   "jafar--the-secrets-of-eternity-isles":0,"jafar--the-flying-metal-nuisance":0,"jafar--the-sands-in-the-hourglass":0,"jafar--your-eternal-reward":0,"jafar--the-optics-of-a-second-chance":2,"jafar--the-alchemical-revolution":4,"jafar--the-serpent-s-gift":7,"jafar--the-trial-of-eternity":10,"jafar--making-amends":10,
-  "oswald--an-alarming-development":4,"oswald--a-cockamamie-contest":7,"oswald--erratic-transportation":10,"oswald--the-lesser-evil":0
+  "oswald--an-alarming-development":4,"oswald--a-cockamamie-contest":7,"oswald--erratic-transportation":10,"oswald--the-lesser-evil":0,
+  "jasmine--jasmine-s-campaign-forest-beautification":0
 };
+/* What else a quest needs first, from the same wiki pages: villagers to have
+   met (by key) or quests to have finished (by id). Only ones that aren't
+   already a given for this save. */
+const NEEDS={
+  "cinderella--critter-chaos":["alice","cheshire-cat"],
+  "cinderella--the-friendship-ball":["cogsworth","lumiere"],
+  "ralph--mini-game-mayhem":["alice"],
+  "pocahontas--working-together":["cogsworth"],
+  "ralph--ralph-breaks-the-valley":["peter-pan--a-real-hideout"],
+  "aladdin--good-as-gold":["introductory--making-cents-of-things"],
+  "aladdin--advanced-marketing":["the-beast--a-gift-in-crimson"],
+  "jafar--your-eternal-reward":["rapunzel--the-tower","gaston--diamond-in-the-rough"],
+  "jafar--the-alchemical-revolution":["jack-skellington--the-scientific-method"],
+  "oswald--the-lesser-evil":["merlin--the-now-and-then"],
+  "jasmine--jasmine-s-campaign-forest-beautification":["cogsworth--vote-for-cogsworth"]
+};
+/* How to meet a villager, shown on their Unlock to-do. */
+const UNLOCK_HOW={};
 
 const LABEL={"":"To do",p:"In progress",d:"Done",l:"Not unlocked"};
 const CYCLE={"":"p",p:"d",d:"l",l:""};
@@ -1270,12 +1289,11 @@ document.querySelectorAll("[data-fold]").forEach(sec=>{applyFold(sec);
   sec.querySelector(".dv-fold").onclick=()=>{const k=sec.dataset.fold;folds.has(k)?folds.delete(k):folds.add(k);saveFolds();applyFold(sec)}});
 
 /* ---------------- to-do ----------------
-   One list, ranked by how many future quests each to-do opens up, so the
-   ones that unblock the most come first. Besides the stored to-dos, it adds
-   its own for anything new it can read from the quest list (a friendship
-   level or unlock a locked quest is waiting on, a quest on your plate, or
-   the next quest in each storyline you can play now), so the list keeps up
-   as you play. An added one that's removed is stored
+   A short list of what to do next, picked by the plan below so the steps
+   that open up the most for the effort come first. Besides the stored
+   to-dos, it adds its own from the quest list, friendship levels, FRIEND_REQ
+   and NEEDS (quests open now, friendship levels and villagers to unlock),
+   so the list keeps up as you play. An added one that's removed is stored
    with no text, so it stays gone. */
 const TAG={quest:"Quest",unlock:"Unlock",friend:"Friendship",mine:"Yours"};
 const TAG_ORDER=["quest","unlock","friend","mine"];
@@ -1291,111 +1309,156 @@ function tsave(fn){
   });
 }
 function tchange(id,v){T={...T};if(v)T[id]=v;else delete T[id];tsave(v?()=>tdoc.update({[id]:v}):()=>tdoc.set({...T}));renderTodo()}
+/* ---------------- the plan ----------------
+   Every storyline (a character's quests in one section) has a frontier: its
+   first quest not Done. blockers() says what's holding a frontier back, and
+   leads() what it leads to: itself, the rest of its storyline, and quests
+   elsewhere waiting on any of those ("starts during …", "progress further
+   with …", or a quest in NEEDS), and so on down the line.
+   Each blocker is something to do: reach a friendship level, or meet a
+   villager. Its worth is the quests it leads to (shared out when a frontier
+   has more than one blocker), and its cost is a rough guess at the effort:
+   COST below. The to-do list puts the best worth for the cost first. */
+const COST={start:1,finish:.5,level:1,unlock:3};
+const TOP=7;
+const metV=vl=>lvl(vl.k)>0||vl.rows.some(r=>st(r[0])==="d");
+const vByKey=k=>VILLAGERS.find(x=>x.k===k);
+const vByName=n=>VILLAGERS.find(x=>x.name.toLowerCase()===n.toLowerCase()||x.name.split(" ")[0].toLowerCase()===n.toLowerCase());
+const villagerOf=r=>VILLAGERS.find(x=>x.rows.includes(r));
+// "starts during Oswald's A Cockamamie Contest" -> that quest's row
+function questNamed(text){
+  const t=text.trim().toLowerCase(),rows=Q.filter(r=>t.endsWith(r[4].toLowerCase()));
+  return rows.find(r=>t.startsWith(r[2].split(" ")[0].toLowerCase()))||rows.find(r=>t===r[4].toLowerCase());
+}
+/* What's in the way of a quest, as a list of
+     {f: villager key, l: level}  a friendship level to reach
+     {u: villager key or name}    a villager to meet first
+     {q: quest id}                another quest to finish first
+     {p: villager}                more progress with someone (their quests)
+     {x: 1}                       locked for a reason the list can't read
+   A villager's quest not started needs the level in FRIEND_REQ, or level
+   10 when it isn't listed. Empty means it's open now. */
+function blockers(r){
+  const out=[],s=st(r[0]),vl=villagerOf(r),note=why(nt(r[0]));
+  if(s==="p"||s==="d")return out;
+  if(vl&&!metV(vl))out.push({u:vl.k});
+  for(const x of NEEDS[r[0]]||[]){
+    if(x.includes("--")){if(st(x)!=="d")out.push({q:x})}
+    else{const o=vByKey(x);if(o&&!metV(o))out.push({u:x})}}
+  if(s==="l"){let read=false,m;
+    if((m=/friendship level (\d+)/i.exec(note))){read=true;if(vl&&lvl(vl.k)<+m[1])out.push({f:vl.k,l:+m[1]})}
+    if((m=/unlock ([^,]+?)\s*(?:,|$)/i.exec(note))){read=true;const o=vByName(m[1]);if(!o)out.push({u:m[1]});else if(!metV(o))out.push({u:o.k})}
+    if((m=/starts during (.+?)\s*(?:,|$)/i.exec(note))){read=true;const p=questNamed(m[1]);if(p&&st(p[0])!=="d")out.push({q:p[0]})}
+    if((m=/progress further with ([^,]+?)\s*(?:,|$)/i.exec(note))){read=true;const o=vByName(m[1]);if(o)out.push({p:o.k})}
+    if(!read)out.push({x:1});
+  }else if(vl&&metV(vl)){const need=FRIEND_REQ[r[0]],n=need===undefined?MAX_LEVEL:need;if(lvl(vl.k)<n)out.push({f:vl.k,l:n})}
+  return out;
+}
+function plan(){
+  // storylines, in order; UNORDERED characters and Dream Bundles are one quest each
+  const lines=[];
+  for(const g of byChar){const free=UNORDERED.includes(g.ch)||/\(Dream Bundle\)$/.test(g.ch),m=new Map();
+    for(const r of g.rows){if(!playable(r)||st(r[0])==="d")continue;
+      const k=free?r[0]:r[3];if(!m.has(k)){m.set(k,[]);lines.push(m.get(k))}m.get(k).push(r)}}
+  const B=new Map(),line=new Map();
+  for(const L of lines)for(const r of L){B.set(r,blockers(r));line.set(r,L)}
+  // quests waiting on r directly: the next in its storyline, and anything
+  // whose blockers name r (or r's villager, for "progress further with")
+  const after=new Map();const add=(a,b)=>{if(!after.has(a))after.set(a,[]);after.get(a).push(b)};
+  for(const L of lines)for(let i=0;i+1<L.length;i++)add(L[i],L[i+1]);
+  for(const[r,bs]of B)for(const b of bs){
+    if(b.q){const p=Q.find(x=>x[0]===b.q);if(p&&B.has(p))add(p,r)}
+    if(b.p){const o=vByKey(b.p);if(o)for(const x of o.rows)if(B.has(x))add(x,r)}}
+  const leadsMemo=new Map();
+  const leads=r=>{if(leadsMemo.has(r))return leadsMemo.get(r);
+    const seen=new Set([r]),todo=[r];
+    while(todo.length)for(const y of after.get(todo.pop())||[])if(!seen.has(y)){seen.add(y);todo.push(y)}
+    leadsMemo.set(r,seen);return seen};
+  // the frontiers: first quest of each storyline, unless it's only waiting on
+  // another quest (then it's counted in that quest's worth instead)
+  const fronts=[];
+  for(const L of lines){const r=L[0],bs=B.get(r);
+    if(bs.some(b=>b.q||b.p||b.x))continue;
+    fronts.push({r,bs:bs.filter(b=>b.f||b.u),leads:leads(r)})}
+  return{fronts,leads};
+}
+/* A to-do's worth: the quests it leads to, shared out between blockers. */
+function worth(v,P){
+  const quests=new Set();let w=0,cost=1;
+  const take=(F,share)=>{for(const r of F.leads)quests.add(r);w+=F.leads.size*share};
+  if(v.q){const r=Q.find(x=>x[0]===v.q);if(!r||st(r[0])==="d")return{w:0,quests,cost};
+    const F=P.fronts.find(F=>F.r===r);
+    if(F&&!F.bs.length)take(F,1);else{const s=P.leads(r);for(const x of s)quests.add(x);w=s.size}
+    cost=st(r[0])==="p"?COST.finish:COST.start}
+  else if(v.f){const L=lvl(v.f.k);
+    for(const F of P.fronts){const b=F.bs.find(b=>b.f===v.f.k&&b.l<=v.f.l);if(b)take(F,1/F.bs.length)}
+    cost=Math.max(1,v.f.l-L)*COST.level}
+  else if(v.u){
+    for(const name of v.u){const o=vByKey(name)||vByName(name),k=o?o.k:name;
+      for(const F of P.fronts)if(F.bs.some(b=>b.u===k))take(F,1/F.bs.length)}
+    cost=COST.unlock*v.u.length}
+  return{w,quests,cost};
+}
 /* A to-do ticks itself off when its linked quest is Done (q), its villager
-   reaches the level in the friendship tracker (f: {k, l}), or, for a
-   friendship or unlock to-do, once no locked quest is waiting on it.
+   reaches the level in the friendship tracker (f: {k, l}), they're met (u),
+   or, for a friendship or unlock to-do, once nothing is waiting on it.
    Returns the reason, or "" while it still needs doing by hand. */
-function autoDone(v){
+function autoDone(v,P){
   if(v.q&&st(v.q)==="d")return "Marked Done in the quest list.";
   if(v.f&&lvl(v.f.k)>=v.f.l)return `Level ${v.f.l} reached in the friendship tracker.`;
-  if((v.f||v.u)&&!v.q&&!opens(v).length)return "Nothing locked is waiting on this any more.";
+  if(v.u&&v.u.every(n=>{const o=vByKey(n)||vByName(n);return o&&metV(o)}))return "Met. Their quests are on the list now.";
+  if((v.f||v.u)&&!v.q&&!worth(v,P||plan()).quests.size)return "Nothing is waiting on this any more.";
   return "";
 }
-const lockedRows=()=>Q.filter(r=>st(r[0])==="l");
-// from a "Locked: … friendship level N" note, else FRIEND_REQ
-const reqLevel=r=>{const m=/friendship level (\d+)/i.exec(nt(r[0]));return m?+m[1]:FRIEND_REQ[r[0]]||0};
-// locked, or not started but FRIEND_REQ says the villager isn't high enough yet
-const waits=(r,L)=>{const s=st(r[0]);return s==="l"||(!s&&L>0&&FRIEND_REQ[r[0]]>L)};
-/* The quests a to-do helps open:
-   f (villager level)  their locked quests (or ones FRIEND_REQ says still
-                       wait on friendship) needing that level or less, plus
-                       quests waiting to "progress further with" them
-   u (villagers)       every unfinished quest of theirs, plus locked quests
-                       whose note says "unlock <name>"
-   q (a quest)         that character's unfinished quests after it */
-function opens(v){
-  const out=new Set();
-  if(v.f){const vl=VILLAGERS.find(x=>x.k===v.f.k);if(vl){
-    for(const r of vl.rows)if(waits(r,lvl(vl.k))&&reqLevel(r)&&reqLevel(r)<=v.f.l)out.add(r);
-    const with_="with "+vl.name.split(" ")[0].toLowerCase();
-    for(const r of lockedRows())if(nt(r[0]).toLowerCase().includes(with_))out.add(r)}}
-  if(v.u)for(const name of v.u){
-    for(const r of Q)if(r[2]===name&&st(r[0])!=="d")out.add(r);
-    for(const r of lockedRows())if(nt(r[0]).toLowerCase().includes("unlock "+name.toLowerCase()))out.add(r)}
-  if(v.q){const i=Q.findIndex(r=>r[0]===v.q);if(i>=0)
-    for(let j=i+1;j<Q.length;j++){const r=Q[j];if(r[1]===Q[i][1]&&r[2]===Q[i][2]&&st(r[0])!=="d")out.add(r)}}
-  return [...out];
-}
-function autoTodos(){
-  const out=[],have=Object.values(T).filter(v=>v&&v.t),gone=id=>!!T[id];
-  for(const vl of VILLAGERS){
-    const L=lvl(vl.k),reqs=vl.rows.filter(r=>waits(r,L)).map(reqLevel).filter(n=>n>L);
-    if(!reqs.length||have.some(v=>v.f&&v.f.k===vl.k&&v.f.l>L))continue;
-    const n=Math.min(...reqs),id=`a-f-${vl.k}-${n}`;
-    if(!gone(id))out.push([id,{t:`${vl.name} to level ${n}`,h:FRIEND_TIP,g:"friend",f:{k:vl.k,l:n}}]);
-  }
-  const names=new Set();
-  for(const r of lockedRows()){const m=/unlock ([^,]+?)\s*(?:,|$)/i.exec(why(nt(r[0])));if(m)names.add(m[1])}
-  for(const name of names){
-    if(have.some(v=>v.t.toLowerCase().includes("unlock "+name.toLowerCase())))continue;
-    const id="a-u-"+slug(name);
-    if(!gone(id))out.push([id,{t:`Unlock ${name}`,h:"The Guide link shows where to find them.",g:"unlock",u:[name]}]);
-  }
-  for(const r of Q){
-    if(!onPlate(r)||have.some(v=>v.q===r[0]))continue;
-    const id="a-q-"+r[0];
-    // "Cinderella's Custom Creation" already says whose it is
-    const title=r[4].startsWith(r[2])?r[4]:`${r[2]}'s ${r[4]}`;
-    if(!gone(id))out.push([id,{t:`${st(r[0])==="p"?"Finish":"Start"} ${title}`,g:"quest",q:r[0]}]);
-  }
-  // The next quest in each storyline: the first one not Done in its section,
-  // if nothing's holding it back (see nextReady). Villagers not met yet (level 0), events and
-  // expansions not owned are skipped. Mark one Not unlocked and it drops off.
-  for(const g of byChar){
-    const vl=VILLAGERS.find(x=>x.name===g.ch);
-    if(vl&&!lvl(vl.k))continue;
-    const seen=new Set();
-    for(const r of g.rows){
-      if(!playable(r)||seen.has(r[3])||st(r[0])==="d")continue;
-      seen.add(r[3]);
-      const ready=nextReady(r,vl);
-      if(!ready||onPlate(r)||have.some(v=>v.q===r[0]))continue;
-      const id="a-q-"+r[0],title=r[4].startsWith(r[2])?r[4]:`${r[2]}'s ${r[4]}`;
-      if(!gone(id))out.push([id,{t:`Start ${title}`,h:ready===true?"":ready,g:"quest",q:r[0]}]);
-    }
-  }
+const title=r=>r[4].startsWith(r[2])?r[4]:`${r[2]}'s ${r[4]}`; // "Cinderella's Custom Creation" already says whose it is
+function autoTodos(P){
+  P=P||plan();
+  const out=[],have=Object.values(T).filter(v=>v&&v.t),gone=id=>!!T[id],ids=new Set();
+  const push=(id,v)=>{if(!gone(id)&&!ids.has(id)){ids.add(id);out.push([id,v])}};
+  // quests in progress, or noted, wherever they are
+  for(const r of Q)if(onPlate(r)&&!have.some(v=>v.q===r[0]))
+    push("a-q-"+r[0],{t:`${st(r[0])==="p"?"Finish":"Start"} ${title(r)}`,g:"quest",q:r[0]});
+  const fl=new Map();
+  for(const F of P.fronts){const r=F.r;
+    if(!F.bs.length){if(have.some(v=>v.q===r[0]))continue;
+      const ready=st(r[0])==="l"?`${villagerOf(r)?.name||r[2]} is level ${lvl(villagerOf(r)?.k)} now, so this should be open.`:"";
+      push("a-q-"+r[0],{t:`${st(r[0])==="p"?"Finish":"Start"} ${title(r)}`,h:ready,g:"quest",q:r[0]});continue}
+    for(const b of F.bs){
+      // one friendship step per villager: the lowest level anything needs
+      if(b.f&&(!fl.has(b.f)||b.l<fl.get(b.f)))fl.set(b.f,b.l);
+      if(b.u){const o=vByKey(b.u),name=o?o.name:b.u;
+        if(have.some(v=>v.u&&v.u.some(n=>n.toLowerCase()===name.toLowerCase())||v.t.toLowerCase().includes("unlock "+name.toLowerCase())))continue;
+        push("a-u-"+slug(name),{t:`Unlock ${name}`,h:(o&&UNLOCK_HOW[o.k])||"The Guide link shows where to find them.",g:"unlock",u:[name]})}}}
+  for(const[k,l]of fl){const o=vByKey(k),L=lvl(k);
+    if(have.some(v=>v.f&&v.f.k===k&&v.f.l>L))continue;
+    push(`a-f-${k}-${l}`,{t:`${o.name} to level ${l}`,h:(L?`Level ${L} now. `:"Not set in the Friendship tab yet. ")+FRIEND_TIP,g:"friend",f:{k,l}})}
   return out;
 }
 /* Quests in a section named after an expansion need that expansion too
-   (Scrooge's Wishblossom Ranch ones). */
+   (Scrooge's Wishblossom Ranch ones). Events & extras only count when they
+   start during another quest (Training Games' challenges, say). */
 const EXP_PACKS=["A Rift in Time","Storybook Vale","Wishblossom Ranch","Honeyglow Woods"];
 const SECTION_EXP={"Eternity Isle":"A Rift in Time","Wishblossom Ranch":"Wishblossom Ranch"};
 function playable(r){
-  if(r[3]==="Events & extras")return false;
+  if(r[3]==="Events & extras"&&!/starts during/i.test(nt(r[0])))return false;
   const e=SECTION_EXP[r[3]]||r[1];return OWNED.includes(e)||!EXP_PACKS.includes(e);
 }
-/* true if the quest is free to start, a hint if it's locked only on a
-   friendship level the villager has now reached, or false. A villager's
-   quest not started counts as free once they're at the level FRIEND_REQ
-   gives, or at level 10 if it isn't listed there. */
-function nextReady(r,vl){
-  const s=st(r[0]);
-  if(!s){if(!vl)return true;const need=FRIEND_REQ[r[0]];return lvl(vl.k)>=(need===undefined?MAX_LEVEL:need)}
-  if(s!=="l"||!vl)return false;
-  const need=reqLevel(r);
-  if(!need||lvl(vl.k)<need||/,/.test(why(nt(r[0]))))return false;
-  return `${vl.name} is level ${lvl(vl.k)} now, so this should be open.`;
-}
+/* The top TOP to-dos, best worth for the cost first; your own always show,
+   at the top. The rest wait behind "Show more". Ticked ones sit at the
+   bottom until Refresh clears them. */
+let todoAll=false;
 function renderTodo(){
   const box=$("todo-groups");box.innerHTML="";
-  const stored=new Set(Object.keys(T));
-  const all=[...Object.entries(T).filter(([,v])=>v&&v.t),...autoTodos()].map(([id,v])=>{
-    const auto=autoDone(v),done=!!v.d||!!auto,qs=done?[]:opens(v);return{id,v,auto,done,qs}});
-  all.sort((a,b)=>(a.done-b.done)||(b.qs.length-a.qs.length)||
+  const stored=new Set(Object.keys(T)),P=plan();
+  const all=[...Object.entries(T).filter(([,v])=>v&&v.t),...autoTodos(P)].map(([id,v])=>{
+    const auto=autoDone(v,P),done=!!v.d||!!auto,mine=!v.g||v.g==="mine",x=done||mine?{w:0,quests:new Set(),cost:1}:worth(v,P);
+    return{id,v,auto,done,mine,qs:[...x.quests],score:x.w/x.cost}});
+  all.sort((a,b)=>(a.done-b.done)||(b.mine-a.mine)||(b.score-a.score)||
     (TAG_ORDER.indexOf(a.v.g||"mine")-TAG_ORDER.indexOf(b.v.g||"mine"))||((a.v.o||0)-(b.v.o||0)));
-  const ul=document.createElement("ul");ul.className="dv-tl";let left=0;
-  for(const{id,v,auto,done,qs}of all){
-    if(!done)left++;
+  const open=all.filter(a=>!a.done),mineN=open.filter(a=>a.mine).length,cut=Math.max(TOP,mineN);
+  const shown=todoAll?all:[...open.slice(0,cut),...all.filter(a=>a.done)];
+  const ul=document.createElement("ul");ul.className="dv-tl";
+  for(const{id,v,auto,done,qs}of shown){
     const added=!stored.has(id);
     const li=document.createElement("li");li.className="dv-ti"+(done?" done":"");
     const lab=document.createElement("label");const cb=document.createElement("input");cb.type="checkbox";cb.checked=done;cb.disabled=!!auto;
@@ -1403,7 +1466,7 @@ function renderTodo(){
     const tx=document.createElement("span");
     const meta=document.createElement("span");meta.className="dv-tmeta";
     const tag=document.createElement("span");tag.className="dv-tag";tag.textContent=(TAG[v.g]||TAG.mine)+(added?" · added for you":"");meta.append(tag);
-    if(qs.length){const o=document.createElement("span");o.className="dv-opens";o.textContent=`Opens ${plural(qs.length,"quest")}`;
+    if(qs.length){const o=document.createElement("span");o.className="dv-opens";o.textContent=`Leads to ${plural(qs.length,"quest")}`;
       o.title=qs.map(r=>`${r[2]}: ${r[4]}`).join("\n");meta.append(o)}
     const b=document.createElement("b");b.textContent=v.t;tx.append(meta,b);
     const sub=auto||v.h,row=v.q&&!done&&Q.find(r=>r[0]===v.q),uname=v.u&&!done&&v.u[0];
@@ -1417,7 +1480,10 @@ function renderTodo(){
     rm.onclick=()=>{tchange(id,added?{x:1}:null);showUndo(`Removed "${v.t}".`,()=>tchange(id,added?null:v),"todo-undo")};
     li.append(lab,rm);ul.append(li)}
   box.append(ul);
-  $("todo-count").textContent=all.length?`${left} left, most quests opened first`:"";
+  const more=open.length-cut;
+  if(more>0||todoAll&&open.length>cut){const m=document.createElement("button");m.type="button";m.className="dv-nb dv-more";
+    m.textContent=todoAll?"Show just the top "+cut:`Show ${more} more`;m.onclick=()=>{todoAll=!todoAll;renderTodo()};box.append(m)}
+  $("todo-count").textContent=open.length?`${Math.min(open.length,cut)} to do now, biggest payoff first`:"";
   if(!all.length){const p=document.createElement("p");p.className="dv-hint";p.textContent=tloaded?"Nothing on the list. Add something below.":"Loading the list…";box.append(p)}
 }
 /* Refresh clears out everything finished and rebuilds the added-for-you
