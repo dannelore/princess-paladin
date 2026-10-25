@@ -1074,10 +1074,25 @@ const NOT_OWNED_BUNDLES = ["Once Upon a Dance (Dream Bundle)","Dapper WALL-E (Dr
 for(let i=Q.length-1;i>=0;i--)if(NOT_OWNED_BUNDLES.includes(Q[i][2]))Q.splice(i,1);
 
 /* Friendship level a villager's quest needs before it starts, by quest id,
-   from the Dreamlight Valley Wiki. 0 means no friendship level (story only).
+   from the Dreamlight Valley Wiki (Oct 25, 2026). 0 means no friendship
+   level (story or realm quests). Jasmine's Campaign is left out: it starts
+   during Cogsworth's level 10 quest, not on a Jasmine level.
    The to-do list only suggests a villager's quest below level 10 when it's
    listed here, so it never suggests one that isn't open yet. */
-const FRIEND_REQ={};
+const FRIEND_REQ={
+  "daisy-duck--the-glittered-gala":10,
+  "mulan--training-treasures":0,"mulan--a-daily-regime":2,"mulan--the-shadow-play":4,"mulan--the-art-of-fun":7,"mulan--training-games":10,
+  "mushu--a-reminder-in-stone":2,"mushu--the-mushu-program":4,"mushu--the-guardian-party":7,"mushu--the-tiny-villager-society":10,
+  "sally--patchwork-party":7,"sally--preposterous-premonitions":10,
+  "aladdin--good-as-gold":2,"aladdin--bring-your-own-carpet":4,"aladdin--all-that-glitters":7,"aladdin--advanced-marketing":10,
+  "jasmine--a-sandy-competition":4,"jasmine--hot-and-cold":7,"jasmine--wild-wild-wishes":10,
+  "peter-pan--a-real-hideout":4,"peter-pan--the-new-lost-boys":7,"peter-pan--the-valley-pirates":10,
+  "cinderella--critter-chaos":4,"cinderella--a-dream-come-true":7,"cinderella--the-friendship-ball":10,
+  "pocahontas--working-together":4,"pocahontas--a-little-algae-problem":7,"pocahontas--a-raccoon-s-return":10,
+  "ralph--mini-game-mayhem":4,"ralph--green-monster-inc":7,"ralph--ralph-breaks-the-valley":10,
+  "jafar--the-secrets-of-eternity-isles":0,"jafar--the-flying-metal-nuisance":0,"jafar--the-sands-in-the-hourglass":0,"jafar--your-eternal-reward":0,"jafar--the-optics-of-a-second-chance":2,"jafar--the-alchemical-revolution":4,"jafar--the-serpent-s-gift":7,"jafar--the-trial-of-eternity":10,"jafar--making-amends":10,
+  "oswald--an-alarming-development":4,"oswald--a-cockamamie-contest":7,"oswald--erratic-transportation":10,"oswald--the-lesser-evil":0
+};
 
 const LABEL={"":"To do",p:"In progress",d:"Done",l:"Not unlocked"};
 const CYCLE={"":"p",p:"d",d:"l",l:""};
