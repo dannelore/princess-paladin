@@ -1092,7 +1092,20 @@ const FRIEND_REQ={
   "ralph--mini-game-mayhem":4,"ralph--green-monster-inc":7,"ralph--ralph-breaks-the-valley":10,
   "jafar--the-secrets-of-eternity-isles":0,"jafar--the-flying-metal-nuisance":0,"jafar--the-sands-in-the-hourglass":0,"jafar--your-eternal-reward":0,"jafar--the-optics-of-a-second-chance":2,"jafar--the-alchemical-revolution":4,"jafar--the-serpent-s-gift":7,"jafar--the-trial-of-eternity":10,"jafar--making-amends":10,
   "oswald--an-alarming-development":4,"oswald--a-cockamamie-contest":7,"oswald--erratic-transportation":10,"oswald--the-lesser-evil":0,
-  "jasmine--jasmine-s-campaign-forest-beautification":0
+  "jasmine--jasmine-s-campaign-forest-beautification":0,
+  "timon--finding-old-friends":0,"timon--where-s-pumbaa":0,"timon--old-enemies":2,"timon--curious-about-critters":4,"timon--the-timon-talk":7,"timon--the-infestation-pt-1":9,"timon--the-infestation-pt-3":10,"timon--drawings":0,
+  "pumbaa--relax":0,"pumbaa--something-s-off":2,"pumbaa--fine-arts-for-warthogs":4,"pumbaa--down-to-earth":7,"pumbaa--the-infestation-pt-2":10,
+  "alice--teeny-tiny-problems":0,"alice--leaving-wonderland":0,"alice--books-with-no-pictures":2,"alice--mimsy-were-the-borogoves":4,"alice--the-fractured-glass":7,"alice--a-very-merry-unbirthday":10,"alice--cat-tree-catastrophe":0,
+  "cheshire-cat--wonders-of-wonderland":0,"cheshire-cat--the-queen-s-maze":0,"cheshire-cat--mannequin-madness":0,"cheshire-cat--chaos-in-the-kitchen":0,"cheshire-cat--furniture-fluster":2,"cheshire-cat--it-s-all-nonsense":4,"cheshire-cat--the-uncrafting-station":7,"cheshire-cat--on-a-wild-cheshire-chase":10,
+  "joy--emotional-rescue":0,"joy--dream-on":0,"joy--capture-the-sun":2,"joy--mood-swings":4,"joy--imagination-land":7,"joy--dream-a-little-dream":10,
+  "sadness--out-of-the-blue":0,"sadness--get-up-and-glow":0,"sadness--storm-s-a-brewin":2,"sadness--the-fortress-of-saditude":4,"sadness--the-big-worry":7,"sadness--create-a-bear":10,
+  "lumiere--at-your-service":2,"lumiere--here-there-and-everywhere":4,"lumiere--spirit-hunters":7,"lumiere--long-lost-loves":10,
+  "cogsworth--running-like-clockwork":2,"cogsworth--on-her-majesty-s-festive-service":4,"cogsworth--the-circle-of-friendship":7,"cogsworth--vote-for-cogsworth":10,"cogsworth--cogsworth-s-campaign-no-substitute-for-hard-work":0,
+  "lady--the-jailbreak":0,"lady--critters-and-compassion":0,"lady--canine-cuisine":2,"lady--a-little-off-the-top":4,"lady--getting-on-like-cats-and-dogs":7,"lady--portrait-of-a-lady":10,"lady--the-spaghetti-incident":0,"lady--life-s-a-meat-ball":0,"lady--a-curious-dish":0,
+  "tramp--canine-courtship":0,"tramp--meatballs":0,"tramp--not-your-average-squeaky-toy":2,"tramp--cleanliness-is-next-to-dogliness":4,"tramp--and-how-did-that-make-you-feel":7,"tramp--canine-archaeology":10,
+  "hercules--speedrun-crash-course":0,"hercules--thunderstruck":0,"hercules--the-grecian-urn":2,"hercules--aquatic-musings":4,"hercules--medicinal-mortality":7,"hercules--battle-of-the-coaches":10,
+  "phil--moonlighting-as-a-hero":0,"phil--a-real-godly-mess":0,"phil--satyrical-theater":2,"phil--an-unlikely-hero":4,"phil--sweet-sweet-retirement":7,"phil--coach-s-commission":10,
+  "oogie-boogie--let-the-games-begin":0,"oogie-boogie--oogie-boogie-s-big-game":0
 };
 /* What else a quest needs first, from the same wiki pages: villagers to have
    met (by key) or quests to have finished (by id). Only ones that aren't
@@ -1108,10 +1121,53 @@ const NEEDS={
   "jafar--your-eternal-reward":["rapunzel--the-tower","gaston--diamond-in-the-rough"],
   "jafar--the-alchemical-revolution":["jack-skellington--the-scientific-method"],
   "oswald--the-lesser-evil":["merlin--the-now-and-then"],
-  "jasmine--jasmine-s-campaign-forest-beautification":["cogsworth--vote-for-cogsworth"]
+  "jasmine--jasmine-s-campaign-forest-beautification":["cogsworth--vote-for-cogsworth"],
+  "alice--teeny-tiny-problems":["cheshire-cat--the-queen-s-maze"],
+  "cheshire-cat--mannequin-madness":["alice--leaving-wonderland"],
+  "alice--cat-tree-catastrophe":["cheshire-cat--chaos-in-the-kitchen","moana--fixing-the-boat"],
+  "pumbaa--relax":["timon--finding-old-friends"],
+  "timon--where-s-pumbaa":["pumbaa--relax"],
+  "pumbaa--something-s-off":["timon"],
+  "timon--the-timon-talk":["pumbaa--fine-arts-for-warthogs"],
+  "timon--the-infestation-pt-1":["merlin--a-creepy-crawly-mystery","pumbaa--down-to-earth","timon--the-timon-talk"],
+  "pumbaa--the-infestation-pt-2":["timon--the-infestation-pt-1"],
+  "timon--the-infestation-pt-3":["pumbaa--the-infestation-pt-2"],
+  "sadness--out-of-the-blue":["joy--emotional-rescue"],
+  "joy--dream-on":["sadness--out-of-the-blue"],
+  "sadness--get-up-and-glow":["joy--dream-on"],
+  "joy--capture-the-sun":["sadness"],
+  "sadness--storm-s-a-brewin":["joy--capture-the-sun"],
+  "sadness--the-fortress-of-saditude":["joy--mood-swings"],
+  "joy--imagination-land":["sadness--the-fortress-of-saditude"],
+  "sadness--the-big-worry":["joy--imagination-land"],
+  "joy--dream-a-little-dream":["sadness--the-big-worry"],
+  "sadness--create-a-bear":["joy--dream-a-little-dream"],
+  "lady--the-jailbreak":["tramp--canine-courtship"],
+  "tramp--meatballs":["lady--the-jailbreak"],
+  "lady--critters-and-compassion":["tramp--meatballs"],
+  "lady--canine-cuisine":["cheshire-cat"],
+  "lady--portrait-of-a-lady":["tramp--canine-archaeology","alice","joy"],
+  "hercules--speedrun-crash-course":["phil--moonlighting-as-a-hero"],
+  "phil--a-real-godly-mess":["hercules--thunderstruck"],
+  "hercules--the-grecian-urn":["phil--satyrical-theater"],
+  "hercules--medicinal-mortality":["alice"],
+  "hercules--battle-of-the-coaches":["pumbaa"],
+  "alice--a-very-merry-unbirthday":["pumbaa"],
+  "cogsworth--the-circle-of-friendship":["timon","pumbaa"],
+  "cogsworth--cogsworth-s-campaign-no-substitute-for-hard-work":["cogsworth--vote-for-cogsworth"]
 };
-/* How to meet a villager, shown on their Unlock to-do. */
-const UNLOCK_HOW={};
+/* Villagers still to meet come in pairs from a Dream Castle realm, so the
+   to-do is to open the realm. Door costs go up with each one opened. */
+const REALMS=[
+  {name:"the Lion King realm",v:["timon","pumbaa"],how:"Open its Dream Castle door with Dreamlight (Simba and Nala need to be level 10), then Finding Old Friends, Relax! and Where's Pumbaa?."},
+  {name:"the Wonderland realm",v:["alice","cheshire-cat"],how:"Open its Dream Castle door with Dreamlight, then Wonders of Wonderland, The Queen's Maze, Teeny, Tiny Problems and Leaving Wonderland (Alice's house costs Star Coins). Cheshire Cat follows a few days later."},
+  {name:"the Inside Out realm",v:["joy","sadness"],how:"Open its Dream Castle door with Dreamlight, then Emotional Rescue, Out of the Blue, Dream On! (Headquarters costs 10,000 Star Coins) and Get Up and Glow!."},
+  {name:"the Lady and the Tramp realm",v:["lady","tramp"],how:"Open its Dream Castle door with Dreamlight, then Canine Courtship, The Jailbreak, Meatballs (their house costs 20,000 Star Coins) and Critters and Compassion."},
+  {name:"the Hercules realm",v:["hercules","phil"],how:"Open its Dream Castle door with Dreamlight, then Moonlighting as a Hero, Speedrun Crash Course, Thunderstruck and A Real Godly Mess (the villa costs 10,000 Star Coins). Phil moves in once you bring him a 5-star meal."}
+];
+/* Event quests that go away: last day you can do them. They jump to the top
+   of the to-do list in their last two weeks and drop off after. */
+const DEADLINE={"oogie-boogie--let-the-games-begin":"2026-11-04"};
 
 const LABEL={"":"To do",p:"In progress",d:"Done",l:"Not unlocked"};
 const CYCLE={"":"p",p:"d",d:"l",l:""};
@@ -1316,7 +1372,7 @@ function tchange(id,v){T={...T};if(v)T[id]=v;else delete T[id];tsave(v?()=>tdoc.
    elsewhere waiting on any of those ("starts during …", "progress further
    with …", or a quest in NEEDS), and so on down the line.
    Each blocker is something to do: reach a friendship level, or meet a
-   villager. Its worth is the quests it leads to (shared out when a frontier
+   villager (open their realm, for the ones in REALMS). Its worth is the quests it leads to (shared out when a frontier
    has more than one blocker), and its cost is a rough guess at the effort:
    COST below. The to-do list puts the best worth for the cost first. */
 const COST={start:1,finish:.5,level:1,unlock:3};
@@ -1393,10 +1449,10 @@ function worth(v,P){
   else if(v.f){const L=lvl(v.f.k);
     for(const F of P.fronts){const b=F.bs.find(b=>b.f===v.f.k&&b.l<=v.f.l);if(b)take(F,1/F.bs.length)}
     cost=Math.max(1,v.f.l-L)*COST.level}
-  else if(v.u){
-    for(const name of v.u){const o=vByKey(name)||vByName(name),k=o?o.k:name;
-      for(const F of P.fronts)if(F.bs.some(b=>b.u===k))take(F,1/F.bs.length)}
-    cost=COST.unlock*v.u.length}
+  else if(v.u){const ks=v.u.map(n=>{const o=vByKey(n)||vByName(n);return o?o.k:n});
+    // the blockers this clears, counting a realm's pair as one
+    for(const F of P.fronts){const n=F.bs.filter(b=>ks.includes(b.u)).length;if(n)take(F,n/F.bs.length)}
+    cost=COST.unlock}
   return{w,quests,cost};
 }
 /* A to-do ticks itself off when its linked quest is Done (q), its villager
@@ -1421,14 +1477,17 @@ function autoTodos(P){
   const fl=new Map();
   for(const F of P.fronts){const r=F.r;
     if(!F.bs.length){if(have.some(v=>v.q===r[0]))continue;
-      const ready=st(r[0])==="l"?`${villagerOf(r)?.name||r[2]} is level ${lvl(villagerOf(r)?.k)} now, so this should be open.`:"";
+      const ready=DEADLINE[r[0]]?`Event quest, only until ${fmtDay(DEADLINE[r[0]])}.`:
+        st(r[0])==="l"?`${villagerOf(r)?.name||r[2]} is level ${lvl(villagerOf(r)?.k)} now, so this should be open.`:"";
       push("a-q-"+r[0],{t:`${st(r[0])==="p"?"Finish":"Start"} ${title(r)}`,h:ready,g:"quest",q:r[0]});continue}
     for(const b of F.bs){
       // one friendship step per villager: the lowest level anything needs
       if(b.f&&(!fl.has(b.f)||b.l<fl.get(b.f)))fl.set(b.f,b.l);
-      if(b.u){const o=vByKey(b.u),name=o?o.name:b.u;
+      if(b.u){const o=vByKey(b.u),name=o?o.name:b.u,realm=o&&REALMS.find(R=>R.v.includes(o.k));
         if(have.some(v=>v.u&&v.u.some(n=>n.toLowerCase()===name.toLowerCase())||v.t.toLowerCase().includes("unlock "+name.toLowerCase())))continue;
-        push("a-u-"+slug(name),{t:`Unlock ${name}`,h:(o&&UNLOCK_HOW[o.k])||"The Guide link shows where to find them.",g:"unlock",u:[name]})}}}
+        if(realm){const names=realm.v.map(k=>vByKey(k).name);
+          push("a-u-"+slug(realm.name),{t:`Open ${realm.name}`,h:`For ${names.join(" and ")}. ${realm.how}`,g:"unlock",u:names})}
+        else push("a-u-"+slug(name),{t:`Unlock ${name}`,h:"The Guide link shows where to find them.",g:"unlock",u:[name]})}}}
   for(const[k,l]of fl){const o=vByKey(k),L=lvl(k);
     if(have.some(v=>v.f&&v.f.k===k&&v.f.l>L))continue;
     push(`a-f-${k}-${l}`,{t:`${o.name} to level ${l}`,h:(L?`Level ${L} now. `:"Not set in the Friendship tab yet. ")+FRIEND_TIP,g:"friend",f:{k,l}})}
@@ -1439,12 +1498,15 @@ function autoTodos(P){
    start during another quest (Training Games' challenges, say). */
 const EXP_PACKS=["A Rift in Time","Storybook Vale","Wishblossom Ranch","Honeyglow Woods"];
 const SECTION_EXP={"Eternity Isle":"A Rift in Time","Wishblossom Ranch":"Wishblossom Ranch"};
+const daysLeft=id=>Math.ceil((new Date(DEADLINE[id]+"T23:59:59")-Date.now())/864e5);
+const fmtDay=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"});
 function playable(r){
+  if(DEADLINE[r[0]]&&daysLeft(r[0])<0)return false;
   if(r[3]==="Events & extras"&&!/starts during/i.test(nt(r[0])))return false;
   const e=SECTION_EXP[r[3]]||r[1];return OWNED.includes(e)||!EXP_PACKS.includes(e);
 }
 /* The top TOP to-dos, best worth for the cost first; your own always show,
-   at the top. The rest wait behind "Show more". Ticked ones sit at the
+   at the top, then event quests about to go (DEADLINE). The rest wait behind "Show more". Ticked ones sit at the
    bottom until Refresh clears them. */
 let todoAll=false;
 function renderTodo(){
@@ -1452,8 +1514,9 @@ function renderTodo(){
   const stored=new Set(Object.keys(T)),P=plan();
   const all=[...Object.entries(T).filter(([,v])=>v&&v.t),...autoTodos(P)].map(([id,v])=>{
     const auto=autoDone(v,P),done=!!v.d||!!auto,mine=!v.g||v.g==="mine",x=done||mine?{w:0,quests:new Set(),cost:1}:worth(v,P);
-    return{id,v,auto,done,mine,qs:[...x.quests],score:x.w/x.cost}});
-  all.sort((a,b)=>(a.done-b.done)||(b.mine-a.mine)||(b.score-a.score)||
+    const soon=!done&&!!v.q&&!!DEADLINE[v.q]&&daysLeft(v.q)<=14;
+    return{id,v,auto,done,mine,soon,qs:[...x.quests],score:x.w/x.cost}});
+  all.sort((a,b)=>(a.done-b.done)||(b.mine-a.mine)||(b.soon-a.soon)||(b.score-a.score)||
     (TAG_ORDER.indexOf(a.v.g||"mine")-TAG_ORDER.indexOf(b.v.g||"mine"))||((a.v.o||0)-(b.v.o||0)));
   const open=all.filter(a=>!a.done),mineN=open.filter(a=>a.mine).length,cut=Math.max(TOP,mineN);
   const shown=todoAll?all:[...open.slice(0,cut),...all.filter(a=>a.done)];
