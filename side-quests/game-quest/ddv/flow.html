@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quest Flow &middot; Dreamlight Valley</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/themes/side-quests.css">
+
+<style>
+  /* ======================================================================
+     THE QUEST FLOW
+
+     A flowchart of what to do, in order, to reach a goal in Danni's
+     Dreamlight Valley: pick a character (finish their story) or a quest,
+     and it lays out every step still in the way, top to bottom — realm
+     doors, quests, villagers to meet, friendship levels — with an arrow
+     from each step to what it opens. Steps already done don't get a box;
+     they show as ticks on the box that needed them. Below the goal, faded,
+     is what it opens up next.
+
+     Read-only. Built from ddv-data.js (the quest list, FRIEND_REQ, NEEDS,
+     PROGRESS, UNLOCKS, REALMS) plus the tracker's "Locked: …" notes, with
+     progress and friendship levels from the same Firestore documents.
+     The goal is in the #hash: #c=timon or #q=<quest id>.
+     ====================================================================== */
+
+  .qf [hidden]{ display: none !important; }
+  .qf{
+    --qf-chain: var(--ink-soft);
+    --qf-friend: var(--dusk);
+    --qf-quest: var(--gold);
+    --qf-unlock: var(--pink-deep);
+    --qf-door: var(--sage-deep);
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .qf-intro{
+    font-family: var(--font-serif); font-style: italic; font-size: 1.02rem; color: var(--ink-soft);
+    text-align: center; max-width: 640px; margin: -18px auto 0; line-height: 1.5;
+  }
+  .qf-intro a, .qf-foot a{ color: var(--accent-deep); }
+  .qf button:focus-visible, .qf input:focus-visible, .qf select:focus-visible, .qf a:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- picking a goal (in .pp-field for its input styling) ---- */
+  .qf-tools{ display: flex; flex-direction: row; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .qf-tools select{ flex: 1 1 220px; min-width: 0; width: auto; }
+  .qf-tools input{ flex: 1 1 220px; min-width: 0; width: auto; }
+  .qf-or{ font-family: var(--font-serif); font-style: italic; color: var(--ink-soft); }
+
+  /* ---- the chart ---- */
+  .qf-panel{ padding: 0; overflow: hidden; }
+  .qf-head{ padding: 18px 22px 14px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+  .qf-head h3{ font-family: var(--font-serif); font-weight: 600; font-size: 1.5rem; margin: 0; line-height: 1.15; }
+  .qf-head p{ margin: 0; font-size: .9rem; color: var(--ink-soft); line-height: 1.45; }
+  .qf-scroll{ overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+  .qf-canvas{ position: relative; margin: 0 auto; }
+  .qf-canvas>svg{ position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+  .qf-edge{ fill: none; stroke-width: 2; stroke-linecap: round; transition: opacity .15s; }
+  .qf-edge.chain{ stroke: var(--qf-chain); }
+  .qf-edge.meet, .qf-edge.level{ stroke: var(--qf-friend); }
+  .qf-edge.quest{ stroke: var(--qf-quest); }
+  .qf-edge.unlock{ stroke: var(--qf-unlock); }
+  .qf-edge.door{ stroke: var(--qf-door); }
+  .qf-edge.progress{ stroke: var(--qf-chain); stroke-dasharray: 5 5; }
+  .qf-edge.lead{ stroke-dasharray: 3 5; opacity: .55; }
+  .qf-step{ position: absolute; left: 6px; width: 22px; text-align: center; font-family: var(--font-serif); font-style: italic; font-size: .95rem; color: var(--ink-soft); }
+
+  .qf-box{
+    position: absolute; box-sizing: border-box; display: flex; flex-direction: column; gap: 3px;
+    padding: 8px 10px 9px; border-radius: 10px; background: var(--white); border: 1px solid var(--line-strong);
+    border-top: 3px solid var(--qf-chain); box-shadow: var(--lift); cursor: pointer; font-size: .84rem; line-height: 1.3;
+    transition: opacity .15s, box-shadow .15s;
+  }
+  .qf-box:hover{ box-shadow: var(--lift-lg); }
+  .qf-box.meet, .qf-box.level{ border-top-color: var(--qf-friend); background: #FBF8FD; }
+  .qf-box.door{ border-top-color: var(--qf-door); background: #F5F8F2; }
+  .qf-box.unmet-meet{ background: #F6EFE0; }
+  .qf-box.start{ outline: 2px solid var(--accent); outline-offset: 1px; }
+  .qf-box.goal{ border-color: var(--accent-deep); }
+  .qf-box.lead{ border-style: dashed; border-top-style: dashed; background: var(--panel); opacity: .78; box-shadow: none; }
+  .qf-kick{ font-size: .62rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
+  .qf-box.start .qf-kick{ color: var(--accent-deep); }
+  .qf-box b{ font-weight: 600; font-size: .9rem; color: var(--ink); }
+  .qf-box b a{ color: var(--accent-deep); text-decoration: none; margin-left: 3px; font-weight: 400; }
+  .qf-sub{ color: var(--ink-soft); font-size: .78rem; }
+  .qf-sub.p{ color: var(--pink-deep); font-weight: 500; }
+  .qf-sub.soon{ color: var(--blade); font-weight: 500; }
+  .qf-ticks{ color: var(--sage-deep); font-size: .76rem; }
+  .qf-canvas.focus .qf-box:not(.lit){ opacity: .25; }
+  .qf-canvas.focus .qf-edge:not(.lit){ opacity: .08; }
+
+  .qf-legend{ display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 12px 22px 16px; border-top: 1px solid var(--line); font-size: .8rem; color: var(--ink-soft); }
+  .qf-legend span{ display: inline-flex; align-items: center; gap: 6px; }
+  .qf-legend .sw{ display: inline-block; width: 24px; height: 0; border-top: 2.5px solid; }
+  .qf-legend .bx{ display: inline-block; width: 16px; height: 12px; border-radius: 3px; border: 1px solid var(--line-strong); }
+  .qf-empty{ margin: 0; padding: 24px 22px; font-family: var(--font-serif); font-style: italic; font-size: 1.05rem; color: var(--ink-soft); }
+  .qf-foot{ font-family: var(--font-serif); font-style: italic; font-size: .9rem; color: var(--ink-soft); text-align: center; max-width: 640px; margin: 4px auto 0; }
+  @media (max-width: 560px){ .qf-head{ padding: 16px 16px 12px; } .qf-legend{ padding: 12px 16px 14px; } }
+  @media (prefers-reduced-motion: reduce){ .qf *{ transition: none !important; } }
+</style>
+</head>
+<body class="pp-sidequest" data-nav-eyebrow="Dreamlight Valley" data-nav-title="Quest Flow">
+
+<div class="pp-wrap">
+
+  <div class="pp-page-title">
+    <h2>The Quest Flow</h2>
+  </div>
+
+  <div class="qf">
+    <p class="qf-intro">Pick a character or a quest, and see every step still in the way, in order: realm doors, quests, who to meet and which friendship levels. Back to <a href="./">the quest tracker</a>.</p>
+
+    <div class="qf-tools pp-field">
+      <select id="goal" aria-label="Finish a character's story"></select>
+      <span class="qf-or">or</span>
+      <input id="find" type="search" list="find-list" placeholder="Reach a quest…" aria-label="Reach a quest" autocomplete="off">
+      <datalist id="find-list"></datalist>
+      <button class="pp-pill" type="button" id="t-prog" aria-pressed="false">&ldquo;Progress with&rdquo; steps</button>
+    </div>
+
+    <section class="pp-panel qf-panel" aria-live="polite">
+      <div class="qf-head"><h3 id="title"></h3><p id="summary"></p></div>
+      <div class="qf-scroll"><div class="qf-canvas" id="canvas"></div></div>
+      <p class="qf-empty" id="empty" hidden></p>
+      <div class="qf-legend" aria-hidden="true">
+        <span><i class="sw" style="border-color:var(--ink-soft)"></i>next in their story</span>
+        <span><i class="sw" style="border-color:var(--dusk)"></i>meet / friendship</span>
+        <span><i class="sw" style="border-color:var(--gold)"></i>another quest first</span>
+        <span><i class="sw" style="border-color:var(--pink-deep)"></i>brings a villager</span>
+        <span><i class="sw" style="border-color:var(--sage-deep)"></i>realm door</span>
+        <span><i class="bx" style="outline:2px solid var(--accent);outline-offset:1px"></i>start here</span>
+        <span><i class="bx" style="border-style:dashed"></i>opens up after</span>
+      </div>
+    </section>
+
+    <p class="qf-foot">Tap a box to trace what leads to it and what it leads to; tap it again to clear. The &#8599; opens the quest on the Dreamlight Valley Wiki. Requirements from the wiki, checked Oct 25, 2026, plus the &ldquo;Locked&rdquo; notes on the tracker. Only the Base Game and A Rift in Time.</p>
+  </div>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-firebase.js"></script>
+<script src="ddv-data.js"></script>
+<script>
+"use strict";
+
+const $=id=>document.getElementById(id);
+const NS="http://www.w3.org/2000/svg";
+let S={},FD={};   // quest progress and friendship levels, as the tracker stores them
+const st=id=>(S[id]&&S[id].s)||"";
+const nt=id=>(S[id]&&S[id].n)||"";
+const lvl=k=>+FD[k]||0;
+const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const plural=(n,w)=>`${n} ${w}${n===1?"":"s"}`;
+const playable=r=>playableFor(r,nt(r[0]));
+const ROW=new Map(Q.map(r=>[r[0],r]));
+let showProg=false,goal=null,focus=null;
+
+/* ---------------- characters ----------------
+   One per villager (by key), plus the storylines that aren't villagers
+   (Introductory, The Forgotten…), by the slug of their name. */
+const CH=new Map();
+for(const v of VILLAGERS)CH.set(v.k,{k:v.k,name:v.name,v,rows:v.rows});
+for(const g of byChar){
+  if(/\(Dream Bundle\)$/.test(g.ch)||VILLAGERS.some(v=>v.name===g.ch))continue;
+  const k=slug(g.ch);if(!CH.has(k))CH.set(k,{k,name:g.ch,v:null,rows:[]});CH.get(k).rows.push(...g.rows)}
+const ownerOf=new Map();for(const c of CH.values())for(const r of c.rows)ownerOf.set(r[0],c.k);
+const met=c=>!c.v||lvl(c.k)>0||c.rows.some(r=>st(r[0])==="d");
+const vKey=n=>{n=n.trim().toLowerCase();for(const c of CH.values())if(c.v&&(c.name.toLowerCase()===n||c.name.split(" ")[0].toLowerCase()===n))return c.k};
+const short=k=>{const c=CH.get(k);return c.k==="the-beast"?"Beast":c.k==="fairy-godmother"?"Fairy Godmother":c.k==="mother-gothel"?"Mother Gothel":c.name.split(" ")[0]};
+// "Oswald's A Cockamamie Contest" or "The Guardian Party" -> that quest's row
+function questNamed(text){
+  const t=text.trim().toLowerCase(),rows=Q.filter(r=>ownerOf.has(r[0])&&t.endsWith(r[4].toLowerCase()));
+  return rows.find(r=>t.startsWith(r[2].split(" ")[0].toLowerCase()))||rows.find(r=>t===r[4].toLowerCase());
+}
+// the first quest of theirs not done: "more of their story" points at it
+const nextOf=k=>CH.get(k).rows.find(r=>playable(r)&&r[3]!=="Events & extras"&&st(r[0])!=="d");
+
+/* ---------------- the steps ----------------
+   Every step and what it needs first ("pre"):
+     q:<id>       a quest: the one before it in its storyline, its own
+                  friendship level (FRIEND_REQ), NEEDS, the tracker's
+                  "Locked" notes, and the realm door if it's a realm's first
+     m:<key>      meeting a villager: the quest that brings them (UNLOCKS)
+     f:<key>:<l>  a villager at a friendship level: the level below it, or
+                  meeting them
+     d:<n>        a realm door in the Dream Castle (REALMS[n])
+   Each pre has a kind, for the arrow's colour. */
+let N=new Map();
+function build(){
+  N=new Map();
+  const mk=(id,kind,o)=>{if(!N.has(id))N.set(id,{id,kind,pre:[],...o});return N.get(id)};
+  const meet=k=>{const c=CH.get(k);return mk("m:"+k,"meet",{k,label:`Meet ${c.name}`,done:met(c)})};
+  const level=(k,l)=>{const c=CH.get(k);return mk(`f:${k}:${l}`,"level",{k,l,label:`${c.name} to level ${l}`,done:lvl(k)>=l})};
+  const quest=id=>{const r=ROW.get(id);return mk("q:"+id,"quest",{r,k:ownerOf.get(id),label:r[4],done:st(id)==="d"})};
+  const door=i=>{const R=REALMS[i];return mk("d:"+i,"door",{label:`Open ${R.name} door`,
+    done:R.v.some(k=>met(CH.get(k)))||st(R.start)!==""})};
+  const pre=(n,p,kind)=>{if(p&&p!==n&&!n.pre.some(x=>x.n===p))n.pre.push({n:p,kind})};
+  for(const g of byChar)for(const r of g.rows){
+    if(!ownerOf.has(r[0])||!playable(r))continue;
+    const n=quest(r[0]),c=CH.get(ownerOf.get(r[0]));
+    if(!loose(r)&&r[3]!=="Events & extras")
+      for(let j=g.rows.indexOf(r)-1;j>=0;j--){const x=g.rows[j];if(x[3]!==r[3]||!playable(x))continue;pre(n,quest(x[0]),"chain");break}
+    if(c.v&&FRIEND_REQ[r[0]]>0)pre(n,level(c.k,FRIEND_REQ[r[0]]),"level");
+    for(const x of NEEDS[r[0]]||[]){
+      if(x.includes("--")){if(ownerOf.has(x)&&playable(ROW.get(x)))pre(n,quest(x),"quest");continue}
+      const[k,l]=x.split("@");if(!CH.has(k))continue;pre(n,l?level(k,+l):meet(k),l?"level":"meet")}
+    if(showProg)for(const k of PROGRESS[r[0]]||[]){const x=CH.has(k)&&nextOf(k);if(x&&x[0]!==r[0])pre(n,quest(x[0]),"progress")}
+    // the tracker's own notes: "Locked: unlock Mulan, Tiana friendship level 7"
+    if(/^locked/i.test(nt(r[0]))){const why=nt(r[0]).replace(/^locked:\s*/i,"");let m;
+      if((m=/unlock ([^,]+?)\s*(?:,|$)/i.exec(why))){const k=vKey(m[1]);if(k)pre(n,meet(k),"meet")}
+      if((m=/([^,]+?) friendship level (\d+)/i.exec(why))){const k=vKey(m[1]);if(k)pre(n,level(k,+m[2]),"level")}
+      if((m=/starts during (.+?)\s*(?:,|$)/i.exec(why))){const p=questNamed(m[1]);if(p)pre(n,quest(p[0]),"quest")}
+      if((m=/progress further with ([^,]+?)\s*(?:,|$)/i.exec(why))){const k=vKey(m[1]),x=k&&nextOf(k);if(x)pre(n,quest(x[0]),"progress")}}
+    const R=REALMS.findIndex(R=>R.start===r[0]);if(R>=0)pre(n,door(R),"door");
+  }
+  for(const[q,ks]of Object.entries(UNLOCKS))if(ownerOf.has(q)&&playable(ROW.get(q)))for(const k of ks)if(CH.has(k))pre(meet(k),quest(q),"unlock");
+  // friendship goes up a level at a time: each level step needs the one below it, the lowest needs meeting them
+  const ladders=new Map();for(const n of N.values())if(n.kind==="level"){if(!ladders.has(n.k))ladders.set(n.k,[]);ladders.get(n.k).push(n)}
+  for(const[k,ls]of ladders){ls.sort((a,b)=>a.l-b.l);ls.forEach((n,i)=>pre(n,i?ls[i-1]:meet(k),i?"level":"meet"))}
+}
+// how a step reads as a tick on the box that needed it
+function tickText(n){
+  if(n.kind==="quest")return(n.k&&CH.get(n.k).v?`${short(n.k)}'s `:"")+n.label;
+  if(n.kind==="meet")return CH.get(n.k).name;
+  if(n.kind==="level")return`${short(n.k)} ${n.l}`;
+  return n.label.replace(/^Open /,"")+" open";
+}
+
+/* ---------------- the chart for a goal ----------------
+   Everything not done that the goal needs, all the way back; done steps
+   become ticks. Then, faded, what the goal opens next. */
+function plan(goal){
+  let targets=[];
+  if(goal.q){const n=N.get("q:"+goal.q);if(n)targets=[n]}
+  else{const c=CH.get(goal.c);
+    targets=c.rows.filter(r=>playable(r)&&st(r[0])!=="d").map(r=>N.get("q:"+r[0])).filter(Boolean);
+    if(c.v&&!met(c)&&N.has("m:"+c.k))targets.push(N.get("m:"+c.k))}
+  const vis=new Set(),edges=[],ticks=new Map();
+  const visit=n=>{if(vis.has(n))return;vis.add(n);const tk=[];
+    // done steps become ticks, except the obvious ones (the quest before, or meeting them on their own level step)
+    for(const p of n.pre){if(p.n.done){if(p.kind!=="chain"&&!(n.kind==="level"&&p.n.k===n.k))tk.push(p.n);continue}edges.push({from:p.n,to:n,kind:p.kind});visit(p.n)}
+    ticks.set(n,tk)};
+  for(const n of targets)if(!n.done)visit(n);
+  // what it opens: other quests that wait directly on the goal's own steps
+  const mine=n=>goal.q?targets.includes(n):(n.kind==="quest"||n.kind==="meet"||n.kind==="level")&&n.k===goal.c;
+  const lead=new Set();
+  for(const n of N.values()){if(vis.has(n)||n.done||n.kind!=="quest")continue;
+    const via=n.pre.filter(p=>vis.has(p.n)&&mine(p.n));if(!via.length)continue;
+    lead.add(n);for(const p of via)edges.push({from:p.n,to:n,kind:p.kind,lead:true});
+    n.others=n.pre.some(p=>!p.n.done&&!via.includes(p))}
+  return{targets,vis,lead,edges,ticks};
+}
+
+/* ---------------- layout ----------------
+   Layered, top to bottom (a small Sugiyama): each step one row below the
+   lowest thing it needs, then pulled down next to what it opens; long
+   arrows get waypoints so they route between boxes; rows are ordered to
+   cut crossings, then nudged towards their neighbours. */
+const BW=()=>matchMedia("(max-width: 560px)").matches?150:178;
+const GX=22,GY=46,PAD_L=36,PAD=16;
+function layout(P,heights){
+  const nodes=[...P.vis,...P.lead],preds=new Map(nodes.map(n=>[n,[]])),succ=new Map(nodes.map(n=>[n,[]]));
+  for(const e of P.edges){preds.get(e.to).push(e.from);succ.get(e.from).push(e.to)}
+  const rank=new Map(),busy=new Set();
+  const rk=n=>{if(rank.has(n))return rank.get(n);if(busy.has(n))return 0;busy.add(n);
+    let r=0;for(const p of preds.get(n))r=Math.max(r,rk(p)+1);busy.delete(n);rank.set(n,r);return r};
+  nodes.forEach(rk);
+  // pull steps down to just above the first thing that needs them
+  for(const n of [...nodes].sort((a,b)=>rank.get(b)-rank.get(a))){const s=succ.get(n);
+    if(s.length){const r=Math.min(...s.map(x=>rank.get(x)))-1;if(r>rank.get(n))rank.set(n,r)}}
+  // waypoints for arrows that skip rows
+  const items=nodes.map(n=>({n,r:rank.get(n),w:BW(),h:heights.get(n)}));
+  const at=new Map(items.map(i=>[i.n,i])),up=new Map(items.map(i=>[i,[]])),down=new Map(items.map(i=>[i,[]]));
+  const routes=[];
+  for(const e of P.edges){let a=at.get(e.from);const b=at.get(e.to),path=[a];
+    for(let r=a.r+1;r<b.r;r++){const d={dummy:true,r,w:0,h:0};items.push(d);up.set(d,[]);down.set(d,[]);path.push(d)}
+    path.push(b);for(let i=0;i+1<path.length;i++){down.get(path[i]).push(path[i+1]);up.get(path[i+1]).push(path[i])}
+    routes.push({e,path})}
+  const R=Math.max(0,...items.map(i=>i.r))+1,rows=[...Array(R)].map(()=>[]);
+  // first order: by character, then quest-list order, so a storyline stays together
+  const key=i=>i.dummy?"~":(i.n.k?CH.get(i.n.k).name:"")+"|"+String(i.n.r?Q.indexOf(i.n.r):0).padStart(4,"0");
+  for(const i of items)rows[i.r].push(i);
+  for(const row of rows)row.sort((a,b)=>key(a)<key(b)?-1:key(a)>key(b)?1:0);
+  const idx=()=>{for(const row of rows)row.forEach((i,x)=>i.o=x)};idx();
+  const bary=(i,nb)=>{const l=nb.get(i);return l.length?l.reduce((s,x)=>s+x.o,0)/l.length:i.o};
+  for(let it=0;it<8;it++){
+    for(let r=1;r<R;r++){rows[r].sort((a,b)=>bary(a,up)-bary(b,up));rows[r].forEach((i,x)=>i.o=x)}
+    for(let r=R-2;r>=0;r--){rows[r].sort((a,b)=>bary(a,down)-bary(b,down));rows[r].forEach((i,x)=>i.o=x)}}
+  // x: lay each row out, then nudge towards neighbours, keeping order and spacing
+  const gap=(a,b)=>a.dummy||b.dummy?12:GX;
+  for(const row of rows){let x=0;for(const i of row){i.x=x;x+=i.w+gap(i,row[row.indexOf(i)+1]||i)}}
+  const cx=i=>i.x+i.w/2;
+  for(let it=0;it<12;it++)for(const row of rows){
+    const want=row.map(i=>{const nb=[...up.get(i),...down.get(i)];return nb.length?nb.reduce((s,x)=>s+cx(x),0)/nb.length-i.w/2:i.x});
+    const L=row.map((i,k)=>want[k]),Rr=row.map((i,k)=>want[k]);
+    for(let k=1;k<row.length;k++)L[k]=Math.max(L[k],L[k-1]+row[k-1].w+gap(row[k-1],row[k]));
+    for(let k=row.length-2;k>=0;k--)Rr[k]=Math.min(Rr[k],Rr[k+1]-row[k].w-gap(row[k],row[k+1]));
+    row.forEach((i,k)=>i.x=(L[k]+Rr[k])/2);
+    for(let k=1;k<row.length;k++)row[k].x=Math.max(row[k].x,row[k-1].x+row[k-1].w+gap(row[k-1],row[k]))}
+  const minX=Math.min(...items.map(i=>i.x));for(const i of items)i.x+=PAD_L-minX;
+  // y: rows stacked, each as tall as its tallest box
+  let y=PAD;const rowY=[],rowH=[];
+  for(let r=0;r<R;r++){rowY[r]=y;rowH[r]=Math.max(0,...rows[r].map(i=>i.h));y+=rowH[r]+GY}
+  for(const i of items){i.y=rowY[i.r];if(i.dummy)i.h=rowH[i.r]}
+  const width=Math.max(...items.map(i=>i.x+i.w))+PAD,height=y-GY+PAD;
+  return{items,at,routes,rows,rowY,width,height,preds,succ,rank};
+}
+
+/* ---------------- drawing ---------------- */
+function boxFor(n,P,goalSet){
+  const d=document.createElement("div");d.className="qf-box "+n.kind;
+  if(n.kind==="meet"&&!n.done)d.classList.add("unmet-meet");
+  const isLead=P.lead.has(n),start=!isLead&&!n.pre.some(p=>!p.n.done);
+  if(isLead)d.classList.add("lead");if(start)d.classList.add("start");if(goalSet.has(n))d.classList.add("goal");
+  const kick=document.createElement("span");kick.className="qf-kick";
+  const who=n.k&&CH.get(n.k)?CH.get(n.k).name:"";
+  kick.textContent=isLead?"Opens up after":start?"Start here":n.kind==="quest"?who:n.kind==="meet"?"Meet":n.kind==="level"?"Friendship":"Realm door";
+  if(!isLead&&start&&n.kind==="quest")kick.textContent+=" · "+who;
+  if(isLead&&n.kind==="quest")kick.textContent+=" · "+who;
+  const b=document.createElement("b");b.textContent=n.kind==="meet"?CH.get(n.k).name:n.label;
+  if(n.kind==="quest"){const a=document.createElement("a");a.textContent="↗";a.target="_blank";a.rel="noopener";
+    a.href="https://dreamlightvalleywiki.com/index.php?title=Special%3ASearch&go=Go&search="+encodeURIComponent(n.label);
+    a.setAttribute("aria-label",`${n.label} on the Dreamlight Valley Wiki (opens in a new tab)`);a.onclick=e=>e.stopPropagation();b.append(a)}
+  d.append(kick,b);
+  const sub=document.createElement("span");sub.className="qf-sub";
+  if(n.kind==="quest"){const s=st(n.r[0]);
+    if(DEADLINE[n.r[0]]){sub.classList.add("soon");sub.textContent=`Event, only until ${new Date(DEADLINE[n.r[0]]+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}`}
+    else if(s==="p"){sub.classList.add("p");sub.textContent="In progress"}
+    else if(isLead&&n.others)sub.textContent="Needs other steps too"}
+  else if(n.kind==="level")sub.textContent=met(CH.get(n.k))?(lvl(n.k)?`Level ${lvl(n.k)} now`:"Level not set on the tracker"):"Not met yet";
+  else if(n.kind==="meet"){const R=REALMS.find(R=>R.v.includes(n.k));sub.textContent=R?`Joins from ${R.name}`:"Joins the Valley"}
+  else if(n.kind==="door")sub.textContent="Dream Castle, paid in Dreamlight";
+  if(sub.textContent)d.append(sub);
+  const tk=P.ticks.get(n)||[];
+  if(tk.length){const t=document.createElement("span");t.className="qf-ticks";const names=tk.map(tickText);
+    t.textContent="✓ "+(names.length>3?names.slice(0,3).join(", ")+` +${names.length-3} more`:names.join(", "));t.title="Done: "+names.join(", ");d.append(t)}
+  d.tabIndex=0;d.setAttribute("role","button");d.setAttribute("aria-label",`${kick.textContent}: ${b.textContent}${sub.textContent?", "+sub.textContent:""}. Trace it`);
+  d.onclick=()=>{focus=focus===n?null:n;lightUp()};
+  d.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();d.click()}};
+  return d;
+}
+let L=null;
+function draw(){
+  const C=$("canvas");C.innerHTML="";focus=null;
+  const P=plan(goal),c=goal.c?CH.get(goal.c):null,r=goal.q?ROW.get(goal.q):null;
+  $("title").textContent=c?`Finish ${c.name}'s story`:`Reach ${r[4]}`;
+  const steps=P.vis.size;
+  if(!steps){$("empty").hidden=false;C.parentNode.hidden=true;
+    $("empty").textContent=c?`All of ${c.name}'s quests you can play are done.`:`${r[4]} is done.`;$("summary").textContent="";return}
+  $("empty").hidden=true;C.parentNode.hidden=false;
+  // measure every box at its width before laying out
+  const goalSet=new Set(P.targets),boxes=new Map(),heights=new Map(),w=BW();
+  for(const n of [...P.vis,...P.lead]){const d=boxFor(n,P,goalSet);d.style.width=w+"px";d.style.visibility="hidden";C.append(d);boxes.set(n,d)}
+  for(const[n,d]of boxes)heights.set(n,d.offsetHeight);
+  L=layout(P,heights);
+  C.style.width=L.width+"px";C.style.height=L.height+"px";
+  const svg=document.createElementNS(NS,"svg");svg.setAttribute("width",L.width);svg.setAttribute("height",L.height);
+  const defs=document.createElementNS(NS,"defs");svg.append(defs);
+  for(const[k,col]of[["chain","var(--ink-soft)"],["meet","var(--dusk)"],["level","var(--dusk)"],["quest","var(--gold)"],["unlock","var(--pink-deep)"],["door","var(--sage-deep)"],["progress","var(--ink-soft)"]]){
+    const m=document.createElementNS(NS,"marker");for(const[a,v]of Object.entries({id:"ar-"+k,viewBox:"0 0 10 10",refX:"9",refY:"5",markerWidth:"8",markerHeight:"8",orient:"auto",markerUnits:"userSpaceOnUse"}))m.setAttribute(a,v);
+    const p=document.createElementNS(NS,"path");p.setAttribute("d","M0,0 L10,5 L0,10 z");p.setAttribute("fill",col);m.append(p);defs.append(m)}
+  C.prepend(svg);
+  for(const{e,path}of L.routes){
+    const pts=[];const a=path[0],b=path[path.length-1];
+    pts.push([a.x+a.w/2,a.y+a.h]);
+    for(const d of path.slice(1,-1)){pts.push([d.x,d.y]);pts.push([d.x,d.y+d.h])}
+    pts.push([b.x+b.w/2,b.y-2]);
+    let dstr=`M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+    for(let i=1;i<pts.length;i++){const[x1,y1]=pts[i-1],[x2,y2]=pts[i],h=(y2-y1)/2;
+      dstr+=x1===x2?` L${x2.toFixed(1)},${y2.toFixed(1)}`:` C${x1.toFixed(1)},${(y1+h).toFixed(1)} ${x2.toFixed(1)},${(y2-h).toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}`}
+    const p=document.createElementNS(NS,"path");p.setAttribute("d",dstr);p.setAttribute("class",`qf-edge ${e.kind}${e.lead?" lead":""}`);
+    p.setAttribute("marker-end",`url(#ar-${e.kind})`);p.dataset.from=e.from.id;p.dataset.to=e.to.id;svg.append(p)}
+  for(const[n,d]of boxes){const i=L.at.get(n);d.style.left=i.x+"px";d.style.top=i.y+"px";d.style.visibility="";d.dataset.id=n.id}
+  // step numbers down the side, for the rows before what it opens
+  let s=0;
+  L.rows.forEach((row,r)=>{if(!row.some(i=>!i.dummy&&!P.lead.has(i.n)))return;s++;
+    const t=document.createElement("span");t.className="qf-step";t.style.top=(L.rowY[r]+6)+"px";t.textContent=s;t.title=`Step ${s}`;C.append(t)});
+  const startN=[...P.vis].filter(n=>!n.pre.some(p=>!p.n.done)).length;
+  $("summary").textContent=`${plural(steps,"step")} in ${plural(s,"round")}. Start with the ${startN===1?"box":startN+" boxes"} marked "Start here".`+
+    (P.lead.size?` After that it opens ${plural(P.lead.size,"more quest")}, faded at the bottom.`:"")+
+    (L.width>C.parentNode.clientWidth+4?" Scroll sideways for the rest.":"");
+  // start scrolled so the first "start here" box is in the middle
+  const first=[...boxes].find(([n])=>!P.lead.has(n)&&!n.pre.some(p=>!p.n.done));
+  if(first){const i=L.at.get(first[0]),sc=C.parentNode;sc.scrollLeft=Math.max(0,i.x+i.w/2-sc.clientWidth/2)}
+}
+function lightUp(){
+  const C=$("canvas");C.classList.toggle("focus",!!focus);
+  if(!focus||!L){C.querySelectorAll(".lit").forEach(e=>e.classList.remove("lit"));return}
+  const on=new Set([focus]),walk=(n,m)=>{for(const x of m.get(n)||[])if(!on.has(x)){on.add(x);walk(x,m)}};
+  walk(focus,L.preds);walk(focus,L.succ);
+  const ids=new Set([...on].map(n=>n.id));
+  C.querySelectorAll(".qf-box").forEach(d=>d.classList.toggle("lit",ids.has(d.dataset.id)));
+  C.querySelectorAll(".qf-edge").forEach(p=>p.classList.toggle("lit",ids.has(p.dataset.from)&&ids.has(p.dataset.to)));
+}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&focus){focus=null;lightUp()}});
+
+/* ---------------- choosing a goal ---------------- */
+const left=c=>c.rows.filter(r=>playable(r)&&st(r[0])!=="d").length;
+// what each villager not met yet holds up, all the way down
+function reach(n){const seen=new Set(),todo=[n],succ=new Map();
+  for(const x of N.values())for(const p of x.pre){if(!succ.has(p.n))succ.set(p.n,[]);succ.get(p.n).push(x)}
+  while(todo.length)for(const y of succ.get(todo.pop())||[])if(!seen.has(y)&&!y.done){seen.add(y);todo.push(y)}
+  return[...seen].filter(x=>x.kind==="quest").length}
+function fillPickers(){
+  const sel=$("goal");sel.innerHTML="";
+  const ph=document.createElement("option");ph.value="";ph.textContent="Finish a character's story…";sel.append(ph);
+  const groups=[["Not met yet",c=>c.v&&!met(c)],["Villagers",c=>c.v&&met(c)],["Storylines",c=>!c.v]];
+  for(const[label,f]of groups){const g=document.createElement("optgroup");g.label=label;
+    for(const c of [...CH.values()].filter(c=>f(c)&&left(c)).sort((a,b)=>a.name.localeCompare(b.name))){
+      const o=document.createElement("option");o.value=c.k;o.textContent=`${c.name} (${left(c)} left)`;g.append(o)}
+    if(g.children.length)sel.append(g)}
+  sel.value=goal&&goal.c?goal.c:"";
+  const dl=$("find-list");dl.innerHTML="";
+  for(const r of Q)if(ownerOf.has(r[0])&&playable(r)&&st(r[0])!=="d"){const o=document.createElement("option");o.value=`${r[4]} (${r[2]})`;dl.append(o)}
+}
+function setGoal(g,remember){
+  goal=g;if(remember)history.replaceState(null,"",g.c?"#c="+g.c:"#q="+g.q);
+  $("goal").value=g.c||"";draw();
+}
+$("goal").onchange=e=>{if(e.target.value)setGoal({c:e.target.value},true)};
+$("find").addEventListener("change",e=>{const m=/^(.*) \(([^)]*)\)$/.exec(e.target.value.trim());if(!m)return;
+  const r=Q.find(r=>r[4]===m[1]&&r[2]===m[2]&&ownerOf.has(r[0]));if(r){setGoal({q:r[0]},true);e.target.value=""}});
+$("t-prog").onclick=()=>{showProg=!showProg;$("t-prog").setAttribute("aria-pressed",showProg);build();draw()};
+function fromHash(){const h=new URLSearchParams(location.hash.slice(1));
+  if(h.get("c")&&CH.has(h.get("c")))return{c:h.get("c")};if(h.get("q")&&ROW.has(h.get("q")))return{q:h.get("q")};return null}
+// with nothing chosen: the villager not met yet who holds up the most
+function defaultGoal(){
+  const unmet=[...CH.values()].filter(c=>c.v&&!met(c)&&N.has("m:"+c.k)).map(c=>({c,n:reach(N.get("m:"+c.k))})).sort((a,b)=>b.n-a.n);
+  if(unmet.length)return{c:unmet[0].c.k};
+  const any=[...CH.values()].filter(c=>c.v&&left(c)).sort((a,b)=>left(b)-left(a))[0];return any?{c:any.k}:{c:"merlin"};
+}
+window.addEventListener("hashchange",()=>{const g=fromHash();if(g){goal=g;$("goal").value=g.c||"";draw()}});
+let lastW=innerWidth;window.addEventListener("resize",()=>{if((innerWidth<=560)!==(lastW<=560)){lastW=innerWidth;draw()}});
+
+/* ---------------- data ---------------- */
+function refresh(){build();fillPickers();if(!goal)goal=fromHash()||defaultGoal();$("goal").value=goal.c||"";draw()}
+try{const p=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");if(p){S=p.S||{};FD=p.F||{}}}catch(e){}
+refresh();
+try{
+  firebase.initializeApp(window.PPFirebaseConfig);
+  const db=firebase.firestore();
+  db.doc(QUEST_DOC).onSnapshot(s=>{S=s.exists?{...s.data()}:{};refresh()},err=>console.error(err));
+  db.doc(FRIENDS_DOC).onSnapshot(s=>{FD=s.exists?{...s.data()}:{};refresh()},err=>console.error(err));
+}catch(err){console.error("Firestore unavailable, showing the copy saved on this device:",err)}
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>

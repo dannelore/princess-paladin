@@ -2,8 +2,8 @@
    Dreamlight Valley — shared data
    /side-quests/game-quest/ddv/ddv-data.js
 
-   Everything the Dreamlight Valley tracker (index.html) and the Quest Web
-   (web/) both read: the Firestore document names, the quest list, the
+   Everything the Dreamlight Valley tracker (index.html) and the Quest Flow
+   (flow.html) both read: the Firestore document names, the quest list, the
    friendship levels and prerequisites from the Dreamlight Valley Wiki, and
    the villager list built from them. index.html's header describes what's
    stored in each Firestore document.
@@ -683,8 +683,10 @@ const FRIEND_REQ={
 /* What else a quest needs first, from the same wiki pages: villagers to have
    met (by key), at a level ("pumbaa@10"), or quests to have finished (by
    id). Villagers already met are no hold-up, so they cost the to-do list
-   nothing; the Quest Web draws them all. */
+   nothing; the Quest Flow shows them all, as ticks once done. */
 const NEEDS={
+  "timon--drawings":["timon"],
+  "lady--the-spaghetti-incident":["lady"],
   "merlin--a-creepy-crawly-mystery":["pumbaa@10","timon@9","pumbaa--down-to-earth","timon--the-timon-talk"],
   "merlin--the-infestation-finale":["timon--the-infestation-pt-1"],
   "daisy-duck--the-glittered-gala":["stitch"],
@@ -770,19 +772,21 @@ const NEEDS={
   "oswald--the-lesser-evil":["merlin--the-now-and-then"]
 };
 /* Villagers still to meet come in pairs from a Dream Castle realm, so the
-   to-do is to open the realm. Door costs go up with each one opened. */
+   to-do is to open the realm. Door costs go up with each one opened.
+   start is the realm's first quest, the one the door opens. */
 const REALMS=[
-  {name:"the Lion King realm",v:["timon","pumbaa"],how:"Open the Lion King door in the Dream Castle with Dreamlight (Simba and Nala need to be level 10), then Finding Old Friends, Relax! and Where's Pumbaa?."},
-  {name:"the Wonderland realm",v:["alice","cheshire-cat"],how:"Open the Alice in Wonderland door in the Dream Castle with Dreamlight, then Wonders of Wonderland, The Queen's Maze, Teeny, Tiny Problems and Leaving Wonderland (Alice's house costs Star Coins). Cheshire Cat follows a few days later."},
-  {name:"the Inside Out realm",v:["joy","sadness"],how:"Open the Inside Out door in the Dream Castle with Dreamlight, then Emotional Rescue, Out of the Blue, Dream On! (Headquarters costs 10,000 Star Coins) and Get Up and Glow!."},
-  {name:"the Lady and the Tramp realm",v:["lady","tramp"],how:"Open the Lady and the Tramp door in the Dream Castle with Dreamlight, then Canine Courtship, The Jailbreak, Meatballs (their house costs 20,000 Star Coins) and Critters and Compassion."},
-  {name:"the Hercules realm",v:["hercules","phil"],how:"Open the Hercules door in the Dream Castle with Dreamlight, then Moonlighting as a Hero, Speedrun Crash Course, Thunderstruck and A Real Godly Mess (the villa costs 10,000 Star Coins). Phil moves in once you bring him a 5-star meal."}
+  {name:"the Lion King realm",start:"timon--finding-old-friends",v:["timon","pumbaa"],how:"Open the Lion King door in the Dream Castle with Dreamlight (Simba and Nala need to be level 10), then Finding Old Friends, Relax! and Where's Pumbaa?."},
+  {name:"the Wonderland realm",start:"cheshire-cat--wonders-of-wonderland",v:["alice","cheshire-cat"],how:"Open the Alice in Wonderland door in the Dream Castle with Dreamlight, then Wonders of Wonderland, The Queen's Maze, Teeny, Tiny Problems and Leaving Wonderland (Alice's house costs Star Coins). Cheshire Cat follows a few days later."},
+  {name:"the Inside Out realm",start:"joy--emotional-rescue",v:["joy","sadness"],how:"Open the Inside Out door in the Dream Castle with Dreamlight, then Emotional Rescue, Out of the Blue, Dream On! (Headquarters costs 10,000 Star Coins) and Get Up and Glow!."},
+  {name:"the Lady and the Tramp realm",start:"tramp--canine-courtship",v:["lady","tramp"],how:"Open the Lady and the Tramp door in the Dream Castle with Dreamlight, then Canine Courtship, The Jailbreak, Meatballs (their house costs 20,000 Star Coins) and Critters and Compassion."},
+  {name:"the Hercules realm",start:"phil--moonlighting-as-a-hero",v:["hercules","phil"],how:"Open the Hercules door in the Dream Castle with Dreamlight, then Moonlighting as a Hero, Speedrun Crash Course, Thunderstruck and A Real Godly Mess (the villa costs 10,000 Star Coins). Phil moves in once you bring him a 5-star meal."}
 ];
 /* Event quests that go away: last day you can do them. They jump to the top
    of the to-do list in their last two weeks and drop off after. */
 const DEADLINE={"oogie-boogie--let-the-games-begin":"2026-11-04"};
 /* "Progress further with" someone: the wiki says a quest waits on more of
-   their story without naming the quest. Only the Quest Web uses these. */
+   their story without naming the quest. Only the Quest Flow uses these
+   (pointed at their next quest not done), and only when asked to. */
 const PROGRESS={
   "mulan--a-daily-regime":["scrooge-mcduck","remy","mushu","goofy"],
   "mulan--the-shadow-play":["mickey"],
@@ -823,7 +827,7 @@ const PROGRESS={
   "jafar--the-optics-of-a-second-chance":["eve"]
 };
 /* Quests that bring a villager to the Valley (the realm ones, and Oswald's
-   The Lesser Evil for Jafar). Only the Quest Web uses these. */
+   The Lesser Evil for Jafar). Only the Quest Flow uses these. */
 const UNLOCKS={
   "timon--where-s-pumbaa":["timon","pumbaa"],
   "alice--leaving-wonderland":["alice"],
@@ -837,6 +841,32 @@ const UNLOCKS={
   "oogie-boogie--oogie-boogie-s-big-game":["oogie-boogie"],
   "oswald--the-lesser-evil":["jafar"]
 };
+
+/* A character's quests come one after another within a section, except
+   these: Secret Potatoes, Snow White's and Tinker Bell's quests, the Dream
+   Bundles, and Merlin's side stories (the Night Mite pair waits on Timon
+   and Pumbaa, Islands in the Sky doesn't). LOOSE_QUESTS are single quests
+   listed in a story they don't follow on from: Cat Tree Catastrophe is how
+   Cheshire Cat moves in, Drawings and The Spaghetti Incident start once
+   Timon or Lady live in the Valley (NEEDS says so). */
+const UNORDERED=["Secret Potatoes","Snow White","Tinker Bell"];
+const LOOSE=["Merlin|Side Story"];
+const LOOSE_QUESTS=["alice--cat-tree-catastrophe","timon--drawings","lady--the-spaghetti-incident"];
+const loose=r=>UNORDERED.includes(r[2])||/\(Dream Bundle\)$/.test(r[2])||LOOSE.includes(r[2]+"|"+r[3])||LOOSE_QUESTS.includes(r[0]);
+
+/* Whether a quest can be played on this save: in an expansion Danni owns
+   (a section named after an expansion needs that one too, like Scrooge's
+   Wishblossom Ranch quests), not an event that's over, and not a seasonal
+   extra unless its note says it starts during another quest (Training
+   Games' challenges, say). note is the quest's tracker note. */
+const EXP_PACKS=["A Rift in Time","Storybook Vale","Wishblossom Ranch","Honeyglow Woods"];
+const SECTION_EXP={"Eternity Isle":"A Rift in Time","Wishblossom Ranch":"Wishblossom Ranch"};
+const daysLeft=id=>Math.ceil((new Date(DEADLINE[id]+"T23:59:59")-Date.now())/864e5);
+function playableFor(r,note){
+  if(DEADLINE[r[0]]&&daysLeft(r[0])<0)return false;
+  if(r[3]==="Events & extras"&&!/starts during/i.test(note||""))return false;
+  const e=SECTION_EXP[r[3]]||r[1];return OWNED.includes(e)||!EXP_PACKS.includes(e);
+}
 
 const byChar=[];{const m=new Map();for(const r of Q){const k=r[1]+"|"+r[2];if(!m.has(k)){const g={exp:r[1],ch:r[2],key:k,rows:[]};m.set(k,g);byChar.push(g)}m.get(k).rows.push(r)}}
 
