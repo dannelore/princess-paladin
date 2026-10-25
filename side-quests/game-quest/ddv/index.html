@@ -291,7 +291,7 @@
   </div>
 
   <div class="dv">
-    <p class="dv-intro">Every Disney Dreamlight Valley quest, friendship and critter: what's done, what's on the go, and what the Valley is still hiding. For who opens what, see <a href="web.html">the Quest Web</a>.</p>
+    <p class="dv-intro">Every Disney Dreamlight Valley quest, friendship and critter: what's done, what's on the go, and what the Valley is still hiding. For every step to a goal, in order, see <a href="flow.html">the Quest Flow</a>.</p>
 
     <div class="dv-tabs" role="tablist" aria-label="Dreamlight Valley trackers">
       <button class="dv-tab" role="tab" id="tab-quests" aria-controls="pane-quests" aria-selected="true">Quests</button>
@@ -415,7 +415,7 @@
 "use strict";
 
 /* The quest list, friendship levels, prerequisites and the Firestore
-   document names live in ddv-data.js, shared with the Quest Web page. */
+   document names live in ddv-data.js, shared with the Quest Flow page. */
 const MAX_LEVEL = 10;
 
 /* Tameable critters: { type, area, biome, food, feeds, variants: [{ name, rare, when }] }.
@@ -499,13 +499,8 @@ function change(id,patch){S={...S,[id]:{...(S[id]||{}),...patch}};if(!S[id].s)de
    before it (in the same section) are done too. Secret Potatoes, Snow White's and
    Tinker Bell's quests, and the Dream Bundles can be done in any order. Seasonal and
    side quests (Holiday Treats, Villager of the Month, Training Games…) sit in an
-   "Events & extras" section of their own, so finishing one doesn't tick the story. */
-const UNORDERED=["Secret Potatoes","Snow White","Tinker Bell"];
-/* Sections whose quests don't follow on from each other: Merlin's side
-   stories (the Night Mite pair waits on Timon and Pumbaa, Islands in the
-   Sky doesn't). */
-const LOOSE=["Merlin|Side Story"];
-const loose=r=>UNORDERED.includes(r[2])||/\(Dream Bundle\)$/.test(r[2])||LOOSE.includes(r[2]+"|"+r[3]);
+   "Events & extras" section of their own, so finishing one doesn't tick the story.
+   loose() (in ddv-data.js) says which quests don't follow on. */
 function doneBefore(r){
   if(loose(r))return[];
   const rows=byChar.find(g=>g.exp===r[1]&&g.ch===r[2]).rows,prev=[];
@@ -787,18 +782,8 @@ function autoTodos(P){
     push(`a-f-${k}-${l}`,{t:`${o.name} to level ${l}`,h:neededFor([k],true)+(L?`Level ${L} now. `:"Not set in the Friendship tab yet. ")+FRIEND_TIP,g:"friend",f:{k,l}})}
   return out;
 }
-/* Quests in a section named after an expansion need that expansion too
-   (Scrooge's Wishblossom Ranch ones). Events & extras only count when they
-   start during another quest (Training Games' challenges, say). */
-const EXP_PACKS=["A Rift in Time","Storybook Vale","Wishblossom Ranch","Honeyglow Woods"];
-const SECTION_EXP={"Eternity Isle":"A Rift in Time","Wishblossom Ranch":"Wishblossom Ranch"};
-const daysLeft=id=>Math.ceil((new Date(DEADLINE[id]+"T23:59:59")-Date.now())/864e5);
 const fmtDay=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"});
-function playable(r){
-  if(DEADLINE[r[0]]&&daysLeft(r[0])<0)return false;
-  if(r[3]==="Events & extras"&&!/starts during/i.test(nt(r[0])))return false;
-  const e=SECTION_EXP[r[3]]||r[1];return OWNED.includes(e)||!EXP_PACKS.includes(e);
-}
+const playable=r=>playableFor(r,nt(r[0]));
 /* The top TOP to-dos, best worth for the cost first; your own always show,
    at the top, then event quests about to go (DEADLINE). The rest wait behind "Show more". Ticked ones sit at the
    bottom until Refresh clears them. */
