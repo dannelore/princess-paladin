@@ -142,16 +142,24 @@
     .bars{ order:4; max-width:100%; flex-basis:100%; }
   }
 
-  /* On a phone each of these took a line of its own. Smaller, the portrait,
-     party and name share one line, and the coins and buttons the next. */
+  /* On a phone each of these took a line of its own. Shrunk, the portrait,
+     party, name and the two buttons (icons only) share one line, the coins
+     and bars the next two. */
   @media (max-width:760px){
-    .pet-slot{ width:46px; border-width:2px; box-shadow:0 0 0 2px var(--accent), 0 3px 8px rgba(180,90,120,0.2); }
-    .party-strip a{ width:26px; }
-    .identity{ min-width:0; flex:1 1 110px; }
-    .identity .level-tag{ white-space:nowrap; }
-    .identity .name{ font-size:19px; }
-    .panel-btns{ gap:6px; }
-    .panel-btn{ font-size:12.5px; padding:5px 11px; }
+    .pet-slot{ width:34px; border-width:2px; border-radius:7px; box-shadow:0 0 0 2px var(--accent); }
+    .party-strip{ gap:3px; }
+    .party-strip a{ width:20px; border-radius:4px; }
+    .identity{ min-width:0; flex:1 1 80px; }
+    .identity .name{ font-size:16px; }
+    .identity .pet-title{ font-size:11px; min-height:0; }
+    .identity .level-tag{ font-size:11.5px; white-space:nowrap; }
+    .panel-btns{ gap:4px; }
+    .panel-btn{ font-size:0; padding:0; width:32px; height:32px; border-radius:50%; }
+    .panel-btn .col-emo, .panel-btn .btn-icon{ font-size:15px; }
+    .bars{ gap:3px; }
+    .bar-track{ height:7px; }
+    .date-strip{ margin-top:4px; }
+    .board{ margin-top:14px; }
   }
 
   /* ===== DATE STRIP ===== */
@@ -986,8 +994,8 @@
             <div class="coin meow"><span class="dot"></span><span id="meowNum">0</span></div>
           </div>
           <div class="panel-btns">
-            <button class="panel-btn" id="openShop"><span class="col-emo" data-alt="🏆">🎁</span> Rewards</button>
-            <button class="panel-btn" id="openSettings">⚙ Settings</button>
+            <button class="panel-btn" id="openShop" aria-label="Rewards"><span class="col-emo" data-alt="🏆">🎁</span> Rewards</button>
+            <button class="panel-btn" id="openSettings" aria-label="Settings"><span class="btn-icon">⚙</span> Settings</button>
           </div>
     </div>
   </div>
