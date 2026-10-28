@@ -26,10 +26,17 @@
        sidequest/fr-brendon  { items: [dragon], daily, updated }
        dragon: { id, name, frId, breed, gender, flight, level,
                  colours: [primary, secondary, tertiary], genes,
-                 status, notes, added, sire, dam }
+                 status, notes, added, sire, dam, breedOn }
        sire / dam: null, { id } for a dragon in the same lair, or
                    { name } for one outside it. Removing a dragon turns
                    links to it into { name }, so the tree keeps the name.
+       breedOn: the FR date ("YYYY-MM-DD") they can breed again, or "" if
+                they already can. The card counts down to it; "Bred today"
+                sets it from the breed's cooldown.
+
+     Cards show the name, breed and gender, flight, that countdown, and
+     links to the family tree and Flight Rising; the rest is in Edit.
+     Eggs (status "egg") sort last whatever the sort.
 
      Family trees are worked out from sire and dam: two generations up,
      and every dragon in the lair that names this one as a parent.
@@ -123,8 +130,8 @@
   }
   .fr-tag.flight{ background: var(--flight); color: #fff; }
   .fr-tag.flight[data-light]{ color: var(--ink); }
-  .fr-tag.st{ background: var(--accent-soft); color: var(--accent-deep); }
-  .fr-notes{ font-size: .82rem; color: var(--ink-soft); margin: 4px 0 0; line-height: 1.4; overflow-wrap: anywhere; }
+  .fr-breed{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin: 4px 0 0; font-size: .82rem; color: var(--ink-soft); line-height: 1.35; }
+  .fr-breed.is-ready{ color: var(--sage-deep); font-weight: 500; }
   .fr-link{ font-size: .8rem; color: var(--accent-deep); margin-top: 2px; width: fit-content; }
   .fr-edit{
     position: absolute; top: 7px; right: 7px; width: 28px; height: 28px; border-radius: 50%;
@@ -241,6 +248,7 @@
             <option value="name-asc">Name A&ndash;Z</option>
             <option value="breed-asc">Breed</option>
             <option value="level-desc">Highest level</option>
+            <option value="breed-soon">Ready to breed first</option>
             <option value="flight-asc">Flight</option>
             <option value="status-asc">What they're for</option>
           </select>
@@ -316,8 +324,12 @@
             <select id="fDam"></select>
             <input id="fDamOut" type="text" maxlength="60" placeholder="Their name, or name and id" aria-label="Dam from outside the lair" hidden>
           </div>
+          <div class="pp-field">
+            <label for="fBreedIn">Can breed in (days)</label>
+            <input id="fBreedIn" type="number" min="0" max="99" placeholder="Blank if ready">
+          </div>
         </div>
-        <p class="fr-hint">The id is the number at the end of the dragon's profile link. With it, the card shows the dragon and links back to Flight Rising.</p>
+        <p class="fr-hint">The id is the number at the end of the dragon's profile link. With it, the card shows the dragon and links back to Flight Rising. For the days, use the number in brackets after &ldquo;cannot breed until&rdquo; on their profile.</p>
         <div class="fr-actions">
           <button class="pp-btn" id="saveBtn" type="button">Save</button>
           <button class="pp-btn pp-btn-quiet" id="cancelBtn" type="button">Cancel</button>
@@ -447,6 +459,15 @@ const DIETS = {
 };
 const GATHER_FOR = { insects:"Insect Catching", meat:"Hunting", seafood:"Fishing", plants:"Foraging" };
 
+/* Days a dragon can't breed for after breeding or hatching, from each
+   breed's encyclopedia page. */
+const COOLDOWNS = {
+  Aberration:20, Aether:20, Auraboa:20, Banescale:20, Bogsneak:25, Chorus:20, Cirrus:20, Coatl:35,
+  Dusthide:20, Everlux:20, Fae:15, Fathom:25, Gaoler:20, Guardian:15, Imperial:30, Mirror:15,
+  Nocturne:30, Obelisk:25, Pearlcatcher:20, Ridgeback:20, Sandsurge:20, Skydancer:25, Snapper:20,
+  Spiral:20, Thorntail:20, Tundra:15, Undertide:20, Veilspun:20, Vigil:20, Wildclaw:35
+};
+
 /* Turns per gathering type, biggest first, or null if no dragon has a known diet. */
 function gatherPlan(items, turns){
   const unit = 12;   /* a whole, half, third or quarter dragon are all whole twelfths */
@@ -493,11 +514,10 @@ function festivalOn(day){
 /* e.g. "Insect Catching ×5 · Foraging ×3 · Hunting ×1 · Fishing ×1, in the Earth region (…)" */
 function gatherHint(){
   const day = frToday();
-  const [y, m, d] = day.split("-").map(Number);
   const fest = festivalOn(day);
   const where = fest
     ? `in the ${fest.flight} region for ${fest.name}${fest.first ? " (from 6am)" : ""}: every pull there also drops festival currency.`
-    : `in the ${Object.keys(FLIGHTS)[Math.floor(Date.UTC(y, m - 1, d) / 864e5) % 11]} region (a different one each day).`;
+    : `in the ${Object.keys(FLIGHTS)[dayNum(day) % 11]} region (a different one each day).`;
   const plan = gatherPlan(cur().items, 10);
   return plan
     ? plan.map(r => GATHER_FOR[r.f] + " ×" + r.n).join(" · ") + ", " + where
@@ -506,8 +526,11 @@ function gatherHint(){
 
 /* Flight Rising resets at its own midnight, which is Pacific time. */
 const frToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date());
+/* an FR date as a whole day number, and the FR date n days on from one */
+const dayNum  = s => { const [y, m, d] = s.split("-").map(Number); return Date.UTC(y, m - 1, d) / 864e5; };
+const addDays = (s, n) => new Date((dayNum(s) + n) * 864e5).toISOString().slice(0, 10);
 
-const STATUS = { keeper:"Keeper", project:"Project", breeder:"Breeder", hatchling:"Hatchling", exalt:"To exalt", sale:"For sale", gone:"Gone" };
+const STATUS = { keeper:"Keeper", project:"Project", breeder:"Breeder", hatchling:"Hatchling", egg:"Egg", exalt:"To exalt", sale:"For sale", gone:"Gone" };
 const STATUS_ORDER = Object.keys(STATUS);
 const GENDERS = { F:"Female", M:"Male" };
 
@@ -538,6 +561,9 @@ function migrate(items){
     if(d.added == null) d.added = Date.now();
     if(d.sire === undefined) d.sire = null;
     if(d.dam === undefined) d.dam = null;
+    if(typeof d.breedOn !== "string") d.breedOn = "";
+    /* eggs used to be filed as hatchlings with no id or breed yet */
+    if(d.status === "hatchling" && !d.frId && !d.breed) d.status = "egg";
   });
   return items;
 }
@@ -556,6 +582,9 @@ function cleanDaily(d){
 const byId = id => cur().items.find(x => x.id === id);
 const childrenOf = id => cur().items.filter(x => (x.sire && x.sire.id === id) || (x.dam && x.dam.id === id));
 const parentName = p => p ? (p.id ? (byId(p.id) || {}).name || "" : p.name || "") : "";
+const isEgg = d => d.status === "egg";
+/* days until they can breed again, 0 once they can */
+const breedIn = d => d.breedOn ? Math.max(0, dayNum(d.breedOn) - dayNum(frToday())) : 0;
 
 /* Flight Rising files renders in folders of 100 ids. If this ever stops
    matching, the card quietly falls back to the dragon's name. */
@@ -668,6 +697,7 @@ function openForm(d){
   $("fLevel").value  = d && d.level ? d.level : "";
   $("fStatus").value = d ? d.status : "keeper";
   $("fNotes").value  = d ? d.notes || "" : "";
+  $("fBreedIn").value = d && breedIn(d) ? breedIn(d) : "";
   fillParent("sire", d);
   fillParent("dam", d);
   $("deleteBtn").hidden = !d;
@@ -690,6 +720,7 @@ $("saveBtn").onclick = () => {
   /* accept a pasted profile link as well as the bare number */
   const idMatch = $("fFrId").value.match(/(\d{3,})\s*\/?\s*$/);
   const level = parseInt($("fLevel").value, 10) || 0;
+  const wait = Math.max(0, Math.min(99, parseInt($("fBreedIn").value, 10) || 0));
 
   const payload = {
     name: name,
@@ -703,7 +734,8 @@ $("saveBtn").onclick = () => {
     status: $("fStatus").value,
     notes: $("fNotes").value.trim(),
     sire: readParent("sire"),
-    dam: readParent("dam")
+    dam: readParent("dam"),
+    breedOn: wait ? addDays(frToday(), wait) : ""
   };
 
   const l = cur();
@@ -822,11 +854,12 @@ $("dAdd").onsubmit = e => {
   $("dNew").focus();
 };
 
-/* clear the ticks at Flight Rising's midnight even if the page stays open,
-   and keep the countdown in the hint current */
+/* clear the ticks and count the breeding days down at Flight Rising's
+   midnight even if the page stays open, and keep the countdown in the
+   hint current */
 let shownDay = frToday();
 setInterval(() => {
-  if(frToday() !== shownDay){ shownDay = frToday(); renderDaily(); return; }
+  if(frToday() !== shownDay){ shownDay = frToday(); render(); return; }
   if($("dPanel").classList.contains("is-choosing")) return;
   const dd = cur().daily, rows = dailyRows(dd), done = doneToday(dd);
   $("dHint").textContent = dailyHint(false, rows.filter(r => done.includes(r.id)).length, rows.length);
@@ -903,16 +936,28 @@ function visible(){
 /* A–Z with the blanks (an egg's breed, say) at the end. */
 const blankLast = (a, b) => (!a - !b) || (a || "").localeCompare(b || "");
 
-function sorted(rows){
-  const out = rows.slice();
-  if(sortBy === "added-desc") out.sort((a,b) => b.added - a.added);
-  if(sortBy === "added-asc")  out.sort((a,b) => a.added - b.added);
-  if(sortBy === "name-asc")   out.sort((a,b) => a.name.localeCompare(b.name));
-  if(sortBy === "breed-asc")  out.sort((a,b) => blankLast(a.breed, b.breed) || a.name.localeCompare(b.name));
-  if(sortBy === "status-asc") out.sort((a,b) => STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status) || a.name.localeCompare(b.name));
-  if(sortBy === "level-desc") out.sort((a,b) => b.level - a.level || a.name.localeCompare(b.name));
-  if(sortBy === "flight-asc") out.sort((a,b) => blankLast(a.flight, b.flight) || a.name.localeCompare(b.name));
-  return out;
+const SORT_BY = {
+  "added-desc": (a,b) => b.added - a.added,
+  "added-asc":  (a,b) => a.added - b.added,
+  "name-asc":   (a,b) => a.name.localeCompare(b.name),
+  "breed-asc":  (a,b) => blankLast(a.breed, b.breed) || a.name.localeCompare(b.name),
+  "status-asc": (a,b) => STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status) || a.name.localeCompare(b.name),
+  "level-desc": (a,b) => b.level - a.level || a.name.localeCompare(b.name),
+  "breed-soon": (a,b) => breedIn(a) - breedIn(b) || a.name.localeCompare(b.name),
+  "flight-asc": (a,b) => blankLast(a.flight, b.flight) || a.name.localeCompare(b.name)
+};
+/* eggs go last whatever the sort */
+const sorted = rows => rows.slice().sort((a,b) => isEgg(a) - isEgg(b) || SORT_BY[sortBy](a,b));
+
+/* "Can breed in 14 days", or "Ready to breed" with a button to start the
+   cooldown. Eggs and the gone have neither. */
+function breedLine(d){
+  if(isEgg(d) || d.status === "gone") return "";
+  const wait = breedIn(d);
+  if(wait) return `<p class="fr-breed">Can breed ${wait === 1 ? "tomorrow" : `in ${wait} days`}</p>`;
+  const bred = COOLDOWNS[d.breed]
+    ? `<button class="fr-famlink" type="button" data-bred="${esc(d.id)}">Bred today</button>` : "";
+  return `<p class="fr-breed is-ready">Ready to breed ${bred}</p>`;
 }
 
 function card(d){
@@ -921,8 +966,7 @@ function card(d){
          onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'none',textContent:this.dataset.fallback}))">`
     : `<span class="none">${esc(d.name)}</span>`;
   const gender = { F:"♀", M:"♂" }[d.gender] || "";
-  const sub = [d.breed, gender, d.level ? "Lv " + d.level : ""].filter(Boolean).join(" · ");
-  const cols = d.colours.filter(Boolean).join(" / ");
+  const sub = [d.breed, gender].filter(Boolean).join(" · ");
   const flight = d.flight ? `style="--flight:${FLIGHTS[d.flight]}"` : "";
 
   return `<article class="fr-card${d.status === "gone" ? " is-gone" : ""}" ${flight}>
@@ -931,13 +975,8 @@ function card(d){
     <div class="fr-body">
       <h3 class="fr-name">${esc(d.name)}</h3>
       ${sub ? `<span class="fr-sub">${esc(sub)}</span>` : ""}
-      ${cols ? `<span class="fr-sub">${esc(cols)}</span>` : ""}
-      ${d.genes ? `<span class="fr-sub">${esc(d.genes)}</span>` : ""}
-      <div class="fr-meta">
-        ${d.flight ? `<span class="fr-tag flight"${LIGHT_FLIGHTS.includes(d.flight) ? " data-light" : ""}>${esc(d.flight)}</span>` : ""}
-        <span class="fr-tag st">${esc(STATUS[d.status])}</span>
-      </div>
-      ${d.notes ? `<p class="fr-notes">${esc(d.notes)}</p>` : ""}
+      ${d.flight ? `<div class="fr-meta"><span class="fr-tag flight"${LIGHT_FLIGHTS.includes(d.flight) ? " data-light" : ""}>${esc(d.flight)}</span></div>` : ""}
+      ${breedLine(d)}
       <div class="fr-links">
         <button class="fr-famlink" type="button" data-fam="${esc(d.id)}">Family tree</button>
         ${d.frId ? `<a class="fr-link" href="${profileUrl(d.frId)}" target="_blank" rel="noopener">On Flight Rising &rsaquo;</a>` : ""}
@@ -1026,6 +1065,12 @@ function render(){
 $("grid").onclick = e => {
   const fam = e.target.closest("[data-fam]");
   if(fam){ openFam(fam.dataset.fam); return; }
+  const bred = e.target.closest("[data-bred]");
+  if(bred){
+    const d = byId(bred.dataset.bred);
+    if(d && COOLDOWNS[d.breed]){ d.breedOn = addDays(frToday(), COOLDOWNS[d.breed]); save(who); }
+    return;
+  }
   const b = e.target.closest("[data-edit]");
   if(!b) return;
   const d = byId(b.dataset.edit);
