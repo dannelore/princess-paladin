@@ -53,9 +53,9 @@
 
      Two tabs, picked by the #hash: #danni (the default) and #brendon.
 
-     The dailies live in a sidebar beside the lair (.pp-layout), sticking
-     under the site ribbon while the dragons scroll. Below 820px the layout
-     is one column and they drop under the lair.
+     The dailies live in a sidebar beside the lair (.pp-layout), always at
+     full length: no scrolling of their own, and they move with the page.
+     Below 820px the layout is one column and they drop under the lair.
      ====================================================================== */
 
   .fr [hidden], .fr-side [hidden]{ display: none !important; }
@@ -167,14 +167,6 @@
   /* ---- the sidebar ---- */
   .fr-layout{ margin-top: 20px; }
   .fr-side .fr-daily{ padding: 20px 22px; }
-  @media (min-width: 821px){
-    /* sticks just under the site ribbon; --fr-ribbon is its measured height.
-       Not while choosing, when the full list is taller than the screen. */
-    .fr-side .fr-daily:not(.is-choosing){
-      position: sticky; top: calc(var(--fr-ribbon, 0px) + 16px);
-      max-height: calc(100vh - var(--fr-ribbon, 0px) - 32px); overflow-y: auto;
-    }
-  }
 
   /* ---- parents in the form ---- */
   .fr-parent{ display: flex; flex-direction: column; gap: 6px; }
@@ -1099,14 +1091,6 @@ LAIR_KEYS.forEach((k, i) => {
   };
 });
 window.addEventListener("hashchange", () => showTab(location.hash.slice(1)));
-
-/* the dailies stick just under the site ribbon, however tall it wraps */
-function measureRibbon(){
-  const r = document.querySelector(".pp-ribbon");
-  document.documentElement.style.setProperty("--fr-ribbon", (r ? r.offsetHeight : 0) + "px");
-}
-window.addEventListener("load", measureRibbon);
-window.addEventListener("resize", measureRibbon);
 
 LAIR_KEYS.forEach(loadCache);
 showTab(location.hash.slice(1));
