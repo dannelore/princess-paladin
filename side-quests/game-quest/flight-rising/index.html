@@ -22,8 +22,8 @@
 
      Firestore: one document per lair, so the two of them editing at once
      never overwrite each other.
-       sidequest/fr-danni    { items: [dragon], updated }
-       sidequest/fr-brendon  { items: [dragon], updated }
+       sidequest/fr-danni    { items: [dragon], daily, updated }
+       sidequest/fr-brendon  { items: [dragon], daily, updated }
        dragon: { id, name, frId, breed, gender, flight, level,
                  colours: [primary, secondary, tertiary], genes,
                  status, notes, added, sire, dam }
@@ -33,6 +33,12 @@
 
      Family trees are worked out from sire and dam: two generations up,
      and every dragon in the lair that names this one as a parent.
+
+       daily: { picks: [daily id], custom: [{ id, t }], day, done: [daily id] }
+       picks are the DAILIES (below) this lair wants on its checklist;
+       custom are their own. done only counts while day is today in
+       Flight Rising's time (Pacific, where its midnight reset happens),
+       so the ticks clear themselves every day without a write.
 
      Two tabs, picked by the #hash: #danni (the default) and #brendon.
      ====================================================================== */
@@ -120,6 +126,27 @@
   .fr-links{ display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 2px; }
   .fr-famlink{ font: inherit; font-size: .8rem; color: var(--accent-deep); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 
+  /* ---- dailies ---- */
+  .fr-daily{ display: flex; flex-direction: column; gap: 12px; padding: 20px 24px; }
+  .fr-dhead{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+  .fr-dhead h2{ margin: 0; }
+  .fr-dbar{ height: 8px; border-radius: 999px; background: rgba(46,36,31,.07); overflow: hidden; }
+  .fr-dbar i{ display: block; height: 100%; background: var(--sage-deep); transition: width .2s; }
+  .fr-dl{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .fr-di{ display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items: start; padding: 9px 0; border-top: 1px solid var(--line); }
+  .fr-di label{ display: grid; grid-template-columns: auto minmax(0,1fr); gap: 10px; align-items: start; cursor: pointer; min-width: 0; }
+  .fr-di input{ width: 17px; height: 17px; margin: 2px 0 0; accent-color: var(--sage-deep); cursor: pointer; }
+  .fr-di b{ font-weight: 600; font-size: .95rem; }
+  .fr-di small{ display: block; color: var(--ink-soft); font-size: .84rem; margin-top: 2px; line-height: 1.4; }
+  .fr-dl.ticks .fr-di.done b{ text-decoration: line-through; color: var(--ink-soft); font-weight: 400; }
+  .fr-rm{ font: inherit; font-size: 1.1rem; line-height: 1; border: 0; background: none; color: var(--ink-soft); cursor: pointer; padding: 0 6px 4px; border-radius: 6px; }
+  .fr-rm:hover{ color: var(--blade); }
+  .fr-dl.ticks .fr-rm{ visibility: hidden; }
+  /* these sit in .pp-field for its input styling, which also stacks them in a column */
+  .fr-dadd{ display: flex; flex-direction: row; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .fr-dadd input{ flex: 1 1 180px; min-width: 0; }
+  @media (max-width: 600px){ .fr-daily{ padding: 16px 18px; } }
+
   /* ---- parents in the form ---- */
   .fr-parent{ display: flex; flex-direction: column; gap: 6px; }
 
@@ -172,6 +199,23 @@
     </div>
 
     <div id="lair" role="tabpanel" class="fr" aria-labelledby="tab-danni">
+
+      <!-- ---------------- dailies ---------------- -->
+      <section class="pp-panel fr-daily" aria-labelledby="dTitle">
+        <div class="fr-dhead">
+          <h2 class="pp-panel-title" id="dTitle">Today's dailies</h2>
+          <span class="fr-count" id="dCount"></span>
+          <span class="fr-spacer"></span>
+          <button class="pp-btn pp-btn-quiet pp-btn-sm" id="dPick" type="button" aria-pressed="false">Choose dailies</button>
+        </div>
+        <div class="fr-dbar" id="dBar" aria-hidden="true"><i></i></div>
+        <p class="fr-hint" id="dHint"></p>
+        <ul class="fr-dl" id="dList"></ul>
+        <form class="fr-dadd pp-field" id="dAdd" hidden>
+          <input id="dNew" maxlength="80" placeholder="Add your own daily" aria-label="Add your own daily">
+          <button class="pp-btn pp-btn-sm" type="submit">Add</button>
+        </form>
+      </section>
 
       <div class="fr-bar" id="chips"></div>
 
@@ -322,6 +366,28 @@ const BREEDS = ["Aberration","Aether","Auraboa","Banescale","Bogsneak","Coatl","
   "Gaoler","Guardian","Imperial","Mirror","Nocturne","Obelisk","Pearlcatcher","Ridgeback","Sandsurge","Skydancer",
   "Snapper","Spiral","Thundercrest","Tundra","Undertide","Veilspun","Wildclaw"];
 
+/* The dailies to choose from. Ids are stored in daily.picks and
+   daily.done, so never rename one; the words can change freely. */
+const DAILIES = [
+  ["feed",      "Feed your dragons",             "Everyone fed from the hoard."],
+  ["bond",      "Bond with your familiars",      "Tap the heart next to each familiar, once a day."],
+  ["gather",    "Gather",                        "Use today's turns: hunting, fishing, foraging and the rest."],
+  ["nest",      "Check the Nesting Grounds",     "Incubate the eggs and see what has hatched."],
+  ["fair",      "Play the Fairgrounds",          "Games for treasure, up to the daily cap."],
+  ["tomo",      "Tomo's Trivia Tablet",          "Answer today's question."],
+  ["pinkerton", "Pinkerton's Plundered Pile",    "Dig through the pile."],
+  ["swipp",     "Look at Swipp's Swap",          "Today's trades, the same for everyone."],
+  ["fiona",     "Look at Fiona's Familiars",     "Your own selection, in the Trading Post."],
+  ["coliseum",  "Battle in the Coliseum",       "Experience for your fighters and loot to sell."],
+  ["brew",      "Baldwin's Bubbling Brew",       "Collect what's finished and start the next brew."],
+  ["market",    "Browse the Marketplace",        "Anything on the wish list for a project dragon?"],
+  ["exalt",     "Exalt or sell the spares",      "Anyone marked To exalt or For sale."]
+];
+const DAILY_IDS = DAILIES.map(d => d[0]);
+
+/* Flight Rising resets at its own midnight, which is Pacific time. */
+const frToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date());
+
 const STATUS = { keeper:"Keeper", project:"Project", breeder:"Breeder", hatchling:"Hatchling", exalt:"To exalt", sale:"For sale", gone:"Gone" };
 
 const $   = id => document.getElementById(id);
@@ -330,7 +396,7 @@ const esc = s => String(s == null ? "" : s)
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
 const lairs = {};
-LAIR_KEYS.forEach(k => { lairs[k] = { items: [], ref: null, saving: false, timer: null, sync: ["idle","Connecting"] }; });
+LAIR_KEYS.forEach(k => { lairs[k] = { items: [], daily: cleanDaily(null), ref: null, saving: false, timer: null, sync: ["idle","Connecting"] }; });
 
 let who = "danni", editId = null, famId = null;
 let filter = "all", fltFlight = "all", sortBy = "added-desc", query = "";
@@ -350,6 +416,17 @@ function migrate(items){
   return items;
 }
 
+function cleanDaily(d){
+  d = d && typeof d === "object" ? d : {};
+  const custom = Array.isArray(d.custom) ? d.custom.filter(c => c && c.id && c.t) : [];
+  return {
+    picks: Array.isArray(d.picks) ? d.picks.filter(p => DAILY_IDS.includes(p)) : [],
+    custom: custom,
+    day: typeof d.day === "string" ? d.day : "",
+    done: Array.isArray(d.done) ? d.done : []
+  };
+}
+
 const byId = id => cur().items.find(x => x.id === id);
 const childrenOf = id => cur().items.filter(x => (x.sire && x.sire.id === id) || (x.dam && x.dam.id === id));
 
@@ -359,11 +436,12 @@ const renderUrl = frId => `https://www1.flightrising.com/rendern/350/${Math.floo
 const profileUrl = frId => `https://www1.flightrising.com/dragon/${frId}`;
 
 /* ---------------- storage ---------------- */
-function writeCache(k){ try{ localStorage.setItem(LAIRS[k].cache, JSON.stringify({ items: lairs[k].items })); }catch(e){} }
+function writeCache(k){ try{ localStorage.setItem(LAIRS[k].cache, JSON.stringify({ items: lairs[k].items, daily: lairs[k].daily })); }catch(e){} }
 function loadCache(k){
   try{
     const p = JSON.parse(localStorage.getItem(LAIRS[k].cache) || "null");
     if(p && Array.isArray(p.items)) lairs[k].items = migrate(p.items);
+    if(p) lairs[k].daily = cleanDaily(p.daily);
   }catch(e){}
 }
 
@@ -383,7 +461,7 @@ function save(k){
   clearTimeout(l.timer);
   l.timer = setTimeout(() => {
     l.saving = true;
-    l.ref.set({ items: l.items, updated: Date.now() })
+    l.ref.set({ items: l.items, daily: l.daily, updated: Date.now() })
       .then(() => setSync(k, "idle", "Synced"))
       .catch(e => { console.error(e); setSync(k, "error", "Couldn't save"); })
       .finally(() => { l.saving = false; });
@@ -402,6 +480,7 @@ function startFirebase(){
         const data = snap.data();
         if(data && Array.isArray(data.items)){
           l.items = migrate(data.items);
+          l.daily = cleanDaily(data.daily);
           writeCache(k);
           if(k === who) render();
         }
@@ -522,6 +601,87 @@ $("deleteBtn").onclick = () => {
   closeForm();
   save(who);
 };
+
+/* ---------------- dailies ---------------- */
+let picking = false;
+
+function dailyRows(dd){
+  return DAILIES.filter(d => dd.picks.includes(d[0])).map(d => ({ id: d[0], t: d[1], h: d[2] }))
+    .concat(dd.custom.map(c => ({ id: c.id, t: c.t, h: "", own: true })));
+}
+const doneToday = dd => dd.day === frToday() ? dd.done : [];
+
+function renderDaily(){
+  const dd = cur().daily;
+  const rows = dailyRows(dd);
+  const choose = picking || !rows.length;
+  const done = doneToday(dd);
+  const n = rows.filter(r => done.includes(r.id)).length;
+
+  $("dPick").textContent = choose ? "Done choosing" : "Choose dailies";
+  $("dPick").setAttribute("aria-pressed", choose);
+  $("dPick").hidden = choose && !rows.length;
+  $("dAdd").hidden = !choose;
+  $("dBar").hidden = choose;
+  $("dBar").firstElementChild.style.width = rows.length ? (100 * n / rows.length) + "%" : "0";
+  $("dCount").textContent = choose ? "" : `${n} of ${rows.length} done`;
+  $("dHint").textContent = choose
+    ? "Tick the ones you want on your list, or add your own."
+    : n === rows.length ? "All done for today." : "The ticks clear at Flight Rising's midnight.";
+
+  const rm = r => r.own ? `<button class="fr-rm" type="button" data-rm="${esc(r.id)}" aria-label="Remove ${esc(r.t)}">×</button>` : "<span></span>";
+  const li = (r, checked, attr) => `<li class="fr-di${checked ? " done" : ""}">
+      <label><input type="checkbox" ${attr}="${esc(r.id)}"${checked ? " checked" : ""}><span><b>${esc(r.t)}</b>${r.h ? `<small>${esc(r.h)}</small>` : ""}</span></label>${rm(r)}</li>`;
+
+  $("dList").className = "fr-dl" + (choose ? "" : " ticks");
+  $("dList").innerHTML = choose
+    ? DAILIES.map(d => li({ id: d[0], t: d[1], h: d[2] }, dd.picks.includes(d[0]), "data-pick")).join("") +
+      dd.custom.map(c => li({ id: c.id, t: c.t, h: "", own: true }, true, "data-pick")).join("")
+    : rows.map(r => li(r, done.includes(r.id), "data-tick")).join("");
+}
+
+$("dPick").onclick = () => {
+  picking = !(picking || !dailyRows(cur().daily).length);
+  renderDaily();
+};
+
+$("dList").onchange = e => {
+  const dd = cur().daily;
+  const pick = e.target.dataset.pick, tick = e.target.dataset.tick;
+  if(pick){
+    if(!DAILY_IDS.includes(pick)){ renderDaily(); return; }   /* your own stay on until removed with the × */
+    dd.picks = e.target.checked ? dd.picks.concat(pick) : dd.picks.filter(p => p !== pick);
+    picking = true;
+  }else if(tick){
+    if(dd.day !== frToday()){ dd.day = frToday(); dd.done = []; }
+    dd.done = e.target.checked ? dd.done.concat(tick) : dd.done.filter(x => x !== tick);
+  }else return;
+  save(who);
+};
+
+$("dList").onclick = e => {
+  const b = e.target.closest("[data-rm]");
+  if(!b) return;
+  const dd = cur().daily;
+  dd.custom = dd.custom.filter(c => c.id !== b.dataset.rm);
+  dd.done = dd.done.filter(x => x !== b.dataset.rm);
+  save(who);
+};
+
+$("dAdd").onsubmit = e => {
+  e.preventDefault();
+  const t = $("dNew").value.trim();
+  if(!t) return;
+  cur().daily.custom.push({ id: "own-" + uid(), t: t });
+  $("dNew").value = "";
+  picking = true;
+  save(who);
+  $("dNew").focus();
+};
+
+/* clear the ticks at Flight Rising's midnight even if the page stays open */
+let shownDay = frToday();
+setInterval(() => { if(frToday() !== shownDay){ shownDay = frToday(); renderDaily(); } }, 60000);
 
 /* ---------------- filters ---------------- */
 function renderChips(){
@@ -665,6 +825,7 @@ $("fam").onclick = e => {
 };
 
 function render(){
+  renderDaily();
   renderChips();
   const rows = sorted(visible());
   const living = cur().items.filter(d => d.status !== "gone").length;
@@ -689,7 +850,7 @@ $("grid").onclick = e => {
 /* ---------------- tabs: #danni (default), #brendon ---------------- */
 function showTab(k, remember){
   if(!LAIR_KEYS.includes(k)) k = "danni";
-  if(k !== who){ closeForm(); closeFam(); filter = "all"; fltFlight = "all"; }
+  if(k !== who){ closeForm(); closeFam(); filter = "all"; fltFlight = "all"; picking = false; }
   who = k;
   LAIR_KEYS.forEach(x => { $("tab-" + x).setAttribute("aria-selected", x === k); $("tab-" + x).tabIndex = x === k ? 0 : -1; });
   $("lair").setAttribute("aria-labelledby", "tab-" + k);
