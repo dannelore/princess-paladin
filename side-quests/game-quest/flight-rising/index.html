@@ -35,8 +35,12 @@
      and every dragon in the lair that names this one as a parent.
 
        daily: { picks: [daily id], custom: [{ id, t }], day, done: [daily id] }
-       picks are the DAILIES (below) this lair wants on its checklist;
-       custom are their own. done only counts while day is today in
+       picks are the DAILIES (below) this lair wants on its checklist,
+       shown in DAILIES order, each name linking to its Flight Rising page;
+       custom are their own. Gather also shows today's plan: turns split by
+       what the lair's breeds eat, in the festival region during a festival
+       week and a different region each day otherwise.
+       done only counts while day is today in
        Flight Rising's time (Pacific, where its midnight reset happens),
        so the ticks clear themselves every day without a write.
 
@@ -143,6 +147,8 @@
   .fr-di b{ font-weight: 600; font-size: .95rem; }
   .fr-di small{ display: block; color: var(--ink-soft); font-size: .84rem; margin-top: 2px; line-height: 1.4; }
   .fr-dl.ticks .fr-di.done b{ text-decoration: line-through; color: var(--ink-soft); font-weight: 400; }
+  .fr-di b a{ color: inherit; text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; }
+  .fr-di b a:hover{ color: var(--accent-deep); text-decoration-color: currentColor; }
   .fr-rm{ font: inherit; font-size: 1.1rem; line-height: 1; border: 0; background: none; color: var(--ink-soft); cursor: pointer; padding: 0 6px 4px; border-radius: 6px; }
   .fr-rm:hover{ color: var(--blade); }
   .fr-dl.ticks .fr-rm{ visibility: hidden; }
@@ -394,24 +400,109 @@ const BREEDS = ["Aberration","Aether","Auraboa","Banescale","Bogsneak","Coatl","
   "Gaoler","Guardian","Imperial","Mirror","Nocturne","Obelisk","Pearlcatcher","Ridgeback","Sandsurge","Skydancer",
   "Snapper","Spiral","Thundercrest","Tundra","Undertide","Veilspun","Wildclaw"];
 
-/* The dailies to choose from. Ids are stored in daily.picks and
-   daily.done, so never rename one; the words can change freely. */
+/* The dailies to choose from, in the order they show on the list, each with
+   its page on Flight Rising. Ids are stored in daily.picks and daily.done, so
+   never rename one; the words and links can change freely. */
+const FR = "https://www1.flightrising.com";
 const DAILIES = [
-  ["feed",      "Feed your dragons",             "Everyone fed from the hoard."],
-  ["bond",      "Bond with your familiars",      "Tap the heart next to each familiar, once a day."],
-  ["gather",    "Gather",                        "Use today's turns: hunting, fishing, foraging and the rest."],
-  ["nest",      "Check the Nesting Grounds",     "Incubate the eggs and see what has hatched."],
-  ["fair",      "Play the Fairgrounds",          "Games for treasure, up to the daily cap."],
-  ["tomo",      "Tomo's Trivia Tablet",          "Answer today's question."],
-  ["pinkerton", "Pinkerton's Plundered Pile",    "Dig through the pile."],
-  ["swipp",     "Look at Swipp's Swap",          "Today's trades, the same for everyone."],
-  ["fiona",     "Look at Fiona's Familiars",     "Your own selection, in the Trading Post."],
-  ["coliseum",  "Battle in the Coliseum",       "Experience for your fighters and loot to sell."],
-  ["brew",      "Baldwin's Bubbling Brew",       "Collect what's finished and start the next brew."],
-  ["market",    "Browse the Marketplace",        "Anything on the wish list for a project dragon?"],
-  ["exalt",     "Exalt or sell the spares",      "Anyone marked To exalt or For sale."]
+  ["feed",        "Feed your dragons",             "Everyone fed, from the Feed button in your lair.",    "/lair"],
+  ["nest",        "Check the Nesting Grounds",     "Incubate the eggs and see what has hatched.",         "/nesting"],
+  ["gather",      "Gather",                        "Today's mix, worked out from what your dragons eat.", "/gathering"],
+  ["bond",        "Bond with your familiars",      "Tap the heart next to each familiar, once a day.",    "/bestiary"],
+  ["fiona",       "Fiona's Fantastic Familiars",   "Your own selection, in the Trading Post.",            "/trading/fantastic-familiars"],
+  ["fair",        "Play the Fairgrounds",          "Games for treasure, until you've made 75,000 today.", "/play/fairgrounds"],
+  ["pinkerton",   "Pinkerton's Plundered Pile",    "Dig through the pile.",                               "/trading/pinkpile"],
+  ["archaeology", "Archaeology",                   "",                                                    "/trading/archaeology"],
+  ["tomo",        "Tomo's Trivia Tablet",          "Answer today's question.",                            "/trading/trivia"],
+  ["crim",        "Crim's Collection Cart",        "Run today's errands.",                                "/trading/crim"],
+  ["brew",        "Baldwin's Bubbling Brew",       "Collect what's finished and start the next brew.",    "/trading/baldwin/transmute"],
+  ["sophie",      "Sophie's Splendid Stitches",    "Start her next project.",                             "/trading/sophie"],
+  ["raffle",      "Roundsey's Raffle Roulette",    "",                                                    "/trading/raffle"],
+  ["swipp",       "Swipp's Swap Stand",            "Today's trades, the same for everyone.",              "/trading/swipp"],
+  ["gift",        "Galore's Glorious Gifts",       "",                                                    "/trading/gift"],
+  ["coliseum",    "Battle in the Coliseum",        "Experience for your fighters and loot to sell.",      "/coliseum"],
+  ["festival",    "Festive Favors",                "Spend festival currency while a festival is on.",     "/festive-favors"],
+  ["market",      "Browse the Marketplace",        "Anything on the wish list for a project dragon?",     "/market"],
+  ["auction",     "Check the Auction House",       "",                                                    "/auction-house"],
+  ["crossroads",  "Check Crossroads",              "Trades with other players.",                          "/crossroads"],
+  ["exchange",    "Check the Grand Exchange",      "",                                                    "/exchange"],
+  ["waystone",    "Check Which Waystone",          "Flight Rising's own list of what's left today.",      "/waystone"],
+  ["exalt",       "Exalt or sell the spares",      "Anyone marked To exalt or For sale.",                 "/lair"]
 ];
 const DAILY_IDS = DAILIES.map(d => d[0]);
+
+/* ---------------- what to gather today ----------------
+   Each breed's diet, from the Flight Rising encyclopedia. The 10 gathering
+   turns are split across the food the lair eats: a dragon with one food
+   counts wholly toward it, one with four counts a quarter toward each. */
+const DIETS = {
+  Aberration:"meat insects plants seafood", Aether:"plants insects", Auraboa:"seafood meat",
+  Banescale:"insects seafood meat", Bogsneak:"plants meat", Chorus:"meat", Cirrus:"plants", Coatl:"seafood",
+  Dusthide:"insects", Everlux:"plants", Fae:"insects", Fathom:"plants seafood", Gaoler:"meat plants",
+  Guardian:"meat seafood insects plants", Imperial:"insects meat seafood plants", Mirror:"meat seafood",
+  Nocturne:"meat insects", Obelisk:"seafood insects", Pearlcatcher:"insects plants", Ridgeback:"seafood",
+  Sandsurge:"insects meat", Skydancer:"plants insects", Snapper:"plants seafood", Spiral:"insects meat",
+  Thorntail:"meat seafood insects", Tundra:"plants", Undertide:"seafood plants",
+  Veilspun:"insects meat plants seafood", Vigil:"insects meat plants seafood", Wildclaw:"meat"
+};
+const GATHER_FOR = { insects:"Insect Catching", meat:"Hunting", seafood:"Fishing", plants:"Foraging" };
+
+/* Turns per gathering type, biggest first, or null if no dragon has a known diet. */
+function gatherPlan(items, turns){
+  const unit = 12;   /* a whole, half, third or quarter dragon are all whole twelfths */
+  const want = {};
+  let fed = 0;
+  items.forEach(d => {
+    const diet = DIETS[d.breed];
+    if(!diet || d.status === "gone") return;
+    const foods = diet.split(" ");
+    foods.forEach(f => { want[f] = (want[f] || 0) + unit / foods.length; });
+    fed++;
+  });
+  if(!fed) return null;
+  const total = fed * unit;
+  const rows = Object.keys(want).map(f => ({ f: f, n: Math.floor(want[f] * turns / total), rest: want[f] * turns % total, w: want[f] }));
+  /* hand out the leftover turns by largest remainder, ties to the bigger appetite */
+  let left = turns - rows.reduce((a, r) => a + r.n, 0);
+  rows.slice().sort((a,b) => b.rest - a.rest || b.w - a.w).forEach(r => { if(left > 0){ r.n++; left--; } });
+  return rows.filter(r => r.n).sort((a,b) => b.n - a.n || b.w - a.w);
+}
+
+/* The elemental festival on an FR date ("YYYY-MM-DD"), or null. Per Flight
+   Rising's event calendar: one flight a month (none in December), from the
+   Monday of the month's last week with at least four days in that month,
+   for a week, starting 06:00 server time. */
+const FESTIVALS = [["Ice","Crystalline Gala"], ["Shadow","Trickmurk Circus"], ["Wind","Mistral Jamboree"],
+  ["Water","Wavecrest Saturnalia"], ["Nature","Greenskeeper Gathering"], ["Light","Brightshine Jubilee"],
+  ["Lightning","Thundercrack Carnivale"], ["Fire","Flameforger's Festival"], ["Arcane","Starfall Celebration"],
+  ["Plague","Riot of Rot"], ["Earth","Rockbreaker's Ceremony"]];
+function festivalOn(day){
+  const [y, m, d] = day.split("-").map(Number);
+  const today = Date.UTC(y, m - 1, d);
+  for(const back of [0, 1]){   /* a festival week can run into the next month */
+    const mm = (m - 1 - back + 12) % 12, yy = m - 1 - back < 0 ? y - 1 : y;
+    if(!FESTIVALS[mm]) continue;
+    let start = new Date(Date.UTC(yy, mm + 1, 0)).getUTCDate() - 3;
+    while(new Date(Date.UTC(yy, mm, start)).getUTCDay() !== 1) start--;
+    const from = Date.UTC(yy, mm, start);
+    if(today >= from && today < from + 7 * 864e5) return { flight: FESTIVALS[mm][0], name: FESTIVALS[mm][1], first: today === from };
+  }
+  return null;
+}
+
+/* e.g. "Insect Catching ×5 · Foraging ×3 · Hunting ×1 · Fishing ×1, in the Earth region (…)" */
+function gatherHint(){
+  const day = frToday();
+  const [y, m, d] = day.split("-").map(Number);
+  const fest = festivalOn(day);
+  const where = fest
+    ? `in the ${fest.flight} region for ${fest.name}${fest.first ? " (from 6am)" : ""}: every pull there also drops festival currency.`
+    : `in the ${Object.keys(FLIGHTS)[Math.floor(Date.UTC(y, m - 1, d) / 864e5) % 11]} region (a different one each day).`;
+  const plan = gatherPlan(cur().items, 10);
+  return plan
+    ? plan.map(r => GATHER_FOR[r.f] + " ×" + r.n).join(" · ") + ", " + where
+    : "Gather " + where + " Give your dragons their breeds to get a food mix.";
+}
 
 /* Flight Rising resets at its own midnight, which is Pacific time. */
 const frToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date());
@@ -642,7 +733,7 @@ $("deleteBtn").onclick = () => {
 let picking = false;
 
 function dailyRows(dd){
-  return DAILIES.filter(d => dd.picks.includes(d[0])).map(d => ({ id: d[0], t: d[1], h: d[2] }))
+  return DAILIES.filter(d => dd.picks.includes(d[0])).map(d => ({ id: d[0], t: d[1], h: d[2], u: d[3] }))
     .concat(dd.custom.map(c => ({ id: c.id, t: c.t, h: "", own: true })));
 }
 const doneToday = dd => dd.day === frToday() ? dd.done : [];
@@ -678,8 +769,12 @@ function renderDaily(){
   $("dHint").textContent = dailyHint(choose, n, rows.length);
 
   const rm = r => r.own ? `<button class="fr-rm" type="button" data-rm="${esc(r.id)}" aria-label="Remove ${esc(r.t)}">×</button>` : "<span></span>";
+  /* while ticking, each name links to its page on Flight Rising and Gather
+     spells out today's plan; while choosing, they're plain */
+  const name = r => r.u ? `<a href="${FR + r.u}" target="_blank" rel="noopener">${esc(r.t)}</a>` : esc(r.t);
+  const hint = r => r.u && r.id === "gather" ? gatherHint() : r.h;
   const li = (r, checked, attr) => `<li class="fr-di${checked ? " done" : ""}">
-      <label><input type="checkbox" ${attr}="${esc(r.id)}"${checked ? " checked" : ""}><span><b>${esc(r.t)}</b>${r.h ? `<small>${esc(r.h)}</small>` : ""}</span></label>${rm(r)}</li>`;
+      <label><input type="checkbox" ${attr}="${esc(r.id)}"${checked ? " checked" : ""}><span><b>${name(r)}</b>${hint(r) ? `<small>${esc(hint(r))}</small>` : ""}</span></label>${rm(r)}</li>`;
 
   $("dList").className = "fr-dl" + (choose ? "" : " ticks");
   $("dList").innerHTML = choose
