@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flight Rising &middot; Game Quest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/themes/side-quests.css">
+
+<style>
+  /* ======================================================================
+     THE QUEST TO FILL THE LAIR
+
+     Danni's and Brendon's Flight Rising dragons, under Game Quest. It is
+     NOT connected to Flight Rising — every dragon is added by hand. Give a
+     dragon its FR id number and the card links to its profile and shows
+     its render (if Flight Rising serves it; otherwise the name stands in).
+
+     Firestore: one document per lair, so the two of them editing at once
+     never overwrite each other.
+       sidequest/fr-danni    { items: [dragon], updated }
+       sidequest/fr-brendon  { items: [dragon], updated }
+       dragon: { id, name, frId, breed, gender, flight, level,
+                 colours: [primary, secondary, tertiary], genes,
+                 status, notes, added, sire, dam }
+       sire / dam: null, { id } for a dragon in the same lair, or
+                   { name } for one outside it. Removing a dragon turns
+                   links to it into { name }, so the tree keeps the name.
+
+     Family trees are worked out from sire and dam: two generations up,
+     and every dragon in the lair that names this one as a parent.
+
+     Two tabs, picked by the #hash: #danni (the default) and #brendon.
+     ====================================================================== */
+
+  .fr [hidden]{ display: none !important; }
+  .fr{ display: flex; flex-direction: column; gap: 20px; }
+  .fr-intro{
+    font-family: var(--font-serif); font-style: italic; font-size: 1.02rem; color: var(--ink-soft);
+    text-align: center; max-width: 640px; margin: -18px auto 4px; line-height: 1.5;
+  }
+  .fr button:focus-visible, .fr input:focus-visible, .fr select:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .fr-tabs{ display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+  .fr-tab{
+    font-family: var(--font-body); font-size: .78rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--gold); background: var(--panel); border: 1px solid var(--line-gold); border-radius: 999px; padding: 8px 18px; cursor: pointer;
+  }
+  .fr-tab:hover{ color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
+  .fr-tab[aria-selected="true"]{ color: var(--on-accent); background: var(--accent-deep); border-color: var(--accent-deep); }
+
+  /* ---- toolbar ---- */
+  .fr-bar{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .fr-spacer{ flex: 1 1 auto; }
+  .fr-chip{
+    font-family: var(--font-body); font-size: .78rem; font-weight: 500; padding: 6px 13px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--white); color: var(--ink);
+  }
+  .fr-chip[aria-pressed="true"]{ background: var(--accent-deep); border-color: var(--accent-deep); color: var(--on-accent); }
+  .fr-chip span{ opacity: .7; margin-left: 4px; font-variant-numeric: tabular-nums; }
+  .fr-tools{ display: flex; flex-direction: row; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+  .fr-tools input[type="search"]{ flex: 1 1 220px; min-width: 0; width: auto; }
+  .fr-sel{ display: flex; align-items: center; gap: 8px; font-family: var(--font-body); font-size: .72rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
+  .fr-tools .fr-sel select{ width: auto; padding: 6px 10px; font-size: .88rem; letter-spacing: 0; text-transform: none; }
+  .fr-count{ font-family: var(--font-serif); font-style: italic; font-size: .92rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .fr-sync{ font-family: var(--font-body); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .fr-sync[data-state="saving"]{ color: var(--gold); }
+  .fr-sync[data-state="error"]{ color: var(--blade); }
+
+  /* ---- add / edit ---- */
+  .fr-form{ display: flex; flex-direction: column; gap: 16px; }
+  .fr-fields{ display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px 16px; }
+  .fr-fields .wide{ grid-column: 1 / -1; }
+  .fr-fields .two{ grid-column: span 2; }
+  .fr-hint{ margin: 0; font-family: var(--font-serif); font-style: italic; font-size: .9rem; color: var(--ink-soft); line-height: 1.4; }
+  .fr-actions{ display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  @media (max-width: 640px){
+    .fr-fields{ grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+    .fr-fields .two{ grid-column: 1 / -1; }
+  }
+
+  /* ---- the lair ---- */
+  .fr-grid{ display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 14px; }
+  .fr-card{
+    position: relative; display: flex; flex-direction: column; min-width: 0;
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; box-shadow: var(--lift);
+  }
+  .fr-card.is-gone{ opacity: .6; }
+  .fr-art{
+    font: inherit; color: inherit; border: 0; padding: 0; cursor: pointer; display: block; width: 100%;
+    aspect-ratio: 1; background: var(--panel-tint); border-bottom: 3px solid var(--flight, var(--line));
+  }
+  .fr-art img{ display: block; width: 100%; height: 100%; object-fit: contain; }
+  .fr-art .none{
+    display: flex; align-items: center; justify-content: center; height: 100%; padding: 12px; text-align: center;
+    font-family: var(--font-serif); font-style: italic; font-size: 1.1rem; color: var(--ink-soft);
+  }
+  .fr-body{ display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 12px; }
+  .fr-name{ font-family: var(--font-serif); font-weight: 600; font-size: 1.15rem; margin: 0; line-height: 1.2; overflow-wrap: anywhere; }
+  .fr-sub{ font-size: .82rem; color: var(--ink-soft); line-height: 1.35; }
+  .fr-meta{ display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+  .fr-tag{
+    font-family: var(--font-body); font-size: .64rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    border-radius: 999px; padding: 3px 8px; background: rgba(46,36,31,.06); color: var(--ink-soft);
+  }
+  .fr-tag.flight{ background: var(--flight); color: #fff; }
+  .fr-tag.flight[data-light]{ color: var(--ink); }
+  .fr-tag.st{ background: var(--accent-soft); color: var(--accent-deep); }
+  .fr-notes{ font-size: .82rem; color: var(--ink-soft); margin: 4px 0 0; line-height: 1.4; overflow-wrap: anywhere; }
+  .fr-link{ font-size: .8rem; color: var(--accent-deep); margin-top: 2px; width: fit-content; }
+  .fr-edit{
+    position: absolute; top: 7px; right: 7px; width: 28px; height: 28px; border-radius: 50%;
+    border: 1px solid var(--line); background: var(--white); color: var(--ink); cursor: pointer; font-size: .85rem; line-height: 1;
+  }
+  .fr-edit:hover{ border-color: var(--accent); color: var(--accent-deep); }
+  .fr-links{ display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 2px; }
+  .fr-famlink{ font: inherit; font-size: .8rem; color: var(--accent-deep); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+
+  /* ---- parents in the form ---- */
+  .fr-parent{ display: flex; flex-direction: column; gap: 6px; }
+
+  /* ---- family tree ---- */
+  .fr-fam{ display: flex; flex-direction: column; gap: 16px; }
+  .fr-famhead{ display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .fr-famhead h2{ margin: 0; }
+  .fr-tree{ display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+  .fr-gen{ display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .fr-genlist{ flex: 1 1 auto; display: flex; flex-direction: column; justify-content: space-around; gap: 8px; }
+  .fr-genlabel{
+    font-family: var(--font-body); font-size: .66rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--dusk-deep); margin: 0 0 2px;
+  }
+  .fr-node{
+    font: inherit; color: inherit; text-align: left; display: grid; grid-template-columns: 40px minmax(0,1fr); gap: 2px 8px; align-items: center;
+    padding: 6px 8px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--white); min-width: 0;
+    border-left: 4px solid var(--flight, var(--line));
+  }
+  button.fr-node{ cursor: pointer; }
+  button.fr-node:hover{ border-color: var(--accent); border-left-color: var(--flight, var(--accent)); }
+  .fr-node.self{ background: var(--accent-soft); }
+  .fr-node.out, .fr-node.unknown{ background: transparent; border-style: dashed; }
+  .fr-node.unknown{ color: var(--ink-soft); font-style: italic; }
+  .fr-node .pic{ grid-row: 1 / 3; width: 40px; height: 40px; border-radius: 6px; background: var(--panel-tint); overflow: hidden; }
+  .fr-node .pic img{ width: 100%; height: 100%; object-fit: cover; display: block; }
+  .fr-node b{ font-weight: 600; font-size: .9rem; overflow-wrap: anywhere; }
+  .fr-node small{ font-size: .74rem; color: var(--ink-soft); }
+  .fr-node .role{ font-family: var(--font-body); font-size: .6rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-deep); }
+  @media (max-width: 720px){
+    .fr-tree{ grid-template-columns: 1fr; }
+    .fr-genlist{ display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%,150px),1fr)); }
+  }
+</style>
+</head>
+<body class="pp-sidequest" data-nav-eyebrow="Side Quests" data-nav-title="Flight Rising">
+
+<div class="pp-wrap">
+
+  <div class="pp-page-title">
+    <h2>The Quest to Fill the Lair</h2>
+  </div>
+
+  <div class="fr">
+    <p class="fr-intro">Every dragon in both lairs: the keepers, the projects, and the ones bound for the Exalt altar.</p>
+
+    <div class="fr-tabs" role="tablist" aria-label="Whose lair">
+      <button class="fr-tab" role="tab" id="tab-danni" aria-controls="lair" aria-selected="true">Danni's lair</button>
+      <button class="fr-tab" role="tab" id="tab-brendon" aria-controls="lair" aria-selected="false">Brendon's lair</button>
+    </div>
+
+    <div id="lair" role="tabpanel" class="fr" aria-labelledby="tab-danni">
+
+      <div class="fr-bar" id="chips"></div>
+
+      <div class="fr-tools pp-field">
+        <input id="q" type="search" placeholder="Search names, breeds, colours, genes" aria-label="Search dragons">
+        <label class="fr-sel">Flight <select id="fltFlight"></select></label>
+        <label class="fr-sel">Sort
+          <select id="sortBy">
+            <option value="added-desc">Newest first</option>
+            <option value="name-asc">Name A&ndash;Z</option>
+            <option value="level-desc">Highest level</option>
+            <option value="flight-asc">Flight</option>
+          </select>
+        </label>
+        <span class="fr-spacer"></span>
+        <button class="pp-btn" id="addBtn" type="button">Add a dragon</button>
+      </div>
+
+      <!-- ---------------- add / edit ---------------- -->
+      <section class="pp-panel fr-form" id="form" hidden>
+        <h2 class="pp-panel-title" id="formTitle">Add a dragon</h2>
+        <div class="fr-fields">
+          <div class="pp-field two">
+            <label for="fName">Name</label>
+            <input id="fName" type="text" maxlength="60" autocomplete="off">
+          </div>
+          <div class="pp-field">
+            <label for="fFrId">Dragon id</label>
+            <input id="fFrId" type="text" inputmode="numeric" placeholder="e.g. 12345678" autocomplete="off">
+          </div>
+          <div class="pp-field">
+            <label for="fBreed">Breed</label>
+            <input id="fBreed" type="text" list="breeds" autocomplete="off">
+            <datalist id="breeds"></datalist>
+          </div>
+          <div class="pp-field">
+            <label for="fGender">Gender</label>
+            <select id="fGender">
+              <option value="">&mdash;</option>
+              <option value="F">Female</option>
+              <option value="M">Male</option>
+            </select>
+          </div>
+          <div class="pp-field">
+            <label for="fFlight">Flight</label>
+            <select id="fFlight"></select>
+          </div>
+          <div class="pp-field">
+            <label for="fPri">Primary colour</label>
+            <input id="fPri" type="text" maxlength="40" autocomplete="off">
+          </div>
+          <div class="pp-field">
+            <label for="fSec">Secondary colour</label>
+            <input id="fSec" type="text" maxlength="40" autocomplete="off">
+          </div>
+          <div class="pp-field">
+            <label for="fTer">Tertiary colour</label>
+            <input id="fTer" type="text" maxlength="40" autocomplete="off">
+          </div>
+          <div class="pp-field two">
+            <label for="fGenes">Genes</label>
+            <input id="fGenes" type="text" maxlength="120" placeholder="e.g. Iridescent / Shimmer / Gembond" autocomplete="off">
+          </div>
+          <div class="pp-field">
+            <label for="fLevel">Level</label>
+            <input id="fLevel" type="number" min="1" max="25" placeholder="1&ndash;25">
+          </div>
+          <div class="pp-field">
+            <label for="fStatus">What they're for</label>
+            <select id="fStatus"></select>
+          </div>
+          <div class="pp-field two">
+            <label for="fNotes">Notes</label>
+            <input id="fNotes" type="text" maxlength="200" placeholder="Goals, who to pair them with, what to buy" autocomplete="off">
+          </div>
+          <div class="pp-field fr-parent">
+            <label for="fSire">Sire</label>
+            <select id="fSire"></select>
+            <input id="fSireOut" type="text" maxlength="60" placeholder="Their name, or name and id" aria-label="Sire from outside the lair" hidden>
+          </div>
+          <div class="pp-field fr-parent">
+            <label for="fDam">Dam</label>
+            <select id="fDam"></select>
+            <input id="fDamOut" type="text" maxlength="60" placeholder="Their name, or name and id" aria-label="Dam from outside the lair" hidden>
+          </div>
+        </div>
+        <p class="fr-hint">The id is the number at the end of the dragon's profile link. With it, the card shows the dragon and links back to Flight Rising.</p>
+        <div class="fr-actions">
+          <button class="pp-btn" id="saveBtn" type="button">Save</button>
+          <button class="pp-btn pp-btn-quiet" id="cancelBtn" type="button">Cancel</button>
+          <span class="fr-spacer"></span>
+          <button class="pp-btn pp-btn-quiet" id="deleteBtn" type="button" hidden>Remove</button>
+        </div>
+      </section>
+
+      <!-- ---------------- family tree ---------------- -->
+      <section class="pp-panel fr-fam" id="fam" hidden aria-labelledby="famTitle">
+        <div class="fr-famhead">
+          <h2 class="pp-panel-title" id="famTitle"></h2>
+          <span class="fr-spacer"></span>
+          <button class="pp-btn pp-btn-quiet pp-btn-sm" id="famEdit" type="button">Edit</button>
+          <button class="pp-btn pp-btn-quiet pp-btn-sm" id="famClose" type="button">Close</button>
+        </div>
+        <div class="fr-tree" id="tree"></div>
+        <p class="fr-hint">Tap a dragon from the lair to see their tree. Dashed ones live outside it.</p>
+      </section>
+
+      <div class="fr-bar">
+        <span class="fr-count" id="count"></span>
+        <span class="fr-spacer"></span>
+        <span class="fr-sync" id="sync" data-state="idle">Connecting</span>
+      </div>
+
+      <div class="fr-grid" id="grid"></div>
+    </div>
+  </div>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-firebase.js"></script>
+<script>
+"use strict";
+
+const LAIRS = {
+  danni:   { label: "Danni",   doc: "sidequest/fr-danni",   cache: "pp_fr_danni" },
+  brendon: { label: "Brendon", doc: "sidequest/fr-brendon", cache: "pp_fr_brendon" }
+};
+const LAIR_KEYS = Object.keys(LAIRS);
+
+/* Flight colours are this page's own approximations, just for the card stripe. */
+const FLIGHTS = {
+  Arcane:"#8C5BB5", Earth:"#8B7650", Fire:"#D0582B", Ice:"#8FC3D9", Light:"#E3B85A", Lightning:"#D3CB3E",
+  Nature:"#5D9748", Plague:"#A23838", Shadow:"#56467A", Water:"#3A78AD", Wind:"#86BA63"
+};
+const LIGHT_FLIGHTS = ["Ice","Light","Lightning"];
+
+/* Suggestions only — the breed box takes anything typed, so a new breed
+   doesn't need a code change. */
+const BREEDS = ["Aberration","Aether","Auraboa","Banescale","Bogsneak","Coatl","Dusthide","Everlux","Fae","Fathom",
+  "Gaoler","Guardian","Imperial","Mirror","Nocturne","Obelisk","Pearlcatcher","Ridgeback","Sandsurge","Skydancer",
+  "Snapper","Spiral","Thundercrest","Tundra","Undertide","Veilspun","Wildclaw"];
+
+const STATUS = { keeper:"Keeper", project:"Project", breeder:"Breeder", hatchling:"Hatchling", exalt:"To exalt", sale:"For sale", gone:"Gone" };
+
+const $   = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+const lairs = {};
+LAIR_KEYS.forEach(k => { lairs[k] = { items: [], ref: null, saving: false, timer: null, sync: ["idle","Connecting"] }; });
+
+let who = "danni", editId = null, famId = null;
+let filter = "all", fltFlight = "all", sortBy = "added-desc", query = "";
+
+const cur = () => lairs[who];
+
+/* ---------------- shape ---------------- */
+function migrate(items){
+  items.forEach(d => {
+    if(!STATUS[d.status]) d.status = "keeper";
+    if(!Array.isArray(d.colours)) d.colours = ["","",""];
+    if(typeof d.level !== "number") d.level = 0;
+    if(d.added == null) d.added = Date.now();
+    if(d.sire === undefined) d.sire = null;
+    if(d.dam === undefined) d.dam = null;
+  });
+  return items;
+}
+
+const byId = id => cur().items.find(x => x.id === id);
+const childrenOf = id => cur().items.filter(x => (x.sire && x.sire.id === id) || (x.dam && x.dam.id === id));
+
+/* Flight Rising files renders in folders of 100 ids. If this ever stops
+   matching, the card quietly falls back to the dragon's name. */
+const renderUrl = frId => `https://www1.flightrising.com/rendern/350/${Math.floor(frId / 100) + 1}/${frId}_350.png`;
+const profileUrl = frId => `https://www1.flightrising.com/dragon/${frId}`;
+
+/* ---------------- storage ---------------- */
+function writeCache(k){ try{ localStorage.setItem(LAIRS[k].cache, JSON.stringify({ items: lairs[k].items })); }catch(e){} }
+function loadCache(k){
+  try{
+    const p = JSON.parse(localStorage.getItem(LAIRS[k].cache) || "null");
+    if(p && Array.isArray(p.items)) lairs[k].items = migrate(p.items);
+  }catch(e){}
+}
+
+function setSync(k, state_, text){
+  lairs[k].sync = [state_, text];
+  if(k !== who) return;
+  $("sync").textContent = text;
+  $("sync").setAttribute("data-state", state_);
+}
+
+function save(k){
+  const l = lairs[k];
+  writeCache(k);
+  render();
+  if(!l.ref) return;
+  setSync(k, "saving", "Saving");
+  clearTimeout(l.timer);
+  l.timer = setTimeout(() => {
+    l.saving = true;
+    l.ref.set({ items: l.items, updated: Date.now() })
+      .then(() => setSync(k, "idle", "Synced"))
+      .catch(e => { console.error(e); setSync(k, "error", "Couldn't save"); })
+      .finally(() => { l.saving = false; });
+  }, 500);
+}
+
+function startFirebase(){
+  try{
+    firebase.initializeApp(window.PPFirebaseConfig);
+    const db = firebase.firestore();
+    LAIR_KEYS.forEach(k => {
+      const l = lairs[k];
+      l.ref = db.doc(LAIRS[k].doc);
+      l.ref.onSnapshot(snap => {
+        if(l.saving) return;
+        const data = snap.data();
+        if(data && Array.isArray(data.items)){
+          l.items = migrate(data.items);
+          writeCache(k);
+          if(k === who) render();
+        }
+        setSync(k, "idle", "Synced");
+      }, err => { console.error(err); setSync(k, "error", "Offline — saved here"); });
+    });
+  }catch(err){
+    console.error("Firestore unavailable, working from the local copy:", err);
+    LAIR_KEYS.forEach(k => setSync(k, "error", "Offline"));
+  }
+}
+
+/* ---------------- form ---------------- */
+$("fFlight").innerHTML = `<option value="">&mdash;</option>` + Object.keys(FLIGHTS).map(f => `<option>${f}</option>`).join("");
+$("fStatus").innerHTML = Object.keys(STATUS).map(s => `<option value="${s}">${STATUS[s]}</option>`).join("");
+$("breeds").innerHTML  = BREEDS.map(b => `<option value="${b}">`).join("");
+
+/* A parent select lists the lair's dragons of the right gender (or no
+   gender set), plus whoever is already picked, whatever their gender. */
+function fillParent(kind, d){
+  const want = kind === "sire" ? "M" : "F";
+  const ref = d && d[kind];
+  const pickedId = ref && ref.id;
+  const opts = cur().items
+    .filter(x => (!d || x.id !== d.id) && (x.gender === want || !x.gender || x.id === pickedId))
+    .sort((a,b) => a.name.localeCompare(b.name));
+  const sel = $(kind === "sire" ? "fSire" : "fDam");
+  const out = $(kind === "sire" ? "fSireOut" : "fDamOut");
+  sel.innerHTML = `<option value="">Unknown</option><option value="out">Outside the lair…</option>` +
+    opts.map(x => `<option value="${esc(x.id)}">${esc(x.name)}${x.breed ? " · " + esc(x.breed) : ""}</option>`).join("");
+  sel.value = pickedId || (ref && ref.name ? "out" : "");
+  out.value = ref && ref.name ? ref.name : "";
+  out.hidden = sel.value !== "out";
+  sel.onchange = () => { out.hidden = sel.value !== "out"; if(!out.hidden) out.focus(); };
+}
+function readParent(kind){
+  const v = $(kind === "sire" ? "fSire" : "fDam").value;
+  if(v === "out"){
+    const name = $(kind === "sire" ? "fSireOut" : "fDamOut").value.trim();
+    return name ? { name: name } : null;
+  }
+  return v ? { id: v } : null;
+}
+
+function openForm(d){
+  closeFam();
+  editId = d ? d.id : null;
+  $("formTitle").textContent = d ? "Edit " + d.name : `Add a dragon to ${LAIRS[who].label}'s lair`;
+  $("fName").value   = d ? d.name : "";
+  $("fFrId").value   = d && d.frId ? d.frId : "";
+  $("fBreed").value  = d ? d.breed || "" : "";
+  $("fGender").value = d ? d.gender || "" : "";
+  $("fFlight").value = d ? d.flight || "" : "";
+  $("fPri").value    = d ? d.colours[0] || "" : "";
+  $("fSec").value    = d ? d.colours[1] || "" : "";
+  $("fTer").value    = d ? d.colours[2] || "" : "";
+  $("fGenes").value  = d ? d.genes || "" : "";
+  $("fLevel").value  = d && d.level ? d.level : "";
+  $("fStatus").value = d ? d.status : "keeper";
+  $("fNotes").value  = d ? d.notes || "" : "";
+  fillParent("sire", d);
+  fillParent("dam", d);
+  $("deleteBtn").hidden = !d;
+  $("form").hidden = false;
+  $("form").scrollIntoView({ block: "nearest", behavior: "smooth" });
+  $("fName").focus();
+}
+function closeForm(){ $("form").hidden = true; editId = null; }
+
+$("addBtn").onclick    = () => openForm(null);
+$("cancelBtn").onclick = closeForm;
+$("form").addEventListener("keydown", e => {
+  if(e.key === "Enter" && e.target.tagName === "INPUT"){ e.preventDefault(); $("saveBtn").click(); }
+  if(e.key === "Escape") closeForm();
+});
+
+$("saveBtn").onclick = () => {
+  const name = $("fName").value.trim();
+  if(!name){ $("fName").focus(); return; }
+  /* accept a pasted profile link as well as the bare number */
+  const idMatch = $("fFrId").value.match(/(\d{3,})\s*\/?\s*$/);
+  const level = parseInt($("fLevel").value, 10) || 0;
+
+  const payload = {
+    name: name,
+    frId: idMatch ? parseInt(idMatch[1], 10) : 0,
+    breed: $("fBreed").value.trim(),
+    gender: $("fGender").value,
+    flight: $("fFlight").value,
+    level: Math.max(0, Math.min(25, level)),
+    colours: [$("fPri").value.trim(), $("fSec").value.trim(), $("fTer").value.trim()],
+    genes: $("fGenes").value.trim(),
+    status: $("fStatus").value,
+    notes: $("fNotes").value.trim(),
+    sire: readParent("sire"),
+    dam: readParent("dam")
+  };
+
+  const l = cur();
+  if(editId){
+    const i = l.items.findIndex(x => x.id === editId);
+    if(i > -1) l.items[i] = Object.assign({}, l.items[i], payload);
+  }else{
+    l.items.unshift(Object.assign({ id: uid(), added: Date.now() }, payload));
+  }
+  closeForm();
+  save(who);
+};
+
+$("deleteBtn").onclick = () => {
+  const d = cur().items.find(x => x.id === editId);
+  if(!d || !confirm(`Remove ${d.name} from the lair? (To keep a record, set them to Gone instead.)`)) return;
+  cur().items = cur().items.filter(x => x.id !== d.id);
+  cur().items.forEach(x => {
+    if(x.sire && x.sire.id === d.id) x.sire = { name: d.name };
+    if(x.dam && x.dam.id === d.id) x.dam = { name: d.name };
+  });
+  closeForm();
+  save(who);
+};
+
+/* ---------------- filters ---------------- */
+function renderChips(){
+  const items = cur().items;
+  const n = s => items.filter(d => d.status === s).length;
+  const chips = [["all", "Everyone", items.filter(d => d.status !== "gone").length]]
+    .concat(Object.keys(STATUS).map(s => [s, STATUS[s], n(s)]).filter(c => c[2] || c[0] === filter));
+  $("chips").innerHTML = chips.map(([k, label, c]) =>
+    `<button class="fr-chip" type="button" data-filter="${k}" aria-pressed="${k === filter}">${esc(label)}<span>${c}</span></button>`).join("");
+
+  const used = Object.keys(FLIGHTS).filter(f => items.some(d => d.flight === f));
+  if(fltFlight !== "all" && !used.includes(fltFlight)) fltFlight = "all";
+  $("fltFlight").innerHTML = `<option value="all">All</option>` + used.map(f => `<option>${f}</option>`).join("");
+  $("fltFlight").value = fltFlight;
+}
+
+$("chips").onclick = e => {
+  const b = e.target.closest("[data-filter]");
+  if(!b) return;
+  filter = b.dataset.filter;
+  render();
+};
+$("fltFlight").onchange = e => { fltFlight = e.target.value; render(); };
+$("sortBy").onchange    = e => { sortBy = e.target.value; render(); };
+$("q").addEventListener("input", e => { query = e.target.value.trim().toLowerCase(); render(); });
+
+/* ---------------- render ---------------- */
+function visible(){
+  return cur().items.filter(d => {
+    /* "Everyone" means the living lair; Gone dragons show under their own chip */
+    if(filter === "all" ? d.status === "gone" : d.status !== filter) return false;
+    if(fltFlight !== "all" && d.flight !== fltFlight) return false;
+    if(query){
+      const hay = [d.name, d.breed, d.flight, d.genes, d.notes, d.frId || ""].concat(d.colours).join(" ").toLowerCase();
+      if(hay.indexOf(query) < 0) return false;
+    }
+    return true;
+  });
+}
+
+function sorted(rows){
+  const out = rows.slice();
+  if(sortBy === "added-desc") out.sort((a,b) => b.added - a.added);
+  if(sortBy === "name-asc")   out.sort((a,b) => a.name.localeCompare(b.name));
+  if(sortBy === "level-desc") out.sort((a,b) => b.level - a.level || a.name.localeCompare(b.name));
+  if(sortBy === "flight-asc") out.sort((a,b) => (a.flight || "~").localeCompare(b.flight || "~") || a.name.localeCompare(b.name));
+  return out;
+}
+
+function card(d){
+  const art = d.frId
+    ? `<img src="${renderUrl(d.frId)}" alt="" loading="lazy" data-fallback="${esc(d.name)}"
+         onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'none',textContent:this.dataset.fallback}))">`
+    : `<span class="none">${esc(d.name)}</span>`;
+  const gender = { F:"♀", M:"♂" }[d.gender] || "";
+  const sub = [d.breed, gender, d.level ? "Lv " + d.level : ""].filter(Boolean).join(" · ");
+  const cols = d.colours.filter(Boolean).join(" / ");
+  const flight = d.flight ? `style="--flight:${FLIGHTS[d.flight]}"` : "";
+
+  return `<article class="fr-card${d.status === "gone" ? " is-gone" : ""}" ${flight}>
+    <button class="fr-art" type="button" data-fam="${esc(d.id)}" aria-label="${esc(d.name)}'s family tree">${art}</button>
+    <button class="fr-edit" type="button" data-edit="${esc(d.id)}" aria-label="Edit ${esc(d.name)}">✎</button>
+    <div class="fr-body">
+      <h3 class="fr-name">${esc(d.name)}</h3>
+      ${sub ? `<span class="fr-sub">${esc(sub)}</span>` : ""}
+      ${cols ? `<span class="fr-sub">${esc(cols)}</span>` : ""}
+      ${d.genes ? `<span class="fr-sub">${esc(d.genes)}</span>` : ""}
+      <div class="fr-meta">
+        ${d.flight ? `<span class="fr-tag flight"${LIGHT_FLIGHTS.includes(d.flight) ? " data-light" : ""}>${esc(d.flight)}</span>` : ""}
+        <span class="fr-tag st">${esc(STATUS[d.status])}</span>
+      </div>
+      ${d.notes ? `<p class="fr-notes">${esc(d.notes)}</p>` : ""}
+      <div class="fr-links">
+        <button class="fr-famlink" type="button" data-fam="${esc(d.id)}">Family tree</button>
+        ${d.frId ? `<a class="fr-link" href="${profileUrl(d.frId)}" target="_blank" rel="noopener">On Flight Rising &rsaquo;</a>` : ""}
+      </div>
+    </div>
+  </article>`;
+}
+
+/* ---------------- family tree ---------------- */
+function node(ref, role, self){
+  const tag = role ? `<span class="role">${esc(role)}</span>` : "";
+  const d = ref && ref.id ? byId(ref.id) : null;
+  if(d){
+    const pic = d.frId
+      ? `<img src="${renderUrl(d.frId)}" alt="" loading="lazy" onerror="this.remove()">` : "";
+    const sub = [d.breed, d.flight].filter(Boolean).join(" · ");
+    const flight = d.flight ? ` style="--flight:${FLIGHTS[d.flight]}"` : "";
+    return `<button class="fr-node${self ? " self" : ""}" type="button" data-fam="${esc(d.id)}"${flight}
+      ${self ? 'aria-current="true"' : ""}>
+      <span class="pic">${pic}</span><b>${esc(d.name)}</b><small>${tag}${tag && sub ? " " : ""}${esc(sub)}</small></button>`;
+  }
+  if(ref && ref.name){
+    return `<div class="fr-node out"><span class="pic"></span><b>${esc(ref.name)}</b><small>${tag}${tag ? " " : ""}outside the lair</small></div>`;
+  }
+  return `<div class="fr-node unknown"><span class="pic"></span><b>Unknown</b><small>${tag}</small></div>`;
+}
+
+function parentsOf(ref){
+  const d = ref && ref.id ? byId(ref.id) : null;
+  return d ? [d.sire, d.dam] : [null, null];
+}
+
+function openFam(id, quiet){
+  const d = byId(id);
+  if(!d){ closeFam(); return; }
+  closeForm();
+  famId = id;
+  $("famTitle").textContent = d.name + "'s family";
+
+  const grand = parentsOf(d.sire).concat(parentsOf(d.dam));
+  const kids = childrenOf(d.id).sort((a,b) => a.added - b.added);
+  const col = (label, html) => `<div class="fr-gen"><p class="fr-genlabel">${label}</p><div class="fr-genlist">${html}</div></div>`;
+
+  $("tree").innerHTML =
+    col("Grandparents",
+      node(grand[0], "Sire's sire") + node(grand[1], "Sire's dam") +
+      node(grand[2], "Dam's sire") + node(grand[3], "Dam's dam")) +
+    col("Parents", node(d.sire, "Sire") + node(d.dam, "Dam")) +
+    col("This dragon", node({ id: d.id }, "", true)) +
+    col("Offspring" + (kids.length ? ` (${kids.length})` : ""),
+      kids.length
+        ? kids.map(k => {
+            const other = k.sire && k.sire.id === d.id ? k.dam : k.sire;
+            const mate = other ? (other.id ? (byId(other.id) || {}).name : other.name) : "";
+            return node({ id: k.id }, mate ? "with " + mate : "");
+          }).join("")
+        : `<div class="fr-node unknown"><span class="pic"></span><b>None yet</b><small></small></div>`);
+
+  $("fam").hidden = false;
+  if(!quiet) $("fam").scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+function closeFam(){ $("fam").hidden = true; famId = null; }
+
+$("famClose").onclick = closeFam;
+$("famEdit").onclick  = () => { const d = byId(famId); if(d) openForm(d); };
+$("fam").onclick = e => {
+  const b = e.target.closest("[data-fam]");
+  if(b && b.dataset.fam !== famId) openFam(b.dataset.fam);
+};
+
+function render(){
+  renderChips();
+  const rows = sorted(visible());
+  const living = cur().items.filter(d => d.status !== "gone").length;
+  $("count").textContent = rows.length === living && filter === "all"
+    ? `${living} dragon${living === 1 ? "" : "s"} in ${LAIRS[who].label}'s lair`
+    : `Showing ${rows.length}`;
+  $("grid").innerHTML = rows.length
+    ? rows.map(card).join("")
+    : `<p class="pp-empty">${cur().items.length ? "No dragons match." : "No dragons here yet. Add the first one."}</p>`;
+  if(famId) openFam(famId, true);
+}
+
+$("grid").onclick = e => {
+  const fam = e.target.closest("[data-fam]");
+  if(fam){ openFam(fam.dataset.fam); return; }
+  const b = e.target.closest("[data-edit]");
+  if(!b) return;
+  const d = byId(b.dataset.edit);
+  if(d) openForm(d);
+};
+
+/* ---------------- tabs: #danni (default), #brendon ---------------- */
+function showTab(k, remember){
+  if(!LAIR_KEYS.includes(k)) k = "danni";
+  if(k !== who){ closeForm(); closeFam(); filter = "all"; fltFlight = "all"; }
+  who = k;
+  LAIR_KEYS.forEach(x => { $("tab-" + x).setAttribute("aria-selected", x === k); $("tab-" + x).tabIndex = x === k ? 0 : -1; });
+  $("lair").setAttribute("aria-labelledby", "tab-" + k);
+  setSync(k, lairs[k].sync[0], lairs[k].sync[1]);
+  render();
+  if(remember) history.replaceState(null, "", k === "danni" ? location.pathname + location.search : "#" + k);
+}
+LAIR_KEYS.forEach((k, i) => {
+  const b = $("tab-" + k);
+  b.onclick = () => showTab(k, true);
+  b.onkeydown = e => {
+    const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+    if(!step) return;
+    const n = LAIR_KEYS[(i + step + LAIR_KEYS.length) % LAIR_KEYS.length];
+    showTab(n, true); $("tab-" + n).focus();
+  };
+});
+window.addEventListener("hashchange", () => showTab(location.hash.slice(1)));
+
+LAIR_KEYS.forEach(loadCache);
+showTab(location.hash.slice(1));
+startFirebase();
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>

@@ -124,8 +124,9 @@ window.PPNav = (function(){
        section index. The URLs stay flat in /side-quests/ — the families only
        exist here, so a child like Classics sits under Reading in the nav
        without moving. The hub shows the same families as cards.
-       Dreamlight Valley is the one exception: it lives in its own folder,
-       /side-quests/game-quest/ddv/, because Danni asked for it there. */
+       Game Quest's children are the exception: they live in their own
+       folders under /side-quests/game-quest/, because Danni asked for
+       Dreamlight Valley there. */
     {
       key: 'side-quests', label: 'Side Quests', href: '/side-quests/', nav: true,
       sections: [
@@ -141,7 +142,8 @@ window.PPNav = (function(){
         { name:'Game Quest', href:'/side-quests/game-quest.html', indexLabel:'Game Quest',
           note:'The backlog', pages:[
           { label:'Dreamlight Valley', href:'/side-quests/game-quest/ddv/', note:'Every DDV quest, the to-do list and what is still locked' },
-          { label:'Quest Flow', href:'/side-quests/game-quest/ddv/flow.html', note:'A flowchart of every step to finish a DDV character or quest, in order' }
+          { label:'Quest Flow', href:'/side-quests/game-quest/ddv/flow.html', note:'A flowchart of every step to finish a DDV character or quest, in order' },
+          { label:'Flight Rising', href:'/side-quests/game-quest/flight-rising/', note:"Danni's and Brendon's dragons and their family trees" }
         ]},
 
         { name:'Reading Quest', href:'/side-quests/reading-quest.html', indexLabel:'Reading Quest',
