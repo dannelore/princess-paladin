@@ -41,9 +41,13 @@
        so the ticks clear themselves every day without a write.
 
      Two tabs, picked by the #hash: #danni (the default) and #brendon.
+
+     The dailies live in a sidebar beside the lair (.pp-layout), sticking
+     under the site ribbon while the dragons scroll. Below 820px the layout
+     is one column and they drop under the lair.
      ====================================================================== */
 
-  .fr [hidden]{ display: none !important; }
+  .fr [hidden], .fr-side [hidden]{ display: none !important; }
   .fr{ display: flex; flex-direction: column; gap: 20px; }
   .fr-intro{
     font-family: var(--font-serif); font-style: italic; font-size: 1.02rem; color: var(--ink-soft);
@@ -124,7 +128,7 @@
   }
   .fr-edit:hover{ border-color: var(--accent); color: var(--accent-deep); }
   .fr-links{ display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 2px; }
-  .fr-famlink{ font: inherit; font-size: .8rem; color: var(--accent-deep); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .fr-famlink, .fr-clear{ font: inherit; font-size: .8rem; color: var(--accent-deep); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 
   /* ---- dailies ---- */
   .fr-daily{ display: flex; flex-direction: column; gap: 12px; padding: 20px 24px; }
@@ -146,6 +150,18 @@
   .fr-dadd{ display: flex; flex-direction: row; gap: 8px; flex-wrap: wrap; align-items: center; }
   .fr-dadd input{ flex: 1 1 180px; min-width: 0; }
   @media (max-width: 600px){ .fr-daily{ padding: 16px 18px; } }
+
+  /* ---- the sidebar ---- */
+  .fr-layout{ margin-top: 20px; }
+  .fr-side .fr-daily{ padding: 20px 22px; }
+  @media (min-width: 821px){
+    /* sticks just under the site ribbon; --fr-ribbon is its measured height.
+       Not while choosing, when the full list is taller than the screen. */
+    .fr-side .fr-daily:not(.is-choosing){
+      position: sticky; top: calc(var(--fr-ribbon, 0px) + 16px);
+      max-height: calc(100vh - var(--fr-ribbon, 0px) - 32px); overflow-y: auto;
+    }
+  }
 
   /* ---- parents in the form ---- */
   .fr-parent{ display: flex; flex-direction: column; gap: 6px; }
@@ -197,37 +213,30 @@
       <button class="fr-tab" role="tab" id="tab-danni" aria-controls="lair" aria-selected="true">Danni's lair</button>
       <button class="fr-tab" role="tab" id="tab-brendon" aria-controls="lair" aria-selected="false">Brendon's lair</button>
     </div>
+  </div>
 
-    <div id="lair" role="tabpanel" class="fr" aria-labelledby="tab-danni">
+</div>
 
-      <!-- ---------------- dailies ---------------- -->
-      <section class="pp-panel fr-daily" aria-labelledby="dTitle">
-        <div class="fr-dhead">
-          <h2 class="pp-panel-title" id="dTitle">Today's dailies</h2>
-          <span class="fr-count" id="dCount"></span>
-          <span class="fr-spacer"></span>
-          <button class="pp-btn pp-btn-quiet pp-btn-sm" id="dPick" type="button" aria-pressed="false">Choose dailies</button>
-        </div>
-        <div class="fr-dbar" id="dBar" aria-hidden="true"><i></i></div>
-        <p class="fr-hint" id="dHint"></p>
-        <ul class="fr-dl" id="dList"></ul>
-        <form class="fr-dadd pp-field" id="dAdd" hidden>
-          <input id="dNew" maxlength="80" placeholder="Add your own daily" aria-label="Add your own daily">
-          <button class="pp-btn pp-btn-sm" type="submit">Add</button>
-        </form>
-      </section>
+<main class="pp-layout fr-layout" id="lair" role="tabpanel" aria-labelledby="tab-danni">
+
+    <div class="pp-col fr">
 
       <div class="fr-bar" id="chips"></div>
 
       <div class="fr-tools pp-field">
-        <input id="q" type="search" placeholder="Search names, breeds, colours, genes" aria-label="Search dragons">
+        <input id="q" type="search" placeholder="Search names, breeds, colours, genes, parents" aria-label="Search dragons">
+        <label class="fr-sel">Breed <select id="fltBreed"></select></label>
+        <label class="fr-sel">Gender <select id="fltGender"></select></label>
         <label class="fr-sel">Flight <select id="fltFlight"></select></label>
         <label class="fr-sel">Sort
           <select id="sortBy">
             <option value="added-desc">Newest first</option>
+            <option value="added-asc">Oldest first</option>
             <option value="name-asc">Name A&ndash;Z</option>
+            <option value="breed-asc">Breed</option>
             <option value="level-desc">Highest level</option>
             <option value="flight-asc">Flight</option>
+            <option value="status-asc">What they're for</option>
           </select>
         </label>
         <span class="fr-spacer"></span>
@@ -325,21 +334,40 @@
 
       <div class="fr-bar">
         <span class="fr-count" id="count"></span>
+        <button class="fr-clear" id="clearBtn" type="button" hidden>Clear filters</button>
         <span class="fr-spacer"></span>
         <span class="fr-sync" id="sync" data-state="idle">Connecting</span>
       </div>
 
       <div class="fr-grid" id="grid"></div>
     </div>
-  </div>
 
-  <footer class="pp-footer">
-    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
-    <p class="pp-footer-estab">Princess &amp; Paladin</p>
-    <p>Est. 2021</p>
-  </footer>
+    <!-- ---------------- dailies, in the sidebar ---------------- -->
+    <aside class="pp-col fr-side">
+      <section class="pp-panel fr-daily" id="dPanel" aria-labelledby="dTitle">
+        <div class="fr-dhead">
+          <h2 class="pp-panel-title" id="dTitle">Today's dailies</h2>
+          <span class="fr-count" id="dCount"></span>
+          <span class="fr-spacer"></span>
+          <button class="pp-btn pp-btn-quiet pp-btn-sm" id="dPick" type="button" aria-pressed="false">Edit list</button>
+        </div>
+        <div class="fr-dbar" id="dBar" aria-hidden="true"><i></i></div>
+        <p class="fr-hint" id="dHint"></p>
+        <ul class="fr-dl" id="dList"></ul>
+        <form class="fr-dadd pp-field" id="dAdd" hidden>
+          <input id="dNew" maxlength="80" placeholder="Add your own daily" aria-label="Add your own daily">
+          <button class="pp-btn pp-btn-sm" type="submit">Add</button>
+        </form>
+      </section>
+    </aside>
 
-</div>
+</main>
+
+<footer class="pp-wrap pp-footer">
+  <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+  <p class="pp-footer-estab">Princess &amp; Paladin</p>
+  <p>Est. 2021</p>
+</footer>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
@@ -389,6 +417,8 @@ const DAILY_IDS = DAILIES.map(d => d[0]);
 const frToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date());
 
 const STATUS = { keeper:"Keeper", project:"Project", breeder:"Breeder", hatchling:"Hatchling", exalt:"To exalt", sale:"For sale", gone:"Gone" };
+const STATUS_ORDER = Object.keys(STATUS);
+const GENDERS = { F:"Female", M:"Male" };
 
 const $   = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s)
@@ -399,7 +429,12 @@ const lairs = {};
 LAIR_KEYS.forEach(k => { lairs[k] = { items: [], daily: cleanDaily(null), ref: null, saving: false, timer: null, sync: ["idle","Connecting"] }; });
 
 let who = "danni", editId = null, famId = null;
-let filter = "all", fltFlight = "all", sortBy = "added-desc", query = "";
+let filter = "all", fltFlight = "all", fltBreed = "all", fltGender = "all", query = "";
+/* the sort is remembered on this device; the filters start fresh each visit */
+const SORTS = Array.from(document.querySelectorAll("#sortBy option"), o => o.value);
+let sortBy = (() => {
+  try{ const s = localStorage.getItem("pp_fr_sort"); return SORTS.includes(s) ? s : "added-desc"; }catch(e){ return "added-desc"; }
+})();
 
 const cur = () => lairs[who];
 
@@ -429,6 +464,7 @@ function cleanDaily(d){
 
 const byId = id => cur().items.find(x => x.id === id);
 const childrenOf = id => cur().items.filter(x => (x.sire && x.sire.id === id) || (x.dam && x.dam.id === id));
+const parentName = p => p ? (p.id ? (byId(p.id) || {}).name || "" : p.name || "") : "";
 
 /* Flight Rising files renders in folders of 100 ids. If this ever stops
    matching, the card quietly falls back to the dragon's name. */
@@ -611,6 +647,19 @@ function dailyRows(dd){
 }
 const doneToday = dd => dd.day === frToday() ? dd.done : [];
 
+/* Hours and minutes until Flight Rising's midnight, e.g. "13h 05m". */
+function untilReset(){
+  const p = {};
+  new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", hour: "numeric", minute: "numeric", hourCycle: "h23" })
+    .formatToParts(new Date()).forEach(x => { p[x.type] = x.value; });
+  const left = 24 * 60 - ((+p.hour % 24) * 60 + +p.minute);
+  return Math.floor(left / 60) + "h " + String(left % 60).padStart(2, "0") + "m";
+}
+function dailyHint(choose, n, total){
+  if(choose) return "Tick the ones you want on your list, or add your own.";
+  return (n === total ? "All done for today. " : "") + "The ticks clear at Flight Rising's midnight, in " + untilReset() + ".";
+}
+
 function renderDaily(){
   const dd = cur().daily;
   const rows = dailyRows(dd);
@@ -618,16 +667,15 @@ function renderDaily(){
   const done = doneToday(dd);
   const n = rows.filter(r => done.includes(r.id)).length;
 
-  $("dPick").textContent = choose ? "Done choosing" : "Choose dailies";
+  $("dPanel").classList.toggle("is-choosing", choose);
+  $("dPick").textContent = choose ? "Done" : "Edit list";
   $("dPick").setAttribute("aria-pressed", choose);
   $("dPick").hidden = choose && !rows.length;
   $("dAdd").hidden = !choose;
   $("dBar").hidden = choose;
   $("dBar").firstElementChild.style.width = rows.length ? (100 * n / rows.length) + "%" : "0";
   $("dCount").textContent = choose ? "" : `${n} of ${rows.length} done`;
-  $("dHint").textContent = choose
-    ? "Tick the ones you want on your list, or add your own."
-    : n === rows.length ? "All done for today." : "The ticks clear at Flight Rising's midnight.";
+  $("dHint").textContent = dailyHint(choose, n, rows.length);
 
   const rm = r => r.own ? `<button class="fr-rm" type="button" data-rm="${esc(r.id)}" aria-label="Remove ${esc(r.t)}">×</button>` : "<span></span>";
   const li = (r, checked, attr) => `<li class="fr-di${checked ? " done" : ""}">
@@ -679,9 +727,15 @@ $("dAdd").onsubmit = e => {
   $("dNew").focus();
 };
 
-/* clear the ticks at Flight Rising's midnight even if the page stays open */
+/* clear the ticks at Flight Rising's midnight even if the page stays open,
+   and keep the countdown in the hint current */
 let shownDay = frToday();
-setInterval(() => { if(frToday() !== shownDay){ shownDay = frToday(); renderDaily(); } }, 60000);
+setInterval(() => {
+  if(frToday() !== shownDay){ shownDay = frToday(); renderDaily(); return; }
+  if($("dPanel").classList.contains("is-choosing")) return;
+  const dd = cur().daily, rows = dailyRows(dd), done = doneToday(dd);
+  $("dHint").textContent = dailyHint(false, rows.filter(r => done.includes(r.id)).length, rows.length);
+}, 60000);
 
 /* ---------------- filters ---------------- */
 function renderChips(){
@@ -696,6 +750,16 @@ function renderChips(){
   if(fltFlight !== "all" && !used.includes(fltFlight)) fltFlight = "all";
   $("fltFlight").innerHTML = `<option value="all">All</option>` + used.map(f => `<option>${f}</option>`).join("");
   $("fltFlight").value = fltFlight;
+
+  const breeds = [...new Set(items.map(d => d.breed).filter(Boolean))].sort((a,b) => a.localeCompare(b));
+  if(fltBreed !== "all" && !breeds.includes(fltBreed)) fltBreed = "all";
+  $("fltBreed").innerHTML = `<option value="all">All</option>` + breeds.map(b => `<option>${esc(b)}</option>`).join("");
+  $("fltBreed").value = fltBreed;
+
+  const genders = Object.keys(GENDERS).filter(g => items.some(d => d.gender === g));
+  if(fltGender !== "all" && !genders.includes(fltGender)) fltGender = "all";
+  $("fltGender").innerHTML = `<option value="all">Any</option>` + genders.map(g => `<option value="${g}">${GENDERS[g]}</option>`).join("");
+  $("fltGender").value = fltGender;
 }
 
 $("chips").onclick = e => {
@@ -705,8 +769,23 @@ $("chips").onclick = e => {
   render();
 };
 $("fltFlight").onchange = e => { fltFlight = e.target.value; render(); };
-$("sortBy").onchange    = e => { sortBy = e.target.value; render(); };
+$("fltBreed").onchange  = e => { fltBreed = e.target.value; render(); };
+$("fltGender").onchange = e => { fltGender = e.target.value; render(); };
+$("sortBy").onchange    = e => {
+  sortBy = e.target.value;
+  try{ localStorage.setItem("pp_fr_sort", sortBy); }catch(err){}
+  render();
+};
+$("sortBy").value = sortBy;
 $("q").addEventListener("input", e => { query = e.target.value.trim().toLowerCase(); render(); });
+
+const filtering = () => filter !== "all" || fltFlight !== "all" || fltBreed !== "all" || fltGender !== "all" || !!query;
+$("clearBtn").onclick = () => {
+  filter = fltFlight = fltBreed = fltGender = "all";
+  query = "";
+  $("q").value = "";
+  render();
+};
 
 /* ---------------- render ---------------- */
 function visible(){
@@ -714,20 +793,30 @@ function visible(){
     /* "Everyone" means the living lair; Gone dragons show under their own chip */
     if(filter === "all" ? d.status === "gone" : d.status !== filter) return false;
     if(fltFlight !== "all" && d.flight !== fltFlight) return false;
+    if(fltBreed !== "all" && d.breed !== fltBreed) return false;
+    if(fltGender !== "all" && d.gender !== fltGender) return false;
     if(query){
-      const hay = [d.name, d.breed, d.flight, d.genes, d.notes, d.frId || ""].concat(d.colours).join(" ").toLowerCase();
-      if(hay.indexOf(query) < 0) return false;
+      const hay = [d.name, d.breed, d.flight, d.genes, d.notes, d.frId || "", STATUS[d.status],
+        parentName(d.sire), parentName(d.dam)].concat(d.colours).join(" ").toLowerCase();
+      /* every word has to turn up somewhere, so "arcane fae" finds the Arcane Faes */
+      if(!query.split(/\s+/).every(w => hay.indexOf(w) > -1)) return false;
     }
     return true;
   });
 }
 
+/* A–Z with the blanks (an egg's breed, say) at the end. */
+const blankLast = (a, b) => (!a - !b) || (a || "").localeCompare(b || "");
+
 function sorted(rows){
   const out = rows.slice();
   if(sortBy === "added-desc") out.sort((a,b) => b.added - a.added);
+  if(sortBy === "added-asc")  out.sort((a,b) => a.added - b.added);
   if(sortBy === "name-asc")   out.sort((a,b) => a.name.localeCompare(b.name));
+  if(sortBy === "breed-asc")  out.sort((a,b) => blankLast(a.breed, b.breed) || a.name.localeCompare(b.name));
+  if(sortBy === "status-asc") out.sort((a,b) => STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status) || a.name.localeCompare(b.name));
   if(sortBy === "level-desc") out.sort((a,b) => b.level - a.level || a.name.localeCompare(b.name));
-  if(sortBy === "flight-asc") out.sort((a,b) => (a.flight || "~").localeCompare(b.flight || "~") || a.name.localeCompare(b.name));
+  if(sortBy === "flight-asc") out.sort((a,b) => blankLast(a.flight, b.flight) || a.name.localeCompare(b.name));
   return out;
 }
 
@@ -829,9 +918,10 @@ function render(){
   renderChips();
   const rows = sorted(visible());
   const living = cur().items.filter(d => d.status !== "gone").length;
-  $("count").textContent = rows.length === living && filter === "all"
-    ? `${living} dragon${living === 1 ? "" : "s"} in ${LAIRS[who].label}'s lair`
-    : `Showing ${rows.length}`;
+  $("count").textContent = filtering()
+    ? `Showing ${rows.length} of ${cur().items.length}`
+    : `${living} dragon${living === 1 ? "" : "s"} in ${LAIRS[who].label}'s lair`;
+  $("clearBtn").hidden = !filtering();
   $("grid").innerHTML = rows.length
     ? rows.map(card).join("")
     : `<p class="pp-empty">${cur().items.length ? "No dragons match." : "No dragons here yet. Add the first one."}</p>`;
@@ -850,7 +940,7 @@ $("grid").onclick = e => {
 /* ---------------- tabs: #danni (default), #brendon ---------------- */
 function showTab(k, remember){
   if(!LAIR_KEYS.includes(k)) k = "danni";
-  if(k !== who){ closeForm(); closeFam(); filter = "all"; fltFlight = "all"; picking = false; }
+  if(k !== who){ closeForm(); closeFam(); filter = fltFlight = fltBreed = fltGender = "all"; picking = false; }
   who = k;
   LAIR_KEYS.forEach(x => { $("tab-" + x).setAttribute("aria-selected", x === k); $("tab-" + x).tabIndex = x === k ? 0 : -1; });
   $("lair").setAttribute("aria-labelledby", "tab-" + k);
@@ -869,6 +959,14 @@ LAIR_KEYS.forEach((k, i) => {
   };
 });
 window.addEventListener("hashchange", () => showTab(location.hash.slice(1)));
+
+/* the dailies stick just under the site ribbon, however tall it wraps */
+function measureRibbon(){
+  const r = document.querySelector(".pp-ribbon");
+  document.documentElement.style.setProperty("--fr-ribbon", (r ? r.offsetHeight : 0) + "px");
+}
+window.addEventListener("load", measureRibbon);
+window.addEventListener("resize", measureRibbon);
 
 LAIR_KEYS.forEach(loadCache);
 showTab(location.hash.slice(1));
