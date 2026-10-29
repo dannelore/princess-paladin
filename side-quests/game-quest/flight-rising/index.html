@@ -56,6 +56,10 @@
      The dailies live in a sidebar beside the lair (.pp-layout), always at
      full length: no scrolling of their own, and they move with the page.
      Below 820px the layout is one column and they drop under the lair.
+
+     Under them is the hoard: what each lair has, from hoard-data.js (a
+     hoard is private, so it's counted by hand), grouped by kind, each item
+     saying what it's for. Food names the dragons in this lair that eat it.
      ====================================================================== */
 
   .fr [hidden], .fr-side [hidden]{ display: none !important; }
@@ -163,6 +167,19 @@
   .fr-dadd{ display: flex; flex-direction: row; gap: 8px; flex-wrap: wrap; align-items: center; }
   .fr-dadd input{ flex: 1 1 180px; min-width: 0; }
   @media (max-width: 600px){ .fr-daily{ padding: 16px 18px; } }
+
+  /* ---- hoard ---- */
+  .fr-hgroup{ border-top: 1px solid var(--line); }
+  .fr-hgroup summary{ cursor: pointer; padding: 9px 0; font-weight: 600; font-size: .95rem; }
+  .fr-hgroup summary span{ font-weight: 400; font-family: var(--font-serif); font-style: italic; color: var(--ink-soft); margin-left: 6px; }
+  .fr-hl{ list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .fr-hi{ display: grid; grid-template-columns: 32px minmax(0,1fr); gap: 10px; align-items: start; }
+  .fr-hi .pic{ width: 32px; height: 32px; border-radius: 6px; background: var(--panel-tint); overflow: hidden; }
+  .fr-hi .pic img{ width: 100%; height: 100%; object-fit: contain; display: block; }
+  .fr-hi b{ font-weight: 600; font-size: .92rem; }
+  .fr-hi b i{ font-style: normal; font-weight: 400; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .fr-hi small{ display: block; color: var(--ink-soft); font-size: .84rem; margin-top: 2px; line-height: 1.4; }
+  .fr-hi small a{ color: var(--accent-deep); }
 
   /* ---- the sidebar ---- */
   .fr-layout{ margin-top: 20px; }
@@ -369,6 +386,18 @@
           <button class="pp-btn pp-btn-sm" type="submit">Add</button>
         </form>
       </section>
+
+      <!-- ---------------- the hoard ---------------- -->
+      <section class="pp-panel fr-daily fr-hoard" id="hPanel" aria-labelledby="hTitle">
+        <div class="fr-dhead">
+          <h2 class="pp-panel-title" id="hTitle">Hoard</h2>
+          <span class="fr-count" id="hCount"></span>
+          <span class="fr-spacer"></span>
+          <a class="fr-link" href="https://www1.flightrising.com/hoard" target="_blank" rel="noopener">Open on Flight Rising &rsaquo;</a>
+        </div>
+        <p class="fr-hint" id="hHint"></p>
+        <div id="hList"></div>
+      </section>
     </aside>
 
 </main>
@@ -382,6 +411,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script src="/assets/pp-firebase.js"></script>
+<script src="/side-quests/game-quest/flight-rising/hoard-data.js"></script>
 <script>
 "use strict";
 
@@ -413,7 +443,7 @@ const DAILIES = [
   ["nest",        "Check the Nesting Grounds",     "Incubate the eggs and see what has hatched.",         "/nesting"],
   ["gather",      "Gather",                        "Today's mix, worked out from what your dragons eat.", "/gathering"],
   ["bond",        "Bond with your familiars",      "Tap the heart next to each familiar, once a day.",    "/bestiary"],
-  ["fiona",       "Fiona's Fantastic Familiars",   "Your own selection, in the Trading Post.",            "/trading/fantastic-familiars"],
+  ["fiona",       "Fiona's Flattery",              "Flatter today's eight familiars for her.",            "/trading/fantastic-familiars/flattery"],
   ["fair",        "Play the Fairgrounds",          "Games for treasure, until you've made 75,000 today.", "/play/fairgrounds"],
   ["pinkerton",   "Pinkerton's Plundered Pile",    "Dig through the pile.",                               "/trading/pinkpile"],
   ["archaeology", "Archaeology",                   "",                                                    "/trading/archaeology"],
@@ -431,6 +461,7 @@ const DAILIES = [
   ["crossroads",  "Check Crossroads",              "Trades with other players.",                          "/crossroads"],
   ["exchange",    "Check the Grand Exchange",      "",                                                    "/exchange"],
   ["waystone",    "Check Which Waystone",          "Flight Rising's own list of what's left today.",      "/waystone"],
+  ["achieve",     "Check your achievements",       "Claim any that are ready, and see which are close.",  "/achievements"],
   ["exalt",       "Exalt or sell the spares",      "Anyone marked To exalt or For sale.",                 "/lair"]
 ];
 const DAILY_IDS = DAILIES.map(d => d[0]);
@@ -857,6 +888,72 @@ setInterval(() => {
   $("dHint").textContent = dailyHint(false, rows.filter(r => done.includes(r.id)).length, rows.length);
 }, 60000);
 
+/* ---------------- the hoard ---------------- */
+/* What Flight Rising says an item is wanted for, by the key in hoard-data.js. */
+const USES = {
+  sophie:   ["Sophie's Splendid Stitches", "/trading/sophie"],
+  den:      ["a Den task",                 "/den/trade-in/tasks"],
+  swipp:    ["a Swipp trade",              "/trading/swap/sinclair"],
+  baldwin:  ["a Baldwin brew",             "/trading/baldwin/create"],
+  exchange: ["a Grand Exchange trade",     "/exchange"]
+};
+/* food categories, and the diet word DIETS uses for each */
+const FOODS = { Insect:["Insects","insects"], Meat:["Meat","meat"], Plant:["Plants","plants"], Seafood:["Seafood","seafood"] };
+const andList = a => a.length < 3 ? a.join(" and ") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
+
+function hoardUse(it){
+  const [, , cat, , sell, food, uses, note] = it;
+  const bits = [];
+  if(note) bits.push(esc(note));
+  if(FOODS[cat]){
+    const eaters = cur().items.filter(d => d.status !== "gone" && (DIETS[d.breed] || "").split(" ").includes(FOODS[cat][1])).map(d => d.name);
+    bits.push(eaters.length
+      ? `Food for ${esc(andList(eaters))}, ${food} point${food === 1 ? "" : "s"} each.`
+      : `Food, but nobody in this lair eats ${FOODS[cat][1]}.`);
+  }
+  if(uses.length){
+    const links = uses.filter(u => USES[u]).map(u => `<a href="${FR + USES[u][1]}" target="_blank" rel="noopener">${esc(USES[u][0])}</a>`);
+    bits.push((FOODS[cat] ? "Also wanted for " : "Wanted for ") + andList(links) + ".");
+  }
+  if(sell) bits.push(`Sells for ${sell} treasure.`);
+  return bits.join(" ");
+}
+
+function renderHoard(){
+  const h = (window.FR_HOARD || {})[who];
+  /* keep whichever groups are open across re-renders */
+  const open = Array.from(document.querySelectorAll("#hList details[open]"), d => d.dataset.group);
+  if(!h){
+    $("hCount").textContent = "";
+    $("hHint").textContent = `${LAIRS[who].label}'s hoard hasn't been counted yet. It's private, so it has to be read while signed in as ${LAIRS[who].label}.`;
+    $("hList").innerHTML = "";
+    return;
+  }
+  const total = h.items.reduce((a, it) => a + it[3], 0);
+  const worth = h.items.reduce((a, it) => a + it[3] * it[4], 0);
+  $("hCount").textContent = `${total} item${total === 1 ? "" : "s"}`;
+  const asOf = new Date(h.asOf + "T12:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+  $("hHint").textContent = `Counted ${asOf}: worth ${worth.toLocaleString("en-US")} treasure if it all sold.`;
+
+  /* the four foods first, then everything else by its Flight Rising category */
+  const groups = {};
+  h.items.forEach(it => { const g = FOODS[it[2]] ? FOODS[it[2]][0] : it[2]; (groups[g] = groups[g] || []).push(it); });
+  const names = Object.keys(groups).sort((a, b) => {
+    const fa = Object.values(FOODS).some(f => f[0] === a), fb = Object.values(FOODS).some(f => f[0] === b);
+    return fb - fa || a.localeCompare(b);
+  });
+  $("hList").innerHTML = names.map(g => {
+    const rows = groups[g].slice().sort((a, b) => a[1].localeCompare(b[1]));
+    const n = rows.reduce((a, it) => a + it[3], 0);
+    return `<details class="fr-hgroup" data-group="${esc(g)}"${open.includes(g) ? " open" : ""}>
+      <summary>${esc(g)}<span>${rows.length} kind${rows.length === 1 ? "" : "s"}, ${n} in all</span></summary>
+      <ul class="fr-hl">${rows.map(it => `<li class="fr-hi">
+        <span class="pic"><img src="${FR}/static/cms/${FOODS[it[2]] ? "food" : "trinket"}/${it[0]}.png" alt="" loading="lazy" onerror="this.remove()"></span>
+        <span><b>${esc(it[1])} <i>×${it[3]}</i></b><small>${hoardUse(it)}</small></span></li>`).join("")}</ul>
+    </details>`;
+  }).join("");
+}
+
 /* ---------------- filters ---------------- */
 function renderChips(){
   const items = cur().items;
@@ -1041,6 +1138,7 @@ $("fam").onclick = e => {
 
 function render(){
   renderDaily();
+  renderHoard();
   renderChips();
   const rows = sorted(visible());
   const living = cur().items.filter(d => d.status !== "gone").length;
