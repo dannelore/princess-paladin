@@ -43,6 +43,12 @@
      Family trees are worked out from sire and dam: two generations up,
      and every dragon in the lair that names this one as a parent.
 
+     "Who can breed?" lists the bachelorettes and bachelors (not eggs or
+     the gone) and who each could pair with. Flight Rising refuses pairs
+     that share an ancestor within five generations, and pairs an ancient
+     breed only with its own; the page checks both, but only knows the
+     ancestors written here. Ancient breeds get a badge on their card.
+
        daily: { picks: [daily id], custom: [{ id, t }], day, done: [daily id] }
        picks are the DAILIES (below) this lair wants on its checklist,
        shown in DAILIES order, each name linking to its Flight Rising page;
@@ -231,6 +237,33 @@
   .fr-layout{ margin-top: 20px; }
   .fr-side .fr-daily{ padding: 20px 22px; }
 
+  /* ---- ancient breeds ---- */
+  .fr-anc{
+    align-self: center; font-family: var(--font-body); font-size: .58rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--gold-deep); border: 1px solid var(--line-gold); border-radius: 999px; padding: 2px 7px; line-height: 1.3;
+  }
+
+  /* ---- who can breed with whom ---- */
+  .fr-mategrid{ display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px 20px; }
+  .fr-mategrid .wide{ grid-column: 1 / -1; }
+  .fr-matelist{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .fr-mate{ display: flex; flex-direction: column; gap: 4px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .fr-matehead{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+  .fr-matehead b .fr-famlink{ font-family: var(--font-serif); font-size: 1.1rem; font-weight: 600; color: var(--ink); }
+  .fr-matehead small{ color: var(--ink-soft); font-size: .84rem; }
+  .fr-when{ margin-left: auto; font-size: .78rem; color: var(--dusk-deep); }
+  .fr-when.is-ready{ color: var(--sage-deep); font-weight: 600; }
+  .fr-mate p{ margin: 0; font-size: .86rem; line-height: 1.45; }
+  .fr-mate p > span{
+    display: inline-block; margin-right: 6px; font-family: var(--font-body); font-size: .6rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+  }
+  .fr-mate p.ok > span{ color: var(--sage-deep); }
+  .fr-mate p.no > span{ color: var(--blade); }
+  .fr-mate p.no{ color: var(--ink-soft); }
+  .fr-mate p i{ font-style: normal; color: var(--ink-soft); }
+  .fr-mate .fr-famlink{ font-size: inherit; }
+  @media (max-width: 720px){ .fr-mategrid{ grid-template-columns: 1fr; } }
+
   /* ---- parents in the form ---- */
   .fr-parent{ display: flex; flex-direction: column; gap: 6px; }
 
@@ -309,6 +342,7 @@
           </select>
         </label>
         <span class="fr-spacer"></span>
+        <button class="pp-btn pp-btn-quiet" id="matesBtn" type="button" aria-controls="mates">Who can breed?</button>
         <button class="pp-btn" id="addBtn" type="button">Add a dragon</button>
       </div>
 
@@ -405,6 +439,17 @@
         <p class="fr-hint">Tap a dragon from the lair to see their tree. Dashed ones live outside it.</p>
       </section>
 
+      <!-- ---------------- who can breed with whom ---------------- -->
+      <section class="pp-panel fr-fam" id="mates" hidden aria-labelledby="matesTitle">
+        <div class="fr-famhead">
+          <h2 class="pp-panel-title" id="matesTitle">Who can breed with whom</h2>
+          <span class="fr-spacer"></span>
+          <button class="pp-btn pp-btn-quiet pp-btn-sm" id="matesClose" type="button">Close</button>
+        </div>
+        <div class="fr-mategrid" id="mateList"></div>
+        <p class="fr-hint">Flight Rising won't pair dragons that share an ancestor within five generations, and an ancient breed only pairs with its own breed. This only knows the ancestors on this page, so Flight Rising's breeding screen has the final say.</p>
+      </section>
+
       <div class="fr-bar">
         <span class="fr-count" id="count"></span>
         <button class="fr-clear" id="clearBtn" type="button" hidden>Clear filters</button>
@@ -476,9 +521,15 @@ const LIGHT_FLIGHTS = ["Ice","Light","Lightning"];
 
 /* Suggestions only — the breed box takes anything typed, so a new breed
    doesn't need a code change. */
-const BREEDS = ["Aberration","Aether","Auraboa","Banescale","Bogsneak","Coatl","Dusthide","Everlux","Fae","Fathom",
+const BREEDS = ["Aberration","Aether","Auraboa","Banescale","Bogsneak","Chorus","Cirrus","Coatl","Dusthide","Everlux","Fae","Fathom",
   "Gaoler","Guardian","Imperial","Mirror","Nocturne","Obelisk","Pearlcatcher","Ridgeback","Sandsurge","Skydancer",
-  "Snapper","Spiral","Thundercrest","Tundra","Undertide","Veilspun","Wildclaw"];
+  "Snapper","Spiral","Thorntail","Thundercrest","Tundra","Undertide","Veilspun","Vigil","Wildclaw"];
+
+/* The ancient breeds, per the Flight Rising encyclopedia. An ancient only
+   breeds with its own breed. */
+const ANCIENT = ["Aberration","Aether","Auraboa","Banescale","Chorus","Cirrus","Dusthide","Everlux","Gaoler",
+  "Sandsurge","Thorntail","Undertide","Veilspun","Vigil"];
+const isAncient = d => ANCIENT.includes(d.breed);
 
 /* The dailies to choose from, in the order they show on the list, each with
    its page on Flight Rising. Ids are stored in daily.picks and daily.done, so
@@ -1126,7 +1177,7 @@ function card(d){
     <button class="fr-edit" type="button" data-edit="${esc(d.id)}" aria-label="Edit ${esc(d.name)}">✎</button>
     <div class="fr-body">
       <div class="fr-who">
-        <div class="fr-title"><h3 class="fr-name">${esc(d.name)}</h3>${d.breed ? `<span class="fr-sub">${esc(d.breed)}</span>` : ""}</div>
+        <div class="fr-title"><h3 class="fr-name">${esc(d.name)}</h3>${d.breed ? `<span class="fr-sub">${esc(d.breed)}</span>` : ""}${ancientTag(d)}</div>
         <div class="fr-meta">
           ${d.flight ? `<span class="fr-tag flight"${LIGHT_FLIGHTS.includes(d.flight) ? " data-light" : ""}>${esc(d.flight)}</span>` : ""}
           ${gender}${breedBadge(d)}
@@ -1196,6 +1247,105 @@ function openFam(id, quiet){
 }
 function closeFam(){ $("fam").hidden = true; famId = null; }
 
+/* ---------------- who can breed with whom ----------------
+   A dragon's key is its FR id when it has one, so an outside parent
+   written as "Prince (87351898)" is the same dragon wherever it turns up. */
+const KIN_GENS = 5;
+const dragonKey = d => d.frId ? "fr:" + d.frId : "id:" + d.id;
+function refKey(ref){
+  if(ref.id){ const d = byId(ref.id); return d ? dragonKey(d) : null; }
+  const m = String(ref.name).match(/\d{5,}/);
+  return m ? "fr:" + m[0] : "name:" + ref.name.trim().toLowerCase();
+}
+
+/* The dragon and every ancestor within KIN_GENS generations, by key, with
+   how many generations back. The dragon itself is in it so a parent and
+   its offspring count as related. outside: a line leaves the lair before
+   then, so there may be ancestors this can't see. */
+function kin(d){
+  const map = new Map();
+  let outside = false;
+  (function walk(dragon, ref, depth){
+    const key = dragon ? dragonKey(dragon) : refKey(ref);
+    if(!key) return;
+    if(!map.has(key) || map.get(key).depth > depth) map.set(key, { depth: depth, name: dragon ? dragon.name : ref.name });
+    if(depth === KIN_GENS) return;
+    if(!dragon){ outside = true; return; }
+    [dragon.sire, dragon.dam].forEach(p => { if(p) walk(p.id ? byId(p.id) : null, p, depth + 1); });
+  })(d, null, 0);
+  return { map: map, outside: outside };
+}
+
+/* null if a and b could pair, otherwise why not */
+function whyNot(a, b, ka, kb){
+  if((isAncient(a) || isAncient(b)) && a.breed !== b.breed)
+    return { breed: true, text: `${isAncient(a) ? a.breed : b.breed}s only pair with their own breed` };
+  let near = null;
+  ka.map.forEach((x, k) => {
+    const y = kb.map.get(k);
+    if(y && (!near || x.depth + y.depth < near.a + near.b)) near = { a: x.depth, b: y.depth, name: x.name };
+  });
+  if(!near) return null;
+  const n = near.a + near.b;
+  if(!near.a || !near.b) return { text: n === 1 ? "parent and offspring" : n === 2 ? "grandparent and grandchild" : "one descends from the other" };
+  if(near.a === 1 && near.b === 1) return { text: "siblings, both from " + near.name };
+  return { text: "both descend from " + near.name };
+}
+
+const ancientTag = d => isAncient(d) ? `<span class="fr-anc" title="An ancient breed: only pairs with other ${esc(d.breed)}s">Ancient</span>` : "";
+const whenReady = d => { const w = breedIn(d); return w ? (w === 1 ? "tomorrow" : `in ${w} days`) : "ready"; };
+
+function renderMates(){
+  const pool = cur().items.filter(d => !isEgg(d) && d.status !== "gone" && GENDERS[d.gender]);
+  const kins = new Map(pool.map(d => [d.id, kin(d)]));
+  const famBtn = d => `<button class="fr-famlink" type="button" data-fam="${esc(d.id)}">${esc(d.name)}</button>`;
+  const column = (g, title, none) => {
+    const mine = pool.filter(d => d.gender === g).sort((a,b) => breedIn(a) - breedIn(b) || a.name.localeCompare(b.name));
+    /* partners soonest ready first */
+    const others = pool.filter(d => d.gender !== g).sort((a,b) => breedIn(a) - breedIn(b) || a.name.localeCompare(b.name));
+    const rows = mine.map(d => {
+      const ok = [], close = [], breed = [];
+      others.forEach(o => {
+        const why = whyNot(d, o, kins.get(d.id), kins.get(o.id));
+        if(!why) ok.push(`${famBtn(o)} <i>${whenReady(o)}</i>`);
+        /* an ancient's own row says it once; a modern's names the ancient's breed */
+        else if(why.breed) breed.push(isAncient(d) ? famBtn(o) : `${famBtn(o)} <i>only pairs with ${esc(o.breed)}s</i>`);
+        else close.push(`${famBtn(o)} <i>${esc(why.text)}</i>`);
+      });
+      const line = (cls, label, list) => list.length ? `<p class="${cls}"><span>${label}</span>${list.join("; ")}</p>` : "";
+      return `<li class="fr-mate">
+        <div class="fr-matehead"><b>${famBtn(d)}</b>${d.breed ? `<small>${esc(d.breed)}</small>` : ""}${ancientTag(d)}
+          <span class="fr-when${breedIn(d) ? "" : " is-ready"}">${breedIn(d) ? "Can breed " + whenReady(d) : "Ready"}</span></div>
+        ${line("ok", "Can pair with", ok)}
+        ${line("no", "Too closely related", close)}
+        ${line("no", isAncient(d) ? `Not ${esc(d.breed)}s` : "Wrong breed", breed)}
+        ${!ok.length && !close.length && !breed.length ? `<p class="no">${none}</p>` : ""}
+        ${kins.get(d.id).outside ? `<p class="fr-hint">Some of ${esc(d.name)}'s ancestors live outside the lair, so Flight Rising may know of more relatives.</p>` : ""}
+      </li>`;
+    });
+    return `<div class="fr-gen"><p class="fr-genlabel">${title} (${mine.length})</p>
+      ${rows.length ? `<ul class="fr-matelist">${rows.join("")}</ul>` : `<p class="fr-hint">None in the lair yet.</p>`}</div>`;
+  };
+  const unsexed = cur().items.filter(d => !isEgg(d) && d.status !== "gone" && !GENDERS[d.gender]);
+  $("mateList").innerHTML = column("F", "Bachelorettes", "No bachelors in the lair yet.") + column("M", "Bachelors", "No bachelorettes in the lair yet.") +
+    (unsexed.length ? `<p class="fr-hint wide">Left out until they have a gender: ${unsexed.map(d => esc(d.name)).join(", ")}.</p>` : "");
+}
+
+function openMates(){
+  closeForm(); closeFam();
+  renderMates();
+  $("mates").hidden = false;
+  $("matesBtn").setAttribute("aria-expanded", "true");
+  $("mates").scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+function closeMates(){ $("mates").hidden = true; $("matesBtn").setAttribute("aria-expanded", "false"); }
+$("matesBtn").onclick = () => $("mates").hidden ? openMates() : closeMates();
+$("matesClose").onclick = closeMates;
+$("mates").onclick = e => {
+  const b = e.target.closest("[data-fam]");
+  if(b) openFam(b.dataset.fam);
+};
+
 $("famClose").onclick = closeFam;
 $("famEdit").onclick  = () => { const d = byId(famId); if(d) openForm(d); };
 $("fam").onclick = e => {
@@ -1217,6 +1367,7 @@ function render(){
     ? rows.map(card).join("")
     : `<p class="pp-empty">${cur().items.length ? "No dragons match." : "No dragons here yet. Add the first one."}</p>`;
   if(famId) openFam(famId, true);
+  if(!$("mates").hidden) renderMates();
 }
 
 $("grid").onclick = e => {
