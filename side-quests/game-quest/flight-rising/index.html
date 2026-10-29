@@ -34,8 +34,10 @@
                 they already can. The card counts down to it; "Bred today"
                 sets it from the breed's cooldown.
 
-     Cards show the name, breed and gender, flight, that countdown, and
-     links to the family tree and Flight Rising; the rest is in Edit.
+     Cards show the name and breed, then badges for flight, gender and that
+     countdown; beside them, links to the family tree and Flight Rising and
+     the FR id (click to copy). Hovering a card lays its colours, genes,
+     parents and notes over the picture; everything is edited in Edit.
      Eggs (status "egg") sort last whatever the sort.
 
      Family trees are worked out from sire and dam: two generations up,
@@ -109,9 +111,9 @@
   }
 
   /* ---- the lair ---- */
-  .fr-grid{ display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 14px; }
+  .fr-grid{ display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 14px; }
   .fr-card{
-    position: relative; display: flex; flex-direction: column; min-width: 0;
+    position: relative; display: flex; flex-direction: column; min-width: 0; container-type: inline-size;
     background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; box-shadow: var(--lift);
   }
   .fr-card.is-gone{ opacity: .6; }
@@ -124,25 +126,69 @@
     display: flex; align-items: center; justify-content: center; height: 100%; padding: 12px; text-align: center;
     font-family: var(--font-serif); font-style: italic; font-size: 1.1rem; color: var(--ink-soft);
   }
-  .fr-body{ display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 12px; }
-  .fr-name{ font-family: var(--font-serif); font-weight: 600; font-size: 1.15rem; margin: 0; line-height: 1.2; overflow-wrap: anywhere; }
-  .fr-sub{ font-size: .82rem; color: var(--ink-soft); line-height: 1.35; }
-  .fr-meta{ display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+  /* name, breed and badges on the left; a rule; links and the id on the right */
+  .fr-body{ display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px 12px; padding: 12px 12px 14px 14px; }
+  .fr-who{ display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .fr-title{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; }
+  .fr-name{ font-family: var(--font-serif); font-weight: 600; font-size: 1.4rem; margin: 0; line-height: 1.1; overflow-wrap: anywhere; }
+  .fr-sub{ font-family: var(--font-serif); font-size: 1.05rem; color: var(--ink-soft); line-height: 1.2; }
+  .fr-meta{ display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
   .fr-tag{
-    font-family: var(--font-body); font-size: .64rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
-    border-radius: 999px; padding: 3px 8px; background: rgba(46,36,31,.06); color: var(--ink-soft);
+    font-family: var(--font-body); font-size: .66rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    border-radius: 999px; padding: 5px 10px; background: rgba(46,36,31,.06); color: var(--ink-soft); line-height: 1.2;
   }
   .fr-tag.flight{ background: var(--flight); color: #fff; }
   .fr-tag.flight[data-light]{ color: var(--ink); }
-  .fr-breed{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin: 4px 0 0; font-size: .82rem; color: var(--ink-soft); line-height: 1.35; }
-  .fr-breed.is-ready{ color: var(--sage-deep); font-weight: 500; }
-  .fr-link{ font-size: .8rem; color: var(--accent-deep); margin-top: 2px; width: fit-content; }
+  /* round badges: gender, and the days until they can breed */
+  .fr-dot{
+    display: inline-flex; align-items: center; justify-content: center; width: 25px; height: 25px; border-radius: 50%;
+    font-family: var(--font-body); font-size: .76rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums;
+    border: 2px solid var(--line-strong); color: var(--ink-soft); background: var(--white);
+  }
+  .fr-dot.F{ border-color: #E58BB0; color: #C2477A; background: #FCE8F0; font-size: .95rem; }
+  .fr-dot.M{ border-color: #7FA6D6; color: #3F6FA8; background: #E7EFF9; font-size: .95rem; }
+  .fr-dot.wait{ border-color: var(--dusk); color: var(--dusk-deep); }
+  .fr-ready{
+    font-family: var(--font-body); font-size: .7rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; cursor: pointer;
+    border-radius: 999px; padding: 5px 10px; border: 2px solid var(--sage); color: var(--sage-deep); background: var(--white); line-height: 1.1;
+  }
+  .fr-ready:hover{ background: var(--sage); color: #fff; }
+  span.fr-ready{ cursor: default; }
+  span.fr-ready:hover{ background: var(--white); color: var(--sage-deep); }
+  .fr-links{ display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding-left: 12px; border-left: 1px solid var(--line-strong); }
+  .fr-link{ font-size: .8rem; color: var(--accent-deep); width: fit-content; }
+  .fr-id{
+    font: inherit; font-size: .78rem; color: var(--ink-soft); background: none; border: 0; padding: 0; cursor: copy;
+    font-variant-numeric: tabular-nums; text-align: left;
+  }
+  .fr-id span{ user-select: all; }
+  .fr-id:hover{ color: var(--accent-deep); }
+  .fr-id.copied{ color: var(--sage-deep); }
+  /* a narrow card stacks the links under the name, with the rule on top */
+  @container (max-width: 270px){
+    .fr-body{ grid-template-columns: minmax(0,1fr); }
+    .fr-links{ flex-direction: row; flex-wrap: wrap; gap: 4px 14px; padding: 10px 0 0; border-left: 0; border-top: 1px solid var(--line-strong); }
+  }
+
+  /* hover (or keyboard focus) lays the details over the picture; it lets
+     clicks through, so the picture still opens the family tree */
+  .fr-more{
+    position: absolute; left: 0; right: 0; top: 0; aspect-ratio: 1; overflow: hidden; pointer-events: none;
+    padding: 14px 16px; background: rgba(255,253,250,.94); color: var(--ink); border-bottom: 3px solid var(--flight, var(--line));
+    opacity: 0; transition: opacity .15s; font-size: .84rem; line-height: 1.35;
+  }
+  .fr-card:hover .fr-more, .fr-card:focus-within .fr-more{ opacity: 1; }
+  @media (hover: none){ .fr-card:hover .fr-more{ opacity: 0; } }
+  .fr-more dl{ margin: 0; display: grid; grid-template-columns: auto minmax(0,1fr); gap: 4px 10px; }
+  .fr-more dt{ font-family: var(--font-body); font-size: .62rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--gold-deep); padding-top: 3px; }
+  .fr-more dd{ margin: 0; overflow-wrap: anywhere; }
+  .fr-more dd i{ font-style: normal; color: var(--ink-soft); }
+  .fr-more .note{ grid-column: 1 / -1; font-family: var(--font-serif); font-style: italic; color: var(--ink-soft); margin-top: 4px; }
   .fr-edit{
     position: absolute; top: 7px; right: 7px; width: 28px; height: 28px; border-radius: 50%;
     border: 1px solid var(--line); background: var(--white); color: var(--ink); cursor: pointer; font-size: .85rem; line-height: 1;
   }
   .fr-edit:hover{ border-color: var(--accent); color: var(--accent-deep); }
-  .fr-links{ display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 2px; }
   .fr-famlink, .fr-clear{ font: inherit; font-size: .8rem; color: var(--accent-deep); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 
   /* ---- dailies ---- */
@@ -1038,15 +1084,32 @@ const SORT_BY = {
 /* eggs go last whatever the sort */
 const sorted = rows => rows.slice().sort((a,b) => isEgg(a) - isEgg(b) || SORT_BY[sortBy](a,b));
 
-/* "Can breed in 14 days", or "Ready to breed" with a button to start the
-   cooldown. Eggs and the gone have neither. */
-function breedLine(d){
+/* A round badge with the days until they can breed, or "Ready", which
+   starts the cooldown when they've bred. Eggs and the gone have neither. */
+function breedBadge(d){
   if(isEgg(d) || d.status === "gone") return "";
   const wait = breedIn(d);
-  if(wait) return `<p class="fr-breed">Can breed ${wait === 1 ? "tomorrow" : `in ${wait} days`}</p>`;
-  const bred = COOLDOWNS[d.breed]
-    ? `<button class="fr-famlink" type="button" data-bred="${esc(d.id)}">Bred today</button>` : "";
-  return `<p class="fr-breed is-ready">Ready to breed ${bred}</p>`;
+  if(wait) return `<span class="fr-dot wait" title="Can breed ${wait === 1 ? "tomorrow" : `in ${wait} days`}">${wait}</span>`;
+  return COOLDOWNS[d.breed]
+    ? `<button class="fr-ready" type="button" data-bred="${esc(d.id)}" title="Ready to breed. Click once they've bred to start the countdown.">Ready</button>`
+    : `<span class="fr-ready" title="Ready to breed">Ready</span>`;
+}
+
+/* What the hover shows: each colour with its gene, then the rest. Genes
+   written as "Primary / Secondary / Tertiary" pair up with the colours. */
+function moreInfo(d){
+  const genes = (d.genes || "").split("/").map(s => s.trim());
+  const paired = genes.length === 3;
+  const row = (k, v) => v ? `<dt>${k}</dt><dd>${v}</dd>` : "";
+  const colour = i => [esc(d.colours[i]), paired && genes[i] ? `<i>${esc(genes[i])}</i>` : ""].filter(Boolean).join(" ");
+  return `<div class="fr-more" aria-hidden="true"><dl>
+    ${row("Primary", colour(0))}${row("Secondary", colour(1))}${row("Tertiary", colour(2))}
+    ${paired ? "" : row("Genes", esc(d.genes))}
+    ${row("Level", d.level ? d.level : "")}
+    ${row("For", esc(STATUS[d.status]))}
+    ${row("Sire", esc(parentName(d.sire)))}${row("Dam", esc(parentName(d.dam)))}
+    ${d.notes ? `<dd class="note">${esc(d.notes)}</dd>` : ""}
+  </dl></div>`;
 }
 
 function card(d){
@@ -1054,21 +1117,25 @@ function card(d){
     ? `<img src="${renderUrl(d.frId)}" alt="" loading="lazy" data-fallback="${esc(d.name)}"
          onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'none',textContent:this.dataset.fallback}))">`
     : `<span class="none">${esc(d.name)}</span>`;
-  const gender = { F:"♀", M:"♂" }[d.gender] || "";
-  const sub = [d.breed, gender].filter(Boolean).join(" · ");
   const flight = d.flight ? `style="--flight:${FLIGHTS[d.flight]}"` : "";
+  const gender = GENDERS[d.gender] ? `<span class="fr-dot ${d.gender}" title="${GENDERS[d.gender]}">${{ F:"♀", M:"♂" }[d.gender]}</span>` : "";
 
   return `<article class="fr-card${d.status === "gone" ? " is-gone" : ""}" ${flight}>
     <button class="fr-art" type="button" data-fam="${esc(d.id)}" aria-label="${esc(d.name)}'s family tree">${art}</button>
+    ${moreInfo(d)}
     <button class="fr-edit" type="button" data-edit="${esc(d.id)}" aria-label="Edit ${esc(d.name)}">✎</button>
     <div class="fr-body">
-      <h3 class="fr-name">${esc(d.name)}</h3>
-      ${sub ? `<span class="fr-sub">${esc(sub)}</span>` : ""}
-      ${d.flight ? `<div class="fr-meta"><span class="fr-tag flight"${LIGHT_FLIGHTS.includes(d.flight) ? " data-light" : ""}>${esc(d.flight)}</span></div>` : ""}
-      ${breedLine(d)}
+      <div class="fr-who">
+        <div class="fr-title"><h3 class="fr-name">${esc(d.name)}</h3>${d.breed ? `<span class="fr-sub">${esc(d.breed)}</span>` : ""}</div>
+        <div class="fr-meta">
+          ${d.flight ? `<span class="fr-tag flight"${LIGHT_FLIGHTS.includes(d.flight) ? " data-light" : ""}>${esc(d.flight)}</span>` : ""}
+          ${gender}${breedBadge(d)}
+        </div>
+      </div>
       <div class="fr-links">
         <button class="fr-famlink" type="button" data-fam="${esc(d.id)}">Family tree</button>
-        ${d.frId ? `<a class="fr-link" href="${profileUrl(d.frId)}" target="_blank" rel="noopener">On Flight Rising &rsaquo;</a>` : ""}
+        ${d.frId ? `<a class="fr-link" href="${profileUrl(d.frId)}" target="_blank" rel="noopener">On Flight Rising &rsaquo;</a>
+        <button class="fr-id" type="button" data-copy="${d.frId}" title="Copy the id">ID# <span>${d.frId}</span></button>` : ""}
       </div>
     </div>
   </article>`;
@@ -1158,7 +1225,17 @@ $("grid").onclick = e => {
   const bred = e.target.closest("[data-bred]");
   if(bred){
     const d = byId(bred.dataset.bred);
-    if(d && COOLDOWNS[d.breed]){ d.breedOn = addDays(frToday(), COOLDOWNS[d.breed]); save(who); }
+    if(d && COOLDOWNS[d.breed] && confirm(`Did ${d.name} breed today? That starts their ${COOLDOWNS[d.breed]}-day countdown.`)){
+      d.breedOn = addDays(frToday(), COOLDOWNS[d.breed]); save(who);
+    }
+    return;
+  }
+  const copy = e.target.closest("[data-copy]");
+  if(copy){
+    const done = () => { copy.classList.add("copied"); copy.textContent = "Copied"; setTimeout(() => { copy.classList.remove("copied"); copy.innerHTML = `ID# <span>${esc(copy.dataset.copy)}</span>`; }, 1200); };
+    /* if the clipboard says no, select the number so Ctrl+C still works */
+    const pick = () => { const r = document.createRange(); r.selectNodeContents(copy.querySelector("span") || copy); getSelection().removeAllRanges(); getSelection().addRange(r); };
+    if(navigator.clipboard) navigator.clipboard.writeText(copy.dataset.copy).then(done, pick); else pick();
     return;
   }
   const b = e.target.closest("[data-edit]");
