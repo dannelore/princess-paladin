@@ -59,6 +59,12 @@
        Flight Rising's time (Pacific, where its midnight reset happens),
        so the ticks clear themselves every day without a write.
 
+     Refresh (beside the sync status) asks Firestore for both lairs again,
+     reloads hoard-data.js, and redraws everything worked out from the
+     date: breeding countdowns, the dailies' ticks, today's gathering plan.
+     Coming back to the tab does the same, at most once a minute. It can't
+     read Flight Rising itself; what changed there still goes in by hand.
+
      Two tabs, picked by the #hash: #danni (the default) and #brendon.
 
      The dailies live in a sidebar beside the lair (.pp-layout), always at
@@ -103,6 +109,7 @@
   .fr-sync{ font-family: var(--font-body); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
   .fr-sync[data-state="saving"]{ color: var(--gold); }
   .fr-sync[data-state="error"]{ color: var(--blade); }
+  #refreshBtn:disabled{ opacity: .55; cursor: default; }
 
   /* ---- add / edit ---- */
   .fr-form{ display: flex; flex-direction: column; gap: 16px; }
@@ -455,6 +462,7 @@
         <button class="fr-clear" id="clearBtn" type="button" hidden>Clear filters</button>
         <span class="fr-spacer"></span>
         <span class="fr-sync" id="sync" data-state="idle">Connecting</span>
+        <button class="pp-btn pp-btn-quiet pp-btn-sm" id="refreshBtn" type="button">Refresh</button>
       </div>
 
       <div class="fr-grid" id="grid"></div>
@@ -736,12 +744,23 @@ function save(k){
   setSync(k, "saving", "Saving");
   clearTimeout(l.timer);
   l.timer = setTimeout(() => {
+    l.timer = null;
     l.saving = true;
     l.ref.set({ items: l.items, daily: l.daily, updated: Date.now() })
       .then(() => setSync(k, "idle", "Synced"))
       .catch(e => { console.error(e); setSync(k, "error", "Couldn't save"); })
       .finally(() => { l.saving = false; });
   }, 500);
+}
+
+/* a lair as Firestore has it, from the live listener or a refresh */
+function take(k, data){
+  if(!data || !Array.isArray(data.items)) return;
+  const l = lairs[k];
+  l.items = migrate(data.items);
+  l.daily = cleanDaily(data.daily);
+  writeCache(k);
+  if(k === who) render();
 }
 
 function startFirebase(){
@@ -753,13 +772,7 @@ function startFirebase(){
       l.ref = db.doc(LAIRS[k].doc);
       l.ref.onSnapshot(snap => {
         if(l.saving) return;
-        const data = snap.data();
-        if(data && Array.isArray(data.items)){
-          l.items = migrate(data.items);
-          l.daily = cleanDaily(data.daily);
-          writeCache(k);
-          if(k === who) render();
-        }
+        take(k, snap.data());
         setSync(k, "idle", "Synced");
       }, err => { console.error(err); setSync(k, "error", "Offline — saved here"); });
     });
@@ -768,6 +781,53 @@ function startFirebase(){
     LAIR_KEYS.forEach(k => setSync(k, "error", "Offline"));
   }
 }
+
+/* ---------------- refresh ----------------
+   The live listener keeps both lairs current by itself, but it can sit
+   stale after a laptop sleeps or a phone parks the tab, so this asks the
+   server outright. A lair with an edit still on its way up keeps its own
+   copy, which is newer. */
+let refreshing = null, lastRefresh = Date.now();
+
+function reloadHoard(){
+  return new Promise(done => {
+    const s = document.createElement("script");
+    s.src = "/side-quests/game-quest/flight-rising/hoard-data.js?t=" + Date.now();
+    s.onload = s.onerror = () => { s.remove(); done(); };
+    document.head.appendChild(s);
+  });
+}
+
+function refresh(){
+  if(refreshing) return refreshing;
+  lastRefresh = Date.now();
+  $("refreshBtn").disabled = true;
+  const pulls = LAIR_KEYS.map(k => {
+    const l = lairs[k];
+    if(!l.ref || l.saving || l.timer) return null;
+    setSync(k, "saving", "Refreshing");
+    return l.ref.get({ source: "server" })
+      .then(snap => {
+        if(l.saving || l.timer) return;
+        take(k, snap.data());
+        setSync(k, "idle", "Synced");
+      })
+      .catch(e => { console.error(e); setSync(k, "error", "Couldn't refresh"); });
+  });
+  refreshing = Promise.all(pulls.concat(reloadHoard())).then(() => {
+    shownDay = frToday();
+    render();
+    refreshing = null;
+    $("refreshBtn").disabled = false;
+  });
+  return refreshing;
+}
+
+$("refreshBtn").onclick = () => refresh();
+document.addEventListener("visibilitychange", () => {
+  if(document.visibilityState !== "visible") return;
+  if(Date.now() - lastRefresh > 60000) refresh(); else newDay();
+});
 
 /* ---------------- form ---------------- */
 $("fFlight").innerHTML = `<option value="">&mdash;</option>` + Object.keys(FLIGHTS).map(f => `<option>${f}</option>`).join("");
@@ -974,12 +1034,18 @@ $("dAdd").onsubmit = e => {
   $("dNew").focus();
 };
 
-/* clear the ticks and count the breeding days down at Flight Rising's
-   midnight even if the page stays open, and keep the countdown in the
-   hint current */
+/* clear the ticks, count the breeding days down and move today's gathering
+   plan on at Flight Rising's midnight even if the page stays open (or as
+   soon as you come back to it), and keep the countdown in the hint current */
 let shownDay = frToday();
+function newDay(){
+  if(frToday() === shownDay) return false;
+  shownDay = frToday();
+  render();
+  return true;
+}
 setInterval(() => {
-  if(frToday() !== shownDay){ shownDay = frToday(); render(); return; }
+  if(newDay()) return;
   if($("dPanel").classList.contains("is-choosing")) return;
   const dd = cur().daily, rows = dailyRows(dd), done = doneToday(dd);
   $("dHint").textContent = dailyHint(false, rows.filter(r => done.includes(r.id)).length, rows.length);
