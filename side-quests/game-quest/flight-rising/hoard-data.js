@@ -7,7 +7,7 @@
    uses: what Flight Rising itself lists the item as wanted for (USES on the
          page); note: anything else worth saying, in our own words. */
 window.FR_HOARD = {
-  danni: { asOf: "2026-10-28", items: [
+  danni: { asOf: "2026-10-30", items: [
     [2, "Nebula Floaters", "Seafood", 1, 35, 4, ["sophie"]],
     [4, "Aether Hermit", "Seafood", 5, 30, 3, []],
     [5, "Hardshell", "Insect", 1, 25, 3, ["den"]],
@@ -40,10 +40,14 @@ window.FR_HOARD = {
     [173, "Glow Mushroom", "Plant", 4, 20, 2, ["swipp"]],
     [175, "Marsh Choker", "Plant", 2, 20, 2, []],
     [177, "Clay", "Minerals & Ores", 1, 15, 0, ["swipp", "den"], "A building material, dug up by Mining."],
-    [893, "All-Seeing Shroom", "Holiday Items", 52, 0, 0, ["exchange"], "Riot of Rot festival currency: spend it at Festive Favors while the festival is on."],
+    [893, "All-Seeing Shroom", "Holiday Items", 2, 0, 0, ["exchange"], "Riot of Rot festival currency: spend it at Festive Favors while the festival is on."],
     [3085, "Yellow-Tinged Featherduster", "Seafood", 1, 17, 2, ["den"]],
     [8106, "Dwarf Fawn", "Meat", 1, 17, 2, ["den"]],
-    [35756, "Gold Lustre Vase", "Trinkets", 1, 35, 0, [], "Just a pretty trinket: nothing asks for it, so sell it or keep it."]
+    [26423, "Grey Clay", "Minerals & Ores", 1, 82, 0, [], "A pricier clay: nothing asks for it right now, so sell it or keep it."],
+    [35756, "Gold Lustre Vase", "Trinkets", 1, 35, 0, [], "Just a pretty trinket: nothing asks for it, so sell it or keep it."],
+    [600, "Banded Owlcat", "Familiars", 1, 1900, 0, [], "Equip it on a dragon to add it to your Bestiary and start bonding with it."],
+    [60020, "Ancient Gene Parchment: Riot", "Specialty Items", 1, 0, 0, ["exchange"], "Trade it at Glass and Gloss' Genuine Genes for the Riot tertiary gene, for an ancient breed it works with."],
+    [70519, "Accent: Carry on, Carrion", "Skins", 1, 0, 0, [], "An accent for male Thorntails only, from Riot of Rot 2026."]
   ]},
   brendon: null
 };

@@ -232,9 +232,7 @@
   .fr-hgroup summary{ cursor: pointer; padding: 9px 0; font-weight: 600; font-size: .95rem; }
   .fr-hgroup summary span{ font-weight: 400; font-family: var(--font-serif); font-style: italic; color: var(--ink-soft); margin-left: 6px; }
   .fr-hl{ list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-  .fr-hi{ display: grid; grid-template-columns: 32px minmax(0,1fr); gap: 10px; align-items: start; }
-  .fr-hi .pic{ width: 32px; height: 32px; border-radius: 6px; background: var(--panel-tint); overflow: hidden; }
-  .fr-hi .pic img{ width: 100%; height: 100%; object-fit: contain; display: block; }
+  .fr-hi{ display: block; }
   .fr-hi b{ font-weight: 600; font-size: .92rem; }
   .fr-hi b i{ font-style: normal; font-weight: 400; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .fr-hi small{ display: block; color: var(--ink-soft); font-size: .84rem; margin-top: 2px; line-height: 1.4; }
@@ -1111,7 +1109,6 @@ function renderHoard(){
     return `<details class="fr-hgroup" data-group="${esc(g)}"${open.includes(g) ? " open" : ""}>
       <summary>${esc(g)}<span>${rows.length} kind${rows.length === 1 ? "" : "s"}, ${n} in all</span></summary>
       <ul class="fr-hl">${rows.map(it => `<li class="fr-hi">
-        <span class="pic"><img src="${FR}/static/cms/${FOODS[it[2]] ? "food" : "trinket"}/${it[0]}.png" alt="" loading="lazy" onerror="this.remove()"></span>
         <span><b>${esc(it[1])} <i>×${it[3]}</i></b><small>${hoardUse(it)}</small></span></li>`).join("")}</ul>
     </details>`;
   }).join("");
