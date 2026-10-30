@@ -49,6 +49,11 @@
      breed only with its own; the page checks both, but only knows the
      ancestors written here. Ancient breeds get a badge on their card.
 
+     The breeding planner turns chosen pairs into an agenda of when to send
+     them to the nest, from their cooldowns and the lair's free nests.
+       plan: { nests, pairs: [{ id, dam, sire }], busy: [FR date a nest frees] }
+       dam / sire are dragon ids; busy is added by "Sent to nest".
+
        daily: { picks: [daily id], custom: [{ id, t }], day, done: [daily id] }
        picks are the DAILIES (below) this lair wants on its checklist,
        shown in DAILIES order, each name linking to its Flight Rising page;
@@ -160,7 +165,11 @@
   }
   .fr-dot.F{ border-color: #E58BB0; color: #C2477A; background: #FCE8F0; font-size: .95rem; }
   .fr-dot.M{ border-color: #7FA6D6; color: #3F6FA8; background: #E7EFF9; font-size: .95rem; }
-  .fr-dot.wait{ border-color: var(--dusk); color: var(--dusk-deep); }
+  /* the breeding countdown sits in an egg: narrower at the top */
+  .fr-dot.wait{
+    width: 25px; height: 31px; padding-top: 4px; box-sizing: border-box; border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
+    border-color: var(--dusk); color: var(--dusk-deep);
+  }
   .fr-ready{
     font-family: var(--font-body); font-size: .7rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; cursor: pointer;
     border-radius: 999px; padding: 5px 10px; border: 2px solid var(--sage); color: var(--sage-deep); background: var(--white); line-height: 1.1;
@@ -269,6 +278,26 @@
   .fr-mate .fr-famlink{ font-size: inherit; }
   @media (max-width: 720px){ .fr-mategrid{ grid-template-columns: 1fr; } }
 
+  /* ---- breeding planner ---- */
+  .fr-planadd{ display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 12px; }
+  .fr-planadd .pp-field{ flex: 1 1 150px; min-width: 0; }
+  .fr-planadd .fr-nests{ flex: 0 0 70px; }
+  .fr-planmsg{ margin: 0; font-size: .86rem; color: var(--blade); }
+  .fr-agenda{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .fr-agendo{ display: grid; grid-template-columns: 96px minmax(0,1fr) auto; gap: 4px 14px; align-items: start; padding: 11px 0; border-top: 1px solid var(--line); }
+  .fr-agendo .when b{ display: block; font-family: var(--font-serif); font-size: 1.08rem; font-weight: 600; line-height: 1.2; }
+  .fr-agendo .when small{ color: var(--dusk-deep); font-size: .78rem; }
+  .fr-agendo.is-now .when small{ color: var(--sage-deep); font-weight: 600; }
+  .fr-agendo .what{ min-width: 0; font-size: .95rem; }
+  .fr-agendo .what .fr-famlink{ font-size: inherit; color: var(--ink); font-weight: 600; }
+  .fr-agendo .what small{ display: block; color: var(--ink-soft); font-size: .84rem; line-height: 1.4; margin-top: 2px; }
+  .fr-agendo .what small.warn{ color: var(--blade); }
+  .fr-agendo .acts{ display: flex; align-items: center; gap: 4px; }
+  @media (max-width: 560px){
+    .fr-agendo{ grid-template-columns: minmax(0,1fr) auto; }
+    .fr-agendo .what{ grid-column: 1 / -1; grid-row: 2; }
+  }
+
   /* ---- parents in the form ---- */
   .fr-parent{ display: flex; flex-direction: column; gap: 6px; }
 
@@ -348,6 +377,7 @@
         </label>
         <span class="fr-spacer"></span>
         <button class="pp-btn pp-btn-quiet" id="matesBtn" type="button" aria-controls="mates">Who can breed?</button>
+        <button class="pp-btn pp-btn-quiet" id="planBtn" type="button" aria-controls="planner">Breeding planner</button>
         <button class="pp-btn" id="addBtn" type="button">Add a dragon</button>
       </div>
 
@@ -453,6 +483,24 @@
         </div>
         <div class="fr-mategrid" id="mateList"></div>
         <p class="fr-hint">Flight Rising won't pair dragons that share an ancestor within five generations, and an ancient breed only pairs with its own breed. This only knows the ancestors on this page, so Flight Rising's breeding screen has the final say.</p>
+      </section>
+
+      <!-- ---------------- breeding planner ---------------- -->
+      <section class="pp-panel fr-fam" id="planner" hidden aria-labelledby="planTitle">
+        <div class="fr-famhead">
+          <h2 class="pp-panel-title" id="planTitle">Breeding planner</h2>
+          <span class="fr-spacer"></span>
+          <button class="pp-btn pp-btn-quiet pp-btn-sm" id="planClose" type="button">Close</button>
+        </div>
+        <form class="fr-planadd" id="planAdd">
+          <div class="pp-field"><label for="planDam">Dam</label><select id="planDam"></select></div>
+          <div class="pp-field"><label for="planSire">Sire</label><select id="planSire"></select></div>
+          <button class="pp-btn" type="submit">Add pair</button>
+          <div class="pp-field fr-nests"><label for="planNests">Nests</label><input id="planNests" type="number" min="1" max="5"></div>
+        </form>
+        <p class="fr-planmsg" id="planMsg" role="status" hidden></p>
+        <ul class="fr-agenda" id="agenda"></ul>
+        <p class="fr-hint" id="planHint"></p>
       </section>
 
       <div class="fr-bar">
@@ -658,6 +706,9 @@ const frToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_
 /* an FR date as a whole day number, and the FR date n days on from one */
 const dayNum  = s => { const [y, m, d] = s.split("-").map(Number); return Date.UTC(y, m - 1, d) / 864e5; };
 const addDays = (s, n) => new Date((dayNum(s) + n) * 864e5).toISOString().slice(0, 10);
+/* an FR date for reading: "Nov 11, 2026", or on the agenda "Wed, Nov 11" */
+const fmtDay = s => new Date(s + "T12:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+const fmtAgenda = s => new Date(s + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 
 const STATUS = { keeper:"Keeper", project:"Project", breeder:"Breeder", hatchling:"Hatchling", egg:"Egg", exalt:"To exalt", sale:"For sale", gone:"Gone" };
 const STATUS_ORDER = Object.keys(STATUS);
@@ -669,7 +720,7 @@ const esc = s => String(s == null ? "" : s)
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
 const lairs = {};
-LAIR_KEYS.forEach(k => { lairs[k] = { items: [], daily: cleanDaily(null), ref: null, saving: false, timer: null, sync: ["idle","Connecting"] }; });
+LAIR_KEYS.forEach(k => { lairs[k] = { items: [], daily: cleanDaily(null), plan: cleanPlan(null), ref: null, saving: false, timer: null, sync: ["idle","Connecting"] }; });
 
 let who = "danni", editId = null, famId = null;
 let filter = "all", fltFlight = "all", fltBreed = "all", fltGender = "all", query = "";
@@ -708,6 +759,15 @@ function cleanDaily(d){
   };
 }
 
+function cleanPlan(p){
+  p = p && typeof p === "object" ? p : {};
+  return {
+    nests: Math.max(1, Math.min(5, parseInt(p.nests, 10) || 2)),
+    pairs: Array.isArray(p.pairs) ? p.pairs.filter(x => x && x.id && x.dam && x.sire) : [],
+    busy: Array.isArray(p.busy) ? p.busy.filter(x => typeof x === "string") : []
+  };
+}
+
 const byId = id => cur().items.find(x => x.id === id);
 const childrenOf = id => cur().items.filter(x => (x.sire && x.sire.id === id) || (x.dam && x.dam.id === id));
 const parentName = p => p ? (p.id ? (byId(p.id) || {}).name || "" : p.name || "") : "";
@@ -721,12 +781,13 @@ const renderUrl = frId => `https://www1.flightrising.com/rendern/350/${Math.floo
 const profileUrl = frId => `https://www1.flightrising.com/dragon/${frId}`;
 
 /* ---------------- storage ---------------- */
-function writeCache(k){ try{ localStorage.setItem(LAIRS[k].cache, JSON.stringify({ items: lairs[k].items, daily: lairs[k].daily })); }catch(e){} }
+function writeCache(k){ try{ localStorage.setItem(LAIRS[k].cache, JSON.stringify({ items: lairs[k].items, daily: lairs[k].daily, plan: lairs[k].plan })); }catch(e){} }
 function loadCache(k){
   try{
     const p = JSON.parse(localStorage.getItem(LAIRS[k].cache) || "null");
     if(p && Array.isArray(p.items)) lairs[k].items = migrate(p.items);
     if(p) lairs[k].daily = cleanDaily(p.daily);
+    if(p) lairs[k].plan = cleanPlan(p.plan);
   }catch(e){}
 }
 
@@ -747,7 +808,7 @@ function save(k){
   l.timer = setTimeout(() => {
     l.timer = null;
     l.saving = true;
-    l.ref.set({ items: l.items, daily: l.daily, updated: Date.now() })
+    l.ref.set({ items: l.items, daily: l.daily, plan: l.plan, updated: Date.now() })
       .then(() => setSync(k, "idle", "Synced"))
       .catch(e => { console.error(e); setSync(k, "error", "Couldn't save"); })
       .finally(() => { l.saving = false; });
@@ -760,6 +821,7 @@ function take(k, data){
   const l = lairs[k];
   l.items = migrate(data.items);
   l.daily = cleanDaily(data.daily);
+  l.plan = cleanPlan(data.plan);
   writeCache(k);
   if(k === who) render();
 }
@@ -1096,7 +1158,7 @@ function renderHoard(){
   const total = h.items.reduce((a, it) => a + it[3], 0);
   const worth = h.items.reduce((a, it) => a + it[3] * it[4], 0);
   $("hCount").textContent = `${total} item${total === 1 ? "" : "s"}`;
-  const asOf = new Date(h.asOf + "T12:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+  const asOf = fmtDay(h.asOf);
   $("hHint").textContent = `Counted ${asOf}: worth ${worth.toLocaleString("en-US")} treasure if it all sold.`;
 
   /* the four foods first, then everything else by its Flight Rising category */
@@ -1201,7 +1263,7 @@ const SORT_BY = {
 /* eggs go last whatever the sort */
 const sorted = rows => rows.slice().sort((a,b) => isEgg(a) - isEgg(b) || SORT_BY[sortBy](a,b));
 
-/* A round badge with the days until they can breed, or "Ready", which
+/* An egg badge with the days until they can breed, or "Ready", which
    starts the cooldown when they've bred. Eggs and the gone have neither. */
 function breedBadge(d){
   if(isEgg(d) || d.status === "gone") return "";
@@ -1225,6 +1287,7 @@ function moreInfo(d){
     ${row("Level", d.level ? d.level : "")}
     ${row("For", esc(STATUS[d.status]))}
     ${row("Sire", esc(parentName(d.sire)))}${row("Dam", esc(parentName(d.dam)))}
+    ${row("Can breed", isEgg(d) || d.status === "gone" ? "" : breedIn(d) ? fmtDay(d.breedOn) : "Now")}
     ${d.notes ? `<dd class="note">${esc(d.notes)}</dd>` : ""}
   </dl></div>`;
 }
@@ -1397,8 +1460,132 @@ function renderMates(){
     (unsexed.length ? `<p class="fr-hint wide">Left out until they have a gender: ${unsexed.map(d => esc(d.name)).join(", ")}.</p>` : "");
 }
 
+/* ---------------- breeding planner ----------------
+   The pairs go in, the agenda comes out: each pair on the first day both
+   dragons are off cooldown and a nest is free, soonest first. Each pairing
+   restarts both dragons' cooldowns, so a dragon in two pairs gets its second
+   date from the first, and a nest is taken until the eggs hatch. */
+const NEST_DAYS = 5;   /* five daily incubations, hatching the day after */
+const dayStr = n => new Date(n * 864e5).toISOString().slice(0, 10);
+const plannable = d => !isEgg(d) && d.status !== "gone" && GENDERS[d.gender] && COOLDOWNS[d.breed];
+
+function agenda(){
+  const plan = cur().plan, today = dayNum(frToday());
+  const free = Array(plan.nests).fill(today);
+  plan.busy.map(dayNum).filter(n => n > today).sort((a,b) => b - a).slice(0, plan.nests).forEach((n, i) => { free[i] = n; });
+  const next = {};
+  const on = d => next[d.id] !== undefined ? next[d.id] : Math.max(today, d.breedOn ? dayNum(d.breedOn) : today);
+  const left = plan.pairs.map(p => ({ id: p.id, dam: byId(p.dam), sire: byId(p.sire) })).filter(x => x.dam && x.sire && plannable(x.dam) && plannable(x.sire));
+  const rows = [];
+  while(left.length){
+    let at = 0, soonest = Infinity;
+    left.forEach((x, i) => { const n = Math.max(on(x.dam), on(x.sire)); if(n < soonest){ soonest = n; at = i; } });
+    const x = left.splice(at, 1)[0];
+    free.sort((a,b) => a - b);
+    const day = Math.max(soonest, free[0]);
+    rows.push({ id: x.id, dam: x.dam, sire: x.sire, day: day, damOn: on(x.dam), sireOn: on(x.sire), nestWait: free[0] > soonest });
+    free[0] = day + NEST_DAYS;
+    next[x.dam.id] = day + COOLDOWNS[x.dam.breed];
+    next[x.sire.id] = day + COOLDOWNS[x.sire.breed];
+  }
+  return rows;
+}
+
+function fillPlanPick(id, g){
+  const sel = $(id), was = sel.value;
+  const pool = cur().items.filter(d => plannable(d) && d.gender === g).sort((a,b) => a.name.localeCompare(b.name));
+  sel.innerHTML = `<option value="">Choose…</option>` + pool.map(d => `<option value="${esc(d.id)}">${esc(d.name)} · ${esc(d.breed)}</option>`).join("");
+  sel.value = pool.some(d => d.id === was) ? was : "";
+}
+
+function renderPlanner(){
+  fillPlanPick("planDam", "F");
+  fillPlanPick("planSire", "M");
+  const plan = cur().plan, today = dayNum(frToday());
+  if(document.activeElement !== $("planNests")) $("planNests").value = plan.nests;
+  const famBtn = d => `<button class="fr-famlink" type="button" data-fam="${esc(d.id)}">${esc(d.name)}</button>`;
+  const rows = agenda();
+  $("agenda").innerHTML = rows.map(r => {
+    const left = r.day - today;
+    const why = whyNot(r.dam, r.sire, kin(r.dam), kin(r.sire));
+    const ready = r.damOn === r.sireOn ? `Both ready ${fmtAgenda(dayStr(r.damOn))}.` : `${esc(r.dam.name)} ready ${fmtAgenda(dayStr(r.damOn))}, ${esc(r.sire.name)} ${fmtAgenda(dayStr(r.sireOn))}.`;
+    return `<li class="fr-agendo${left ? "" : " is-now"}">
+      <div class="when"><b>${fmtAgenda(dayStr(r.day))}</b><small>${left ? (left === 1 ? "tomorrow" : `in ${left} days`) : "today"}</small></div>
+      <div class="what">${famBtn(r.dam)} × ${famBtn(r.sire)}
+        <small>${ready}${r.nestWait ? " Waiting on a free nest." : ""} Eggs hatch around ${fmtAgenda(dayStr(r.day + NEST_DAYS))}.</small>
+        ${why ? `<small class="warn">Flight Rising will refuse this pair: ${esc(why.text)}.</small>` : ""}</div>
+      <div class="acts">${left ? "" : `<button class="pp-btn pp-btn-sm" type="button" data-sent="${esc(r.id)}">Sent to nest</button>`}
+        <button class="fr-rm" type="button" data-unplan="${esc(r.id)}" aria-label="Take ${esc(r.dam.name)} and ${esc(r.sire.name)} off the plan">×</button></div>
+    </li>`;
+  }).join("");
+  const eggs = cur().items.filter(isEgg).length;
+  const skipped = cur().items.filter(d => !isEgg(d) && d.status !== "gone" && !plannable(d)).map(d => d.name);
+  $("planHint").textContent = [
+    rows.length ? "" : "Choose a dam and a sire to start the agenda. Add a pair twice to plan a second clutch.",
+    eggs ? `You have ${eggs} egg${eggs === 1 ? "" : "s"} in the lair: the agenda doesn't know which nests they're in, so check one is free.` : "",
+    skipped.length ? `Not on the lists until they have a gender and a known breed: ${skipped.join(", ")}.` : "",
+    "Flight Rising's breeding screen has the final say on relatives from outside the lair."
+  ].filter(Boolean).join(" ");
+}
+
+function planMsg(text){
+  $("planMsg").textContent = text;
+  $("planMsg").hidden = !text;
+}
+
+function openPlanner(){
+  closeForm(); closeFam(); closeMates();
+  planMsg("");
+  renderPlanner();
+  $("planner").hidden = false;
+  $("planBtn").setAttribute("aria-expanded", "true");
+  $("planner").scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+function closePlanner(){ $("planner").hidden = true; $("planBtn").setAttribute("aria-expanded", "false"); }
+$("planBtn").onclick = () => $("planner").hidden ? openPlanner() : closePlanner();
+$("planClose").onclick = closePlanner;
+
+$("planAdd").onsubmit = e => {
+  e.preventDefault();
+  const dam = byId($("planDam").value), sire = byId($("planSire").value);
+  if(!dam || !sire){ planMsg("Choose a dam and a sire first."); return; }
+  const why = whyNot(dam, sire, kin(dam), kin(sire));
+  if(why){ planMsg(`${dam.name} and ${sire.name} can't pair: ${why.text}.`); return; }
+  planMsg("");
+  cur().plan.pairs.push({ id: uid(), dam: dam.id, sire: sire.id });
+  $("planDam").value = $("planSire").value = "";
+  save(who);
+};
+$("planNests").onchange = e => {
+  cur().plan.nests = Math.max(1, Math.min(5, parseInt(e.target.value, 10) || 2));
+  e.target.value = cur().plan.nests;
+  save(who);
+};
+$("agenda").onclick = e => {
+  const fam = e.target.closest("[data-fam]");
+  if(fam){ openFam(fam.dataset.fam); return; }
+  const plan = cur().plan;
+  const off = e.target.closest("[data-unplan]");
+  if(off){
+    plan.pairs = plan.pairs.filter(p => p.id !== off.dataset.unplan);
+    save(who);
+    return;
+  }
+  const sent = e.target.closest("[data-sent]");
+  if(!sent) return;
+  const p = plan.pairs.find(x => x.id === sent.dataset.sent);
+  const dam = p && byId(p.dam), sire = p && byId(p.sire);
+  if(!dam || !sire || !confirm(`Did ${dam.name} and ${sire.name} go to the nest today? That starts their countdowns and takes a nest for ${NEST_DAYS} days.`)) return;
+  const today = frToday();
+  dam.breedOn = addDays(today, COOLDOWNS[dam.breed]);
+  sire.breedOn = addDays(today, COOLDOWNS[sire.breed]);
+  plan.busy = plan.busy.filter(b => dayNum(b) > dayNum(today)).concat(addDays(today, NEST_DAYS));
+  plan.pairs = plan.pairs.filter(x => x.id !== p.id);
+  save(who);
+};
+
 function openMates(){
-  closeForm(); closeFam();
+  closeForm(); closeFam(); closePlanner();
   renderMates();
   $("mates").hidden = false;
   $("matesBtn").setAttribute("aria-expanded", "true");
@@ -1434,6 +1621,7 @@ function render(){
     : `<p class="pp-empty">${cur().items.length ? "No dragons match." : "No dragons here yet. Add the first one."}</p>`;
   if(famId) openFam(famId, true);
   if(!$("mates").hidden) renderMates();
+  if(!$("planner").hidden) renderPlanner();
 }
 
 $("grid").onclick = e => {
