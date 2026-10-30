@@ -2,12 +2,14 @@
    is private, so the page can't read it). Recount and replace a lair's list
    whenever it's out of date; "asOf" is the FR date it was counted.
 
+   turns: gathering turns a day, for the plan on the Gather daily. Leave it
+          out for the usual 10; it's 15 while the clan's energy stays high.
    item: [FR item id, name, FR category, how many, sells for, food points,
           uses, note]
    uses: what Flight Rising itself lists the item as wanted for (USES on the
          page); note: anything else worth saying, in our own words. */
 window.FR_HOARD = {
-  danni: { asOf: "2026-10-30", items: [
+  danni: { asOf: "2026-10-30", turns: 15, items: [
     [2, "Nebula Floaters", "Seafood", 1, 35, 4, ["sophie"]],
     [4, "Aether Hermit", "Seafood", 5, 30, 3, []],
     [5, "Hardshell", "Insect", 1, 25, 3, ["den"]],
@@ -39,7 +41,7 @@ window.FR_HOARD = {
     [172, "Balsas Anole", "Meat", 3, 15, 2, ["den"]],
     [173, "Glow Mushroom", "Plant", 4, 20, 2, ["swipp"]],
     [175, "Marsh Choker", "Plant", 2, 20, 2, []],
-    [177, "Clay", "Minerals & Ores", 1, 15, 0, ["swipp", "den"], "A building material, dug up by Mining."],
+    [177, "Clay", "Minerals & Ores", 1, 15, 0, ["swipp", "den"], "A building material, found by Digging."],
     [893, "All-Seeing Shroom", "Holiday Items", 2, 0, 0, ["exchange"], "Riot of Rot festival currency: spend it at Festive Favors while the festival is on."],
     [3085, "Yellow-Tinged Featherduster", "Seafood", 1, 17, 2, ["den"]],
     [8106, "Dwarf Fawn", "Meat", 1, 17, 2, ["den"]],
