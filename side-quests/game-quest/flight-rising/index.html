@@ -570,7 +570,7 @@ const DAILIES = [
 const DAILY_IDS = DAILIES.map(d => d[0]);
 
 /* ---------------- what to gather today ----------------
-   Each breed's diet, from the Flight Rising encyclopedia. The 10 gathering
+   Each breed's diet, from the Flight Rising encyclopedia. The day's gathering
    turns are split across the food the lair eats: a dragon with one food
    counts wholly toward it, one with four counts a quarter toward each. */
 const DIETS = {
@@ -644,7 +644,10 @@ function gatherHint(){
   const where = fest
     ? `in the ${fest.flight} region for ${fest.name}${fest.first ? " (from 6am)" : ""}: every pull there also drops festival currency.`
     : `in the ${Object.keys(FLIGHTS)[dayNum(day) % 11]} region (a different one each day).`;
-  const plan = gatherPlan(cur().items, 10);
+  /* 10 a day, or the number counted in hoard-data.js for a lair that has the
+     5 extra for keeping its dragons' energy high */
+  const counted = (window.FR_HOARD || {})[who];
+  const plan = gatherPlan(cur().items, counted && counted.turns || 10);
   return plan
     ? plan.map(r => GATHER_FOR[r.f] + " ×" + r.n).join(" · ") + ", " + where
     : "Gather " + where + " Give your dragons their breeds to get a food mix.";
