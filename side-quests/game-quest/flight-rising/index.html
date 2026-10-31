@@ -205,6 +205,7 @@
   .fr-more dt{ font-family: var(--font-body); font-size: .62rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--gold-deep); padding-top: 3px; }
   .fr-more dd{ margin: 0; overflow-wrap: anywhere; }
   .fr-more dd i{ font-style: normal; color: var(--ink-soft); }
+  .fr-more .fr-stars{ color: var(--gold-deep); letter-spacing: .04em; }
   .fr-more .note{ grid-column: 1 / -1; font-family: var(--font-serif); font-style: italic; color: var(--ink-soft); margin-top: 4px; }
   .fr-edit{
     position: absolute; top: 7px; right: 7px; width: 28px; height: 28px; border-radius: 50%;
@@ -584,6 +585,15 @@ const BREEDS = ["Aberration","Aether","Auraboa","Banescale","Bogsneak","Chorus",
 const ANCIENT = ["Aberration","Aether","Auraboa","Banescale","Chorus","Cirrus","Dusthide","Everlux","Gaoler",
   "Sandsurge","Thorntail","Undertide","Veilspun","Vigil"];
 const isAncient = d => ANCIENT.includes(d.breed);
+/* Each breed's rarity, per the encyclopedia's Breed Rarity page, as stars out
+   of 5: it goes by how a breed is obtained, and every ancient is Common. */
+const RARITY = ["Plentiful","Common","Uncommon","Limited","Rare"];
+const BREED_STARS = { Fae:1, Guardian:1, Mirror:1, Tundra:1, Pearlcatcher:2, Ridgeback:2, Snapper:2, Spiral:2,
+  Bogsneak:3, Fathom:3, Obelisk:3, Skydancer:3, Imperial:4, Nocturne:4, Coatl:5, Wildclaw:5 };
+function rarityStars(d){
+  const n = isAncient(d) ? 2 : BREED_STARS[d.breed];
+  return n ? `<span class="fr-stars">${"★".repeat(n)}${"☆".repeat(5 - n)}</span> <i>${RARITY[n - 1]}</i>` : "";
+}
 
 /* The dailies to choose from, in the order they show on the list, each with
    its page on Flight Rising. Ids are stored in daily.picks and daily.done, so
@@ -1285,6 +1295,7 @@ function moreInfo(d){
   return `<div class="fr-more" aria-hidden="true"><dl>
     ${row("Primary", colour(0))}${row("Secondary", colour(1))}${row("Tertiary", colour(2))}
     ${paired ? "" : row("Genes", esc(d.genes))}
+    ${row("Rarity", rarityStars(d))}
     ${row("Level", d.level ? d.level : "")}
     ${row("For", esc(STATUS[d.status]))}
     ${row("Sire", esc(parentName(d.sire)))}${row("Dam", esc(parentName(d.dam)))}
