@@ -48,6 +48,8 @@
      that share an ancestor within five generations, and pairs an ancient
      breed only with its own; the page checks both, but only knows the
      ancestors written here. Ancient breeds get a badge on their card.
+     Each pair that can go together links to its colour spectrum on the
+     Flight Rising Color Schemer.
 
      The breeding planner turns chosen pairs into an agenda of when to send
      them to the nest, from their cooldowns and the lair's free nests.
@@ -277,6 +279,7 @@
   .fr-mate p.no{ color: var(--ink-soft); }
   .fr-mate p i{ font-style: normal; color: var(--ink-soft); }
   .fr-mate .fr-famlink{ font-size: inherit; }
+  .fr-mate .fr-spectrum{ color: var(--accent-deep); text-decoration: underline; text-underline-offset: 2px; }
   @media (max-width: 720px){ .fr-mategrid{ grid-template-columns: 1fr; } }
 
   /* ---- breeding planner ---- */
@@ -1437,6 +1440,29 @@ function whyNot(a, b, ka, kb){
 const ancientTag = d => isAncient(d) ? `<span class="fr-anc" title="An ancient breed: only pairs with other ${esc(d.breed)}s">Ancient</span>` : "";
 const whenReady = d => { const w = breedIn(d); return w ? (w === 1 ? "tomorrow" : `in ${w} days`) : "ready"; };
 
+/* Flight Rising's colours in its own order: the Color Schemer's links number
+   them from 1. */
+const FR_COLOURS = ("maize cream antique white moon ice orca platinum silver dust grey smoke gloom lead shale flint " +
+  "charcoal coal oilslick black obsidian eldritch midnight shadow blackberry mulberry plum wisteria thistle fog mist " +
+  "lavender heather purple orchid amethyst nightshade violet grape royal eggplant iris storm twilight indigo sapphire " +
+  "navy cobalt ultramarine blue periwinkle lapis splash cornflower sky stonewash overcast steel denim abyss phthalo " +
+  "azure caribbean teal cerulean cyan robin aqua turquoise spruce pistachio seafoam mint jade spearmint thicket peacock " +
+  "emerald shamrock jungle hunter forest camo algae swamp avocado green fern mantis pear leaf radioactive honeydew " +
+  "peridot chartreuse spring crocodile olive murk moss goldenrod amber honey lemon yellow grapefruit banana sanddollar " +
+  "flaxen ivory buttercup gold metals marigold sunshine saffron sunset peach cantaloupe orange bronze terracotta carrot " +
+  "fire pumpkin tangerine cinnamon caramel sand tan beige stone taupe slate driftwood latte dirt clay sable umber soil " +
+  "hickory tarnish ginger brown chocolate auburn copper rust tomato vermilion ruby cherry crimson garnet sanguine blood " +
+  "maroon berry red strawberry cerise carmine brick coral blush cottoncandy watermelon magenta fuchsia raspberry wine " +
+  "mauve pink bubblegum rose pearl").split(" ");
+
+/* A pair's spectrum link, mother's colour then father's for each of primary,
+   secondary and tertiary; nothing if either has a colour missing or misspelled. */
+function spectrumLink(a, b){
+  const [mum, dad] = a.gender === "F" ? [a, b] : [b, a];
+  const ids = [0, 1, 2].flatMap(i => [mum, dad].map(d => FR_COLOURS.indexOf(String(d.colours[i]).toLowerCase().replace(/\s/g, "")) + 1));
+  return ids.includes(0) ? "" : ` <a class="fr-spectrum" href="https://fr.fintastic.net/?id=${ids.join(",")},1,1" target="_blank" rel="noopener">Spectrum</a>`;
+}
+
 function renderMates(){
   const pool = cur().items.filter(d => !isEgg(d) && d.status !== "gone" && GENDERS[d.gender]);
   const kins = new Map(pool.map(d => [d.id, kin(d)]));
@@ -1449,7 +1475,7 @@ function renderMates(){
       const ok = [], close = [], breed = [];
       others.forEach(o => {
         const why = whyNot(d, o, kins.get(d.id), kins.get(o.id));
-        if(!why) ok.push(`${famBtn(o)} <i>${whenReady(o)}</i>`);
+        if(!why) ok.push(`${famBtn(o)} <i>${whenReady(o)}</i>${spectrumLink(d, o)}`);
         /* an ancient's own row says it once; a modern's names the ancient's breed */
         else if(why.breed) breed.push(isAncient(d) ? famBtn(o) : `${famBtn(o)} <i>only pairs with ${esc(o.breed)}s</i>`);
         else close.push(`${famBtn(o)} <i>${esc(why.text)}</i>`);
