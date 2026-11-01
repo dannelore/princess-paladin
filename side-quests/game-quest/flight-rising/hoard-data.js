@@ -9,7 +9,7 @@
    uses: what Flight Rising itself lists the item as wanted for (USES on the
          page); note: anything else worth saying, in our own words. */
 window.FR_HOARD = {
-  danni: { asOf: "2026-10-31", turns: 15, items: [
+  danni: { asOf: "2026-11-01", turns: 15, items: [
     [2, "Nebula Floaters", "Seafood", 1, 35, 4, ["sophie"]],
     [4, "Aether Hermit", "Seafood", 5, 30, 3, []],
     [5, "Hardshell", "Insect", 1, 25, 3, ["den"]],
@@ -46,18 +46,20 @@ window.FR_HOARD = {
     [177, "Clay", "Minerals & Ores", 1, 15, 0, ["swipp", "den"], "A building material, found by Digging."],
     [671, "Tiny Feathers", "Organics", 1, 21, 0, ["baldwin"]],
     [687, "Ambush", "Accessory Stone", 1, 500, 0, [], "A battle stone: the dragon wearing it strikes first when a battle begins."],
-    [893, "All-Seeing Shroom", "Holiday Items", 46, 0, 0, ["exchange"], "Riot of Rot festival currency: spend it at Festive Favors while the festival is on."],
+    [893, "All-Seeing Shroom", "Holiday Items", 55, 0, 0, ["exchange"], "Riot of Rot festival currency: spend it at Festive Favors while the festival is on."],
     [1888, "Orange Goo", "Transmutation", 1, 0, 0, ["baldwin", "den"]],
     [2413, "Honeycomb Fragment", "Plant", 1, 18, 2, ["sophie"]],
     [3085, "Yellow-Tinged Featherduster", "Seafood", 1, 17, 2, ["den"]],
     [8106, "Dwarf Fawn", "Meat", 1, 17, 2, ["den"]],
-    [13573, "Primary Gene: Cherub", "Specialty Items", 1, 18500, 0, [], "Changes one dragon's primary gene to Cherub, and is used up."],
     [15121, "Jagged Beak", "Meat", 4, 18, 2, []],
     [22373, "Fine Filament", "Organics", 1, 20, 0, ["swipp"]],
     [22397, "Display Plumes", "Organics", 2, 20, 0, ["baldwin", "den"]],
     [22399, "Rosy Similis", "Seafood", 2, 17, 2, []],
     [26423, "Grey Clay", "Minerals & Ores", 1, 82, 0, [], "A pricier clay: nothing asks for it right now, so sell it or keep it."],
+    [27378, "Tertiary Gene: Ringlets", "Specialty Items", 1, 15500, 0, [], "Changes one dragon's tertiary gene to Ringlets, and is used up."],
+    [28942, "Tertiary Gene: Peacock", "Specialty Items", 1, 15000, 0, ["den"], "Changes one dragon's tertiary gene to Peacock, and is used up."],
     [60020, "Ancient Gene Parchment: Riot", "Specialty Items", 1, 0, 0, ["exchange"], "Trade it at Glass and Gloss' Genuine Genes for the Riot tertiary gene, for an ancient breed it works with."],
+    [62374, "Secondary Gene: Chess", "Specialty Items", 1, 16000, 0, [], "Changes one dragon's secondary gene to Chess, and is used up."],
     [70519, "Accent: Carry on, Carrion", "Skins", 1, 0, 0, [], "An accent for male Thorntails only, from Riot of Rot 2026."]
   ]},
   brendon: { asOf: "2026-10-31", turns: 15, items: [

@@ -641,7 +641,8 @@ const DIETS = {
   Thorntail:"meat seafood insects", Tundra:"plants", Undertide:"seafood plants",
   Veilspun:"insects meat plants seafood", Vigil:"insects meat plants seafood", Wildclaw:"meat"
 };
-const GATHER_FOR = { insects:"Insect Catching", meat:"Hunting", seafood:"Fishing", plants:"Foraging" };
+/* in the order of Flight Rising's gathering links */
+const GATHER_FOR = { meat:"Hunting", seafood:"Fishing", insects:"Insect Catching", plants:"Foraging" };
 
 /* Days a dragon can't breed for after breeding or hatching, from each
    breed's encyclopedia page. */
@@ -652,7 +653,7 @@ const COOLDOWNS = {
   Spiral:20, Thorntail:20, Tundra:15, Undertide:20, Veilspun:20, Vigil:20, Wildclaw:35
 };
 
-/* Turns per gathering type, biggest first, or null if no dragon has a known diet. */
+/* Turns per gathering type, in link order, or null if no dragon has a known diet. */
 function gatherPlan(items, turns){
   const unit = 12;   /* a whole, half, third or quarter dragon are all whole twelfths */
   const want = {};
@@ -670,7 +671,7 @@ function gatherPlan(items, turns){
   /* hand out the leftover turns by largest remainder, ties to the bigger appetite */
   let left = turns - rows.reduce((a, r) => a + r.n, 0);
   rows.slice().sort((a,b) => b.rest - a.rest || b.w - a.w).forEach(r => { if(left > 0){ r.n++; left--; } });
-  return rows.filter(r => r.n).sort((a,b) => b.n - a.n || b.w - a.w);
+  return Object.keys(GATHER_FOR).map(f => rows.find(r => r.f === f)).filter(r => r && r.n);
 }
 
 /* The elemental festival on an FR date ("YYYY-MM-DD"), or null. Per Flight
@@ -695,7 +696,7 @@ function festivalOn(day){
   return null;
 }
 
-/* e.g. "Insect Catching ×5 · Foraging ×3 · Hunting ×1 · Fishing ×1, in the Earth region (…)" */
+/* e.g. "Hunting ×1 · Fishing ×1 · Insect Catching ×5 · Foraging ×3, in the Earth region (…)" */
 function gatherHint(){
   const day = frToday();
   const fest = festivalOn(day);
