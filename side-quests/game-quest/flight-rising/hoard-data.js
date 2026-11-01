@@ -46,7 +46,7 @@ window.FR_HOARD = {
     [177, "Clay", "Minerals & Ores", 1, 15, 0, ["swipp", "den"], "A building material, found by Digging."],
     [671, "Tiny Feathers", "Organics", 1, 21, 0, ["baldwin"]],
     [687, "Ambush", "Accessory Stone", 1, 500, 0, [], "A battle stone: the dragon wearing it strikes first when a battle begins."],
-    [893, "All-Seeing Shroom", "Holiday Items", 55, 0, 0, ["exchange"], "Riot of Rot festival currency: spend it at Festive Favors while the festival is on."],
+    [893, "All-Seeing Shroom", "Holiday Items", 56, 0, 0, ["exchange"], "Riot of Rot festival currency: spend it at Festive Favors while the festival is on."],
     [1888, "Orange Goo", "Transmutation", 1, 0, 0, ["baldwin", "den"]],
     [2413, "Honeycomb Fragment", "Plant", 1, 18, 2, ["sophie"]],
     [3085, "Yellow-Tinged Featherduster", "Seafood", 1, 17, 2, ["den"]],
@@ -58,6 +58,7 @@ window.FR_HOARD = {
     [26423, "Grey Clay", "Minerals & Ores", 1, 82, 0, [], "A pricier clay: nothing asks for it right now, so sell it or keep it."],
     [27378, "Tertiary Gene: Ringlets", "Specialty Items", 1, 15500, 0, [], "Changes one dragon's tertiary gene to Ringlets, and is used up."],
     [28942, "Tertiary Gene: Peacock", "Specialty Items", 1, 15000, 0, ["den"], "Changes one dragon's tertiary gene to Peacock, and is used up."],
+    [35261, "Old Tin Pot", "Trinkets", 1, 85, 0, [], "Just a trinket: nothing asks for it, so sell it or keep it."],
     [60020, "Ancient Gene Parchment: Riot", "Specialty Items", 1, 0, 0, ["exchange"], "Trade it at Glass and Gloss' Genuine Genes for the Riot tertiary gene, for an ancient breed it works with."],
     [62374, "Secondary Gene: Chess", "Specialty Items", 1, 16000, 0, [], "Changes one dragon's secondary gene to Chess, and is used up."],
     [70519, "Accent: Carry on, Carrion", "Skins", 1, 0, 0, [], "An accent for male Thorntails only, from Riot of Rot 2026."]
