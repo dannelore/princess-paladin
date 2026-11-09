@@ -359,92 +359,138 @@ function buildWeek(){
     return true;
   };
 
-  const chosen = new Set();
-  const skippedForNoMatch = [];
-  let beefCount = 0;
-  let pastaCount = 0;
+  const isQuick = (r) => hasTag(r, 'quick');
+  const MIN_QUICK = 2;        // at least this many "quick" dinners per week
+  const BUILD_ATTEMPTS = 200; // random tries; the best-scoring week wins
 
   // Days already assigned (by hand or from a previous build) count toward
-  // the no-repeat rule and the beef/pasta caps, same as picks made below.
+  // the no-repeat rule, the beef/pasta caps, and the quick minimum, same as
+  // picks made below.
+  const preChosen = new Set();
+  let preBeef = 0, prePasta = 0, preQuick = 0;
+  const openDays = [];
   DAY_KEYS.forEach(k => {
     const existing = days[k].dinner;
-    if (!existing || existing === 'SKIP') return;
-    chosen.add(existing);
+    if (!existing){ openDays.push(k); return; }
+    if (existing === 'SKIP') return; // eating out — stays as is
+    preChosen.add(existing);
     const r = getRecipe(existing);
-    if (r && hasTag(r, 'beef')) beefCount++;
-    if (r && hasTag(r, 'pasta')) pastaCount++;
+    if (r && hasTag(r, 'beef')) preBeef++;
+    if (r && hasTag(r, 'pasta')) prePasta++;
+    if (r && isQuick(r)) preQuick++;
   });
+  if (!openDays.length) return; // every night is already set — nothing to build
 
-  DAY_KEYS.forEach(k => {
-    const existing = days[k].dinner;
-    if (existing) return; // already set (recipe id or SKIP) — leave it alone
+  function shuffled(arr){
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
 
-    const dayTagFilter = DAY_TAG_RULES[k];
-    let base = recipes.filter(r => passesExclusions(r, k));
-    if (dayTagFilter) base = base.filter(dayTagFilter);
+  // One random pass over the open days. Days are filled in a shuffled order
+  // so the quick minimum doesn't always land on the last nights of the week.
+  function attemptWeek(){
+    const picks = {};
+    const skipped = [];
+    const chosen = new Set(preChosen);
+    let beefCount = preBeef, pastaCount = prePasta, quickCount = preQuick;
+    let rotationBreaks = 0;
+    const order = shuffled(openDays);
 
-    // No meal repeats within the same week, and the beef/pasta caps below,
-    // are hard rules — never loosened. The frequency rule (occasional =
-    // hasn't run in 3 weeks, biweekly = hasn't run in 1) is preferred but
-    // gets loosened as a last resort if nothing else fits the day — and
-    // when it does, a "quick" recipe is preferred for the repeat.
-    const dayCandidates = base.filter(r => !chosen.has(r.id));
-    let candidates = dayCandidates.filter(r => eligible(r));
-    let usedFallback = false;
+    order.forEach((k, idx) => {
+      const dayTagFilter = DAY_TAG_RULES[k];
+      let base = recipes.filter(r => passesExclusions(r, k));
+      if (dayTagFilter) base = base.filter(dayTagFilter);
 
-    if (!candidates.length){
-      // Nothing respects the frequency cooldown for this day — fall back to
-      // ignoring it rather than leaving the day empty.
-      candidates = dayCandidates;
-      usedFallback = true;
-    }
+      // Hard rules — never loosened: no meal repeats within the same week,
+      // at most 2 beef dinners AND at most 2 pasta dinners per week (separate
+      // caps; a recipe tagged both needs room under each).
+      base = base.filter(r => !chosen.has(r.id));
+      if (beefCount >= 2) base = base.filter(r => !hasTag(r, 'beef'));
+      if (pastaCount >= 2) base = base.filter(r => !hasTag(r, 'pasta'));
 
-    if (!candidates.length){
-      // still nothing at all for this day — leave it empty
-      skippedForNoMatch.push(DAY_LABELS[k]);
-      return;
-    }
+      if (!base.length){
+        // nothing at all fits this day — leave it empty
+        skipped.push(k);
+        return;
+      }
 
-    // At most 2 beef dinners per week AND at most 2 pasta dinners per week —
-    // separate hard caps, never loosened. A recipe tagged both counts against
-    // both and needs room under each.
-    let filtered = candidates;
-    if (beefCount >= 2) filtered = filtered.filter(r => !hasTag(r, 'beef'));
-    if (pastaCount >= 2) filtered = filtered.filter(r => !hasTag(r, 'pasta'));
+      // The frequency rule (occasional = hasn't run in 3 weeks, biweekly =
+      // hasn't run in 1) is preferred, but gets loosened as a last resort
+      // rather than leaving the day empty — and when it does, a "quick"
+      // recipe is preferred for the repeat.
+      let candidates = base.filter(r => eligible(r));
+      let usedFallback = false;
+      if (!candidates.length){
+        candidates = base;
+        usedFallback = true;
+      }
 
-    if (!filtered.length){
-      skippedForNoMatch.push(DAY_LABELS[k]);
-      return;
-    }
+      // At least 2 "quick" dinners per week. Once the open nights left
+      // (this one included) are only just enough to reach that, this night
+      // has to be quick if anything quick fits it — even a quick recipe
+      // that's ahead of its normal rotation.
+      const quickNeeded = MIN_QUICK - quickCount;
+      const openLeft = order.length - idx;
+      if (quickNeeded > 0 && quickNeeded >= openLeft){
+        const quickInRotation = candidates.filter(isQuick);
+        const quickAny = base.filter(isQuick);
+        if (quickInRotation.length) candidates = quickInRotation;
+        else if (quickAny.length){ candidates = quickAny; usedFallback = true; }
+      }
 
-    let pool;
-    if (usedFallback) {
-      // Repeating a recipe ahead of its normal rotation — prefer a "quick" one.
-      const quickOnes = filtered.filter(r => hasTag(r, 'quick'));
-      pool = quickOnes.length ? quickOnes : filtered;
-    } else {
-      // "Current Favorite" recipes go in every week — if one fits this day's
-      // rules and hasn't been placed yet, it wins the slot over everything else.
-      const favorites = filtered.filter(r => r.frequency === 'current-favorite');
-      pool = favorites.length ? favorites : filtered;
-    }
+      let pool;
+      if (usedFallback) {
+        // Repeating a recipe ahead of its normal rotation — prefer a "quick" one.
+        const quickOnes = candidates.filter(isQuick);
+        pool = quickOnes.length ? quickOnes : candidates;
+      } else {
+        // "Current Favorite" recipes go in every week — if one fits this day's
+        // rules and hasn't been placed yet, it wins the slot over everything else.
+        const favorites = candidates.filter(r => r.frequency === 'current-favorite');
+        pool = favorites.length ? favorites : candidates;
+      }
 
-    const pick = pool[Math.floor(Math.random() * pool.length)];
-    days[k].dinner = pick.id;
-    chosen.add(pick.id);
-    
-    if (hasTag(pick, 'beef')) beefCount++;
-    if (hasTag(pick, 'pasta')) pastaCount++;
-  });
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+      picks[k] = pick.id;
+      chosen.add(pick.id);
+      if (usedFallback) rotationBreaks++;
+      if (hasTag(pick, 'beef')) beefCount++;
+      if (hasTag(pick, 'pasta')) pastaCount++;
+      if (isQuick(pick)) quickCount++;
+    });
+
+    return { picks, skipped, quickCount, quickShort: Math.max(0, MIN_QUICK - quickCount), rotationBreaks };
+  }
+
+  // Keep the best of many random weeks: fewest empty nights first, then
+  // closest to the quick minimum, then fewest recipes pulled ahead of their
+  // rotation. Stops early once a week is perfect on all three.
+  const worse = (a, b) =>
+    a.skipped.length - b.skipped.length || a.quickShort - b.quickShort || a.rotationBreaks - b.rotationBreaks;
+  let best = null;
+  for (let i = 0; i < BUILD_ATTEMPTS; i++){
+    const tryWeek = attemptWeek();
+    if (!best || worse(tryWeek, best) < 0) best = tryWeek;
+    if (!best.skipped.length && !best.quickShort && !best.rotationBreaks) break;
+  }
+
+  Object.entries(best.picks).forEach(([k, id]) => { days[k].dinner = id; });
 
   const plan = getPlan();
   plan[currentWeek] = days;
   saveJSON(PLAN_KEY, plan);
   render();
 
-  if (skippedForNoMatch.length){
-    alert(`Left ${skippedForNoMatch.join(' & ')} empty — nothing fits without breaking a rule. Reminder: Sun/Tue need "6/8 servings," Mon/Wed/Fri need "2/4 servings," Sat needs "kid friendly," Thu needs "Repeat this: Date Night Default," slow cooker meals are Sun/Wed/Fri only, kid-friendly meals are Saturday only, Date Night Default meals are Thursday only, at least 2 meals per week must be tagged "quick," at most 2 meals can be beef and at most 2 can be pasta (separate caps), and no meal repeats in the same week. Add more matching recipes, or fill it in manually.`);
+  const notes = [];
+  if (best.skipped.length){
+    const emptyDays = DAY_KEYS.filter(k => best.skipped.includes(k)).map(k => DAY_LABELS[k]);
+    notes.push(`Left ${emptyDays.join(' & ')} empty — nothing fits without breaking a rule. Reminder: Sun/Tue need "6/8 servings," Mon/Wed/Fri need "2/4 servings," Sat needs "kid friendly," Thu needs "Repeat this: Date Night Default," slow cooker meals are Sun/Wed/Fri only, kid-friendly meals are Saturday only, Date Night Default meals are Thursday only, at most 2 meals can be beef and at most 2 can be pasta (separate caps), and no meal repeats in the same week. Add more matching recipes, or fill it in manually.`);
   }
+  if (best.quickShort){
+    notes.push(`Only ${best.quickCount} "quick" dinner${best.quickCount === 1 ? '' : 's'} this week — the goal is at least ${MIN_QUICK}, but no quick recipe fits the open nights without breaking a rule (a quick recipe still has to match that night's servings/kid-friendly rules and the beef/pasta caps). Tag more recipes "quick," or swap one in by hand.`);
+  }
+  if (notes.length) alert(notes.join('\n\n'));
 }
 
 // Figures out, for each day, whether lunch is leftovers — and from which dinner.
