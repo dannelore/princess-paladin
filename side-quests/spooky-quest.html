@@ -484,6 +484,18 @@ const DOC_PATH  = "sidequest/spooky-list";
 const CACHE_KEY = "pp_spooky_list";
 let fltYear = "all";
 
+/* A link can open the page on one season: ?year=2026 picks that year in the
+   Year filter and switches to Everything, because a finished season is all
+   watched titles and Current would hide every one of them. The Archive links
+   here this way. The year is held in linkYear until the list has loaded and
+   the Year filter actually has it to select. */
+let linkYear = ((new URLSearchParams(location.search).get("year") || "").match(/^\d{4}$/) || [""])[0];
+if(linkYear){
+  filter = "all";
+  document.querySelectorAll(".cq-filter").forEach(b =>
+    b.setAttribute("aria-pressed", b.dataset.filter === "all" ? "true" : "false"));
+}
+
 /* ---------------- spooky season ----------------
    The season runs 1 September to 31 October. Outside those dates we still
    pick a "current" season year so history keeps working: before September
@@ -557,7 +569,7 @@ function seenThisYear(item){
 function renderYearFilter(){
   const sel = $("fltYear");
   if(!sel) return;
-  const keep = sel.value;
+  const keep = linkYear || sel.value;
   const years = new Set();
   state.items.forEach(i => (i.years || []).forEach(y => years.add(y)));
   sel.innerHTML = '<option value="all">Any year</option>';
@@ -568,6 +580,7 @@ function renderYearFilter(){
     sel.appendChild(o);
   });
   sel.value = years.has(parseInt(keep, 10)) ? keep : "all";
+  if(sel.value === linkYear) linkYear = "";   // applied — the select is in charge from here
   fltYear = sel.value;
 }
 
@@ -691,9 +704,9 @@ extraCardParts = function(item){
 
 extraNewItemDefaults = { years: [] };
 extraRenderSteps = [renderYearFilter, renderBanner];
-extraReset = function(){ fltYear = "all"; $("fltYear").value = "all"; };
+extraReset = function(){ linkYear = ""; fltYear = "all"; $("fltYear").value = "all"; };
 
-$("fltYear").onchange = e => { fltYear = e.target.value; render(); };
+$("fltYear").onchange = e => { linkYear = ""; fltYear = e.target.value; render(); };
 
 boot();
 </script>
