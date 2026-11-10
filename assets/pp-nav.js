@@ -154,7 +154,10 @@ window.PPNav = (function(){
 
         { name:'Couch Quest', href:'/side-quests/couch-quest.html', indexLabel:'Couch Quest',
           note:'Watch list', pages:[
-          { label:'Spooky Quest',  href:'/side-quests/spooky-quest.html',  note:'1 September – 31 October' },
+          /* `season` keeps it out of the mini navbar outside those dates
+             (MM-DD/MM-DD) — see inSeason(). It's still on the links page. */
+          { label:'Spooky Quest',  href:'/side-quests/spooky-quest.html',  note:'1 September – 31 October',
+            season:'09-01/10-31' },
           { label:'Watch History', href:'/side-quests/watch-history.html', note:'Every watch list, in the order you finished them' }
         ]},
 
@@ -187,6 +190,11 @@ window.PPNav = (function(){
       sections: [
         { name:'Archive', href:'/archive/', indexLabel:'The Archive',
           note:'Finished quests, kept as they were', pages:[] },
+
+        /* A finished season, not a retired page: Spooky Quest stays under
+           Couch Quest for next year. ?year= opens it on that season. */
+        { name:'Spooky Season 2026', href:'/side-quests/spooky-quest.html?year=2026', indexLabel:'Spooky Season 2026',
+          note:'Sep 1 – Oct 31 2026, nineteen films', pages:[] },
 
         { name:'The Bach', href:'/bach/', indexLabel:'The Bach',
           note:'Party plan, Oct 9–11 2026', pages:[
@@ -250,6 +258,15 @@ window.PPNav = (function(){
     return !(siblings || []).some(function(p){
       return normalize(p.href) === here() && hashOf(p.href) && location.hash === hashOf(p.href);
     });
+  }
+
+  /* A page with season:'MM-DD/MM-DD' is only in season between those dates,
+     both ends included. Anything without one always is. */
+  function inSeason(p){
+    if(!p.season) return true;
+    var r = p.season.split('/'), d = new Date();
+    var mmdd = ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+    return mmdd >= r[0] && mmdd <= r[1];
   }
 
   /* Every destination in a folder, section indexes included, in menu order. */
@@ -370,7 +387,11 @@ window.PPNav = (function(){
     var sec = currentSection(folder);
     if(!sec || !(sec.pages || []).length) return '';
 
-    var rows = [indexPage(sec)].concat(sec.pages);
+    /* A seasonal page drops out when its season is over, unless you're
+       standing on it — then it stays so the bar still shows where you are. */
+    var rows = [indexPage(sec)].concat(sec.pages).filter(function(p){
+      return inSeason(p) || normalize(p.href) === here();
+    });
     var html = '';
 
     rows.forEach(function(p){

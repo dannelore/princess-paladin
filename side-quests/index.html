@@ -111,7 +111,11 @@
      falls inside that window (the script at the bottom works it out): it
      takes its --season colour as a border and a tint, and gets an
      "In season" tag. To add another: data-season plus a --season style on
-     the link, nothing else. */
+     the link, nothing else.
+     Add data-season-only as well and the spin-off is hidden outside its
+     window and comes back by itself when the season opens. Spooky Quest does
+     this; out of season its finished year is reached from the Archive. */
+  .sq-kid[hidden]{ display: none; }
   .sq-kid.is-in-season{
     border: 1.5px solid var(--season, var(--burgundy));
     background: color-mix(in srgb, var(--season, var(--burgundy)) 8%, #fff);
@@ -227,7 +231,7 @@
         </a>
         <div class="sq-kids">
           <a class="sq-kid" href="/side-quests/spooky-quest.html"
-             data-season="09-01/10-31" style="--season:#C96A2E;">
+             data-season="09-01/10-31" data-season-only style="--season:#C96A2E;">
             <svg class="sq-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <!-- stem + curl -->
               <path d="M24 13 V8" stroke="#6D8259" stroke-width="2.6" stroke-linecap="round"/>
@@ -462,6 +466,8 @@
     var range = el.getAttribute('data-season').split('/');
     if(today >= day(range[0], y) && today <= day(range[1], y)){
       el.classList.add('is-in-season');
+    } else if(el.hasAttribute('data-season-only')){
+      el.hidden = true;
     }
   });
 })();
