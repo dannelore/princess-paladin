@@ -31,9 +31,9 @@
 
      ribbon dropdown  lists a folder's SECTION INDEXES only. It's there to get
                       you across the site, so it stays short — a folder with
-                      one section (Castle, Templates, Paladin) gets a plain
-                      link and no menu at all. Princess and Side Quests have
-                      enough sections to be worth a dropdown.
+                      one section (Templates, Paladin) gets a plain link and
+                      no menu at all. Princess, Castle Keep and Side Quests
+                      have enough sections to be worth a dropdown.
 
      mini navbar      the row under the ribbon. Lists the section you're
                       standing in: its index first, then its pages. This is
@@ -108,12 +108,17 @@ window.PPNav = (function(){
       ]
     },
 
+    /* Meal Planner is a section of its own so it's in the Castle Keep
+       dropdown, one tap from anywhere. The two recipe pages go with it:
+       all three work off the same recipes. */
     {
       key: 'castle', label: 'Castle Keep', href: '/castle/', nav: true,
       sections: [
         { name:'Castle Keep', href:'/castle/', indexLabel:'Castle Keep',
-          note:'Household tools', pages:[
-          { label:'Meal Planner',        href:'/castle/meal-planner.html',        note:'Week plan and shopping list' },
+          note:'Household tools', pages:[] },
+
+        { name:'Meal Planner', href:'/castle/meal-planner.html', indexLabel:'Meal Planner',
+          note:'Week plan and shopping list', pages:[
           { label:'Recipe Book',         href:'/castle/recipe-book.html',         note:'Everything we cook' },
           { label:'Recipe Construction', href:'/castle/recipe-construction.html', note:'Build a new recipe entry' }
         ]}
