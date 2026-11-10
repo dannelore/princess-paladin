@@ -24,7 +24,23 @@
 .day-date{ font-family:var(--font-body); font-weight:400; font-size:.8rem; color:var(--ink-soft); margin-left:6px; }
 .day-row{ display:flex; align-items:center; gap:12px; padding:4px 0; flex-wrap:wrap; }
 .meal-label{ width:64px; font-size:.75rem; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); }
-.day-select, .lunch-select{ flex:1 1 220px; font-family:var(--font-body); font-size:.92rem; padding:8px 10px; border:1px solid var(--line); border-radius:var(--radius-sm); background:#fff; }
+.day-select{ flex:1 1 220px; min-width:0; font-family:var(--font-body); font-size:.92rem; padding:8px 10px; border:1px solid var(--line); border-radius:var(--radius-sm); background:#fff; }
+
+/* Lunch is worked out for you and just shown as words. "Change" swaps the
+   words for a short box to type your own; "Automatic" swaps back. */
+.lunch-auto{ flex:1 1 160px; font-size:.92rem; }
+.lunch-auto.none{ color:var(--ink-soft); font-style:italic; }
+.lunch-text, .dinner-other{ flex:1 1 110px; min-width:0; max-width:240px; font-family:var(--font-body); font-size:.92rem; padding:8px 10px; border:1px solid var(--line); border-radius:var(--radius-sm); background:#fff; }
+
+/* Under each dinner: one tick per day it makes lunch for. Days on or before
+   the night it's cooked are greyed out. */
+.lunch-for{ display:flex; align-items:center; gap:4px 10px; flex-wrap:wrap; flex:1 1 220px; }
+.lunch-for-caption{ font-size:.78rem; color:var(--ink-soft); }
+.lf-day{ display:inline-flex; flex-direction:column; align-items:center; gap:1px; font-size:.66rem; letter-spacing:.03em; color:var(--ink-soft); cursor:pointer; }
+.lf-day input{ margin:0; width:16px; height:16px; accent-color:var(--sage-deep); cursor:pointer; }
+.lf-day.off{ opacity:.35; cursor:default; }
+.lf-day.off input{ cursor:default; }
+.lf-reset{ background:none; border:none; padding:0 2px; font-family:var(--font-body); font-size:.74rem; color:var(--sage-deep); text-decoration:underline; cursor:pointer; }
 
 .two-col{ display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; }
 .two-col > .panel{ flex:1 1 320px; margin-bottom:0; }
@@ -275,8 +291,52 @@ function fmtLabel(iso){
 let currentWeek = weekStartOf(new Date());
 
 function getPlan(){ return loadJSON(PLAN_KEY, {}); }
+
+/* ============ WHAT A DAY HOLDS ============
+   dinner       a recipe id, one of the DINNER_SPECIALS keys below, or null (empty)
+   dinnerOther  the words typed next to "Other" — only kept when dinner is OTHER
+   lunch        null = automatic (leftovers, worked out by computeLunches).
+                'OTHER' = typed by hand, the words are in lunchText.
+                Older weeks may still hold 'SKIP' or a recipe id from when lunch
+                was a dropdown; those are still shown and still count.
+   lunchFor     the days this dinner makes lunch for, once ticked by hand
+                (e.g. ['Mon','Tue']). Left off = worked out from servings.
+
+   The optional ones are only stored when they're set, and the keys are kept
+   in alphabetical order because that's the order Firestore hands them back
+   in — otherwise every page load would look like a change and re-save. */
+const DINNER_SPECIALS = {
+  TAKEOUT:  'Take out',
+  CLEANOUT: 'Fridge cleanout',
+  OTHER:    'Other',
+  SKIP:     'Eating out / other'   // the old catch-all: still shown on weeks that used it, no longer offered
+};
+function isRecipeChoice(v){ return !!v && !DINNER_SPECIALS[v]; }
+function dinnerName(day){
+  const v = day.dinner;
+  if (!v) return '';
+  if (v === 'OTHER') return day.dinnerOther || 'Other';
+  if (DINNER_SPECIALS[v]) return DINNER_SPECIALS[v];
+  const r = getRecipe(v);
+  return r ? r.name : '';
+}
+function escHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
+}
+
 function normalizeDay(val){
-  if (val && typeof val === 'object') return { dinner: val.dinner ?? null, lunch: val.lunch ?? null };
+  if (val && typeof val === 'object'){
+    const day = { dinner: val.dinner ?? null };
+    if (day.dinner === 'OTHER' && val.dinnerOther) day.dinnerOther = String(val.dinnerOther);
+    day.lunch = val.lunch ?? null;
+    if (day.dinner && Array.isArray(val.lunchFor)) day.lunchFor = val.lunchFor.filter(d => DAY_KEYS.includes(d));
+    if (day.lunch === 'OTHER'){
+      if (val.lunchText) day.lunchText = String(val.lunchText);
+      else day.lunch = null; // "other" with nothing typed is just automatic
+    }
+    return day;
+  }
   return { dinner: val ?? null, lunch: null }; // legacy format: bare dinner value
 }
 function getWeekDays(iso){
@@ -293,12 +353,13 @@ function getWeekDays(iso){
   if (changed) saveJSON(PLAN_KEY, plan);
   return plan[iso];
 }
-function setDay(iso, dayKey, field, value){
+// Changes some of a day's fields and saves. To drop an optional field, pass
+// null for it — normalizeDay leaves out anything that isn't set.
+function updateDay(iso, dayKey, patch){
   const plan = getPlan();
   if (!plan[iso]) getWeekDays(iso);
   const plan2 = getPlan();
-  plan2[iso][dayKey] = normalizeDay(plan2[iso][dayKey]);
-  plan2[iso][dayKey][field] = value;
+  plan2[iso][dayKey] = normalizeDay(Object.assign(normalizeDay(plan2[iso][dayKey]), patch));
   saveJSON(PLAN_KEY, plan2);
 }
 
@@ -309,7 +370,7 @@ function history(beforeWeekIso){
     if (w >= beforeWeekIso) return;
     DAY_KEYS.forEach(k => {
       const day = normalizeDay(plan[w][k]);
-      if (day.dinner && day.dinner !== 'SKIP') entries.push({ week: w, recipeId: day.dinner });
+      if (isRecipeChoice(day.dinner)) entries.push({ week: w, recipeId: day.dinner });
     });
   });
   return entries;
@@ -372,7 +433,7 @@ function buildWeek(){
   DAY_KEYS.forEach(k => {
     const existing = days[k].dinner;
     if (!existing){ openDays.push(k); return; }
-    if (existing === 'SKIP') return; // eating out — stays as is
+    if (DINNER_SPECIALS[existing]) return; // take out, fridge cleanout, other — stays as is
     preChosen.add(existing);
     const r = getRecipe(existing);
     if (r && hasTag(r, 'beef')) preBeef++;
@@ -500,76 +561,225 @@ function buildWeek(){
 // oldest leftovers get eaten first, same as you'd actually clear a fridge —
 // so a batch's days never get silently skipped just because a fresher dinner
 // happened in the meantime. A batch's stock never carries into next week.
+//
+// Two things can overrule the servings maths:
+//   - Ticks under a dinner. Once you tick or untick a day there, that dinner
+//     makes lunch for exactly the days ticked, whatever its servings say.
+//   - A lunch you typed yourself. That day doesn't eat any leftovers, so
+//     they roll on to the next lunch that's still automatic.
+//
+// Returns { labels, feeds }: labels[i] is the automatic lunch for day i
+// ('—' when there's nothing), and feeds[dinnerDay] lists the days that
+// dinner makes lunch for — which is what the ticks show.
 function computeLunches(days){
   const household = getHousehold();
-  const lunch = new Array(7).fill('—');
-  const batches = []; // { name, daysLeft }, oldest first
+  const sources = DAY_KEYS.map(() => []); // per lunch day: the dinner(s) feeding it
+  const feeds = {};
+  DAY_KEYS.forEach(k => feeds[k] = []);
 
+  // Hand-ticked dinners first, so the automatic ones can work around them.
   DAY_KEYS.forEach((k, i) => {
+    const day = days[k];
+    if (!day.dinner || !Array.isArray(day.lunchFor)) return;
+    DAY_KEYS.forEach((d, j) => {
+      if (j <= i || !day.lunchFor.includes(d)) return; // can't be lunch before it's cooked
+      sources[j].push(dinnerName(day));
+      feeds[k].push(d);
+    });
+  });
+
+  const batches = []; // { day, name, daysLeft }, oldest first
+  DAY_KEYS.forEach((k, i) => {
+    const day = days[k];
+
     // Today's lunch, from whichever batch (created on an earlier day) has
     // stock left. Today's own dinner isn't cooked yet, so it can't feed it.
-    const batch = batches.find(b => b.daysLeft > 0);
-    if (batch){
-      lunch[i] = `Leftovers — ${batch.name}`;
-      batch.daysLeft--;
+    // Skipped if a hand-ticked dinner already covers today, or lunch was typed in.
+    if (!sources[i].length && !day.lunch){
+      const batch = batches.find(b => b.daysLeft > 0);
+      if (batch){
+        sources[i].push(batch.name);
+        feeds[batch.day].push(k);
+        batch.daysLeft--;
+      }
     }
 
     // Today's dinner starts a new batch, available from tomorrow.
-    const val = days[k].dinner;
-    if (!val || val === 'SKIP') return;
-    const r = getRecipe(val);
+    if (!isRecipeChoice(day.dinner) || Array.isArray(day.lunchFor)) return;
+    const r = getRecipe(day.dinner);
     if (!r) return;
     const servings = Number(r.servings) || 0;
     const leftoverPortions = Math.max(0, servings - household);
     const daysLeft = Math.floor(leftoverPortions / household);
-    if (daysLeft > 0) batches.push({ name: r.name, daysLeft });
+    if (daysLeft > 0) batches.push({ day: k, name: r.name, daysLeft });
   });
 
-  return lunch;
+  return { labels: sources.map(s => s.length ? `Leftovers — ${s.join(' + ')}` : '—'), feeds };
+}
+
+// Lunch rows that are showing the type-your-own box, as "week|day". A lunch
+// with something typed always shows the box; this is for the ones opened
+// with "Change" that are still empty. Not saved — it's only about the screen.
+const lunchEditing = new Set();
+
+const DAY_SHORT = { Sun:'Su', Mon:'Mo', Tue:'Tu', Wed:'We', Thu:'Th', Fri:'Fr', Sat:'Sa' };
+
+// What to show in the box for a lunch that isn't automatic.
+function lunchWords(day){
+  if (day.lunch === 'OTHER') return day.lunchText || '';
+  if (day.lunch === 'SKIP') return 'Not eating lunch';
+  const r = day.lunch ? getRecipe(day.lunch) : null; // an older week's recipe pick
+  return r ? r.name : '';
 }
 
 function renderWeekPanel(){
   document.getElementById('weekLabel').textContent = fmtLabel(currentWeek);
   const days = getWeekDays(currentWeek);
   const recipes = getRecipes().sort((a,b) => a.name.localeCompare(b.name));
-  const autoLunches = computeLunches(days);
+  const lunches = computeLunches(days);
   const wrap = document.getElementById('weekPanel');
 
-  const recipeOptions = (selectedId) => recipes.map(r => `<option value="${r.id}" ${selectedId===r.id ? 'selected':''}>${r.name}${r.active === false ? ' (inactive)' : ''}</option>`).join('');
+  const recipeOptions = (selectedId) => recipes.map(r => `<option value="${r.id}" ${selectedId===r.id ? 'selected':''}>${escHtml(r.name)}${r.active === false ? ' (inactive)' : ''}</option>`).join('');
+  const specialOption = (key, selected) => `<option value="${key}" ${selected === key ? 'selected' : ''}>${DINNER_SPECIALS[key]}${key === 'OTHER' ? '…' : ''}</option>`;
 
   wrap.innerHTML = DAY_KEYS.map((k, idx) => {
     const day = days[k];
-    // The "Auto" option's own label shows what it resolves to, so you don't
-    // have to read a separate line to find out — the dropdown just says it.
-    const autoLabel = autoLunches[idx] === '—' ? 'Auto: nothing to carry over' : `Auto: ${autoLunches[idx]}`;
-    const lunchOptions = `<option value="">${autoLabel}</option><option value="SKIP" ${day.lunch==='SKIP'?'selected':''}>Not eating lunch / other</option>` + recipeOptions(day.lunch && day.lunch !== 'SKIP' ? day.lunch : null);
-    const dinnerOptions = `<option value="">— empty —</option><option value="SKIP" ${day.dinner==='SKIP'?'selected':''}>Eating out / other</option>` + recipeOptions(day.dinner && day.dinner !== 'SKIP' ? day.dinner : null);
+
+    // ---- lunch: the automatic answer in words, or a box to type your own ----
+    const typing = !!day.lunch || lunchEditing.has(currentWeek + '|' + k);
+    const lunchRow = typing
+      ? `<input type="text" class="lunch-text" data-day="${k}" maxlength="60" placeholder="What's for lunch?" aria-label="${DAY_LABELS[k]} lunch" value="${escHtml(lunchWords(day))}">
+         <button type="button" class="btn secondary small lunch-auto-btn" data-day="${k}">Automatic</button>`
+      : `<span class="lunch-auto" data-day="${k}"></span>
+         <button type="button" class="btn secondary small lunch-change-btn" data-day="${k}">Change</button>`;
+
+    // ---- dinner: a recipe, or one of the no-recipe nights ----
+    const dinnerOptions = `<option value="">— empty —</option>`
+      + ['TAKEOUT', 'CLEANOUT', 'OTHER'].map(key => specialOption(key, day.dinner)).join('')
+      + (day.dinner === 'SKIP' ? specialOption('SKIP', day.dinner) : '') // only on weeks that already use it
+      + recipeOptions(isRecipeChoice(day.dinner) ? day.dinner : null);
+    const otherBox = day.dinner === 'OTHER'
+      ? `<input type="text" class="dinner-other" data-day="${k}" maxlength="60" placeholder="What is it?" aria-label="${DAY_LABELS[k]} dinner, other" value="${escHtml(day.dinnerOther || '')}">`
+      : '';
+
+    // ---- which days this dinner makes lunch for ----
+    const ticks = day.dinner ? `
+        <div class="day-row">
+          <div class="meal-label" aria-hidden="true"></div>
+          <div class="lunch-for" role="group" aria-label="${DAY_LABELS[k]} dinner makes lunch for">
+            <span class="lunch-for-caption">Makes lunch for</span>
+            ${DAY_KEYS.map((d, j) => {
+              const off = j <= idx; // not cooked yet on those days
+              return `<label class="lf-day${off ? ' off' : ''}" title="${DAY_LABELS[d]}${off ? ' — before this is cooked' : ''}">${DAY_SHORT[d]}<input type="checkbox" class="lf-check" data-dinner="${k}" data-day="${d}" aria-label="${DAY_LABELS[d]}" ${off ? 'disabled' : ''}></label>`;
+            }).join('')}
+            ${Array.isArray(day.lunchFor) ? `<button type="button" class="lf-reset" data-day="${k}" title="Go back to working it out from the recipe's servings">reset</button>` : ''}
+          </div>
+        </div>` : '';
 
     return `
       <div class="day-block">
         <div class="day-heading">${DAY_LABELS[k]}<span class="day-date">${new Date(addDays(currentWeek, idx) + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span></div>
         <div class="day-row">
           <div class="meal-label">Lunch</div>
-          <select class="lunch-select" data-day="${k}">${lunchOptions}</select>
+          ${lunchRow}
         </div>
         <div class="day-row">
           <div class="meal-label">Dinner</div>
-          <select class="day-select" data-day="${k}">${dinnerOptions}</select>
-        </div>
+          <select class="day-select" data-day="${k}" aria-label="${DAY_LABELS[k]} dinner">${dinnerOptions}</select>
+          ${otherBox}
+        </div>${ticks}
       </div>
     `;
   }).join('');
 
+  fillLunchInfo(lunches);
+
+  // Picking a different dinner starts its lunch ticks over: they belonged to
+  // the old meal.
   wrap.querySelectorAll('.day-select').forEach(sel => {
     sel.addEventListener('change', () => {
-      setDay(currentWeek, sel.dataset.day, 'dinner', sel.value || null);
+      updateDay(currentWeek, sel.dataset.day, { dinner: sel.value || null, dinnerOther: null, lunchFor: null });
+      render();
+      if (sel.value === 'OTHER'){
+        const box = wrap.querySelector(`.dinner-other[data-day="${sel.dataset.day}"]`);
+        if (box) box.focus();
+      }
+    });
+  });
+
+  // The two typing boxes save without redrawing the panel. Redrawing would
+  // swap out whatever you were about to click next (the change fires as you
+  // click away), and that click would be lost.
+  wrap.querySelectorAll('.dinner-other').forEach(box => {
+    box.addEventListener('change', () => {
+      updateDay(currentWeek, box.dataset.day, { dinnerOther: box.value.trim() || null });
+      fillLunchInfo();
+    });
+  });
+  wrap.querySelectorAll('.lunch-text').forEach(box => {
+    box.addEventListener('change', () => {
+      const words = box.value.trim();
+      // Emptied = back to automatic, but the box stays open until you leave it.
+      lunchEditing.add(currentWeek + '|' + box.dataset.day);
+      updateDay(currentWeek, box.dataset.day, words ? { lunch: 'OTHER', lunchText: words } : { lunch: null, lunchText: null });
+      fillLunchInfo();
+      renderPantryRail(); renderPantryList(); renderShopList(); // an older week's lunch recipe may have just come off
+    });
+    box.addEventListener('keydown', e => { if (e.key === 'Enter') box.blur(); });
+  });
+
+  wrap.querySelectorAll('.lunch-change-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      lunchEditing.add(currentWeek + '|' + btn.dataset.day);
+      render();
+      const box = wrap.querySelector(`.lunch-text[data-day="${btn.dataset.day}"]`);
+      if (box) box.focus();
+    });
+  });
+  wrap.querySelectorAll('.lunch-auto-btn').forEach(btn => {
+    const backToAuto = () => {
+      lunchEditing.delete(currentWeek + '|' + btn.dataset.day);
+      updateDay(currentWeek, btn.dataset.day, { lunch: null, lunchText: null });
+      render();
+    };
+    // mousedown, so it lands before the box next to it reacts to losing
+    // focus and saves what was typed; click still covers the keyboard.
+    btn.addEventListener('mousedown', e => { e.preventDefault(); backToAuto(); });
+    btn.addEventListener('click', backToAuto);
+  });
+
+  // Ticking a day turns that dinner's days into exactly what's ticked.
+  wrap.querySelectorAll('.lf-check').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const k = cb.dataset.dinner;
+      const ticked = Array.from(wrap.querySelectorAll(`.lf-check[data-dinner="${k}"]`))
+        .filter(c => c.checked && !c.disabled).map(c => c.dataset.day);
+      updateDay(currentWeek, k, { lunchFor: ticked });
       render();
     });
   });
-  wrap.querySelectorAll('.lunch-select').forEach(sel => {
-    sel.addEventListener('change', () => {
-      setDay(currentWeek, sel.dataset.day, 'lunch', sel.value || null);
+  wrap.querySelectorAll('.lf-reset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      updateDay(currentWeek, btn.dataset.day, { lunchFor: null });
       render();
+    });
+  });
+}
+
+// Writes the worked-out bits into the week panel that's already on screen:
+// the automatic lunch words and which days each dinner's ticks are on.
+function fillLunchInfo(lunches){
+  const info = lunches || computeLunches(getWeekDays(currentWeek));
+  const wrap = document.getElementById('weekPanel');
+  DAY_KEYS.forEach((k, i) => {
+    const words = wrap.querySelector(`.lunch-auto[data-day="${k}"]`);
+    if (words){
+      const none = info.labels[i] === '—';
+      words.textContent = none ? 'Nothing carried over' : info.labels[i];
+      words.classList.toggle('none', none);
+    }
+    wrap.querySelectorAll(`.lf-check[data-dinner="${k}"]`).forEach(cb => {
+      cb.checked = info.feeds[k].includes(cb.dataset.day);
     });
   });
 }
@@ -831,8 +1041,9 @@ function setPantryChecked(weekIso, item, checked){
 
 function getWeekRecipesForMatching(){
   const days = getWeekDays(currentWeek);
-  const dinnerRecipes = DAY_KEYS.map(k => days[k].dinner).filter(v => v && v !== 'SKIP').map(getRecipe).filter(Boolean);
-  const manualLunchRecipes = DAY_KEYS.map(k => days[k].lunch).filter(v => v && v !== 'SKIP').map(getRecipe).filter(Boolean);
+  const dinnerRecipes = DAY_KEYS.map(k => days[k].dinner).filter(isRecipeChoice).map(getRecipe).filter(Boolean);
+  // Only older weeks have a recipe picked for lunch — lunch is typed words now.
+  const manualLunchRecipes = DAY_KEYS.map(k => days[k].lunch).filter(isRecipeChoice).map(getRecipe).filter(Boolean);
   return [...dinnerRecipes, ...manualLunchRecipes];
 }
 
@@ -1098,6 +1309,7 @@ document.getElementById('clearAllBtn').addEventListener('click', () => {
   const plan = getPlan();
   plan[currentWeek] = {};
   DAY_KEYS.forEach(k => plan[currentWeek][k] = { dinner: null, lunch: null });
+  DAY_KEYS.forEach(k => lunchEditing.delete(currentWeek + '|' + k));
   saveJSON(PLAN_KEY, plan);
   render();
 });
