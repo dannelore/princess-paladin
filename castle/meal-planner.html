@@ -190,6 +190,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="/assets/pp-firebase.js"></script>
+<script src="/assets/pp-meals.js"></script>
 
 <script>
 /* ============ FIREBASE SETUP ============
@@ -255,8 +256,9 @@ const RECIPES_KEY = 'pp_recipes';
 const PLAN_KEY = 'pp_mealplan';
 const EXTRAS_KEY = 'pp_shopping_extras';
 const CHECKED_KEY = 'pp_shopping_checked';
-const DAY_KEYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const DAY_LABELS = { Sun:'Sunday', Mon:'Monday', Tue:'Tuesday', Wed:'Wednesday', Thu:'Thursday', Fri:'Friday', Sat:'Saturday' };
+// The meal-plan logic shared with the home page lives in /assets/pp-meals.js:
+// what a day holds, the no-recipe dinners, and how lunches are worked out.
+const { DAY_KEYS, DAY_LABELS, DINNER_SPECIALS, isRecipeChoice, normalizeDay, weekStartOf } = PPMeals;
 
 const MEAL_KEY_FIELD_MAP = {
   'pp_recipes': 'recipes',
@@ -281,13 +283,8 @@ function uid(){ return 'x_' + Date.now().toString(36) + Math.random().toString(3
 function getRecipes(){ return loadJSON(RECIPES_KEY, []); }
 function getRecipe(id){ return getRecipes().find(r => r.id === id); }
 
-function getHousehold(){ return 2; } // always 2 people
+function getHousehold(){ return PPMeals.HOUSEHOLD; } // always 2 people
 
-function weekStartOf(date){
-  const d = new Date(date); d.setHours(0,0,0,0);
-  d.setDate(d.getDate() - d.getDay());
-  return d.toISOString().slice(0,10);
-}
 function addDays(iso, n){ const d = new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
 function fmtLabel(iso){
   const start = new Date(iso+'T00:00:00'); const end = new Date(start); end.setDate(end.getDate()+6);
@@ -299,53 +296,14 @@ let currentWeek = weekStartOf(new Date());
 
 function getPlan(){ return loadJSON(PLAN_KEY, {}); }
 
-/* ============ WHAT A DAY HOLDS ============
-   dinner       a recipe id, one of the DINNER_SPECIALS keys below, or null (empty)
-   dinnerOther  the words typed next to "Other" — only kept when dinner is OTHER
-   lunch        null = automatic (leftovers, worked out by computeLunches).
-                'OTHER' = typed by hand, the words are in lunchText.
-                Older weeks may still hold 'SKIP' or a recipe id from when lunch
-                was a dropdown; those are still shown and still count.
-   lunchFor     the days this dinner makes lunch for, once ticked by hand
-                (e.g. ['Mon','Tue']). Left off = worked out from servings.
-
-   The optional ones are only stored when they're set, and the keys are kept
-   in alphabetical order because that's the order Firestore hands them back
-   in — otherwise every page load would look like a change and re-save. */
-const DINNER_SPECIALS = {
-  TAKEOUT:  'Take out',
-  CLEANOUT: 'Fridge cleanout',
-  OTHER:    'Other',
-  SKIP:     'Eating out / other'   // the old catch-all: still shown on weeks that used it, no longer offered
-};
-function isRecipeChoice(v){ return !!v && !DINNER_SPECIALS[v]; }
-function dinnerName(day){
-  const v = day.dinner;
-  if (!v) return '';
-  if (v === 'OTHER') return day.dinnerOther || 'Other';
-  if (DINNER_SPECIALS[v]) return DINNER_SPECIALS[v];
-  const r = getRecipe(v);
-  return r ? r.name : '';
-}
+// What a day holds (dinner, dinnerOther, lunch, lunchText, lunchFor) is
+// written up at the top of /assets/pp-meals.js.
+function dinnerName(day){ return PPMeals.dinnerName(day, getRecipe); }
 function escHtml(s){
   return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
     ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
 }
 
-function normalizeDay(val){
-  if (val && typeof val === 'object'){
-    const day = { dinner: val.dinner ?? null };
-    if (day.dinner === 'OTHER' && val.dinnerOther) day.dinnerOther = String(val.dinnerOther);
-    day.lunch = val.lunch ?? null;
-    if (day.dinner && Array.isArray(val.lunchFor)) day.lunchFor = val.lunchFor.filter(d => DAY_KEYS.includes(d));
-    if (day.lunch === 'OTHER'){
-      if (val.lunchText) day.lunchText = String(val.lunchText);
-      else day.lunch = null; // "other" with nothing typed is just automatic
-    }
-    return day;
-  }
-  return { dinner: val ?? null, lunch: null }; // legacy format: bare dinner value
-}
 function getWeekDays(iso){
   const plan = getPlan();
   let changed = false;
@@ -561,87 +519,10 @@ function buildWeek(){
   if (notes.length) alert(notes.join('\n\n'));
 }
 
-// Figures out, for each day, whether lunch is leftovers — and from which dinner.
-// A dinner's leftover portions = servings - household (what's eaten at dinner)
-// become a "batch" available starting the day after it's cooked. Each lunch
-// day eats `household` portions from the OLDEST batch that still has stock —
-// oldest leftovers get eaten first, same as you'd actually clear a fridge —
-// so a batch's days never get silently skipped just because a fresher dinner
-// happened in the meantime. A batch's stock never carries into next week.
-//
-// Two things can overrule the servings maths:
-//   - Ticks under a dinner. Once you tick or untick a day there, that dinner
-//     makes lunch for exactly the days ticked, whatever its servings say.
-//   - A lunch you typed yourself. That day doesn't eat any leftovers, so
-//     they roll on to the next lunch that's still automatic.
-//
-// A lunch only ever comes from ONE dinner. Once a day is ticked under a
-// dinner (by hand, or by the servings maths), no other dinner can take it —
-// its tick for that day is greyed out until the first one lets go.
-//
-// Returns { labels, feeds, owner, leftovers }:
-//   labels[i]         the automatic lunch for day i ('—' when there's nothing)
-//   feeds[dinnerDay]  the days that dinner makes lunch for — what the ticks show
-//   owner[i]          which night's dinner is day i's lunch, or null
-//   leftovers[dinnerDay]  { total, left } in servings: what the recipe leaves
-//                     after dinner, and what's still there after the lunches
-//                     it's ticked for (negative = ticked for more than it
-//                     makes). null when the dinner isn't a recipe.
-function computeLunches(days){
-  const household = getHousehold();
-  const owner = DAY_KEYS.map(() => null);
-  const feeds = {};
-  DAY_KEYS.forEach(k => feeds[k] = []);
-  const claim = (dinnerDay, j) => { owner[j] = dinnerDay; feeds[dinnerDay].push(DAY_KEYS[j]); };
-  const leftoverServings = (day) => {
-    const r = isRecipeChoice(day.dinner) ? getRecipe(day.dinner) : null;
-    return r ? Math.max(0, (Number(r.servings) || 0) - household) : null;
-  };
-
-  // Hand-ticked dinners first, so the automatic ones can work around them.
-  // If two somehow list the same day, the earlier night keeps it.
-  DAY_KEYS.forEach((k, i) => {
-    const day = days[k];
-    if (!day.dinner || !Array.isArray(day.lunchFor)) return;
-    DAY_KEYS.forEach((d, j) => {
-      if (j <= i || !day.lunchFor.includes(d)) return; // can't be lunch before it's cooked
-      if (owner[j] || days[d].lunch) return;           // already taken, or lunch was typed in
-      claim(k, j);
-    });
-  });
-
-  const batches = []; // { day, daysLeft }, oldest first
-  DAY_KEYS.forEach((k, i) => {
-    const day = days[k];
-
-    // Today's lunch, from whichever batch (created on an earlier day) has
-    // stock left. Today's own dinner isn't cooked yet, so it can't feed it.
-    // Skipped if a hand-ticked dinner already covers today, or lunch was typed in.
-    if (!owner[i] && !day.lunch){
-      const batch = batches.find(b => b.daysLeft > 0);
-      if (batch){
-        claim(batch.day, i);
-        batch.daysLeft--;
-      }
-    }
-
-    // Today's dinner starts a new batch, available from tomorrow.
-    if (Array.isArray(day.lunchFor)) return;
-    const daysLeft = Math.floor((leftoverServings(day) || 0) / household);
-    if (daysLeft > 0) batches.push({ day: k, daysLeft });
-  });
-
-  const leftovers = {};
-  DAY_KEYS.forEach(k => {
-    const total = leftoverServings(days[k]);
-    leftovers[k] = total == null ? null : { total, left: total - feeds[k].length * household };
-  });
-
-  return {
-    labels: owner.map(o => o ? `Leftovers — ${dinnerName(days[o])}` : '—'),
-    feeds, owner, leftovers
-  };
-}
+// Works out each day's automatic lunch, which days each dinner's ticks are
+// on, and each dinner's leftover servings. The rules are written up beside
+// the real thing in /assets/pp-meals.js.
+function computeLunches(days){ return PPMeals.computeLunches(days, getRecipe, getHousehold()); }
 
 // Lunch rows that are showing the type-your-own box, as "week|day". A lunch
 // with something typed always shows the box; this is for the ones opened
@@ -651,12 +532,7 @@ const lunchEditing = new Set();
 const DAY_SHORT = { Sun:'Su', Mon:'Mo', Tue:'Tu', Wed:'We', Thu:'Th', Fri:'Fr', Sat:'Sa' };
 
 // What to show in the box for a lunch that isn't automatic.
-function lunchWords(day){
-  if (day.lunch === 'OTHER') return day.lunchText || '';
-  if (day.lunch === 'SKIP') return 'Not eating lunch';
-  const r = day.lunch ? getRecipe(day.lunch) : null; // an older week's recipe pick
-  return r ? r.name : '';
-}
+function lunchWords(day){ return PPMeals.lunchWords(day, getRecipe); }
 
 function renderWeekPanel(){
   document.getElementById('weekLabel').textContent = fmtLabel(currentWeek);
