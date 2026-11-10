@@ -33,13 +33,20 @@
 .lunch-text, .dinner-other{ flex:1 1 110px; min-width:0; max-width:240px; font-family:var(--font-body); font-size:.92rem; padding:8px 10px; border:1px solid var(--line); border-radius:var(--radius-sm); background:#fff; }
 
 /* Under each dinner: one tick per day it makes lunch for. Days on or before
-   the night it's cooked are greyed out. */
+   the night it's cooked are greyed out (.off), and so are days another
+   dinner already covers or that have a typed lunch (.taken). After the ticks
+   comes the leftover count, which turns red when it's ticked for more
+   lunches than the recipe makes. */
 .lunch-for{ display:flex; align-items:center; gap:4px 10px; flex-wrap:wrap; flex:1 1 220px; }
 .lunch-for-caption{ font-size:.78rem; color:var(--ink-soft); }
 .lf-day{ display:inline-flex; flex-direction:column; align-items:center; gap:1px; font-size:.66rem; letter-spacing:.03em; color:var(--ink-soft); cursor:pointer; }
 .lf-day input{ margin:0; width:16px; height:16px; accent-color:var(--sage-deep); cursor:pointer; }
 .lf-day.off{ opacity:.35; cursor:default; }
 .lf-day.off input{ cursor:default; }
+.lf-day.taken{ opacity:.6; cursor:not-allowed; }
+.lf-day.taken input{ cursor:not-allowed; }
+.lf-left{ font-size:.78rem; color:var(--ink-soft); white-space:nowrap; }
+.lf-left.short{ color:var(--burgundy); font-weight:600; }
 .lf-reset{ background:none; border:none; padding:0 2px; font-family:var(--font-body); font-size:.74rem; color:var(--sage-deep); text-decoration:underline; cursor:pointer; }
 
 .two-col{ display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; }
@@ -568,53 +575,72 @@ function buildWeek(){
 //   - A lunch you typed yourself. That day doesn't eat any leftovers, so
 //     they roll on to the next lunch that's still automatic.
 //
-// Returns { labels, feeds }: labels[i] is the automatic lunch for day i
-// ('—' when there's nothing), and feeds[dinnerDay] lists the days that
-// dinner makes lunch for — which is what the ticks show.
+// A lunch only ever comes from ONE dinner. Once a day is ticked under a
+// dinner (by hand, or by the servings maths), no other dinner can take it —
+// its tick for that day is greyed out until the first one lets go.
+//
+// Returns { labels, feeds, owner, leftovers }:
+//   labels[i]         the automatic lunch for day i ('—' when there's nothing)
+//   feeds[dinnerDay]  the days that dinner makes lunch for — what the ticks show
+//   owner[i]          which night's dinner is day i's lunch, or null
+//   leftovers[dinnerDay]  { total, left } in servings: what the recipe leaves
+//                     after dinner, and what's still there after the lunches
+//                     it's ticked for (negative = ticked for more than it
+//                     makes). null when the dinner isn't a recipe.
 function computeLunches(days){
   const household = getHousehold();
-  const sources = DAY_KEYS.map(() => []); // per lunch day: the dinner(s) feeding it
+  const owner = DAY_KEYS.map(() => null);
   const feeds = {};
   DAY_KEYS.forEach(k => feeds[k] = []);
+  const claim = (dinnerDay, j) => { owner[j] = dinnerDay; feeds[dinnerDay].push(DAY_KEYS[j]); };
+  const leftoverServings = (day) => {
+    const r = isRecipeChoice(day.dinner) ? getRecipe(day.dinner) : null;
+    return r ? Math.max(0, (Number(r.servings) || 0) - household) : null;
+  };
 
   // Hand-ticked dinners first, so the automatic ones can work around them.
+  // If two somehow list the same day, the earlier night keeps it.
   DAY_KEYS.forEach((k, i) => {
     const day = days[k];
     if (!day.dinner || !Array.isArray(day.lunchFor)) return;
     DAY_KEYS.forEach((d, j) => {
       if (j <= i || !day.lunchFor.includes(d)) return; // can't be lunch before it's cooked
-      sources[j].push(dinnerName(day));
-      feeds[k].push(d);
+      if (owner[j] || days[d].lunch) return;           // already taken, or lunch was typed in
+      claim(k, j);
     });
   });
 
-  const batches = []; // { day, name, daysLeft }, oldest first
+  const batches = []; // { day, daysLeft }, oldest first
   DAY_KEYS.forEach((k, i) => {
     const day = days[k];
 
     // Today's lunch, from whichever batch (created on an earlier day) has
     // stock left. Today's own dinner isn't cooked yet, so it can't feed it.
     // Skipped if a hand-ticked dinner already covers today, or lunch was typed in.
-    if (!sources[i].length && !day.lunch){
+    if (!owner[i] && !day.lunch){
       const batch = batches.find(b => b.daysLeft > 0);
       if (batch){
-        sources[i].push(batch.name);
-        feeds[batch.day].push(k);
+        claim(batch.day, i);
         batch.daysLeft--;
       }
     }
 
     // Today's dinner starts a new batch, available from tomorrow.
-    if (!isRecipeChoice(day.dinner) || Array.isArray(day.lunchFor)) return;
-    const r = getRecipe(day.dinner);
-    if (!r) return;
-    const servings = Number(r.servings) || 0;
-    const leftoverPortions = Math.max(0, servings - household);
-    const daysLeft = Math.floor(leftoverPortions / household);
-    if (daysLeft > 0) batches.push({ day: k, name: r.name, daysLeft });
+    if (Array.isArray(day.lunchFor)) return;
+    const daysLeft = Math.floor((leftoverServings(day) || 0) / household);
+    if (daysLeft > 0) batches.push({ day: k, daysLeft });
   });
 
-  return { labels: sources.map(s => s.length ? `Leftovers — ${s.join(' + ')}` : '—'), feeds };
+  const leftovers = {};
+  DAY_KEYS.forEach(k => {
+    const total = leftoverServings(days[k]);
+    leftovers[k] = total == null ? null : { total, left: total - feeds[k].length * household };
+  });
+
+  return {
+    labels: owner.map(o => o ? `Leftovers — ${dinnerName(days[o])}` : '—'),
+    feeds, owner, leftovers
+  };
 }
 
 // Lunch rows that are showing the type-your-own box, as "week|day". A lunch
@@ -668,11 +694,9 @@ function renderWeekPanel(){
           <div class="meal-label" aria-hidden="true"></div>
           <div class="lunch-for" role="group" aria-label="${DAY_LABELS[k]} dinner makes lunch for">
             <span class="lunch-for-caption">Makes lunch for</span>
-            ${DAY_KEYS.map((d, j) => {
-              const off = j <= idx; // not cooked yet on those days
-              return `<label class="lf-day${off ? ' off' : ''}" title="${DAY_LABELS[d]}${off ? ' — before this is cooked' : ''}">${DAY_SHORT[d]}<input type="checkbox" class="lf-check" data-dinner="${k}" data-day="${d}" aria-label="${DAY_LABELS[d]}" ${off ? 'disabled' : ''}></label>`;
-            }).join('')}
+            ${DAY_KEYS.map(d => `<label class="lf-day">${DAY_SHORT[d]}<input type="checkbox" class="lf-check" data-dinner="${k}" data-day="${d}" aria-label="${DAY_LABELS[d]}"></label>`).join('')}
             ${Array.isArray(day.lunchFor) ? `<button type="button" class="lf-reset" data-day="${k}" title="Go back to working it out from the recipe's servings">reset</button>` : ''}
+            <span class="lf-left" data-dinner="${k}"></span>
           </div>
         </div>` : '';
 
@@ -767,9 +791,11 @@ function renderWeekPanel(){
 }
 
 // Writes the worked-out bits into the week panel that's already on screen:
-// the automatic lunch words and which days each dinner's ticks are on.
+// the automatic lunch words, each dinner's ticks (which are on, and which
+// are greyed out and why), and how many leftover servings it has.
 function fillLunchInfo(lunches){
-  const info = lunches || computeLunches(getWeekDays(currentWeek));
+  const days = getWeekDays(currentWeek);
+  const info = lunches || computeLunches(days);
   const wrap = document.getElementById('weekPanel');
   DAY_KEYS.forEach((k, i) => {
     const words = wrap.querySelector(`.lunch-auto[data-day="${k}"]`);
@@ -778,9 +804,33 @@ function fillLunchInfo(lunches){
       words.textContent = none ? 'Nothing carried over' : info.labels[i];
       words.classList.toggle('none', none);
     }
+
     wrap.querySelectorAll(`.lf-check[data-dinner="${k}"]`).forEach(cb => {
-      cb.checked = info.feeds[k].includes(cb.dataset.day);
+      const d = cb.dataset.day, j = DAY_KEYS.indexOf(d);
+      const before = j <= i;                                    // not cooked yet on those days
+      const takenBy = !before && info.owner[j] && info.owner[j] !== k ? info.owner[j] : null;
+      const typed = !before && !!days[d].lunch;                 // that day's lunch was typed in
+      cb.checked = info.feeds[k].includes(d);
+      cb.disabled = before || !!takenBy || typed;
+      cb.parentNode.classList.toggle('off', before);
+      cb.parentNode.classList.toggle('taken', !!takenBy || typed);
+      cb.parentNode.title = DAY_LABELS[d] + (
+        before  ? ' — before this is cooked' :
+        typed   ? ' — lunch is typed in for that day' :
+        takenBy ? ` — already lunch from ${DAY_LABELS[takenBy]}'s ${dinnerName(days[takenBy])}` : '');
     });
+
+    const left = wrap.querySelector(`.lf-left[data-dinner="${k}"]`);
+    if (left){
+      const l = info.leftovers[k];
+      const servings = n => `${n} serving${n === 1 ? '' : 's'}`;
+      left.classList.toggle('short', !!l && l.left < 0);
+      left.textContent =
+        !l            ? '' :                                   // take out, other… — no servings to count
+        l.total === 0 ? 'No leftovers' :
+        l.left < 0    ? `Leftovers: ${servings(-l.left)} short` :
+                        `Leftovers: ${l.left} of ${servings(l.total)} left`;
+    }
   });
 }
 
