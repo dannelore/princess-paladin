@@ -199,6 +199,17 @@
   .hm-chip.ashore{ border-color: var(--sea); color: var(--sea-deep); font-weight: 500; }
   .hm-chip.tz{ border-color: var(--gold); color: var(--gold-deep); }
 
+  /* The same port times on the UK's clock and the US Eastern one. */
+  .hm-zones{
+    display: flex; flex-wrap: wrap; gap: 2px 20px;
+    margin: -2px 0 14px; padding: 0 4px;
+    font-size: .84rem; color: var(--ink-soft);
+  }
+  .hm-zones small{
+    margin-right: 7px; font-size: .64rem; font-weight: 600;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--gold-deep);
+  }
+
   .hm-blurb{ font-family: var(--font-serif); font-size: 1.08rem; line-height: 1.45; margin: 0 0 6px; }
   .hm-note{ font-size: .86rem; color: var(--ink-soft); line-height: 1.5; margin: 0; }
 
@@ -375,7 +386,7 @@
   <main class="hm-main">
     <!-- ---------------- the voyage ---------------- -->
     <h2 class="hm-section-title">The Voyage</h2>
-    <p class="hm-section-note">Times are local, as the ship keeps them. Open a day to add ideas, put them in order, and mark them booked once they are.</p>
+    <p class="hm-section-note">Times are local, as the ship keeps them, with UK and Eastern time underneath. Open a day to add ideas, put them in order, and mark them booked once they are.</p>
     <div class="hm-voyage-tools"><button type="button" id="foldAll">Open every day</button></div>
 
     <div class="hm-voyage" id="voyage"></div>
@@ -541,6 +552,30 @@ function hoursLabel(h){
 
 function ashore(d){ return d.arrive && d.depart ? (mins(d.depart) - mins(d.arrive)) / 60 : 0; }
 
+/* ---------------- other clocks ----------------
+   A day's port times again, on the UK's clock and the US Eastern one.
+   The whole trip is in summer time on both sides (British Summer Time and
+   Eastern Daylight Time), so Eastern runs a flat five hours behind the UK. */
+const EASTERN_BEHIND_UK = 5;
+
+/* A local "HH:MM" as it reads on a clock `hrs` hours behind. */
+function onClock(t, hrs){
+  let m = mins(t) - hrs * 60, dayBefore = false;
+  if(m < 0){ m += 1440; dayBefore = true; }
+  const hhmm = String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+  return clock(hhmm) + (dayBefore ? " the day before" : "");
+}
+
+function zonesLine(d){
+  if(d.kind === "sea") return "";
+  const ukBehind = d.ukPlus || 0, eastBehind = ukBehind + EASTERN_BEHIND_UK;
+  const times = [d.arrive, d.depart].filter(Boolean);
+  const span = hrs => times.map(t => onClock(t, hrs)).join(" – ");
+  const uk = !ukBehind ? "same as local" : times.length ? span(ukBehind) : ukBehind + " hr behind";
+  const east = times.length ? span(eastBehind) : eastBehind + " hrs behind";
+  return `<p class="hm-zones"><span><small>UK time</small>${uk}</span><span><small>Eastern</small>${east}</span></p>`;
+}
+
 function dayDate(i){
   return new Date(SAIL_DATE.getFullYear(), SAIL_DATE.getMonth(), SAIL_DATE.getDate() + i - LEAD);
 }
@@ -634,6 +669,7 @@ function buildVoyage(){
         </div>
         <div class="hm-card-body" id="${d.id}-body" hidden>
           <div class="hm-times">${times.join("")}</div>
+          ${zonesLine(d)}
           <p class="hm-blurb">${esc(d.blurb)}</p>
           <p class="hm-note">${esc(d.note)}</p>
           <div class="hm-plans-wrap">
