@@ -49,8 +49,8 @@
      others. Removing a to-do rewrites that whole document, since update can
      only add or change fields.
 
-     Three tabs, picked by the #hash: #quests (the default), #friendship
-     and #critters.
+     Four tabs, picked by the #hash: #quests (the default), #friendship,
+     #critters and #resources (a reference list from ddv-resources.js).
      ====================================================================== */
 
   .dv [hidden]{ display: none !important; }
@@ -239,6 +239,23 @@
   .dv-tools{ display: flex; flex-direction: row; flex-wrap: wrap; gap: 10px; align-items: center; }
   .dv-tools input{ flex: 1 1 220px; min-width: 0; width: auto; }
   .dv-chips{ display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* ---- resources ---- */
+  .dv-rtable-wrap{ overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel); box-shadow: var(--lift); }
+  .dv-rtable{ width: 100%; border-collapse: collapse; font-size: .9rem; }
+  .dv-rtable th{ position: sticky; top: 0; background: var(--panel-tint); text-align: left; padding: 0; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
+  .dv-rtable th button{ font-family: var(--font-body); font-size: .7rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--gold);
+    background: none; border: 0; padding: 10px 12px; width: 100%; text-align: inherit; cursor: pointer; }
+  .dv-rtable th button::after{ content: " \2195"; opacity: .35; }
+  .dv-rtable th[aria-sort="ascending"] button::after{ content: " \2191"; opacity: 1; }
+  .dv-rtable th[aria-sort="descending"] button::after{ content: " \2193"; opacity: 1; }
+  .dv-rtable td{ padding: 8px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+  .dv-rtable tr:hover td{ background: var(--panel-tint); }
+  .dv-rtable td.num, .dv-rtable th.num{ text-align: right; font-variant-numeric: tabular-nums; }
+  .dv-rtable td b{ font-weight: 600; }
+  .dv-rtable td small{ display: block; color: var(--ink-soft); font-size: .8rem; }
+  .dv-rtable .rarea{ color: var(--ink-soft); font-size: .8rem; display: block; }
+  @media (max-width: 560px){ .dv-rtable th button, .dv-rtable td{ padding: 7px 8px; } .dv-rtable{ font-size: .85rem; } }
   .dv-sels{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; flex: 1 1 100%; }
   .dv-sel{ display: flex; align-items: center; gap: 8px; font-family: var(--font-body); font-size: .72rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
   .dv-tools .dv-sel select{ width: auto; padding: 6px 10px; font-size: .88rem; letter-spacing: 0; text-transform: none; }
@@ -291,12 +308,13 @@
   </div>
 
   <div class="dv">
-    <p class="dv-intro">Every Disney Dreamlight Valley quest, friendship and critter: what's done, what's on the go, and what the Valley is still hiding. For every step to a goal, in order, see <a href="flow.html">the Quest Flow</a>.</p>
+    <p class="dv-intro">Every Disney Dreamlight Valley quest, friendship, critter and resource: what's done, what's on the go, and what the Valley is still hiding. For every step to a goal, in order, see <a href="flow.html">the Quest Flow</a>.</p>
 
     <div class="dv-tabs" role="tablist" aria-label="Dreamlight Valley trackers">
       <button class="dv-tab" role="tab" id="tab-quests" aria-controls="pane-quests" aria-selected="true">Quests</button>
       <button class="dv-tab" role="tab" id="tab-friendship" aria-controls="pane-friendship" aria-selected="false">Friendship</button>
       <button class="dv-tab" role="tab" id="tab-critters" aria-controls="pane-critters" aria-selected="false">Critters</button>
+      <button class="dv-tab" role="tab" id="tab-resources" aria-controls="pane-resources" aria-selected="false">Resources</button>
     </div>
 
     <div class="dv-pane" id="pane-friendship" role="tabpanel" aria-labelledby="tab-friendship" hidden>
@@ -345,6 +363,25 @@
       </section>
       <div id="c-list" class="dv-pane"></div>
       <p class="dv-foot" id="c-foot"></p>
+    </div>
+
+    <div class="dv-pane" id="pane-resources" role="tabpanel" aria-labelledby="tab-resources" hidden>
+      <div class="dv-tools pp-field">
+        <input id="r-q" type="search" placeholder="Search resources" aria-label="Search resources">
+        <div class="dv-chips" id="r-chips"></div>
+        <div class="dv-sels">
+          <label class="dv-sel">Area <select id="r-area"><option value="all">All</option><option value="owned">Ones I own</option></select></label>
+          <label class="dv-sel">Biome <select id="r-biome"><option value="all">All</option></select></label>
+          <span class="dv-count" id="r-count"></span>
+        </div>
+      </div>
+      <div class="dv-rtable-wrap">
+        <table class="dv-rtable">
+          <thead><tr id="r-head"></tr></thead>
+          <tbody id="r-body"></tbody>
+        </table>
+      </div>
+      <p class="dv-foot" id="r-foot"></p>
     </div>
 
     <div class="dv-pane" id="pane-quests" role="tabpanel" aria-labelledby="tab-quests">
@@ -411,6 +448,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script src="/assets/pp-firebase.js"></script>
 <script src="ddv-data.js"></script>
+<script src="ddv-resources.js"></script>
 <script>
 "use strict";
 
@@ -1144,8 +1182,54 @@ function renderNow(){
 // keep the clock-based list current while the tab is open
 setInterval(()=>{if(!$("pane-critters").hidden)renderNow()},60000);
 
-/* ---------------- tabs: #quests (default), #friendship, #critters ---------------- */
-const TABS=["quests","friendship","critters"];
+/* ---------------- resources ----------------
+   A reference list, nothing to tick: one row per resource per biome, so the
+   biome filter and sort show everything a biome has. Filters and sort are
+   remembered in this browser. RESOURCES, BIOME_AREA and RESOURCE_SOURCE are in
+   ddv-resources.js. */
+const R_KEY="pp_ddv_resources";
+const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const AREA_EXP={"Dreamlight Valley":"Base Game","Eternity Isle":"A Rift in Time","Storybook Vale":"Storybook Vale","Wishblossom Ranch":"Wishblossom Ranch","Honeyglow Woods":"Honeyglow Woods"};
+const R_COLS=[["name","Resource"],["category","Type"],["biome","Biome"],["how","How"],["sell","Sells for"]];
+const R_ROWS=RESOURCES.flatMap(x=>x.biomes.map(b=>({...x,biome:b,area:BIOME_AREA[b]||""})));
+const R_AREAS=[...new Set(Object.values(BIOME_AREA))];
+const R_CATS=[...new Set(RESOURCES.map(x=>x.category))];
+let rArea="all",rBiome="all",rCat="all",rQuery="",rSort={col:"biome",dir:1};
+try{const p=JSON.parse(localStorage.getItem(R_KEY)||"null");if(p){rArea=p.area||"all";rBiome=p.biome||"all";rCat=p.cat||"all";if(p.sort)rSort=p.sort}}catch(e){}
+function saveRPrefs(){try{localStorage.setItem(R_KEY,JSON.stringify({area:rArea,biome:rBiome,cat:rCat,sort:rSort}))}catch(e){}}
+const rAreaOk=a=>rArea==="all"||(rArea==="owned"?OWNED.includes(AREA_EXP[a]||a):a===rArea);
+{const sel=$("r-area");for(const a of R_AREAS){const o=document.createElement("option");o.value=a;o.textContent=a;sel.append(o)}
+  if(![...sel.options].some(o=>o.value===rArea))rArea="all";sel.value=rArea;
+  sel.onchange=()=>{rArea=sel.value;rBiome="all";saveRPrefs();renderResources()};
+  $("r-biome").onchange=e=>{rBiome=e.target.value;saveRPrefs();renderResources()};
+  $("r-q").addEventListener("input",e=>{rQuery=e.target.value.trim().toLowerCase();renderResources()})}
+function renderResources(){
+  // biome choices follow the area
+  const bsel=$("r-biome"),biomes=[...new Set(R_ROWS.filter(r=>rAreaOk(r.area)).map(r=>r.biome))].sort();
+  if(rBiome!=="all"&&!biomes.includes(rBiome))rBiome="all";
+  bsel.innerHTML='<option value="all">All</option>'+biomes.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join("");bsel.value=rBiome;
+  const chips=$("r-chips");chips.innerHTML="";
+  for(const k of ["all",...R_CATS]){const b=document.createElement("button");b.className="pp-pill";b.textContent=k==="all"?"All":k;b.setAttribute("aria-pressed",rCat===k);
+    b.onclick=()=>{rCat=k;saveRPrefs();renderResources()};chips.append(b)}
+  const rows=R_ROWS.filter(r=>rAreaOk(r.area)&&(rBiome==="all"||r.biome===rBiome)&&(rCat==="all"||r.category===rCat)&&
+    (!rQuery||(r.name+" "+r.biome+" "+r.category+" "+(r.note||"")).toLowerCase().includes(rQuery)));
+  const{col,dir}=rSort;
+  const key=r=>col==="sell"?(r.sell==null?-1:r.sell):String(r[col]||"").toLowerCase();
+  rows.sort((a,b)=>{const x=key(a),y=key(b);return(x<y?-1:x>y?1:0)*dir||a.name.localeCompare(b.name)||a.biome.localeCompare(b.biome)});
+  const head=$("r-head");head.innerHTML="";
+  for(const[k,label]of R_COLS){const th=document.createElement("th");th.scope="col";if(k==="sell")th.className="num";
+    th.setAttribute("aria-sort",col===k?(dir>0?"ascending":"descending"):"none");
+    const b=document.createElement("button");b.textContent=label;b.onclick=()=>{rSort={col:k,dir:col===k?-dir:(k==="sell"?-1:1)};saveRPrefs();renderResources()};
+    th.append(b);head.append(th)}
+  $("r-body").innerHTML=rows.map(r=>`<tr><td><b>${esc(r.name)}</b>${r.note?`<small>${esc(r.note)}</small>`:""}</td><td>${esc(r.category)}</td>`+
+    `<td>${esc(r.biome)}<span class="rarea">${esc(r.area)}</span></td><td>${esc(r.how||"")}</td><td class="num">${r.sell==null?"—":r.sell}</td></tr>`).join("")||
+    `<tr><td colspan="5" class="pp-empty">No resources match. Try another filter or search.</td></tr>`;
+  $("r-count").textContent=`${rows.length} row${rows.length===1?"":"s"} · ${new Set(rows.map(r=>r.name)).size} resources`;
+  $("r-foot").textContent=RESOURCE_SOURCE;
+}
+
+/* ---------------- tabs: #quests (default), #friendship, #critters, #resources ---------------- */
+const TABS=["quests","friendship","critters","resources"];
 function showTab(t,remember){
   if(!TABS.includes(t))t="quests";
   for(const x of TABS){$("tab-"+x).setAttribute("aria-selected",x===t);$("tab-"+x).tabIndex=x===t?0:-1;$("pane-"+x).hidden=x!==t}
@@ -1157,7 +1241,7 @@ TABS.forEach((t,i)=>{const b=$("tab-"+t);b.onclick=()=>showTab(t,true);
 window.addEventListener("hashchange",()=>showTab(location.hash.slice(1)));
 showTab(location.hash.slice(1));
 
-function render(){renderSummary();renderTodo();renderChips();renderList();renderFriends();renderCritters()}
+function render(){renderSummary();renderTodo();renderChips();renderList();renderFriends();renderCritters();renderResources()}
 $("q").addEventListener("input",e=>{query=e.target.value.trim().toLowerCase();renderList()});
 
 /* ---------------- Firestore ---------------- */
