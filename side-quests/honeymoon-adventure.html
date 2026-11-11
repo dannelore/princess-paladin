@@ -15,7 +15,8 @@
   /* ======================================================================
      HONEYMOON ADVENTURE
 
-     Twelve days around the British Isles, out of Southampton and back.
+     Twelve days around the British Isles, out of Southampton and back,
+     with a day in London first (day 0).
      The itinerary itself is fixed and lives in ITINERARY in the script —
      sail date, ports, times and the notes about getting ashore. What we
      add on top (plans for each day, the packing checklist) is shared
@@ -420,8 +421,15 @@ const OPEN_KEY  = "pp_honeymoon_open";
 /* ---------------- the itinerary ----------------
    Fixed. Times are 24-hour local time; null means "---" on the booking.
    ukPlus is how far local time runs ahead of the UK that day. `pin` names
-   the matching marker on the map. */
+   the matching marker on the map.
+
+   A day with kind:"before" comes ahead of the cruise: it gets a card and
+   its own plans, but it isn't one of the twelve days and has no port times. */
 const ITINERARY = [
+  { id:"d0",  day:"Sat", name:"London", country:"United Kingdom", region:"England",
+    arrive:null, depart:null, kind:"before", currency:"£",
+    blurb:"A day in London before the ship — the sights, a proper tea, and an early night.",
+    note:"We sail from Southampton at 4 PM the next day; it's about 1½ hours by train from Waterloo." },
   { id:"d1",  day:"Sun", name:"London", via:"Southampton", country:"United Kingdom", region:"England",
     arrive:null, depart:"16:00", kind:"embark", pin:"southampton", currency:"£",
     blurb:"All aboard. We sail out of Southampton Water at four.",
@@ -471,7 +479,12 @@ const ITINERARY = [
     note:"Heathrow is about 1½ hours from Southampton by road." }
 ];
 
+/* How many days come before the sail date, so day numbers and dates still
+   count from the day we board. */
+const LEAD = ITINERARY.findIndex(d => d.kind === "embark");
+
 const PLAN_HINTS = {
+  d0:"A show, a sight, somewhere for tea…",
   d1:"Train to Southampton, a hotel the night before…",
   d10:"Spa, trivia, a very long lunch…",
   d12:"Flight number, transfer to the airport…"
@@ -529,7 +542,7 @@ function hoursLabel(h){
 function ashore(d){ return d.arrive && d.depart ? (mins(d.depart) - mins(d.arrive)) / 60 : 0; }
 
 function dayDate(i){
-  return new Date(SAIL_DATE.getFullYear(), SAIL_DATE.getMonth(), SAIL_DATE.getDate() + i);
+  return new Date(SAIL_DATE.getFullYear(), SAIL_DATE.getMonth(), SAIL_DATE.getDate() + i - LEAD);
 }
 
 function today(){ const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
@@ -582,11 +595,13 @@ function syncFoldAll(){
 /* ---------------- the voyage (built once, filled by render) ---------------- */
 function buildVoyage(){
   $("voyage").innerHTML = ITINERARY.map((d, i) => {
-    const sea = d.kind === "sea";
+    const sea = d.kind === "sea", before = d.kind === "before";
+    const num = i - LEAD + 1;
     const where = sea ? "" : [d.via ? "via " + d.via : "", d.region, d.country].filter(Boolean).join(" · ");
 
     const times = [];
-    if(!sea){
+    if(before) times.push(`<span class="hm-chip ashore">Before we sail</span>`);
+    if(!sea && !before){
       times.push(`<span class="hm-time"><small>Arrive</small>${clock(d.arrive)}</span>`);
       times.push(`<span class="hm-time"><small>Depart</small>${clock(d.depart)}</span>`);
     }
@@ -600,10 +615,10 @@ function buildVoyage(){
 
     const cls = ["hm-day"];
     if(sea) cls.push("is-sea");
-    if(d.kind === "embark" || d.kind === "home") cls.push("is-home");
+    if(d.kind === "embark" || d.kind === "home" || before) cls.push("is-home");
 
     return `<article class="${cls.join(" ")}" id="${d.id}" data-i="${i}">
-      <div class="hm-badge" aria-hidden="true"><small>Day</small><b>${i + 1}</b><i>${d.day}</i></div>
+      <div class="hm-badge" aria-hidden="true"><small>Day</small><b>${num}</b><i>${d.day}</i></div>
       <div class="pp-panel hm-card">
         <div class="hm-card-head">
           <div>
@@ -625,7 +640,7 @@ function buildVoyage(){
             <div class="hm-plans-head"><h4>Our plans</h4><span class="hm-hint" data-hint></span></div>
             <ul class="hm-plans" data-plans="${d.id}"></ul>
             <form class="hm-add" data-add="${d.id}" novalidate>
-              ${planFields({}, `New plan for day ${i + 1}`, PLAN_HINTS[d.id])}
+              ${planFields({}, `New plan for day ${num}`, PLAN_HINTS[d.id])}
               <button class="pp-btn pp-btn-sm" type="submit">Add</button>
             </form>
           </div>
@@ -659,10 +674,10 @@ function renderCountdown(){
   if(diff > 0){
     box.innerHTML = `<span class="hm-count-big">${diff}</span>
       <span class="hm-count-sub">${diff === 1 ? "day" : "days"} until we sail</span>`;
-  }else if(diff > -ITINERARY.length){
-    const d = ITINERARY[-diff];
+  }else if(diff > LEAD - ITINERARY.length){
+    const d = ITINERARY[LEAD - diff];
     box.innerHTML = `<span class="hm-count-big is-words">${diff === 0 ? "We sail today" : esc(d.name)}</span>
-      <span class="hm-count-sub">Day ${1 - diff} of ${ITINERARY.length}</span>`;
+      <span class="hm-count-sub">Day ${1 - diff} of ${ITINERARY.length - LEAD}</span>`;
   }else{
     box.innerHTML = `<span class="hm-count-big is-words">Home again</span>
       <span class="hm-count-sub">What a trip</span>`;
