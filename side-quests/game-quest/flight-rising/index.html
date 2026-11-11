@@ -58,7 +58,9 @@
 
      The breeding planner turns chosen pairs into an agenda of when to send
      them to the nest, from their cooldowns and the lair's free nests.
-       plan: { nests, pairs: [{ id, dam, sire }], busy: [FR date a nest frees] }
+       plan: { nests, pairs: [{ id, dam, sire, pri? }], busy: [FR date a nest frees] }
+     A pair's pri is "high" or "low" (none means normal); higher ones get
+     nests and dragons first.
        dam / sire are dragon ids; busy is added by "Sent to nest".
 
        daily: { picks: [daily id], custom: [{ id, t }], day, done: [daily id] }
@@ -291,6 +293,12 @@
   .fr-planadd{ display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 12px; }
   .fr-planadd .pp-field{ flex: 1 1 150px; min-width: 0; }
   .fr-planadd .fr-nests{ flex: 0 0 70px; }
+  .fr-planadd .fr-pri{ flex: 0 1 110px; }
+  /* the priority tag on each agenda row: tap to change it */
+  .fr-prichip{ font-family: var(--font-body); font-size: .6rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; vertical-align: 2px;
+    margin-left: 6px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--ink-soft); cursor: pointer; }
+  .fr-prichip.high{ border-color: var(--gold-deep); color: var(--gold-deep); background: var(--accent-soft); }
+  .fr-prichip.low{ border-style: dashed; }
   .fr-planmsg{ margin: 0; font-size: .86rem; color: var(--blade); }
   .fr-agenda{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
   .fr-agendo{ display: grid; grid-template-columns: 96px minmax(0,1fr) auto; gap: 4px 14px; align-items: start; padding: 11px 0; border-top: 1px solid var(--line); }
@@ -526,6 +534,7 @@
         <form class="fr-planadd" id="planAdd">
           <div class="pp-field"><label for="planDam">Dam</label><select id="planDam"></select></div>
           <div class="pp-field"><label for="planSire">Sire</label><select id="planSire"></select></div>
+          <div class="pp-field fr-pri"><label for="planPri">Priority</label><select id="planPri"><option value="high">High</option><option value="normal" selected>Normal</option><option value="low">Low</option></select></div>
           <button class="pp-btn" type="submit">Add pair</button>
           <div class="pp-field fr-nests"><label for="planNests">Nests</label><input id="planNests" type="number" min="1" max="5"></div>
         </form>
@@ -804,7 +813,7 @@ function cleanPlan(p){
   p = p && typeof p === "object" ? p : {};
   return {
     nests: Math.max(1, Math.min(5, parseInt(p.nests, 10) || 2)),
-    pairs: Array.isArray(p.pairs) ? p.pairs.filter(x => x && x.id && x.dam && x.sire) : [],
+    pairs: Array.isArray(p.pairs) ? p.pairs.filter(x => x && x.id && x.dam && x.sire) : [],   /* each may carry pri: "high" | "low" */
     busy: Array.isArray(p.busy) ? p.busy.filter(x => typeof x === "string") : []
   };
 }
@@ -1648,26 +1657,47 @@ const NEST_DAYS = 5;   /* five daily incubations, hatching the day after */
 const dayStr = n => new Date(n * 864e5).toISOString().slice(0, 10);
 const plannable = d => !isEgg(d) && d.status !== "gone" && GENDERS[d.gender] && COOLDOWNS[d.breed];
 
+/* Priority: high pairs are booked first, then normal, then low. A later
+   pair can still slip into an earlier gap (a free nest, a dragon's idle
+   days), but only if it doesn't push back anything already booked. */
+const PRIORITY = { high: { rank: 0, label: "High" }, normal: { rank: 1, label: "Normal" }, low: { rank: 2, label: "Low" } };
+const priOf = p => PRIORITY[p.pri] ? p.pri : "normal";
+
 function agenda(){
   const plan = cur().plan, today = dayNum(frToday());
-  const free = Array(plan.nests).fill(today);
-  plan.busy.map(dayNum).filter(n => n > today).sort((a,b) => b - a).slice(0, plan.nests).forEach((n, i) => { free[i] = n; });
-  const next = {};
-  const on = d => next[d.id] !== undefined ? next[d.id] : Math.max(today, d.breedOn ? dayNum(d.breedOn) : today);
-  const left = plan.pairs.map(p => ({ id: p.id, dam: byId(p.dam), sire: byId(p.sire) })).filter(x => x.dam && x.sire && plannable(x.dam) && plannable(x.sire));
+  /* each nest and each dragon keeps a list of [from, to) days it's taken */
+  const nests = Array.from({ length: plan.nests }, () => []);
+  plan.busy.map(dayNum).filter(n => n > today).sort((a,b) => b - a).slice(0, plan.nests).forEach((n, i) => nests[i].push([-Infinity, n]));
+  const held = {};
+  const ready = d => Math.max(today, d.breedOn ? dayNum(d.breedOn) : today);
+  const clear = (list, from, to) => list.every(([a, b]) => to <= a || from >= b);
+  const dragonFree = (d, day) => clear(held[d.id] || [], day, day + COOLDOWNS[d.breed]);
+  /* the first day both dragons and a nest are free, from when both are ready */
+  const slot = x => {
+    for(let day = Math.max(ready(x.dam), ready(x.sire)); day < today + 3650; day++){
+      if(!dragonFree(x.dam, day) || !dragonFree(x.sire, day)) continue;
+      const n = nests.findIndex(l => clear(l, day, day + NEST_DAYS));
+      if(n >= 0) return { day: day, nest: n };
+    }
+    return null;
+  };
+  const all = plan.pairs.map(p => ({ id: p.id, pri: priOf(p), dam: byId(p.dam), sire: byId(p.sire) })).filter(x => x.dam && x.sire && plannable(x.dam) && plannable(x.sire));
   const rows = [];
-  while(left.length){
-    let at = 0, soonest = Infinity;
-    left.forEach((x, i) => { const n = Math.max(on(x.dam), on(x.sire)); if(n < soonest){ soonest = n; at = i; } });
-    const x = left.splice(at, 1)[0];
-    free.sort((a,b) => a - b);
-    const day = Math.max(soonest, free[0]);
-    rows.push({ id: x.id, dam: x.dam, sire: x.sire, day: day, damOn: on(x.dam), sireOn: on(x.sire), nestWait: free[0] > soonest });
-    free[0] = day + NEST_DAYS;
-    next[x.dam.id] = day + COOLDOWNS[x.dam.breed];
-    next[x.sire.id] = day + COOLDOWNS[x.sire.breed];
-  }
-  return rows;
+  Object.keys(PRIORITY).forEach(pri => {
+    const left = all.filter(x => x.pri === pri);
+    while(left.length){
+      let at = -1, best = null;
+      left.forEach((x, i) => { const s = slot(x); if(s && (!best || s.day < best.day)){ best = s; at = i; } });
+      if(at < 0) break;
+      const x = left.splice(at, 1)[0], day = best.day;
+      const first = d => (held[d.id] || []).filter(([a]) => a < day).reduce((m, [, b]) => Math.max(m, b), ready(d));
+      rows.push({ id: x.id, pri: pri, dam: x.dam, sire: x.sire, day: day, damOn: first(x.dam), sireOn: first(x.sire),
+        nestWait: day > Math.max(first(x.dam), first(x.sire)) });
+      nests[best.nest].push([day, day + NEST_DAYS]);
+      [x.dam, x.sire].forEach(d => (held[d.id] = held[d.id] || []).push([day, day + COOLDOWNS[d.breed]]));
+    }
+  });
+  return rows.sort((a, b) => a.day - b.day || PRIORITY[a.pri].rank - PRIORITY[b.pri].rank);
 }
 
 function fillPlanPick(id, g){
@@ -1690,7 +1720,7 @@ function renderPlanner(){
     const ready = r.damOn === r.sireOn ? `Both ready ${fmtAgenda(dayStr(r.damOn))}.` : `${esc(r.dam.name)} ready ${fmtAgenda(dayStr(r.damOn))}, ${esc(r.sire.name)} ${fmtAgenda(dayStr(r.sireOn))}.`;
     return `<li class="fr-agendo${left ? "" : " is-now"}">
       <div class="when"><b>${fmtAgenda(dayStr(r.day))}</b><small>${left ? (left === 1 ? "tomorrow" : `in ${left} days`) : "today"}</small></div>
-      <div class="what">${famBtn(r.dam)} × ${famBtn(r.sire)}
+      <div class="what">${famBtn(r.dam)} × ${famBtn(r.sire)}<button class="fr-prichip ${r.pri}" type="button" data-pri="${esc(r.id)}" title="Priority: tap to change">${PRIORITY[r.pri].label}</button>
         <small>${ready}${r.nestWait ? " Waiting on a free nest." : ""} Eggs hatch around ${fmtAgenda(dayStr(r.day + NEST_DAYS))}.</small>
         ${why ? `<small class="warn">Flight Rising will refuse this pair: ${esc(why.text)}.</small>` : ""}</div>
       <div class="acts">${left ? "" : `<button class="pp-btn pp-btn-sm" type="button" data-sent="${esc(r.id)}">Sent to nest</button>`}
@@ -1731,8 +1761,10 @@ $("planAdd").onsubmit = e => {
   const why = whyNot(dam, sire, kin(dam), kin(sire));
   if(why){ planMsg(`${dam.name} and ${sire.name} can't pair: ${why.text}.`); return; }
   planMsg("");
-  cur().plan.pairs.push({ id: uid(), dam: dam.id, sire: sire.id });
+  const pri = $("planPri").value;
+  cur().plan.pairs.push(Object.assign({ id: uid(), dam: dam.id, sire: sire.id }, pri !== "normal" ? { pri: pri } : {}));
   $("planDam").value = $("planSire").value = "";
+  $("planPri").value = "normal";
   save(who);
 };
 $("planNests").onchange = e => {
@@ -1744,6 +1776,16 @@ $("agenda").onclick = e => {
   const fam = e.target.closest("[data-fam]");
   if(fam){ openFam(fam.dataset.fam); return; }
   const plan = cur().plan;
+  const chip = e.target.closest("[data-pri]");
+  if(chip){
+    /* High → Normal → Low → High */
+    const p = plan.pairs.find(x => x.id === chip.dataset.pri);
+    if(!p) return;
+    const nextPri = { high: "normal", normal: "low", low: "high" }[priOf(p)];
+    if(nextPri === "normal") delete p.pri; else p.pri = nextPri;
+    save(who);
+    return;
+  }
   const off = e.target.closest("[data-unplan]");
   if(off){
     plan.pairs = plan.pairs.filter(p => p.id !== off.dataset.unplan);
