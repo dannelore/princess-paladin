@@ -252,6 +252,7 @@
   .dv-rtable td{ padding: 8px 12px; border-top: 1px solid var(--line); vertical-align: top; }
   .dv-rtable tr:hover td{ background: var(--panel-tint); }
   .dv-rtable td.num, .dv-rtable th.num{ text-align: right; font-variant-numeric: tabular-nums; }
+  .dv-rtable .unsure{ color: var(--gold-deep); font-weight: 600; cursor: help; }
   .dv-rtable td b{ font-weight: 600; }
   .dv-rtable td small{ display: block; color: var(--ink-soft); font-size: .8rem; }
   .dv-rtable .rarea{ color: var(--ink-soft); font-size: .8rem; display: block; }
@@ -1192,7 +1193,12 @@ setInterval(()=>{if(!$("pane-critters").hidden)renderNow()},60000);
 const R_KEY="pp_ddv_resources";
 const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const AREA_EXP={"Dreamlight Valley":"Base Game","Eternity Isle":"A Rift in Time","Storybook Vale":"Storybook Vale","Wishblossom Ranch":"Wishblossom Ranch","Honeyglow Woods":"Honeyglow Woods"};
-const R_COLS=[["name","Resource"],["category","Type"],["biome","Biome"],["how","How"],["sell","Sells for"]];
+const R_COLS=[["name","Resource"],["category","Type"],["biome","Biome"],["how","How"],["max","Max"],["respawn","Respawn"],["sell","Sells for"]];
+// Max sorts by its number (no cap counts as most), Respawn by minutes (unknown last)
+const maxNum=r=>!r.max?-1:/no cap|unlimited/i.test(r.max)?1e6:parseFloat(r.max.replace(/^~/,""))||0;
+const respawnMin=r=>{const m=/(\d+)\s*(min|h)/.exec(r.respawn||"");return m?(+m[1])*(m[2]==="h"?60:1):1e6};
+// a value only one guide gives, or that guides disagree on, gets a "?"
+const spawnCell=(r,k)=>r[k]?esc(r[k])+((r.unsure||[]).includes(k)?' <span class="unsure" title="Only one guide says so, or guides disagree">?</span>':""):"—";
 const R_ROWS=RESOURCES.map(x=>({...x,biomes:[...x.biomes].sort()}));
 const R_AREAS=[...new Set(Object.values(BIOME_AREA))];
 const R_CATS=[...new Set(RESOURCES.map(x=>x.category))];
@@ -1221,18 +1227,18 @@ function renderResources(){
     .filter(r=>r.shown.length&&(rBiome==="all"||r.shown.includes(rBiome))&&(rCat==="all"||r.category===rCat)&&(rHow==="all"||r.how===rHow)&&
       (!rQuery||(r.name+" "+r.shown.join(" ")+" "+r.category+" "+(r.note||"")).toLowerCase().includes(rQuery)));
   const{col,dir}=rSort;
-  const key=r=>col==="sell"?(r.sell==null?-1:r.sell):col==="biome"?r.shown[0].toLowerCase():String(r[col]||"").toLowerCase();
+  const key=r=>col==="sell"?(r.sell==null?-1:r.sell):col==="biome"?r.shown[0].toLowerCase():col==="max"?maxNum(r):col==="respawn"?respawnMin(r):String(r[col]||"").toLowerCase();
   rows.sort((a,b)=>{const x=key(a),y=key(b);return(x<y?-1:x>y?1:0)*dir||a.name.localeCompare(b.name)});
   const head=$("r-head");head.innerHTML="";
   for(const[k,label]of R_COLS){const th=document.createElement("th");th.scope="col";if(k==="sell")th.className="num";
     th.setAttribute("aria-sort",col===k?(dir>0?"ascending":"descending"):"none");
-    const b=document.createElement("button");b.textContent=label;b.onclick=()=>{rSort={col:k,dir:col===k?-dir:(k==="sell"?-1:1)};saveRPrefs();renderResources()};
+    const b=document.createElement("button");b.textContent=label;b.onclick=()=>{rSort={col:k,dir:col===k?-dir:(k==="sell"||k==="max"?-1:1)};saveRPrefs();renderResources()};
     th.append(b);head.append(th)}
   $("r-body").innerHTML=rows.map(r=>`<tr><td><b>${esc(r.name)}</b>${r.note?`<small>${esc(r.note)}</small>`:""}</td><td>${esc(r.category)}</td>`+
     // the chosen biome is in bold among the others
-    `<td>${r.shown.map(b=>b===rBiome?`<b>${esc(b)}</b>`:esc(b)).join(", ")}<span class="rarea">${esc([...new Set(r.shown.map(b=>BIOME_AREA[b]))].join(", "))}</span></td>`+
-    `<td>${esc(r.how||"")}</td><td class="num">${r.sell==null?"—":r.sell}</td></tr>`).join("")||
-    `<tr><td colspan="5" class="pp-empty">No resources match. Try another filter or search.</td></tr>`;
+    `<td>${r.shown.map(b=>b===rBiome?`<b>${esc(b)}</b>`:esc(b)).join(", ")}<span class="rarea">${esc(R_AREAS.filter(a=>r.shown.some(b=>BIOME_AREA[b]===a)).join(", "))}</span></td>`+
+    `<td>${esc(r.how||"")}</td><td>${spawnCell(r,"max")}</td><td>${spawnCell(r,"respawn")}</td><td class="num">${r.sell==null?"—":r.sell}</td></tr>`).join("")||
+    `<tr><td colspan="7" class="pp-empty">No resources match. Try another filter or search.</td></tr>`;
   $("r-count").textContent=`${rows.length} resource${rows.length===1?"":"s"}`;
   // the wiki asks to be credited, so its name links back to it
   const foot=$("r-foot"),[pre,post]=RESOURCE_SOURCE.split("Dreamlight Valley Wiki");foot.textContent=pre;
