@@ -372,6 +372,7 @@
         <div class="dv-sels">
           <label class="dv-sel">Area <select id="r-area"><option value="all">All</option><option value="owned">Ones I own</option></select></label>
           <label class="dv-sel">Biome <select id="r-biome"><option value="all">All</option></select></label>
+          <label class="dv-sel">How <select id="r-how"><option value="all">All</option></select></label>
           <span class="dv-count" id="r-count"></span>
         </div>
       </div>
@@ -1194,14 +1195,18 @@ const R_COLS=[["name","Resource"],["category","Type"],["biome","Biome"],["how","
 const R_ROWS=RESOURCES.flatMap(x=>x.biomes.map(b=>({...x,biome:b,area:BIOME_AREA[b]||""})));
 const R_AREAS=[...new Set(Object.values(BIOME_AREA))];
 const R_CATS=[...new Set(RESOURCES.map(x=>x.category))];
-let rArea="all",rBiome="all",rCat="all",rQuery="",rSort={col:"biome",dir:1};
-try{const p=JSON.parse(localStorage.getItem(R_KEY)||"null");if(p){rArea=p.area||"all";rBiome=p.biome||"all";rCat=p.cat||"all";if(p.sort)rSort=p.sort}}catch(e){}
-function saveRPrefs(){try{localStorage.setItem(R_KEY,JSON.stringify({area:rArea,biome:rBiome,cat:rCat,sort:rSort}))}catch(e){}}
+let rArea="all",rBiome="all",rCat="all",rHow="all",rQuery="",rSort={col:"biome",dir:1};
+try{const p=JSON.parse(localStorage.getItem(R_KEY)||"null");if(p){rArea=p.area||"all";rBiome=p.biome||"all";rCat=p.cat||"all";rHow=p.how||"all";if(p.sort)rSort=p.sort}}catch(e){}
+function saveRPrefs(){try{localStorage.setItem(R_KEY,JSON.stringify({area:rArea,biome:rBiome,cat:rCat,how:rHow,sort:rSort}))}catch(e){}}
 const rAreaOk=a=>rArea==="all"||(rArea==="owned"?OWNED.includes(AREA_EXP[a]||a):a===rArea);
 {const sel=$("r-area");for(const a of R_AREAS){const o=document.createElement("option");o.value=a;o.textContent=a;sel.append(o)}
   if(![...sel.options].some(o=>o.value===rArea))rArea="all";sel.value=rArea;
   sel.onchange=()=>{rArea=sel.value;rBiome="all";saveRPrefs();renderResources()};
   $("r-biome").onchange=e=>{rBiome=e.target.value;saveRPrefs();renderResources()};
+  // Grow is the crops: seeds from the biome's stall
+  {const hs=$("r-how");for(const w of [...new Set(RESOURCES.map(x=>x.how))].sort()){const o=document.createElement("option");o.value=w;o.textContent=w==="Grow"?"Grow (crops)":w;hs.append(o)}
+    if(![...hs.options].some(o=>o.value===rHow))rHow="all";hs.value=rHow;
+    hs.onchange=()=>{rHow=hs.value;saveRPrefs();renderResources()}}
   $("r-q").addEventListener("input",e=>{rQuery=e.target.value.trim().toLowerCase();renderResources()})}
 function renderResources(){
   // biome choices follow the area
@@ -1211,7 +1216,7 @@ function renderResources(){
   const chips=$("r-chips");chips.innerHTML="";
   for(const k of ["all",...R_CATS]){const b=document.createElement("button");b.className="pp-pill";b.textContent=k==="all"?"All":k;b.setAttribute("aria-pressed",rCat===k);
     b.onclick=()=>{rCat=k;saveRPrefs();renderResources()};chips.append(b)}
-  const rows=R_ROWS.filter(r=>rAreaOk(r.area)&&(rBiome==="all"||r.biome===rBiome)&&(rCat==="all"||r.category===rCat)&&
+  const rows=R_ROWS.filter(r=>rAreaOk(r.area)&&(rBiome==="all"||r.biome===rBiome)&&(rCat==="all"||r.category===rCat)&&(rHow==="all"||r.how===rHow)&&
     (!rQuery||(r.name+" "+r.biome+" "+r.category+" "+(r.note||"")).toLowerCase().includes(rQuery)));
   const{col,dir}=rSort;
   const key=r=>col==="sell"?(r.sell==null?-1:r.sell):String(r[col]||"").toLowerCase();
@@ -1225,7 +1230,9 @@ function renderResources(){
     `<td>${esc(r.biome)}<span class="rarea">${esc(r.area)}</span></td><td>${esc(r.how||"")}</td><td class="num">${r.sell==null?"—":r.sell}</td></tr>`).join("")||
     `<tr><td colspan="5" class="pp-empty">No resources match. Try another filter or search.</td></tr>`;
   $("r-count").textContent=`${rows.length} row${rows.length===1?"":"s"} · ${new Set(rows.map(r=>r.name)).size} resources`;
-  $("r-foot").textContent=RESOURCE_SOURCE;
+  // the wiki asks to be credited, so its name links back to it
+  const foot=$("r-foot"),[pre,post]=RESOURCE_SOURCE.split("Dreamlight Valley Wiki");foot.textContent=pre;
+  if(post!==undefined){const a=document.createElement("a");a.href="https://dreamlightvalleywiki.com/";a.target="_blank";a.rel="noopener";a.textContent="Dreamlight Valley Wiki";foot.append(a,post)}
 }
 
 /* ---------------- tabs: #quests (default), #friendship, #critters, #resources ---------------- */
