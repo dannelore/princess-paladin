@@ -353,9 +353,13 @@
   .fr-node .pic img{ width: 100%; height: 100%; object-fit: cover; display: block; }
   .fr-node b{ font-weight: 600; font-size: .9rem; overflow-wrap: anywhere; }
   .fr-node small{ font-size: .74rem; color: var(--ink-soft); }
-  .fr-genlist > .fr-away{ display: flex; flex-direction: column; gap: 4px; flex-basis: 100%; max-width: 460px; }
-  .fr-away ul{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-  .fr-away li{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; font-size: .85rem; }
+  /* one quiet line for relatives no longer in this lair */
+  .fr-away{ align-self: center; max-width: 100%; margin: 2px 0 0; padding: 3px 10px; border: 1px dashed var(--line); border-radius: var(--radius-sm);
+    font-size: .74rem; line-height: 1.5; color: var(--ink-soft); text-align: center; }
+  .fr-away span + span::before{ content: " · "; }
+  .fr-away b{ font-weight: 600; }
+  .fr-away i{ font-style: normal; opacity: .8; }
+  .fr-away .fr-famlink{ font-size: inherit; color: inherit; }
   .fr-node .role{ font-family: var(--font-body); font-size: .6rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-deep); }
 </style>
 </head>
@@ -1443,7 +1447,17 @@ function openFam(id, quiet){
   famId = id;
   $("famTitle").textContent = d.name + "'s family";
 
-  const row = (label, html, cls) => `<div class="fr-gen${cls ? " " + cls : ""}"><p class="fr-genlabel">${label}</p><div class="fr-genlist">${html}</div></div>`;
+  const row = (label, html, cls, extra) => `<div class="fr-gen${cls ? " " + cls : ""}"><p class="fr-genlabel">${label}</p>${html ? `<div class="fr-genlist">${html}</div>` : ""}${extra || ""}</div>`;
+  /* dragons in a row who have moved on or live in the other lair get one
+     quiet line under the row instead of a card each. list is [{ o, tag }] */
+  const away = o => o.status === "gone" || lairOf(o) !== who;
+  const awayNote = list => {
+    if(!list.length) return "";
+    const name = x => (lairOf(x.o) === who ? `<button class="fr-famlink" type="button" data-fam="${esc(x.o.id)}">${esc(x.o.name)}</button>` : esc(x.o.name)) + (x.tag ? ` <i>(${esc(x.tag)})</i>` : "");
+    const groups = [["Moved on", list.filter(x => lairOf(x.o) === who)]]
+      .concat(LAIR_KEYS.filter(k => k !== who).map(k => [`In ${LAIRS[k].label}'s lair`, list.filter(x => lairOf(x.o) === k)]));
+    return `<p class="fr-away">${groups.filter(g => g[1].length).map(([t, xs]) => `<span><b>${esc(t)}:</b> ${xs.map(name).join(", ")}</span>`).join("")}</p>`;
+  };
   const none = t => `<div class="fr-node unknown"><span class="pic"></span><b>${t}</b><small></small></div>`;
 
   /* up the tree: parents, grandparents, great-grandparents */
@@ -1464,12 +1478,6 @@ function openFam(id, quiet){
   }).filter(Boolean).sort((a, b) => a.role.localeCompare(b.role) || a.o.added - b.o.added)
     /* a dragon handed to the other lair is listed in both; keep the live copy */
     .filter((s, i, all) => !(s.o.status === "gone" && s.o.frId && all.some(t => t !== s && t.o.frId === s.o.frId && t.o.status !== "gone")));
-  /* siblings who have moved on or live in the other lair share one box */
-  const away = o => o.status === "gone" || lairOf(o) !== who;
-  const gone = sibs.filter(s => away(s.o));
-  const awayBox = gone.length ? `<div class="fr-node out fr-away"><b>No longer here (${gone.length})</b><ul>${gone.map(s =>
-    `<li>${lairOf(s.o) === who ? `<button class="fr-famlink" type="button" data-fam="${esc(s.o.id)}">${esc(s.o.name)}</button>` : esc(s.o.name)}
-      <small>${esc(s.role)} · ${lairOf(s.o) === who ? "moved on" : "in " + esc(LAIRS[lairOf(s.o)].label) + "'s lair"}</small></li>`).join("")}</ul></div>` : "";
 
   /* down: offspring and their offspring */
   const kids = childrenOf(d.id).sort((a,b) => a.added - b.added);
@@ -1485,10 +1493,13 @@ function openFam(id, quiet){
     (anyKnown(great) ? row("Great-grandparents", great.map(([p, ref], i) => kinNode(p, ref, `${gpRole(i >> 1)}'s ${i % 2 ? "dam" : "sire"}`)).join(""), "great") : "") +
     row("Grandparents", grand.map(([p, ref], i) => kinNode(p, ref, gpRole(i))).join(""), "grand") +
     row("Parents", parents.map(([p, ref], i) => kinNode(p, ref, i ? "Dam" : "Sire")).join(""), "parents") +
-    row("This dragon" + (sibs.length ? ` and siblings (${sibs.length})` : ""), node({ id: d.id }, "", true) + sibs.filter(s => !away(s.o)).map(s => kinNode(s.o, null, s.role)).join("") + awayBox, "self") +
+    row("This dragon" + (sibs.length ? ` and siblings (${sibs.length})` : ""), node({ id: d.id }, "", true) + sibs.filter(s => !away(s.o)).map(s => kinNode(s.o, null, s.role)).join(""), "self",
+      awayNote(sibs.filter(s => away(s.o)).map(s => ({ o: s.o, tag: s.role === "Full sibling" ? "" : s.role.replace("Half · ", "half, ") })))) +
     row("Offspring" + (kids.length ? ` (${kids.length})` : ""),
-      kids.length ? kids.map(k => kinNode(k, null, mateOf(k) ? "with " + mateOf(k) : "")).join("") : none("None yet"), "kids") +
-    (grandkids.length ? row(`Grandchildren (${grandkids.length})`, grandkids.map(x => kinNode(x.g, null, "via " + x.via.name)).join(""), "kids") : "");
+      kids.length ? kids.filter(k => !away(k)).map(k => kinNode(k, null, mateOf(k) ? "with " + mateOf(k) : "")).join("") : none("None yet"), "kids",
+      awayNote(kids.filter(away).map(k => ({ o: k, tag: mateOf(k) ? "with " + mateOf(k) : "" })))) +
+    (grandkids.length ? row(`Grandchildren (${grandkids.length})`, grandkids.filter(x => !away(x.g)).map(x => kinNode(x.g, null, "via " + x.via.name)).join(""), "kids",
+      awayNote(grandkids.filter(x => away(x.g)).map(x => ({ o: x.g, tag: "via " + x.via.name })))) : "");
 
   $("kinList").innerHTML =
     `<h3 class="fr-genlabel">How everyone in the lair is related to ${esc(d.name)}</h3>` +
