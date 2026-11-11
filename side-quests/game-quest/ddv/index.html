@@ -493,14 +493,41 @@ function write(id){
     pending--; if(!busy()) setSync("idle","Synced");
   });
 }
-function change(id,patch){S={...S,[id]:{...(S[id]||{}),...patch}};if(!S[id].s)delete S[id].s;if(!S[id].n)delete S[id].n;write(id);render()}
+// Returns the sub-quests it moved along with the quest (see SUB_QUESTS), so callers can undo them too
+function change(id,patch){S={...S,[id]:{...(S[id]||{}),...patch}};if(!S[id].s)delete S[id].s;if(!S[id].n)delete S[id].n;write(id);
+  const subs=patch.s!==undefined?moveSubQuests(id,patch.s):[];render();return subs}
+
+/* Quests that start partway through another one, keyed by the quest they start
+   during (from the wiki). Starting that quest puts them In progress, and finishing
+   it finishes them, since each is one of its objectives. They sit in a
+   "Starts during …" section, and are Not unlocked with a note until then. */
+const SUB_QUESTS={
+  "jack-skellington--the-holiday-poll":["scar--a-holiday-treat-for-scar","olaf--a-holiday-treat-for-olaf","vanellope-von-schwee--a-holiday-treat-for-vanellope"],
+  "sulley--villager-of-the-month":["ursula--villager-of-the-month-ursula","donald-duck--villager-of-the-month-donald","mike-wazowski--villager-of-the-month-mike"],
+  "mulan--training-games":["maui--training-games-the-shapeshifter","nala--training-games-the-lioness","buzz-lightyear--training-games-the-space-ranger"],
+  "mushu--the-guardian-party":["mushu--the-red-pouch-hunt","mushu--cooking-sesame-balls","mushu--mushu-s-pinata-extravaganza"],
+  "oswald--a-cockamamie-contest":["eve--eve-s-challenge","gaston--gaston-s-challenge","rapunzel--rapunzel-s-challenge"],
+  "daisy-duck--ask-daisy":["kristoff--a-romantic-in-the-making"]
+};
+function moveSubQuests(id,s){
+  if(!SUB_QUESTS[id]||(s!=="p"&&s!=="d"))return[];
+  const prev=[];
+  for(const sid of SUB_QUESTS[id]){const cur=st(sid);
+    if(cur==="d"||cur===s||!Q.some(r=>r[0]===sid))continue;
+    prev.push([sid,{s:cur,n:nt(sid)}]);
+    S={...S,[sid]:{...(S[sid]||{}),s}};
+    if(/^locked/i.test(nt(sid)))delete S[sid].n; // "Locked: starts during …" is stale now
+    write(sid)}
+  return prev;
+}
 
 /* A character's quests come one after another, so finishing one means the ones
    before it (in the same section) are done too. Secret Potatoes, Snow White's and
-   Tinker Bell's quests, and the Dream Bundles can be done in any order. Seasonal and
-   side quests (Holiday Treats, Villager of the Month, Training Games…) sit in an
-   "Events & extras" section of their own, so finishing one doesn't tick the story.
-   loose() (in ddv-data.js) says which quests don't follow on. */
+   Tinker Bell's quests, and the Dream Bundles can be done in any order. Quests that start
+   partway through another one (Holiday Treats, Villager of the Month, Training
+   Games…) sit in a "Starts during …" section of their own, so finishing one
+   doesn't tick the villager's story. loose() (in ddv-data.js) says which quests
+   don't follow on. */
 function doneBefore(r){
   if(loose(r))return[];
   const rows=byChar.find(g=>g.exp===r[1]&&g.ch===r[2]).rows,prev=[];
@@ -515,9 +542,9 @@ function doneBefore(r){
 function restore(prev){for(const[id,p]of prev){const v={};if(p.s)v.s=p.s;if(p.n)v.n=p.n;S={...S,[id]:v};write(id)}render()}
 // Mark done, with the earlier quests, and offer to undo the lot
 function markDone(r,patch,undoEl){const id=r[0],was={s:st(id),n:nt(id)},prev=doneBefore(r);
-  change(id,patch);
-  const also=prev.length?` ${plural(prev.length,"earlier quest")} too.`:"";
-  if(undoEl==="undo"||also)showUndo(`${r[4]} marked Done.${also}`,()=>restore([[id,was],...prev]),undoEl);
+  const subs=change(id,patch);
+  const also=(prev.length?` ${plural(prev.length,"earlier quest")} too.`:"")+(subs.length?` ${plural(subs.length,"quest")} that started during it too.`:"");
+  if(undoEl==="undo"||also)showUndo(`${r[4]} marked Done.${also}`,()=>restore([[id,was],...prev,...subs]),undoEl);
 }
 
 /* ---------------- progress ---------------- */
@@ -604,8 +631,9 @@ function plateSet(r,patch){const id=r[0],prev={s:st(id),n:nt(id)};
   // a "Locked: …" note is stale once the quest leaves Locked
   if(prev.s==="l"&&patch.s!=="l"&&patch.n===undefined&&/^locked/i.test(prev.n))patch={...patch,n:""};
   if(patch.s==="d")return markDone(r,patch,"undo");
-  change(id,patch);
-  showUndo(`${r[4]} marked ${LABEL[patch.s]}.`,()=>change(id,prev));
+  const subs=change(id,patch);
+  const also=subs.length?` ${plural(subs.length,"quest")} that start${subs.length===1?"s":""} during it too.`:"";
+  showUndo(`${r[4]} marked ${LABEL[patch.s]}.${also}`,()=>{change(id,prev);restore(subs)});
 }
 function showUndo(msg,fn,el="undo"){const U=$(el);clearTimeout(undoTimer[el]);U.innerHTML="";
   const t=document.createElement("span");t.textContent=msg;const b=document.createElement("button");b.textContent="Undo";

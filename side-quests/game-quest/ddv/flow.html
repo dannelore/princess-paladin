@@ -185,7 +185,7 @@ function questNamed(text){
   return rows.find(r=>t.startsWith(r[2].split(" ")[0].toLowerCase()))||rows.find(r=>t===r[4].toLowerCase());
 }
 // the first quest of theirs not done: "more of their story" points at it
-const nextOf=k=>CH.get(k).rows.find(r=>playable(r)&&r[3]!=="Events & extras"&&st(r[0])!=="d");
+const nextOf=k=>CH.get(k).rows.find(r=>playable(r)&&!/^Starts during /.test(r[3])&&st(r[0])!=="d");
 
 /* ---------------- the steps ----------------
    Every step and what it needs first ("pre"):
@@ -210,7 +210,7 @@ function build(){
   for(const g of byChar)for(const r of g.rows){
     if(!ownerOf.has(r[0])||!playable(r))continue;
     const n=quest(r[0]),c=CH.get(ownerOf.get(r[0]));
-    if(!loose(r)&&r[3]!=="Events & extras")
+    if(!loose(r)&&!/^Starts during /.test(r[3]))
       for(let j=g.rows.indexOf(r)-1;j>=0;j--){const x=g.rows[j];if(x[3]!==r[3]||!playable(x))continue;pre(n,quest(x[0]),"chain");break}
     if(c.v&&FRIEND_REQ[r[0]]>0)pre(n,level(c.k,FRIEND_REQ[r[0]]),"level");
     for(const x of NEEDS[r[0]]||[]){
