@@ -1,0 +1,9 @@
+# Settings for the link check (.github/workflows/link-check.yml).
+# lychee reads this file by itself when it runs from the repo root.
+
+# Leave the Jcink skin source out. Those files are forum templates, not
+# pages of this site: their links (index.php?act=…, <!-- |id| -->) only
+# mean something once they're installed on the board.
+exclude_path = [
+    "(^|/)jcink/",
+]
