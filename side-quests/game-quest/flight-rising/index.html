@@ -40,8 +40,13 @@
      parents and notes over the picture; everything is edited in Edit.
      Eggs (status "egg") sort last whatever the sort.
 
-     Family trees are worked out from sire and dam: two generations up,
-     and every dragon in the lair that names this one as a parent.
+     Family trees are worked out from sire and dam and read top to bottom:
+     up to great-grandparents, then the dragon beside its full and half
+     siblings, then offspring and grandchildren. An outside parent written
+     with its FR id is followed into the other lair when it lives there.
+     Under the tree, everyone in the lair who shares an ancestor within five
+     generations is listed nearest first, named (half brother, first cousin
+     once removed...) with the ancestor they share. Gone dragons count too.
 
      "Who can breed?" lists the bachelorettes and bachelors (not eggs or
      the gone) and who each could pair with. Flight Rising refuses pairs
@@ -309,9 +314,27 @@
   .fr-fam{ display: flex; flex-direction: column; gap: 16px; }
   .fr-famhead{ display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
   .fr-famhead h2{ margin: 0; }
-  .fr-tree{ display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
-  .fr-gen{ display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-  .fr-genlist{ flex: 1 1 auto; display: flex; flex-direction: column; justify-content: space-around; gap: 8px; }
+  /* the tree reads top to bottom: oldest generation first, each a row */
+  .fr-tree{ display: flex; flex-direction: column; gap: 6px; }
+  .fr-gen{ display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-bottom: 12px; position: relative; }
+  .fr-gen + .fr-gen::before{
+    content: ""; position: absolute; left: 50%; top: -10px; height: 8px; border-left: 2px solid var(--line);
+  }
+  .fr-genlist{ display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .fr-genlist > *{ flex: 1 1 140px; max-width: 220px; }
+  .fr-gen .fr-genlabel{ text-align: center; }
+  .fr-gen.great .fr-genlist > *{ flex-basis: 110px; max-width: 170px; }
+  .fr-gen.great .fr-node{ grid-template-columns: minmax(0,1fr); }
+  .fr-gen.great .fr-node .pic{ display: none; }
+  .fr-kinwrap{ border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .fr-kinwrap h3{ margin: 0; }
+  .fr-kin{ list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%,260px),1fr)); gap: 6px 18px; }
+  .fr-kin li{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding: 4px 0; border-bottom: 1px dotted var(--line); }
+  .fr-kin .what{ font-family: var(--font-serif); font-style: italic; color: var(--ink); }
+  .fr-kin small{ flex-basis: 100%; font-size: .74rem; color: var(--ink-soft); }
+  .fr-kin .gone{ font-family: var(--font-body); font-size: .6rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .fr-kinfar summary{ cursor: pointer; font-size: .85rem; color: var(--ink-soft); }
+  .fr-kinfar p{ margin: 6px 0 0; line-height: 1.7; }
   .fr-genlabel{
     font-family: var(--font-body); font-size: .66rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
     color: var(--dusk-deep); margin: 0 0 2px;
@@ -331,10 +354,6 @@
   .fr-node b{ font-weight: 600; font-size: .9rem; overflow-wrap: anywhere; }
   .fr-node small{ font-size: .74rem; color: var(--ink-soft); }
   .fr-node .role{ font-family: var(--font-body); font-size: .6rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-deep); }
-  @media (max-width: 720px){
-    .fr-tree{ grid-template-columns: 1fr; }
-    .fr-genlist{ display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%,150px),1fr)); }
-  }
 </style>
 </head>
 <body class="pp-sidequest" data-nav-eyebrow="Side Quests" data-nav-title="Flight Rising">
@@ -475,7 +494,8 @@
           <button class="pp-btn pp-btn-quiet pp-btn-sm" id="famClose" type="button">Close</button>
         </div>
         <div class="fr-tree" id="tree"></div>
-        <p class="fr-hint">Tap a dragon from the lair to see their tree. Dashed ones live outside it.</p>
+        <div class="fr-kinwrap" id="kinList"></div>
+        <p class="fr-hint">Tap a dragon to see their tree. Dashed ones live outside this lair. Dragons that have moved on stay listed under the Gone filter, so their families still count here.</p>
       </section>
 
       <!-- ---------------- who can breed with whom ---------------- -->
@@ -1356,9 +1376,61 @@ function node(ref, role, self){
   return `<div class="fr-node unknown"><span class="pic"></span><b>Unknown</b><small>${tag}</small></div>`;
 }
 
-function parentsOf(ref){
-  const d = ref && ref.id ? byId(ref.id) : null;
-  return d ? [d.sire, d.dam] : [null, null];
+/* A tree node for a dragon found in either lair. One in the lair on show
+   opens its own tree; one in the other lair just says whose it is. */
+function kinNode(dragon, ref, role){
+  if(!dragon) return node(ref, role);
+  const k = lairOf(dragon);
+  if(k === who) return node({ id: dragon.id }, role).replace("</small></button>", (dragon.status === "gone" ? " · moved on" : "") + "</small></button>");
+  const tag = role ? `<span class="role">${esc(role)}</span> ` : "";
+  return `<div class="fr-node out"><span class="pic"></span><b>${esc(dragon.name)}</b><small>${tag}in ${esc(LAIRS[k].label)}'s lair</small></div>`;
+}
+
+/* The parents of a link, as [ [dragon or null, link], [dragon or null, link] ] */
+function parentPair(dragon){
+  return dragon ? [dragon.sire, dragon.dam].map(p => [resolveRef(p, dragon), p]) : [[null, null], [null, null]];
+}
+
+/* What b is to a, from how many generations each sits below the nearest
+   ancestor they share (0 means that dragon is the ancestor). */
+const ORD = ["", "First", "Second", "Third", "Fourth"];
+function relation(a, b, up, down, full){
+  const g = (f, m, n) => b.gender === "F" ? f : b.gender === "M" ? m : n;
+  /* "great-" n times in front, capitalised: Great-great-grandson */
+  const gr = (n, word) => { const t = "great-".repeat(Math.max(0, n)) + word; return t[0].toUpperCase() + t.slice(1); };
+  if(up === 0) return down === 1 ? g("Daughter", "Son", "Offspring") : gr(down - 2, g("granddaughter", "grandson", "grandchild"));
+  if(down === 0) return up === 1 ? g("Dam", "Sire", "Parent") : gr(up - 2, g("grandmother", "grandfather", "grandparent"));
+  if(up === 1 && down === 1) return (full ? "Full " : "Half ") + g("sister", "brother", "sibling");
+  if(up === 1) return gr(down - 2, g("niece", "nephew", "niece or nephew"));
+  if(down === 1) return gr(up - 2, g("aunt", "uncle", "aunt or uncle"));
+  const c = Math.min(up, down) - 1, r = Math.abs(up - down);
+  return `${ORD[c] || c + "th"} cousin${r ? (r === 1 ? ", once removed" : r === 2 ? ", twice removed" : `, ${r}× removed`) : ""}`;
+}
+
+/* Everyone in this lair who shares an ancestor with d within KIN_GENS
+   generations (or descends from d), nearest first. */
+function relatives(d){
+  const kd = kin(d);
+  const pk = x => [x.sire, x.dam].map(p => { const r = resolveRef(p, x); return r ? dragonKey(r) : p ? refKey(p) : null; });
+  const [ds, dd] = pk(d);
+  const near = [], far = [];
+  cur().items.forEach(o => {
+    if(o === d || isEgg(o) && !o.sire && !o.dam) return;
+    const ko = kin(o);
+    let best = null;
+    kd.map.forEach((x, k) => {
+      const y = ko.map.get(k);
+      if(y && (!best || x.depth + y.depth < best.up + best.down || (x.depth + y.depth === best.up + best.down && x.depth < best.up)))
+        best = { up: x.depth, down: y.depth, name: x.name };
+    });
+    if(!best){ far.push(o); return; }
+    const [os, od] = pk(o);
+    const full = !!(ds && dd && ds === os && dd === od);
+    near.push({ o: o, best: best, text: relation(d, o, best.up, best.down, full) });
+  });
+  near.sort((a, b) => (a.best.up + a.best.down) - (b.best.up + b.best.down) || Math.max(a.best.up, a.best.down) - Math.max(b.best.up, b.best.down) || a.o.name.localeCompare(b.o.name));
+  far.sort((a, b) => a.name.localeCompare(b.name));
+  return { near: near, far: far, outside: kd.outside };
 }
 
 function openFam(id, quiet){
@@ -1368,24 +1440,50 @@ function openFam(id, quiet){
   famId = id;
   $("famTitle").textContent = d.name + "'s family";
 
-  const grand = parentsOf(d.sire).concat(parentsOf(d.dam));
+  const row = (label, html, cls) => `<div class="fr-gen${cls ? " " + cls : ""}"><p class="fr-genlabel">${label}</p><div class="fr-genlist">${html}</div></div>`;
+  const none = t => `<div class="fr-node unknown"><span class="pic"></span><b>${t}</b><small></small></div>`;
+
+  /* up the tree: parents, grandparents, great-grandparents */
+  const parents = parentPair(d);
+  const grand = parents.flatMap(([p]) => parentPair(p));
+  const great = grand.flatMap(([p]) => parentPair(p));
+  const side = ["Sire's", "Dam's"];
+  const gpRole = i => `${side[i >> 1]} ${i % 2 ? "dam" : "sire"}`;
+  const anyKnown = list => list.some(([p, ref]) => p || ref);
+
+  /* across: siblings anywhere, by the parents they share */
+  const pkey = x => [x.sire, x.dam].map(p => { const r = resolveRef(p, x); return r ? dragonKey(r) : p ? refKey(p) : null; });
+  const [ds, dd] = pkey(d);
+  const sibs = LAIR_KEYS.flatMap(k => lairItems(k)).filter(o => o !== d).map(o => {
+    const [os, od] = pkey(o);
+    const s = ds && os === ds, m = dd && od === dd;
+    return s || m ? { o: o, role: s && m ? "Full sibling" : s ? "Half · same sire" : "Half · same dam" } : null;
+  }).filter(Boolean).sort((a, b) => a.role.localeCompare(b.role) || a.o.added - b.o.added);
+
+  /* down: offspring and their offspring */
   const kids = childrenOf(d.id).sort((a,b) => a.added - b.added);
-  const col = (label, html) => `<div class="fr-gen"><p class="fr-genlabel">${label}</p><div class="fr-genlist">${html}</div></div>`;
+  const grandkids = kids.flatMap(k => childrenOf(k.id).map(g => ({ g: g, via: k })));
+  const mateOf = k => { const other = k.sire && k.sire.id === d.id ? k.dam : k.sire; return other ? parentName(other) : ""; };
+
+  const rel = relatives(d);
+  const relRow = r => `<li><button class="fr-famlink" type="button" data-fam="${esc(r.o.id)}">${esc(r.o.name)}</button>
+    <span class="what">${esc(r.text)}</span>${r.o.status === "gone" ? ' <span class="gone">moved on</span>' : ""}
+    <small>${r.best.up && r.best.down ? "shared ancestor " + esc(r.best.name) + ", " : ""}${r.best.up + r.best.down} step${r.best.up + r.best.down === 1 ? "" : "s"} apart</small></li>`;
 
   $("tree").innerHTML =
-    col("Grandparents",
-      node(grand[0], "Sire's sire") + node(grand[1], "Sire's dam") +
-      node(grand[2], "Dam's sire") + node(grand[3], "Dam's dam")) +
-    col("Parents", node(d.sire, "Sire") + node(d.dam, "Dam")) +
-    col("This dragon", node({ id: d.id }, "", true)) +
-    col("Offspring" + (kids.length ? ` (${kids.length})` : ""),
-      kids.length
-        ? kids.map(k => {
-            const other = k.sire && k.sire.id === d.id ? k.dam : k.sire;
-            const mate = other ? (other.id ? (byId(other.id) || {}).name : other.name) : "";
-            return node({ id: k.id }, mate ? "with " + mate : "");
-          }).join("")
-        : `<div class="fr-node unknown"><span class="pic"></span><b>None yet</b><small></small></div>`);
+    (anyKnown(great) ? row("Great-grandparents", great.map(([p, ref], i) => kinNode(p, ref, `${gpRole(i >> 1)}'s ${i % 2 ? "dam" : "sire"}`)).join(""), "great") : "") +
+    row("Grandparents", grand.map(([p, ref], i) => kinNode(p, ref, gpRole(i))).join(""), "grand") +
+    row("Parents", parents.map(([p, ref], i) => kinNode(p, ref, i ? "Dam" : "Sire")).join(""), "parents") +
+    row("This dragon" + (sibs.length ? ` and siblings (${sibs.length})` : ""), node({ id: d.id }, "", true) + sibs.map(s => kinNode(s.o, null, s.role)).join(""), "self") +
+    row("Offspring" + (kids.length ? ` (${kids.length})` : ""),
+      kids.length ? kids.map(k => kinNode(k, null, mateOf(k) ? "with " + mateOf(k) : "")).join("") : none("None yet"), "kids") +
+    (grandkids.length ? row(`Grandchildren (${grandkids.length})`, grandkids.map(x => kinNode(x.g, null, "via " + x.via.name)).join(""), "kids") : "");
+
+  $("kinList").innerHTML =
+    `<h3 class="fr-genlabel">How everyone in the lair is related to ${esc(d.name)}</h3>` +
+    (rel.near.length ? `<ul class="fr-kin">${rel.near.map(relRow).join("")}</ul>` : `<p class="fr-hint">Nobody in the lair shares an ancestor with ${esc(d.name)} within ${KIN_GENS} generations.</p>`) +
+    (rel.far.length ? `<details class="fr-kinfar"><summary>Not related within ${KIN_GENS} generations (${rel.far.length})</summary><p>${rel.far.map(o => `<button class="fr-famlink" type="button" data-fam="${esc(o.id)}">${esc(o.name)}</button>`).join(", ")}</p></details>` : "") +
+    (rel.outside ? `<p class="fr-hint">Some of ${esc(d.name)}'s ancestors aren't on this page, so Flight Rising may know of more relatives.</p>` : "");
 
   $("fam").hidden = false;
   if(!quiet) $("fam").scrollIntoView({ block: "nearest", behavior: "smooth" });
@@ -1416,9 +1514,27 @@ function kin(d){
     if(!map.has(key) || map.get(key).depth > depth) map.set(key, { depth: depth, name: dragon ? dragon.name : ref.name });
     if(depth === KIN_GENS) return;
     if(!dragon){ outside = true; return; }
-    [dragon.sire, dragon.dam].forEach(p => { if(p) walk(p.id ? byId(p.id) : null, p, depth + 1); });
+    [dragon.sire, dragon.dam].forEach(p => { if(p) walk(resolveRef(p, dragon), p, depth + 1); });
   })(d, null, 0);
   return { map: map, outside: outside };
+}
+
+/* The lair a dragon is in, and a parent link followed to the dragon it
+   names: a link by id stays in the child's lair, and an outside parent
+   written with its FR id is found in whichever lair has it, so a line that
+   leaves one lair carries on through the other. */
+const lairItems = k => (lairs[k] && lairs[k].items) || [];
+const lairOf = d => LAIR_KEYS.find(k => lairItems(k).includes(d)) || who;
+function resolveRef(ref, child){
+  if(!ref) return null;
+  if(ref.id) return lairItems(child ? lairOf(child) : who).find(x => x.id === ref.id) || null;
+  const m = String(ref.name || "").match(/\d{5,}/);
+  if(!m) return null;
+  for(const k of LAIR_KEYS){
+    const f = lairItems(k).find(x => x.frId && String(x.frId) === m[0]);
+    if(f) return f;
+  }
+  return null;
 }
 
 /* null if a and b could pair, otherwise why not */
