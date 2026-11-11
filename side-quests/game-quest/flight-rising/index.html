@@ -1485,6 +1485,8 @@ function openFam(id, quiet){
   const mateOf = k => { const other = k.sire && k.sire.id === d.id ? k.dam : k.sire; return other ? parentName(other) : ""; };
 
   const rel = relatives(d);
+  /* of the unrelated, only the ones d could actually breed with */
+  const mates = plannable(d) ? rel.far.filter(o => plannable(o) && o.gender !== d.gender && !((isAncient(d) || isAncient(o)) && o.breed !== d.breed)) : [];
   const relRow = r => `<li><button class="fr-famlink" type="button" data-fam="${esc(r.o.id)}">${esc(r.o.name)}</button>
     <span class="what">${esc(r.text)}</span>${r.o.status === "gone" ? ' <span class="gone">moved on</span>' : ""}
     <small>${r.best.up && r.best.down ? "shared ancestor " + esc(r.best.name) + ", " : ""}${r.best.up + r.best.down} step${r.best.up + r.best.down === 1 ? "" : "s"} apart</small></li>`;
@@ -1504,7 +1506,7 @@ function openFam(id, quiet){
   $("kinList").innerHTML =
     `<h3 class="fr-genlabel">How everyone in the lair is related to ${esc(d.name)}</h3>` +
     (rel.near.length ? `<ul class="fr-kin">${rel.near.map(relRow).join("")}</ul>` : `<p class="fr-hint">Nobody in the lair shares an ancestor with ${esc(d.name)} within ${KIN_GENS} generations.</p>`) +
-    (rel.far.length ? `<details class="fr-kinfar"><summary>Not related within ${KIN_GENS} generations (${rel.far.length})</summary><p>${rel.far.map(o => `<button class="fr-famlink" type="button" data-fam="${esc(o.id)}">${esc(o.name)}</button>`).join(", ")}</p></details>` : "") +
+    (mates.length ? `<details class="fr-kinfar"><summary>Unrelated mates, not related within ${KIN_GENS} generations (${mates.length})</summary><p>${mates.map(o => `<button class="fr-famlink" type="button" data-fam="${esc(o.id)}">${esc(o.name)}</button>`).join(", ")}</p></details>` : "") +
     (rel.outside ? `<p class="fr-hint">Some of ${esc(d.name)}'s ancestors aren't on this page, so Flight Rising may know of more relatives.</p>` : "");
 
   $("fam").hidden = false;
