@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+    <head>
+	<title><% TITLE %></title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,500&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:ital,wght@0,400;0,500;1,400&family=Playfair+Display:wght@500&display=swap" rel="stylesheet">
+	<% CSS %>
+	<script src="https://files.jcink.net/html/jquery-3.7.1.min.js"></script>
+	<script src="https://files.jcink.net/html/catcollapse.js"></script>
+	<script>
+/*SKIN_JS*/
+	</script>
+    </head>
+    <body class="mg-<!-- |g_id| -->">
+
+<!-- icons for the header bar -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-new" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15h6"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-add" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></symbol>
+  <symbol id="i-set" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+  <symbol id="i-mod" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+  <symbol id="i-admin" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></symbol>
+  <symbol id="i-in" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5M15 12H3"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></symbol>
+  <symbol id="i-time" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-cast" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-tree" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v5M5 17v-3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3"/></symbol>
+  <symbol id="i-notes" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3"/></symbol>
+  <symbol id="i-fold" viewBox="0 0 24 24"><path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/></symbol>
+</svg>
+
+<!-- header bar: who you are, quick buttons, then breadcrumbs and the character switcher -->
+<div id="alv-bar" data-color="<!-- |field_1| -->">
+  <div class="alv-bar-main">
+    <a class="alv-bar-av m-only" href="index.php?showuser=<!-- |id| -->"><span><!-- |avatar| --></span></a>
+    <div class="alv-bar-av g-only"><span></span></div>
+    <div class="alv-bar-name m-only"><a href="index.php?showuser=<!-- |id| -->"><!-- |name| --></a></div>
+    <div class="alv-bar-name g-only">Welcome, guest</div>
+    <div class="alv-bar-icons">
+      <a class="alv-ic m-only" href="index.php?act=Search&amp;CODE=getnew" title="New posts" aria-label="New posts"><svg><use href="#i-new"/></svg></a>
+      <a class="alv-ic m-only n-<!-- |new_alerts| -->" href="index.php?act=UserCP&amp;CODE=alerts" title="Alerts" aria-label="Alerts"><svg><use href="#i-bell"/></svg><span class="alv-bubble"><!-- |new_alerts| --></span></a>
+      <a class="alv-ic m-only n-<!-- |new_msg| -->" href="index.php?act=Msg&amp;CODE=01" title="Inbox" aria-label="Inbox"><svg><use href="#i-mail"/></svg><span class="alv-bubble"><!-- |new_msg| --></span></a>
+      <a class="alv-ic" href="index.php?act=Search" title="Search" aria-label="Search"><svg><use href="#i-search"/></svg></a>
+      <a class="alv-ic m-only" href="index.php?act=Reg&amp;CODE=00" title="New character" aria-label="New character"><svg><use href="#i-add"/></svg></a>
+      <a class="alv-ic m-only" href="index.php?act=UserCP" title="My settings" aria-label="My settings"><svg><use href="#i-set"/></svg></a>
+      <a class="alv-ic m-only mcp-<!-- |g_is_supmod| -->" href="index.php?act=modcp" title="Mod CP" aria-label="Mod CP"><svg><use href="#i-mod"/></svg></a>
+      <a class="alv-ic m-only acp-<!-- |g_access_cp| -->" href="admin.php" target="_blank" title="Admin CP" aria-label="Admin CP"><svg><use href="#i-admin"/></svg></a>
+      <a class="alv-ic m-only" href="index.php?act=Login&amp;CODE=03&amp;key=<!-- |auth_key| -->" title="Log out" aria-label="Log out"><svg><use href="#i-out"/></svg></a>
+      <a class="alv-ic g-only" href="index.php?act=Login&amp;CODE=00" title="Log in" aria-label="Log in"><svg><use href="#i-in"/></svg></a>
+      <a class="alv-ic g-only" href="index.php?act=Reg&amp;CODE=00" title="Register" aria-label="Register"><svg><use href="#i-add"/></svg></a>
+    </div>
+  </div>
+  <div class="alv-bar-strip">
+    <div id="navi"><% NAVIGATION %></div>
+    <div class="alv-bar-switch"><% SUBACCOUNTS %></div>
+  </div>
+</div>
+<script>Alv.section();</script>
+
+<!-- sidebar. Links marked alv-soon are placeholders until those pages exist:
+     to switch one on, remove class="alv-soon" and add href="the page address" -->
+<nav id="alv-side" aria-label="Story links">
+  <button type="button" id="alv-side-toggle" title="Fold or unfold the sidebar" aria-label="Fold or unfold the sidebar"><svg><use href="#i-fold"/></svg></button>
+  <a class="alv-soon" title="Wiki (not set up yet)"><svg><use href="#i-book"/></svg><span>Wiki</span></a>
+  <a class="alv-soon" title="Timeline (not set up yet)"><svg><use href="#i-time"/></svg><span>Timeline</span></a>
+  <a href="index.php?act=Members" title="Cast"><svg><use href="#i-cast"/></svg><span>Cast</span></a>
+  <a class="alv-soon" title="Relationships (not set up yet)"><svg><use href="#i-heart"/></svg><span>Relationships</span></a>
+  <a class="alv-soon" title="Family trees (not set up yet)"><svg><use href="#i-tree"/></svg><span>Family trees</span></a>
+  <a class="alv-soon" title="Plot notes (not set up yet)"><svg><use href="#i-notes"/></svg><span>Plot notes</span></a>
+  <a href="https://princessandpaladin.com/dannelore/rp/" target="_blank" rel="noopener" title="Writing Room"><svg><use href="#i-ext"/></svg><span>Writing Room</span></a>
+</nav>
+
+	<div id="wrapper">
+	    <!-- homepage banner. Set the picture with banner-image at the top of the stylesheet -->
+	    <div id="alv-banner"><a href="index.php"><!-- |board_name| --></a></div>
+	    <% BOARD HEADER %>
+	    <div id="innerwrapper">
+	    	<% BOARD %>
+	    	<script>Alv.run();</script>
+	    	<div id="skin_selector">
+	    	    <% SKIN_SELECTOR %>
+	    	</div>
+	    	<% COPYRIGHT %>
+	    </div>
+	</div>
+    </body>
+</html>

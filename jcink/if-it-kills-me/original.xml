@@ -1,0 +1,2923 @@
+<?xml version="1.0"?>
+		<skin>
+
+		<skinname>If It Kills Me</skinname>
+		<date>Wednesday 11th of November 2026 02:16:46 PM</date>
+
+		<stylesheet>
+		/* ========================================================== *
+ 
+		 	WELCOME TO TRENCH 
+
+ * ========================================================== *
+			  skin by danni
+ * ========================================================== */
+
+
+html { overflow-x: auto; } 
+form { display:inline; }
+
+/****************************************
+ Body Background & Text Style
+*****************************************/
+
+body { 
+	font: normal 400 12px/16px montserrat; 
+	color: rgba(var(--ltbase),1); margin:0px;
+	padding:0px;
+        background: rgba(42,42,42,1); 
+	background-image: url(https://imagizer.imageshack.com/img923/9525/urJkXo.png);
+	text-align:center;
+        background-repeat: no-repeat;
+ 	background-size: cover;
+	background-attachment: fixed;
+
+}
+
+::-webkit-scrollbar {
+  display: none
+}
+
+/***=============================
+	BOARD COLORS
+=============================***/
+
+:root {
+  --btaccent: 103, 153, 116;
+  --dnaccent: 98, 98, 98;
+  --dkbase: 0, 0, 0;
+  --ltbase: 255, 255, 255; 
+}
+
+
+/***=============================
+	MEMBER COLORS
+=============================***/
+
+
+/* guest color */
+
+#mg-2, .mg-2 {
+  --mg: 103, 153, 116;}
+
+
+/* member color */
+
+#mg-3, .mg-3 {
+  --mg: 103, 153, 116;}
+
+
+/* admin color */
+
+#mg-4, .mg-4 {
+  --mg: 0, 179, 179; } 
+
+
+
+/* banned color */
+
+#mg-5, .mg-5 {
+  --mg: 103, 153, 116; } 
+
+
+
+/* criminals color */
+
+#mg-6, .mg-6 {
+  --mg: 55, 112, 142;}
+
+
+/* enforcers color */
+
+#mg-7, .mg-7 {
+  --mg: 142, 134, 55;}
+
+/* civilians color */
+
+#mg-8, .mg-8 {
+  --mg: 111, 83, 130;}
+
+
+/* alias color */
+
+#mg-9, .mg-9 {
+  --mg: 168, 62, 50;}
+
+
+
+
+/****************************************
+  	 Table Styles
+*****************************************/
+
+table, tr, td {
+	font-family: Arial, sans-serif; 
+	font-size: 12px; 
+	color: rgba(var(--ltbase),1); 
+}
+
+.forum-subheader { display: none; }
+
+/****************************************
+   Board Width
+*****************************************/
+
+#iikmwrapper { 
+   width: 1320px;
+   position: relative;
+   margin: 0px auto;
+}
+
+#wrapper { 
+	text-align:left;
+        width: 1040px;
+        padding: 15px;
+	margin: 0px 0px 30px 280px;
+}
+
+#innerwrapper { 
+	padding: 0 10px;
+}
+
+/****************************************
+   Link colors
+*****************************************/
+
+a:link, a:visited, a:active { 
+	text-decoration: none;
+	color: rgba(var(--btaccent),1);
+
+}
+a:hover { 
+	color: rgba(var(--ltbase), 1); 
+	text-decoration: none; 
+}
+
+
+/****************************************
+   Profile styles 
+*****************************************/
+
+#profilename { 
+	font-size:28px;
+	font-weight:bold; 
+}
+
+#photowrap { 
+	padding:6px; 
+}
+
+#phototitle { 
+	font-size:24px; 
+	border-bottom:1px solid black;
+}
+
+#photoimg   { 
+	text-align:center; margin-top:15px; 
+} 
+
+/****************************************
+   UserCP/My Controls styles
+*****************************************/
+
+#ucpmenu { 
+	line-height:150%;
+	width:22%; 
+	border:1px solid rgba(var(--ltbase),1);
+  	background: rgba(var(--dkbase), .6); 
+	color: rgba(var(--ltbase),1);
+}
+
+#ucpmenu p  { 
+	padding:2px 5px 6px 9px; 
+	margin:0px;  
+}
+
+#ucpcontent { 
+	background-color: transparent; 
+	border:1px solid rgba(var(--ltbase),1);
+	line-height:150%; width:auto; 
+	background: rgba(var(--dkbase), .6); 
+	color: rgba(var(--ltbase),1);
+}
+
+#ucpcontent p  { 
+	padding:10px;
+	margin:0px; 
+}
+
+
+#field-website, #field-location, #field-interests {
+display: none;
+}
+
+
+/****************************************
+  Logo Strip
+*****************************************/
+
+#logostrip { 
+	display: none;
+}
+
+/****************************************
+  Search Bar 
+*****************************************/
+
+#searchbar {
+	display: none;	
+	float: right;
+	position: relative;
+	right: 10px;
+	top: 8px;
+}
+
+#searchbar .search-container {
+    background-color: rgba(var(--ltbase),1);
+    box-shadow: 0 1px 3px rgba(var(--dkbase),0.4) inset;
+    border: 1px solid rgba(var(--dkbase), 1);
+    display: block;
+    height: 26px;
+    position: relative;
+    width: 200px;
+}
+
+#searchbar .search-input {
+	background: none repeat scroll 0 0 transparent;
+	border: 0;
+	color: rgba(var(--dkbase), 1);
+	font-size: 12px;
+	width: 192px;
+	height: 26px;
+	font-family: oswald;
+	padding: 1px 0 0 8px;
+}
+
+#searchbar .search-input:focus {
+    color: rgba(var(--dkbase),1);
+}
+
+#searchbar .search-button {
+	border: 0;
+	bottom: 0;
+	margin: 0;
+	border-radius: 0;
+	display: block;
+	height: 26px;
+	padding: 0;
+	position: absolute;
+	right: 0;
+	text-indent: -3000em;
+	top: 0;
+	width: 26px;
+	cursor: pointer;
+	box-shadow: none;
+}
+
+/****************************************
+  Navigation Bar / Submenu
+*****************************************/
+
+#submenu  {
+	display: none;
+}
+
+#submenu img { 
+	display: none; 
+}
+
+#submenu a:link, #submenu a:visited, #submenu a:active { 
+	text-decoration: none;
+	color: rgba(var(--ltbase),1) !important; 
+        padding: 7px 7px;
+        font-weight: bold;
+}
+
+#submenu a:hover { 
+	color: rgba(var(--ltbase),1) !important; 
+	text-decoration: underline; 
+}
+
+#navi br { 
+	display: none; 
+}
+
+#navstrip  { 
+	font-weight:bold;
+	padding: 5px 0px; 
+
+}
+
+/****************************************
+   Calendar styling
+*****************************************/
+
+.caldate   { 
+	text-align:right;
+	font-weight:bold;
+	font-size:11px;
+	color:#555;
+	background-color:#F2F2F2;
+	padding:4px; margin:0px; 
+}
+
+#calendarname { 
+	font-size:22px;
+	font-weight:bold; 
+}
+
+#padandcenter { 
+	margin-left:auto;
+	margin-right:auto;
+	text-align:center;
+	padding:14px 0px 14px 0px; 
+}
+
+
+/**************************************************
+ User Links Menu (Messages / View new posts / etc )
+***************************************************/
+
+#userlinks { 
+	display: none;
+}
+
+#userlinks td { 
+	color: #333; 
+}
+
+#userlinks a { 
+	text-decoration: underline; padding: 1px; 
+}
+
+#userlinks a:hover { 
+	text-decoration: none; 
+}
+
+
+/****************************************
+   Topic View styles
+*****************************************/
+
+.activeuserstrip { 
+	background: rgba(var(--dkbase), .8);
+	padding:6px;
+}
+
+.normalname { 
+	display: none;
+}
+
+
+.unreg { 
+	font-size: 11px; 
+	font-weight: bold; 
+	color: #900; 
+}
+
+.post1 { 
+	background-color: rgba(var(--dkbase),1); 
+}
+
+.post2 { 
+	background-color: rgba(var(--dkbase),1); 
+}
+
+.postdetails { 
+	font-size: 10px; 
+}
+
+.postcolor   { 
+	font-size: 12px; line-height: 160%; 
+}
+
+.postlinksbar {
+	width: 100%;
+	padding: 5px 15px;
+	margin: 10px 0px;
+}
+
+
+.postlinksbar a {
+	background: rgba(var(--btaccent),.8);
+	border-radius:3px;
+	color: rgba(var(--ltbase),1);
+	font-size: 12px;
+	font-weight: 600;
+	margin: 3px;
+	padding: 10px;
+	text-decoration: none;
+	border: none; 
+        min-width: 75px;
+        display: inline-block;
+	text-align: center;
+}
+
+.signature   { 
+	font-size: 10px; 
+	color: #339; 
+	line-height:150%;  
+}
+
+
+/*******************************
+ Pagination e.g. [1],2,3 ...
+*******************************/
+
+.pagination .pagination_current, .pagination a {
+     padding: 2px 5px;
+}
+
+.pagination a:link, .pagination a:visited, .pagination a:active {
+     border: 1px solid #800000;
+     border-radius:3px;
+     background-color:#740300;
+     padding-left:6px;
+     padding-right:6px;
+     color:rgba(var(--ltbase),1);
+     text-decoration:none;
+     box-shadow: 0pt 2px 3px rgba(var(--dkbase),0.4);
+}
+
+.pagination a:hover {
+	background: rgba(var(--btaccent),1);
+	text-decoration: none;
+	color: rgba(var(--dkbase),1);
+	box-shadow: 0pt 2px 3px rgba(var(--dkbase),0.4);
+
+}
+
+.pagination .pagination_current {
+     background: none repeat scroll 0% 0% rgba(var(--ltbase),1);
+     border: 1px solid #545454;
+     border-radius:3px;
+     padding-left:6px;
+     padding-right:6px; 
+}
+
+.pagination_first, .pagination_last, .pagination_page {
+     background: none repeat scroll 0% 0% #740300;
+     border: 1px solid #800000;
+}
+
+.pagination_pagetxt {
+    display:none;
+}
+
+/****************************************
+   Global general table/div row styles
+*****************************************/
+
+.row1, .row3 { 
+	background: rgba(var(--dkbase), .4);
+	padding: 5px;
+	color: rgba(var(--ltbase),1); 
+
+}
+
+.row4, .row2 { padding: 5px; }
+
+
+#boardstats .row2 { 
+	text-align: center; 
+	
+}
+
+.darkrow1 { 
+	background: rgba(var(--dnaccent),1); 
+	color: rgba(var(--dkbase),1); 
+}
+
+.darkrow2 { 
+	 color: rgba(var(--dkbase),1); 
+}
+
+td.darkrow2 { 
+	display: none; 
+}
+
+.darkrow3 { 
+	background: rgba(var(--dnaccent),1); 
+	color: rgba(var(--dkbase),1); 
+	padding: 3px; 
+}
+
+.hlight, .dlight { background: rgba(var(--dkbase), .4); color: rgba(var(--ltbase), 1); }
+
+
+.tablebasic {
+	background: rgba(var(--dkbase), .8);
+}
+
+/****************************************
+   Top table bars / gradient holders 
+*****************************************/
+
+.maintitle { 
+	text-decoration: none; 
+	color: rgba(var(--btaccent),1);
+        text-shadow: 2px 2px 2px rgba(var(--dnaccent),.85);
+	margin-top:1px; 
+ 	padding: 40px;
+	text-transform: lowercase;
+	font: normal 400 60px/60px barrio;
+	text-align: center; !important; 
+	background: rgba(var(--dkbase), .8);
+	border-radius: 10px;
+	
+}
+
+.maintitle a:link, .maintitle  a:visited, .maintitle  a:active { 
+	text-decoration: none; 
+	color: rgba(var(--btaccent),1);
+}
+
+
+.maintitle a:hover { 
+	color: rgba(var(--ltbase),1)
+	text-decoration: none;  
+}
+
+/****************************************
+  Bar directly below the maintitles 
+*****************************************/
+
+.titlemedium { 
+	font-weight:bold; 
+	padding: 2px 6px; margin:0px;
+	background: rgba(var(--dnaccent), 1);
+	font: normal normal normal 13px/20px montserrat;
+	color:rgba(var(--ltbase),1);
+	text-align: center;
+ }
+
+.titlemedium  a:link, .titlemedium  a:visited, .titlemedium  a:active  { 
+	text-decoration: none; 
+	color: rgba(var(--btaccent), .8); 
+}
+
+/****************************************
+  Table & Div Borders 
+*****************************************/
+
+.tableborder { 
+
+padding:0px; margin:0; 
+}
+
+.tablefill { 
+
+	border:1px solid #555; 
+	padding:6px; 
+}
+
+.tablepad {
+
+	padding:6px;
+}
+
+.tablebasic {
+	width:100%; padding:0; margin:0px; border:0px; 
+}
+
+.plainborder { 
+	border:1px solid #555; 
+
+}
+
+/****************************************
+  QUOTE and CODE BBCode boxes
+*****************************************/
+
+#QUOTE { 
+	white-space: normal; 
+	font-family: montserrat;
+	font-size: 13px; 
+	padding:10px;
+	border: 1px solid rgba(var(--mg),1); 
+	margin-top: 2px; 
+}
+
+/****************************************
+CODE AREA CSS
+*****************************************/
+
+#CODE  {
+white-space:normal;
+font-family: montserrat; 
+font-size: 12px;
+padding: 10px;
+margin-top:2px;
+     word-break: break-word;
+}
+
+.code-scroll {
+max-height: 250px;
+overflow: auto;
+padding-right: 5px;
+}
+
+
+.code-top {
+background-color:rgba(var(--mg),0.5); 
+margin: 0;
+padding: 0;
+text-align: center;
+overflow: hidden;
+color: rgba(var(--ltbase),1);
+}
+
+.code-highlight {
+font: normal normal normal 8px/100% montserrat;
+color:rgba(var(--mg),1);
+padding: 4px 6px 2px; margin:0px;
+background-color:rgba(var(--ltbase),1);
+text-align: center;
+text-transform: uppercase;
+letter-spacing: 1px;
+cursor: crosshair;
+}
+
+.code-top .code-title {
+margin: 20px;
+font: italic normal 300 20px/100% montserrat;
+text-transform: lowercase;
+}
+
+.code-toggle {
+cursor: crosshair;
+}
+
+.code-scroll.auto-code {
+height: auto;
+max-height: none;
+}
+
+#CODE-WRAP.nicole-code { border-collapse: collapse; }
+
+/**********************************************
+  Input buttons, e.g. submit, text input, etc
+***********************************************/
+
+.button-large {
+	background: rgba(var(--btaccent),.8);
+	border-radius:3px;
+	color: rgba(var(--ltbase),1);
+	font-size: 12px;
+	font-weight: 600;
+	margin: 3px;
+	padding: 10px;
+	text-decoration: none;
+	border: none; 
+        min-width: 75px;
+        display: inline-block;
+	text-align: center;
+}
+
+
+.button-small {
+	background: rgba(var(--btaccent),.8);
+	border-radius:3px;
+	color: rgba(var(--ltbase),1);
+	font-size: 10px;
+	font-weight: 500;
+	margin: 3px;
+	padding: 10px;
+	text-decoration: none;
+	border: none; 
+        min-width: 50px;
+        max-width: 80px;
+	text-align: center;
+}
+
+.post-buttons-top { margin-top: 3px; }
+
+.button-large.closed {
+	display: nonse;
+}
+
+.forminput, .codebuttons, .textinput, .radiobutton, .checkbox {
+	border-radius: 10px;
+	background: rgba(var(--dnaccent),.8);
+	border: 1px solid rgba(var(--ltbase),1);
+	color: rgba(var(--ltbase),1);
+	font-family: montserrat, sans-serif;
+	font-size: 12px;
+	padding: 10px;
+	vertical-align: middle;
+}
+
+
+input[type=submit], input[type=button], input[type=reset] {
+	background: rgba(var(--btaccent),.85);
+	border-radius:3px;
+	color: rgba(var(--ltbase),1);
+	font-size: 12px;
+	font-weight: bold;
+	margin: 3.5px;
+	padding: 10px;
+	text-decoration: none;
+	border: none; 
+	text-transform: lowercase;
+}
+
+.codebuttons  { 
+	font-size: 10px; 
+}
+
+
+/****************************************
+  Form table cell styles, left/right/top
+*****************************************/
+
+.pformstrip {
+	background-color: rgba(var(--dnaccent),.85);
+	color: rgba(var(--ltbase),1);
+	height: 40px;
+	margin-top:1px; 
+ 	padding: 10px;
+	text-transform: lowercase;
+	font: normal 500 14px/20px montserrat;
+	text-align: center;
+}
+
+.pformleft  { 
+	background: rgba(var(--dkbase),.85);
+	color: rgba(var(--ltbase), 1);
+	padding:6px; 
+	margin-top:1px; width:25%;  
+}
+
+.pformleftw { 
+	background-color: rgba(var(--dkbase), .45); 
+	padding:6px; 
+	margin-top:1px;width:40%; 
+	border-top:1px solid rgba(var(--dnaccent),.85); 
+	border-right:1px solid rgba(var(--dnaccent),.85); 
+}
+
+.pformright { 
+	background-color: rgba(var(--dkbase), .45);
+	color: rgba(var(--ltbase), 1);
+	padding:6px; margin-top:1px;
+	border-top:1px solid  rgba(var(--dnaccent),.85);
+}
+
+.topic-subheader, .wrapmini { display: none; }
+
+#modcp-content { background: rgba(var(--dkbase), .6); }
+
+
+
+/****************************************
+ Tabs on the portal profiles + sections
+*****************************************/
+
+.opentab {
+	color: rgba(var(--ltbase),1);
+	padding:8px;float: left; width: auto;
+	background-color: #800000;
+	margin-top:3px;
+	margin-right:2px;
+	font-size:11px;
+	border: #545454 1px solid;	
+}
+
+.closedtab {
+	color: rgba(var(--ltbase),1);
+	padding:7px;float: left;width: auto;
+	background-color: #800000;
+
+	margin-top:6px;
+	margin-right:2px;
+	font-size:11px;
+	border-top:   #545454 1px solid;
+	border-right: #545454 1px solid;
+	border-left:  #545454 1px solid;
+}
+
+.positiontab { 
+	height: 34px; margin-left: 2px;
+}
+
+/****************************************
+   Delete all cookies / mark read
+*****************************************/
+
+#delcookiesrow, #mark-as-read-subto {
+	background-color: transparent;
+	border-bottom: 1px solid rgba(var(--ltbase),1);
+	font-size: 11px;
+	padding: 5px;
+        width: 350px;
+        float: right;
+        margin-top:15px;
+        padding-left:1px;
+}
+
+#mark-as-read-subto {
+	float: none;
+	padding-top: 3px;
+}
+
+
+/*******************************
+     Board Statistics Links
+*******************************/
+
+.toplinks a {
+	color: rgba(var(--ltbase),1);
+	font-size: 11px;
+	text-decoration: none;
+}
+
+.toplinks {
+	margin: 0 11px -37px 0;
+	text-align: right;
+	color: transparent;
+}
+
+/*******************************
+ Mini Profile Seperators
+*******************************/
+
+.postbit { 
+	border-bottom: solid 1px #C0C0C0; 
+	color: black;
+	background: #EFEFEF;
+	font-size: 11px;
+        padding: 6px 7px;
+}
+
+/********************************
+	Miscellaneous
+********************************/
+
+/* image tag styles */
+img        { vertical-align:middle; border:0px }
+img.attach { border:2px outset #555;padding:2px }
+
+/* Forum Descriptions */
+.desc { font-size:11px; color: rgba(var(--dkbase),1); }
+
+/* Edited by text */
+.edit { font-size: 9px }
+
+/* Topic Macros */
+
+.wrapmini { float: left; }
+
+/* Warning CSS */
+.warngood { color:green }
+.warnbad  { color:red }
+
+/* Skin selector dropdown */
+#skin_selector { 
+	margin: 10px 0; 
+}
+
+
+/* Online users list row */
+.thin { 
+	padding:6px 0px 6px 0px;
+	line-height:140%;
+	margin:2px 0px 2px 0px;
+	border-top:1px solid #545454;
+	border-bottom:1px solid #545454;
+}
+
+/* Latest news area */
+.newstext { 
+	display: none;
+}
+
+/* Highlighted text in search */
+.searchlite { 
+	color:#F00;
+	font-weight:bold;  
+	background-color:#FF0; 
+}
+
+/****************************************
+ Mobile-specific Styles
+*****************************************/
+
+#mobile { 
+	background-color: #FBFBFB;
+}
+
+/***********************************
+ Copyright: Removal is against Terms
+************************************/
+
+.copyright { 
+	font-size: 10px; line-height: 12px; 
+}
+
+
+/*=========================================================
+  =========================================================
+		Danni's Custom Codes
+  =========================================================
+  =========================================================*/
+
+
+/****************************************
+	CUSTOM MINI PROFILE
+****************************************/
+/*******don't touch this unless you make the middle section of the mini taller. if you do, change the min-height to whatever to appropriate height would be*******/
+
+#outerpost {
+position:relative;
+min-height: 600px!important;
+}
+
+/****this makes space for the top and bottom info bars******/
+
+.borderout {
+padding-top:180px;
+}
+
+
+
+/*******this is inside the HTML profile template. any heights or margins you change in the top and bottom info bars must be reflected in the padding of the above .borderout class*******/
+
+
+.outertopmini {
+width:1020px;
+position: absolute;
+height:180px;
+top:-190px;
+left: -10px;
+}
+
+.outerbottommini {
+width:1020px;
+position: absolute;
+left: 0px; 
+bottom: -15px;
+height: 5px;
+  margin-bottom: 50px;  
+}
+
+/*******this is your middle mini section. any changes to width needs to be reflected in both of these classes– any changes to height must be reflect in the #outerpost min-height******/
+
+.miniprofilepost {
+   width:250px;
+   padding-left: 10px;
+}
+
+.insidemiddlemini {
+	width:250px;
+	height:400px;
+	position: absolute;
+	right: 0px;
+}
+
+
+/***************************
+ Board Stats
+**************************/
+
+.recent-topics-date { display: none; }
+
+
+#wttbsframe {
+  width: 1000px;
+  min-height: 265px;
+  padding: 10px;
+  background: rgba(var(--dkbase), 0.6);
+  position: relative;
+  border: 2px solid rgba(var(--ltbase), 1);
+}
+
+.wttbshead {
+  width: 100%;
+  height: 75px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--dkbase), .8);
+}
+
+.wttbsavbox {
+  width: 75px;
+  height: 75px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--btaccent), .8);
+}
+
+.wttbsavbox mac {
+  width: 60px;
+  height: 60px;
+  border: 2px rgba(var(--ltbase), 1) solid;
+  border-radius: 100%;
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  overflow: hidden;
+  font: normal 400 33px/60px oswald;
+  text-align: center;
+  background: rgba(var(--dkbase), .8);
+  color:  rgba(var(--btaccent), 1);
+}
+
+.wttbslink {
+  width: 35px;
+  height: 35px;
+  background: rgba(var(--dnaccent), .8);
+  border-radius: 100%;
+  position: relative;
+  float: right;
+  color: rgba(var(--ltbase), 1);
+  font: normal 400 18px/35px oswald;
+  text-align: center;
+  margin: 30px 5px 0px;
+}
+
+.wttbslink:hover {
+    background: rgba(var(--btaccent), .8);
+}
+
+.wttprhdtx {
+  position: absolute;
+  top: 0px;
+  left: 75px;
+  padding: 5px 15px;
+  font: normal 500 30px/65px oswald;
+  text-align: left;
+  text-transform: uppercase;
+  color: rgba(var(--ltbase), 1);
+
+}
+
+.wttbsbar {
+  width: 1000px;
+  height: 20px;
+  padding: 0px 10px;
+  position: absolute;
+  left: 0px;
+  top: 75px;
+  background: rgba(var(--dnaccent), .8);
+  color: rgba(var(--ltbase), 1);
+  font: normal 600 10px/20px Montserrat;
+  text-align: left;
+  text-transform: uppercase;
+  
+}
+
+.wttbsbar b { 
+  color: rgba(var(--btaccent),1);
+}
+
+.wttbsdeet {
+  padding: 10px;
+  background: rgba(var(--dnaccent), .8);
+  border: 1px solid rgba(var(--btaccent), .4);
+  position: absolute;
+  color: rgba(var(--ltbase), 1);
+  text-transform: uppercase;
+
+}
+
+.wttbsdeet b {
+  font-weight: normal;
+  display: block;
+  position: absolute;
+  top: -10px;
+  left: 5px;
+  padding: 3px 5px;
+  background: rgba(var(--btaccent), .75);
+  z-index: 80;
+  font: normal 600 11px/12px Montserrat;
+}
+
+.wttbsdt {
+  width: 100%;
+  height: 100%;
+  overflow: scroll;
+  overflow-x: hidden;
+  text-align: justify;
+  font: normal 600 11px/13px Montserrat;
+}
+
+.wttbsdt::-webkit-scrollbar {
+  width: 0px;
+}
+
+.wttbson {
+  width: 300px;
+  height: 50px;
+  top: 110px;
+  left: 10px;
+}
+
+.wttbsot {
+  width: 300px;
+  height: 50px;
+  top: 200px;
+  left: 10px;
+}
+
+.wttbsnm {
+  width: 290px;
+  height: 20px;
+  top: 110px;
+  left: 345px;
+  text-align: right;
+  font: normal 600 15px/20px Montserrat;
+}
+
+.wttbstp {
+  width: 290px;
+  height: 20px;
+  top: 170px;
+  left: 345px;
+  text-align: right;
+  font: normal 600 14px/20px Montserrat;
+}
+
+.wttbstm {
+  width: 290px;
+  height: 20px;
+  top: 230px;
+  left: 345px;
+  text-align: right;
+  font: normal 600 14px/20px Montserrat;
+}
+
+.wttbsrt {
+  width: 320px;
+  height: 140px;
+  top: 110px;
+  right: 10px;
+}
+
+.wttbsrt .maintitle { display: none; }
+
+
+
+/***************************
+ Forum Row
+**************************/
+
+
+.new-category { clear: both; overflow: hidden; } 
+.new-row { margin: 100px; float: left; }
+
+#wttindexframe {
+  width: 481px;
+  height: 180px;
+  background: rgba(var(--dkbase), 0.6); 
+  position: relative;
+  margin: 15px 5px 15px 15px;
+  border: 2px rgba(var(--ltbase),1) solid;
+}
+
+.wtttitle {
+  width: 401px;
+  height: 40px;
+  font: normal 600 27px/40px Montserrat;
+  padding: 5px 0px;
+  background: rgba(var(--dkbase),.8);
+  position: absolute;
+  top: 0px;
+  left: 80px;
+  color: rgba(var(--btaccent),1);
+  text-transform: lowercase;
+  text-align: center;
+  text-shadow: 2px 2px rgba(var(--dnaccent),1);
+
+}
+
+.wtttitle a {text-decoration: none; color: rgba(var(--btaccent),1);}
+
+.wttindexbox {
+  width: 80px;
+  height: 80px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--btaccent),.8);
+}
+
+.wttindexmac {
+  width: 55px;
+  height: 55px;
+  background: rgba(var(--dkbase),1);
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  border: rgba(var(--ltbase),1) 2px solid;
+  border-radius: 100%;
+}
+
+.wttnonewlg { font-size: 30px; line-height: 55px; color: rgba(var(--ltbase),1); text-align: center; }
+.wttnewlg { font-size: 35px; line-height: 55px; color: rgba(var(--btaccent),1); text-align: center; }
+.wttspin {animation:wttspin 2s infinite linear}@keyframes wttspin{0%{transform:rotate(0deg)}100%{transform:rotate(359deg)}}
+
+.wttindexdetails {
+  width: 381px;
+  height: 20px;
+  padding: 5px 10px;
+  position: absolute;
+  top: 50px;
+  left: 80px;
+  background: rgba(var(--dnaccent),.8);
+  color: rgba(var(--ltbase),1);
+  font: normal 600 10px/20px Montserrat;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.wttindexdeet {
+  width: 50%;
+  float: left;
+}
+
+.wttindexthread {
+  width: 401px;
+  font: normal 500 21px/35px montserrat;
+  padding: 5px 0px;
+  position: absolute;
+  top: 80px;
+  left: 0px;
+  color: rgba(var(--btaccent),.8);
+  text-transform: none;
+  text-align: center;
+}
+
+.wttindexby { 
+  width: 391px;
+  height: 35px;
+  font: normal 400 13px/15px ubuntu;
+  position: absolute;
+  top: 115px;
+  left: 0px;
+  bottom: 30px;
+  padding: 5px;
+  text-align: center;
+  color: rgba(var(--ltbase),1);
+  text-transform: none;
+}
+
+
+.wttindexav {
+  width: 60px;
+  height: 60px;
+  background: rgba(var(--dkbase),1);
+  position: absolute;
+  bottom: 26px;
+  right: 10px;
+  border: rgba(var(--btaccent),.8) 3px solid;
+  border-radius: 100%;
+  overflow: hidden;
+}
+
+.wttindexav img { max-width: 60px; max-height: 60px; }
+
+.wttindexbar {
+  width: 461px;
+  height: 20px;
+  padding: 0px 10px;
+  position: absolute;
+  left: 0px;
+  bottom: 0px;
+  background: rgba(var(--dkbase), .4);
+  color: rgba(var(--ltbase),1);
+  font: normal 600 10px/20px Montserrat;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.wttindexbar a { color: rgba(var(--btaccent),.8) }
+
+
+/***************************
+ Main Profile
+**************************/
+
+
+#wttprframe {
+  width: 600px;
+  height: 820px;
+  background: rgba(var(--dkbase), .8);
+  position: relative;
+  margin: 0px auto 30px;
+}
+
+.wttprname {
+  width: 370px;
+  position: absolute;
+  top:0px;
+  right: 0px;
+  text-decoration: none; 
+	color: rgba(var(--mg), 0.7);
+  text-shadow: 2px 2px rgba(var(--dnaccent),1);
+ 	padding: 45px 40px 85px;
+	text-transform: lowercase;
+	font: normal 300 45px/20px barrio;
+	text-align: center; !important; 
+	background: rgba(var(--dkbase), 0.8);
+}
+
+.wttpravbox {
+  width: 150px;
+  height: 150px;
+   position: absolute;
+  top: 0px;
+  left: 0px;
+  background: rgba(var(--mg), 0.4);
+}
+
+.wttpravbox img {
+  max-width: 110px;
+  max-height: 110px;
+  position: absolute;
+  top: 17px;
+  left: 17px;
+  border: 3px solid rgba(var(--ltbase),1);
+  border-radius: 100%;
+}
+
+.wttprlinkbox {
+  width: 100%;
+  height: 55px;
+  position: absolute;
+  left: 0px;
+  bottom: 0px;
+}
+  
+.wttprlink{
+  width: 35px;
+  height: 35px;
+  background: rgba(var(--dnaccent),.8);
+  border-radius: 100%;
+  position: relative;
+  float: right;
+  color: rgba(var(--ltbase),1);
+  font: normal 400 18px/35px oswald;
+  text-align: center;
+  margin: 10px 10px 10px 0px;
+  text-transform: uppercase;
+}
+
+.wttprlink:hover {
+    background: rgba(var(--mg),.8);
+}
+
+.wttprbar { 
+  width: 570px;;
+  height: 20px;
+  padding: 5px 15px;
+  position: absolute;
+  left: 0px;
+  top: 150px;
+  background: rgba(var(--dnaccent),.8);
+  color: rgba(var(--ltbase),1);
+  font: normal 600 11px/20px Montserrat;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.wttprbar b { 
+  color: rgba(var(--mg), 1);
+  font-weight: 700;
+}
+
+.wttprlarge {
+  width: 250px;
+  height: 400px;
+  position: absolute;
+  border: 5px solid rgba(var(--mg), .4);
+  top: 185px;
+  right: 10px;
+}
+
+.wttprlarge img {
+  max-width: 250px;
+  max-height: 400px;
+}
+
+.wttprleft { 
+  left: 10px;
+  width: 290px;
+}
+
+.wttprright { right: 10px; }
+
+.wttpralias {
+  position: absolute;
+  padding: 3px 15px;
+  color: rgba(var(--ltbase),1);
+  font: normal 500 25px/40px oswald;
+  text-align: center;
+  text-transform: uppercase;
+  border-bottom: rgba(var(--ltbase),1) 1px solid;
+}
+
+.wttprdeet {
+  height: 10px;
+  padding: 5px 10px;
+  background: rgba(var(--dnaccent),.8);
+  border: 1px solid rgba(var(--mg), .4);
+  position: absolute;
+  text-align: right;
+  color: rgba(var(--ltbase),1);
+  font: normal 600 10px/10px Montserrat;
+  text-transform: uppercase;
+}
+
+.wttprdeet b {
+  font-weight: normal;
+  display: block;
+  position: absolute;
+  top: -10px;
+  left: 5px;
+  padding: 3px 5px;
+  background-color: rgba(var(--mg), .6) ;
+}
+
+.wttprleft { 
+  left: 10px;
+  width: 290px;
+}
+
+.wttprright { 
+  right: 10px;
+  width: 230px;
+}
+
+.wttprbox {
+  width: 283px;
+  height: 170px;
+  padding: 10px;
+  position: absolute;
+  top: 610px;
+  left: 10px;
+  color: rgba(var(--ltbase),1);
+  border: 5px solid rgba(var(--mg), .4);
+  background: rgba(var(--mg), .2);
+}
+
+/**************************
+Member List Headers
+**************************/
+
+#wttmlback {
+  width: 1000px;
+  min-height: 650px;
+  padding: 10px;
+  position: relative;
+}
+
+
+#wttmldropframe {
+  width: 365px;
+  height: 425px;
+  position: absolute;
+  top: 25px;
+  right: 10px;
+  background: rgba(var(--dkbase), 0.4);
+  border: 2px rgba(var(--ltbase),1) solid;
+
+}
+
+
+.wttmldrophead {
+   width: 100%;
+  height: 55px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--dkbase), .8);
+  margin-bottom: 5px;
+}
+
+.wttmldropbox {
+  width: 55px;
+  height: 55px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--btaccent), .8);
+}
+
+.wttmldropbox mac {
+  width: 40px;
+  height: 40px;
+  border: 2px rgba(var(--ltbase), 1) solid;
+  border-radius: 100%;
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  overflow: hidden;
+  font: normal 400 20px/37px oswald;
+  text-align: center;
+  background: rgba(var(--dkbase), .8);
+  color:  rgba(var(--ltbase),1);
+}
+
+.wttmldroph {
+  width: 285px;
+  position: absolute;
+  top: 0px;
+  left: 55px;
+  padding: 5px 15px;
+  font: normal 500 20px/45px oswald;
+  text-align: center;
+  text-transform: uppercase;
+  color: rgba(var(--ltbase),1);
+}
+
+
+.wttmlcontbox {
+  width: 365px;
+  height: 100%;
+  position: absolute;
+  top: 65px;
+  left: 0px;
+  text-align: center;
+}
+
+#wttmldropframe .forminput {
+  width: 345px;
+  margin: 0px 10px 10px; 
+  background: rgba(var(--dkbase), .8);
+
+}
+
+.wttmlcontbox b {
+  font: normal 600 15px/20px Montserrat;
+  text-transform: uppercase;
+}
+
+.wttmlbutton { 
+  width: 155px; 
+  padding: 5px;
+  margin: 0px 50px;
+  background: rgba(var(--btaccent), .7);
+  font: normal 600 14px/20px Montserrat;
+  text-transform: uppercase;
+}
+
+
+#wttmlsearchframe {
+  width: 365px;
+  height: 160px;
+  position: absolute;
+  top: 470px;
+  right: 10px;
+  background: rgba(var(--skbase), 0.4);
+  border: 2px rgba(var(--ltbase),1) solid;
+
+}
+
+#wttmlsearchframe .forminput {
+  width: 325px;
+  margin: -3px 10px;
+  background: rgba(var(--dnaccent), .8);
+
+}
+
+
+/**************************
+Member List
+**************************/
+
+
+#wttmlframe {
+  width: 600px;
+  height: 300px;
+  background: rgba(var(--dkbase), 0.75);
+  position: relative;
+  margin: 15px;
+  border: 2px rgba(var(--ltbase),1) solid;
+}
+
+.wttmlhead {
+   width: 100%;
+  height: 55px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--dkbase), .8);
+}
+
+.wttmlavbox {
+  width: 55px;
+  height: 55px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--mg),.8);
+}
+
+.wttmlavbox img {
+  width: 40px;
+  height: 40px;
+  border: 2px rgba(var(--ltbase),1) solid;
+  border-radius: 100%;
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  overflow: hidden;
+}
+
+.wttmlname {
+  position: absolute;
+  top: 0px;
+  left: 55px;
+  padding: 5px 15px;
+  font: normal 500 30px/45px oswald;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.wttmllink {
+  width: 35px;
+  height: 35px;
+  background: rgba(var(--dnaccent), .8);
+  border-radius: 100%;
+  position: relative;
+  float: right;
+  color: rgba(var(--ltbase),1);
+  font: normal 400 18px/35px oswald;
+  text-align: center;
+  margin: 10px 10px 10px 0px;
+}
+
+.wttmllink:hover {
+    background: rgba(var(--mg), .8);
+}
+
+.wttmlbar {
+   width: 580px;
+  height: 20px;
+  padding: 0px 10px;
+  position: absolute;
+  left: 0px;
+  top: 55px;
+  background: rgba(var(--dnaccent), .8);
+  color: rgba(var(--ltbase),1);
+  font: normal 600 10px/20px Montserrat;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.wttmlbar b { 
+  color: rgba(var(--mg),1);
+}
+
+
+.wttmlbar a { 
+  color: rgba(var(--ltbase),1);
+}
+
+.wttmlbar a:hover { 
+  color: rgba(var(--mg),1);
+  text-decoration: underline;
+}
+
+.wttmldeet {
+  padding: 5px 10px;
+  background: rgba(var(--dnaccent), .8);
+  border: 1px solid rgba(var(--mg), .4);
+  position: absolute;
+  text-align: right;
+  color: rgba(var(--ltbase),1);
+  text-transform: uppercase;
+}
+
+.wttmldeet b {
+  font-weight: normal;
+  display: block;
+  position: absolute;
+  top: -10px;
+  left: 5px;
+  padding: 3px 5px;
+  background-color: rgba(var(--mg),.6) ;
+}
+
+.wttmldw {
+  height: 15px;
+  width: 270px;
+  left: 10px;
+  font: normal 600 10px/15px Montserrat;
+
+}
+
+.wttmldn {
+  height: 15px;
+  width: 120px;
+  left: 310px;
+  font: normal 600 10px/15px Montserrat;
+
+}
+
+.wttml50l {
+  height: 10px;
+  width: 195px;
+  left: 10px;
+  font: normal 600 10px/10px Montserrat;
+
+}
+
+.wttml50r {
+  height: 10px;
+  width: 195px;
+  left: 235px;
+  font: normal 600 10px/10px Montserrat;
+
+}
+
+
+.wttmllarge {
+  width: 125px;
+  height: 200px;
+  position: absolute;
+  right: 10px;
+  top: 85px;
+  border: 3px rgba(var(--mg),.4) solid;
+}
+
+.wttmllarge img {
+  max-width: 125px;
+  max-height: 200px;
+}
+
+
+/***************************
+ Post Row & Mini Profile
+**************************/
+
+#wttpostframe {
+  width: 1000px;
+  min-height: 750px;
+  padding: 10px;
+  background: rgba(var(--dkbase), 0.8);
+  position: relative;
+  margin-bottom: 30px;
+}
+
+
+.wttpostcontent {
+  width: 685px;
+  position: relative;
+  margin: 180px 0px 0px;
+  min-height: 535px;
+  padding: 15px;
+}
+
+.wttpostavbox { 
+  width: 165px;
+  height: 165px;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  background: rgba(var(--mg), 0.4);
+}
+
+
+.wttpostavbox img {
+  max-width: 135px;
+  max-height: 135px;
+  position: absolute;
+  top: 13px;
+  left: 13px;
+  border: 2px solid rgba(var(--ltbase), 1);
+  border-radius: 100%;
+}
+
+.wttpostname {
+  position: absolute;
+  top: 0px;
+  left: 175px;
+  right: 10px;
+  padding: 10px 10px 10px 20px;
+  font: normal 500 40px/49px oswald;
+  text-align: left;
+  text-transform: uppercase;
+  color: rgba(var(--ltbase), 1);
+  border-bottom: 1px solid rgba(var(--ltbase), 1);
+  background: rgba(0,0,0, .2);
+}
+			
+.wttpostdot {
+  width: 25px;
+  height: 25px;
+  padding: 5px;
+  background: rgba(var(--mg), 0.3);
+  border-radius: 100%;
+  position: relative;
+  color: rgba(var(--ltbase), 1);
+  text-align: center;
+  float: right;
+  margin: 0px 5px 10px 0px;
+}
+
+.mplink { font: normal 400 18px/25px oswald; }
+.mplink a { color: rgba(var(--ltbase), 1); }
+.mplink:hover { background: rgba(var(--mg), 0.8); }
+.mpstat { font: normal 400 10px/11px oswald;}
+
+.mpfbox {
+  position: absolute;
+  bottom: 0px;
+  right: 5px;
+}
+
+
+.wttpostdeet {
+  height: 10px;
+  padding: 6px 10px;
+  background: rgba(var(--dnaccent), .8);
+  border: 1px solid rgba(var(--mg), .4);
+  position: absolute;
+  text-align: right;
+  color: #fff;
+  font: normal 600 10px/10px Montserrat;
+  text-transform: uppercase;
+}
+
+.wttpostdeet b {
+  font-weight: normal;
+  display: block;
+  position: absolute;
+  top: -10px;
+  left: 5px;
+  padding: 3px 5px;
+  background-color: rgba(var(--mg), .6) ;
+}
+
+.wttpostdeet a { color: rgba(var(--mg), 1); }
+.wttpostdeet a:hover { color: rgba(var(--ltbase), 1); }
+
+.mpdtop {
+  top: 85px;
+  width: 250px;
+}
+
+.mpdbottom {
+  top: 125px;
+  width: 390px;
+}
+
+.mpdleft { left: 175px; }
+.mpdmid { left: 457px; }
+.mpdright { right: 10px; }
+
+
+.wttpostbar {
+  width: 1000px;
+  height: 30px;
+  padding: 0px 10px;
+  position: absolute;
+  top: -25px;
+  left: -10px;
+  background: rgba(var(--dnaccent),.8);
+  color: rgba(var(--ltbase),1);
+  font: normal 600 10px/30px Montserrat;
+  text-align: left;
+  text-transform: uppercase;
+  z-index: 90;
+}
+
+.wttpostbar .button-small {
+  background: transparent;
+  height: 30px;
+  padding: 0px 10px;
+  font: normal 600 10px/30px Montserrat;
+  color: rgba(var(--btaccent),.8);
+
+}
+
+.wttpostbar .button-small:hover { 
+	color: rgba(var(--ltbase),1); 
+	text-decoration: none;  }
+
+
+.wttpostlarge {
+  width: 250px;
+  height: 400px;
+  position: absolute;
+  border: 5px solid rgba(var(--mg), 0.5);
+  top: 10px;
+  right: 5px;
+}
+
+.wttpostlarge img {
+  max-width: 250px;
+  max-height: 400px;
+}
+
+.wttbottombox {
+  width: 230px;
+  height: 130px;
+  padding: 10px;
+  position: absolute;
+  top: 430px;
+  right: 5px;
+  color: rgba(var(--ltbase),1);
+  border: 5px solid rgba(var(--mg), 0.4);
+  background: rgba(var(--mg), 0.2);
+}
+
+/* Alerts Coding Here */
+
+.alerts-0 .alerts-bubble { display: none; }
+.inbox-0 .inbox-bubble { display: none; }
+
+.alerts-bubble, .inbox-bubble {
+  width: 11px;
+  height: 11px;
+  padding: 3px;
+  background: rgba(var(--mg), 0.85);
+  border-radius: 100%;
+  position: absolute;
+  color: rgba(var(--ltbase), 1);
+  text-align: center;
+  float: right;
+  top: -5px;
+  right: -5px;
+  font: normal 600 10px/11px Montserrat;
+}
+
+
+
+/*********************************
+ Topic Row
+**********************************/
+
+#wtttopicframe {
+ width: 1020px;  /** edit with wrapper width **/
+  height: 140px;
+  background: rgba(var(--dkbase), .6);
+  margin: 15px auto 5px;
+  position: relative;
+  border: 2px rgba(var(--ltbase),1) solid;
+}
+
+.wtttopicbox {
+  width: 100px;
+  height: 120px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--btaccent),.8);
+}
+
+.wtttopicmac {
+  width: 55px;
+  height: 55px;
+  background: #000;
+  position: absolute;
+  top: 10px;
+  left: 20px;
+  border: rgba(var(--ltbase),1) 2px solid;
+  border-radius: 100%;
+  object-fit: cover;
+}
+
+.wtttopicdetails {
+  width: 100px;
+  position: absolute;
+  top: 75px;
+  font: normal 600 15px/15px Montserrat;
+  text-align: center;
+  color: rgba(var(--ltbase),1);  
+}
+
+.wtttopictitle {
+  width: 850px;
+  height: 24px;
+  font: normal 500 23px/25px montserrat;
+  position: absolute;
+  top: 20px;
+  left: 120px;
+  padding: 5px 15px;
+  text-align: center;
+  color: rgba(var(--btaccent),1);
+  border-bottom: rgba(var(--ltbase),1) solid 1px;
+  text-transform: none;
+}
+
+.wttcheck { 
+  position: absolute; 
+  top: 25px; 
+  right: 30px; 
+  z-index: 300;
+}
+
+.wtttopicdesc {
+  width: 830px;
+  font: normal 400 14px/15px ubuntu;
+  position: absolute;
+  top: 55px;
+  left: 120px;
+  bottom: 30px;
+  padding: 5px 15px;
+  text-align: center;
+  color: rgba(var(--ltbase),1);
+  text-transform: none;
+}
+
+.wtttopicbar {
+  width: 1000px;
+  height: 20px;
+  padding: 0px 10px;
+  position: absolute;
+  left: 0px;
+  bottom: 0px;
+  background: rgba(var(--dnaccent),.8);
+  color: rgba(var(--ltbase),1);
+  font: normal 600 10px/20px Montserrat;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+
+
+/*******************************************
+
+	Homepage Base Code
+
+*******************************************/
+
+#wtthead {
+	width: 1320px;
+	height: 450px;
+	padding: 0px;
+	background-image: url('https://imagizer.imageshack.com/img922/5919/J1m9oX.png');
+	background-size: cover;
+	position: relative; 
+	margin: 110px auto 25px;
+	z-index: 700;
+	font: normal 400 12em/200px barrio;
+	color: rgba(var(--ltbase), .8);
+	text-transform: lowercase;
+	font-weight: bold;
+
+}
+
+
+
+/*******
+Login Area
+********/
+
+.mcp-0, .acp-0, .m-2 { display: none; } .g-2 { display: block !important; }
+
+.wtthlink {
+  width: 35px;
+  height: 35px;
+  background: rgba(var(--dnaccent),.8);
+  border-radius: 100%;
+  position: relative;
+  float: right;
+  color: rgba(var(--ltbase),1);
+  font: normal 400 18px/35px oswald;
+  text-align: center;
+  margin: 10px 10px 10px 0px;
+}
+
+.wtthlink:hover {
+    background: rgba(var(--btaccent),.8);
+}
+
+.wttheaderbar {
+  width: 100%;
+  height: 55px;
+  position: fixed;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--dkbase), .8);
+  z-index: 9999;
+  
+}
+
+.wtthavbox {
+  width: 55px;
+  height: 55px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--btaccent),.8);
+}
+
+.wtthav {
+  width: 40px;
+  height: 40px;
+  border: 2px rgba(var(--ltbase),1) solid;
+  border-radius: 100%;
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  overflow: hidden;
+  object-fit: cover;
+}
+
+.wtthav img { max-width: 40px; max-height: 40px; }
+
+.wttmemname {
+  position: absolute;
+  top: 0px;
+  left: 55px;
+  padding: 5px 15px;
+  font: normal 500 30px/45px oswald;
+  text-align: left;
+  text-transform: uppercase;
+
+}
+
+.wttmemname a {
+  color: rgba(var(--mg),1);
+}
+
+.wttmemname a:hover {
+  color: rgba(var(--ltbase),1);
+}
+
+
+#wttnavbar {
+  width: 100%;
+  height: 22px;
+  padding: 0px 10px;
+  position: fixed;
+  left: 0px;
+  top: 55px;
+  background: rgba(var(--dnaccent),.8);
+  color: rgba(var(--ltbase),1);
+  font: normal 600 10px/10px Montserrat;
+  text-align: left;
+  text-transform: uppercase;
+  z-index: 9999;
+  
+}
+
+#wttnavbar a { 
+  color: rgba(var(--btaccent),1);
+}
+
+#wttnavbar a:hover {
+  color: rgba(var(--ltbase),1);
+}
+
+#wttnavbar .forminput {
+	background: rgba(var(--dnaccent),.6);
+	border: 0px;
+	color: rgba(var(--ltbase),1);
+	font-family: montserrat, sans-serif;
+	font-size: 10px;
+	padding: 2px;
+	vertical-align: middle;
+	float: right;
+	border-radius: 0px;
+	margin: -40px 20px auto 0px;
+}
+
+
+
+/*************************** SIDEBAR ***************************/
+
+#iikmsidebar {
+  width: 260px;
+  height: 520px;
+  position: absolute;
+  top: 500px;
+  left: 0px;
+  border: 2px rgba(var(--ltbase),1) solid;
+  background: rgba(var(--dkbase),.8);
+}
+
+
+.iikmstat {
+  width: 216px;
+  height: 21px;
+  padding: 5px;
+  margin: 5px 15px;
+  background: rgba(var(--ltbase),1);
+  position: relative;
+  border: 2px solid rgba(var(--mg),1);  
+
+  
+}
+
+.iikmstatnbox {
+  width: 35px;
+  height: 35px;
+  top: -2px;
+  position: absolute;
+  background: rgba(var(--mg),1);
+  font: normal 400 13px/35px oswald; 
+}
+
+.iikmstatnum {
+  width: 15px;
+  height: 15px;
+  background: #fff;
+  padding: 5px;
+  margin: 5px;
+  line-height: 15px;
+  text-align: center;
+  border-radius: 100%;
+  color: rgba(var(--mg),1);
+
+
+}
+
+.iikmstattx {
+  width: 178px;
+  height: 21px;
+  padding: 5px;
+  top: 0px;
+  position: absolute;
+  background: rgba(var(--ltbase),1);
+  color: rgba(var(--mg),1);
+  font: normal 600 13px/21px montserrat; 
+  letter-spacing: 2px;
+}
+
+.iikmtabs {
+position: relative;  
+width: 250px;
+height:  375px;
+margin: 0px 5px;
+}
+
+.iikmtab {
+float: right;
+
+}
+
+.iikmtab label {
+background: rgba(var(--dnaccent),1);
+padding: 10px;
+position: absolute;
+border-radius: 3px;
+  top: 0px;
+   width: 50px;
+  height: 15px;
+  line-height: 15px;
+  text-align: center;
+  font: normal 600 17px/15px montserrat; 
+
+}
+
+.iikmtab [type=radio] {
+display: none;  
+}
+
+.iikmcontent {
+position: absolute;
+top: 35px;
+bottom: 0px;
+left: 0px;
+right: 0px;
+background: rgba(var(--dkbase),1);
+padding: 10px;
+text-align: left;
+
+}
+
+.iikmtab [type=radio]:checked ~ label {
+background: rgba(var(--btaccent),1);
+z-index: 2;
+}
+
+.iikmtab [type=radio]:checked ~ label ~ .iikmcontent {
+z-index: 1;
+}
+
+
+.iikmlinks {
+  width: 220px;
+  height: 17px;
+  padding: 5px;
+  margin: 5px 0px;
+  background: rgba(var(--btaccent),1);
+  color: rgba(var(--ltbase),1);
+  font: normal 500 14px/17px oswald; 
+  display: block;
+  border-radius: 3px;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.iikmcontent a { color: rgba(var(--ltbase),1); }
+
+.iikmlinks:hover {
+  background: rgba(var(--dnaccent),.8);
+}
+
+.iikmdate {
+  padding: 5px;
+  margin: 2px 5px;
+  background: rgba(var(--btaccent),1);
+  color: rgba(var(--ltbase),1);
+  font: normal 500 14px/17px oswald; 
+  display: block;
+  border-radius: 3px;
+  text-transform: uppercase;
+  float: left;
+}
+
+
+
+
+
+
+		</stylesheet>
+
+		<wrappers>
+				<!DOCTYPE html>
+<html>
+    <head> 
+	<title><% TITLE %></title> 
+	<% CSS %> 
+	<% JAVASCRIPT %> 
+		<link rel="preconnect" href="https://fonts.gstatic.com">
+		<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;500;600;700&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Oswald:wght@300;400;500;600;700&family=Pacifico&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Barrio&display=swap" rel="stylesheet">
+
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.1/css/all.css" integrity="sha384-vp86vTRFVJgpjF9jiIGPEEqYqlDwgyBgEF109VFjmqGmIY/Y4HV4d3Gp2irVfcrp" crossorigin="anonymous">
+
+    </head> 
+        <body class="mg-<!-- |g_id| -->">
+
+<div class="g-<!-- |g_id| -->" style="display: none;" align='center'>
+<div class="wttheaderbar">
+  <div class="wtthavbox"> <div class="wtthav"><img src="https://img.nickpic.host/jdLpQz.jpg" width="40"></div></div>
+  <div class="wttmemname">Welcome, Guest!</div>
+
+  <a href='/index.php?act=Login&CODE=00'><div class="wtthlink" title="Login"><i class="fas fa-sign-in-alt"></div></i></a>
+  <a href='/index.php?act=Reg&CODE=00'><div class="wtthlink" title="Register"><i class="fas fa-user-plus"></i></div></a>
+
+</div></div>
+
+<div class="m-<!-- |g_id| -->" align='center'>
+
+<div class="wttheaderbar">
+  <div class="wtthavbox"> 
+	<div class="wtthav" style="background-image: url('<!-- |avatar_url| -->'); background-size: cover;"> 
+		<!-- |avatar| -->
+
+</div></div>
+
+  <div class="wttmemname"><a href='index.php?showuser=<!-- |id| -->'><!-- |name| --></a> </div>
+  
+
+  <a href="?act=Login&CODE=03&key=<!-- |auth_key| -->"><div class="wtthlink" title="Logout"><i class="fas fa-sign-out-alt"></i></div></a>
+  <a href='/index.php?act=Reg&CODE=00'><div class="wtthlink"><i class="fas fa-user-plus" title="Create New Character"></i></div></a>
+  <a href='/index.php?&act=Members'><div class="wtthlink"><i class="fas fa-users" title="Members List"></i></div></a>
+  <a href="index.php?act=Search&CODE=getnew"><div class="wtthlink" title="View New Posts"><i class="fas fa-folder-plus"></i></div></a>
+
+  <a class="alerts-<!-- |new_alerts| -->" href="index.php?act=UserCP&CODE=alerts"><div class="wtthlink" title="Alerts"><i class="fas fa-bell"></i><div class="alerts-bubble"><!-- |new_alerts| --></div></div></a>
+
+  <a class="inbox-<!-- |new_msg| -->" href="index.php?act=Msg&CODE=01"><div class="wtthlink"title="Inbox"><i class="fas fa-envelope"></i><div class="inbox-bubble"><!-- |new_msg| --></div></div></a>
+
+  <a href="index.php?act=UserCP&CODE=24"><div class="wtthlink" title="Update Avatar"><i class="fas fa-camera"></i></div></a>
+  <a href="index.php?act=UserCP"><div class="wtthlink" title="User Settings"><i class="fas fa-cog"></i></div></a>
+  <a href="index.php?act=modcp" class="mcp-<!-- |g_is_supmod| -->"><div class="wtthlink" title="MCP"><i class="fas fa-toolbox"></i></div></a>
+  <a href="admin.php" target="_blank" class="acp-<!-- |g_access_cp| -->"><div class="wtthlink" title="ACP"><i class="fas fa-tools"></i></i></div></a>
+
+
+  
+</div></div>
+
+
+
+
+</div>
+
+<div id="wttnavbar"><% NAVIGATION %><% SUBACCOUNTS %></div>
+
+<div id="iikmwrapper">
+
+
+<div id="wtthead"></div>
+
+
+<div id="iikmsidebar">
+
+  <div id="mg-6" class="iikmstat" style="margin-top: 15px;">
+    <div class="iikmstatnbox" style="left: -2px;">
+      <div class="iikmstatnum">11</div>
+    </div>
+    <div class="iikmstattx" style="right: 0px;">criminals</div>
+  </div>
+
+  <div id="mg-7" class="iikmstat">
+    <div class="iikmstatnbox" style="right: -2px;">
+      <div class="iikmstatnum">02</div>
+    </div>
+    <div class="iikmstattx" style="left: 0px;">enforcers</div>
+  </div>
+
+  <div id="mg-8" class="iikmstat" style="margin-bottom: 10px;">
+    <div class="iikmstatnbox" style="left: -2px;">
+      <div class="iikmstatnum">06</div>
+    </div>
+    <div class="iikmstattx" style="right: 0px;">civilians</div>
+  </div>
+
+  <div class="iikmtabs">
+
+    <div class="iikmtab">
+      <input type="radio" id="iikmtab-1" name="iikmtab-group-1" checked>
+      <label for="iikmtab-1" style="left: 10px;"><i class="fab fa-discord"></i></label>
+      <div class="iikmcontent">
+        <iframe src="https://discord.com/widget?id=808729723760672828&theme=dark" width="230" height="320" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
+      </div>
+    </div>
+
+    <div class="iikmtab">
+      <input type="radio" id="iikmtab-2" name="iikmtab-group-1">
+      <label for="iikmtab-2" style="left: 90px;"><i class="fas fa-link"></i></label>
+      <div class="iikmcontent">
+	<a class="iikmlinks" href="https://ifitkillsme.jcink.net/index.php">Home</a></li>
+	<a class="iikmlinks" href="https://ifitkillsme.jcink.net/index.php?act=ST&f=1&t=9">Plot</a></li>
+	<a class="iikmlinks" href="https://ifitkillsme.jcink.net/index.php?act=ST&f=1&t=8">Rules</a></li>
+	<a class="iikmlinks" href="https://ifitkillsme.jcink.net/index.php?act=ST&f=1&t=7y o">Canons</a></li>
+	<a class="iikmlinks" href="https://ifitkillsme.jcink.net/index.php?showtopic=5&st=0&#entry5">Groups</a></li>
+	<a class="iikmlinks" href="https://ifitkillsme.jcink.net/index.php?act=ST&f=4&t=6">Application</a></li>
+	<a class="iikmlinks" href="https://ifitkillsme.jcink.net/index.php?showtopic=4">Face Claim</a></li>
+	<a class="iikmlinks" href="https://ifitkillsme.jcink.net/index.php?showtopic=3">Members</a></li>
+	<a class="iikmlinks" href="https://ifitkillsme.jcink.net/index.php?showtopic=2">Job Claim</a></li>
+	<a class="iikmlinks" href="https://ifitkillsme.jcink.net/index.php?showforum=35">Adverts</a></li>
+      </div>
+    </div>
+
+    <div class="iikmtab">
+      <input type="radio" id="iikmtab-3" name="iikmtab-group-1">
+      <label for="iikmtab-3" style="right: 10px;"><i class="fas fa-bookmark"></i></label>
+      <div class="iikmcontent">
+	<span class="iikmdate">Feb 20</span> If It Kills Me is officially open for business!<p>
+	<span class="iikmdate">Mar 07</span> New skin! Make sure to update your profile information to match!
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+	<div id="wrapper">
+	    <div id="logo">
+		<a href="index.php"><{LOGO}></a>
+		<div id="searchbar">
+		    <div class="search-container">
+			<form action="index.php?act=Search&amp;CODE=01" method="post">
+				<input type="hidden" name="forums" value="all">
+				<input type="text" name="keywords" class="search-input" onfocus="this.value=''" value="Search...">
+				<input type="submit" class="search-button">
+		        </form>
+		    </div>
+		</div>
+	    </div>
+	    <% BOARD HEADER %>
+	    <div id="innerwrapper"> 
+
+
+	    	<% BOARD %> 
+	    	<div id="skin_selector">
+	    	    <% SKIN_SELECTOR %>
+	    	</div>
+	    	<% COPYRIGHT %>
+	    	<script>$('#logo a img[src="style_images/1/spacer.gif"]').replaceWith('<!-- |board_name| -->');</script>
+		<script>$("#recent-topics").appendTo("#recent-topics-clip");</script>
+	    </div>
+	</div></div>
+   
+
+</body> 
+
+
+</html>
+
+		
+
+
+
+		</wrappers>
+
+		<macros>
+		<item name='A_LOCKED_B'><div class='button-large closed'>Closed</div></item>
+			<item name='A_MOVED_B'><div class='button-large closed'>Moved</div></item>
+			<item name='A_POLLONLY_B'><div class='button-large closed'>Closed</div></item>
+			<item name='A_POST'><div class='button-large'>New Topic</div></item>
+			<item name='A_REPLY'><div class='button-large'>Add Reply</div></item>
+			<item name='A_POLL'><div class='button-large'>New Poll</div></item>
+			<item name='A_STAR'><img src='//files.jcink.net/themes/default/red-pip.png' /></item>
+			<item name='B_HOT'><div class="wttnewlg wttspin" title="New Post"><i class="fas fa-cog"></i></div></item>
+			<item name='B_HOT_NN'><div class="wttnonewlg" title="No New Posts"><i class="fas fa-cog"></i></div></item>
+			<item name='B_LOCKED'><img alt="Closed" title="Closed" src="//files.jcink.net/themes/default/closed.png" /></item>
+			<item name='B_MOVED'><img alt="Moved Topic" title="Moved Topic" src='//files.jcink.net/themes/default/red-moved.png' /></item>
+			<item name='B_NEW'><div class="wttnewlg wttspin" title="New Post"><i class="fas fa-cog"></i></div></item>
+			<item name='B_NORM'><div class="wttnonewlg" title="No New Posts"><i class="fas fa-cog"></i></div></item>
+			<item name='B_PIN'><img alt="Pinned" title="Pinned" src="//files.jcink.net/themes/default/white-cube-small.png" /></item>
+			<item name='B_POLL'><div class="wttnewlg wttspin" title="New Post"><i class="fas fa-cog"></i></div></item>
+			<item name='B_POLL_NN'><div class="wttnonewlg" title="No New Votes/Posts"><i class="fas fa-cog"></i></div></item>
+			<item name='B_HOT_DOT'><div class="wttnewlg wttspin" title="New Post"><i class="fas fa-cog"></i></div></item>
+			<item name='B_NEW_DOT'><div class="wttnewlg wttspin" title="New Post"><i class="fas fa-cog"></i></div></item>
+			<item name='B_HOT_NN_DOT'><div class="wttnonewlg" title="No New Posts"><i class="fas fa-cog"></i></div></item>
+			<item name='B_NORM_DOT'><div class="wttnonewlg" title="No New Posts"><i class="fas fa-cog"></i></div></item>
+			<item name='B_POLL_DOT'><div class="wttnewlg wttspin" title="New Post"><i class="fas fa-cog"></i></div></item>
+			<item name='B_POLL_NN_DOT'><div class="wttnonewlg" title="No New Posts"><i class="fas fa-cog"></i></div></item>
+			<item name='C_LOCKED'><div title="Read Only" class="wttnonewlg"><i class="fas fa-ban"></i></div></item>
+			<item name='C_OFF'><div class="wttnonewlg" title="No New Posts"><i class="fas fa-cog"></i></div></item>
+			<item name='C_OFF_CAT'><div class="wttnonewlg" title="No New Posts"><i class="fas fa-cog"></i></div></item>
+			<item name='C_OFF_RES'><div class="wttnonewlg" title="No New Posts"><i class="fas fa-cog"></i></div></item>
+			<item name='C_ON'><div class="wttnewlg wttspin" title="New Post"><i class="fas fa-cog"></i></div></item>
+			<item name='C_ON_CAT'><div class="wttnewlg wttspin" title="New Post"><i class="fas fa-cog"></i></div></item>
+			<item name='C_ON_RES'><div class="wttnewlg wttspin" title="New Post"><i class="fas fa-cog"></i></div></item>
+			<item name='F_ACTIVE'><img alt="Users" title="Users" src="//files.jcink.net/themes/default/active-users.png" /></item>
+			<item name='F_NAV_SEP'>&nbsp;&rarr;&nbsp;</item>
+			<item name='F_NAV'><i class="fas fa-chevron-circle-right"></i>  </item>
+			<item name='F_STATS'><img alt="Statistics" title="Statistics" src="//files.jcink.net/themes/default/statistics.png" /></item>
+			<item name='NO_PHOTO'><img src='//files.jcink.net/themes/default/active-users.png'></item>
+			<item name='CAMERA'>View</item>
+			<item name='M_READ'><img alt="Read Message" title="Read Message" src="https://img.nickpic.host/aM3ciD.png" width="25" /></item>
+			<item name='M_UNREAD'><img alt="Unread Message" title="Unread Message" src="https://img.nickpic.host/aM3lPq.png" width="25"  /></item>
+			<item name='P_AOL'><span class='button-small'>AIM</span></item>
+			<item name='P_DELETE'><span class='button-small'><i class="fas fa-trash-alt"></i></span></item>
+			<item name='P_EDIT'><span class='button-small'><i class="fas fa-edit"></i></span></item>
+			<item name='P_EMAIL'><span class='button-small'>Email</span></item>
+			<item name='P_ICQ'><span class='button-small'>GTalk</span></item>
+			<item name='P_MSG'><span class='button-small'>PM</span></item>
+			<item name='P_QUOTE'><span class='button-small'><i class="fas fa-quote-right"></i></span></item>
+			<item name='P_WEBSITE'><span class='button-small'>Website</span></item>
+			<item name='P_YIM'><span class='button-small'>YIM</span></item>
+			<item name='P_REPORT'><span class='button-small'><i class="fas fa-flag"></i></span></item>
+			<item name='P_MSN'><span class='button-small'>MSN</span></item>
+			<item name='CAT_IMG'></item>
+			<item name='NEW_POST'><img src="//files.jcink.net/themes/default/double-arrow.gif" /></item>
+			<item name='LAST_POST'><img src="//files.jcink.net/themes/default/double-arrow.gif" /></item>
+			<item name='BR_REDIRECT'><img alt="Redirect" title="Redirect" src="//files.jcink.net/themes/default/red-redirect.png" /></item>
+			<item name='INTEGRITY_MSGR'><span class='button-small'>Skype</span></item>
+			<item name='ADDRESS_CARD'><span class='button-small'>Card</span></item>
+			<item name='T_QREPLY'><div class='button-large'>Fast Reply</div></item>
+			<item name='T_OPTS'><div class='button-large'>Topic Options</div></item>
+			<item name='CAL_NEWEVENT'><div class='button-large'>Add Event</div></item>
+			<item name='F_RULES'><img src='//files.jcink.net/html/acp/rules.png' alt='Forum Rules'></item>
+			<item name='WARN_0'> <img src='//files.jcink.net/themes/default/gray-block.png'> <img src='//files.jcink.net/themes/default/gray-block.png'> <img src='//files.jcink.net/themes/default/gray-block.png'> <img src='//files.jcink.net/themes/default/gray-block.png'> <img src='//files.jcink.net/themes/default/gray-block.png'> </item>
+			<item name='WARN_1'> <img src='//files.jcink.net/themes/default/red-block.png'> <img src='//files.jcink.net/themes/default/gray-block.png'> <img src='//files.jcink.net/themes/default/gray-block.png'> <img src='//files.jcink.net/themes/default/gray-block.png'> <img src='//files.jcink.net/themes/default/gray-block.png'> </item>
+			<item name='WARN_2'> <img src='//files.jcink.net/themes/default/red-block.png'> <img src='//files.jcink.net/themes/default/red-block.png'> <img src='//files.jcink.net/themes/default/gray-block.png'> <img src='//files.jcink.net/themes/default/gray-block.png'> <img src='//files.jcink.net/themes/default/gray-block.png'> </item>
+			<item name='WARN_3'> <img src='//files.jcink.net/themes/default/red-block.png'> <img src='//files.jcink.net/themes/default/red-block.png'> <img src='//files.jcink.net/themes/default/red-block.png'> <img src='//files.jcink.net/themes/default/gray-block.png'> <img src='//files.jcink.net/themes/default/gray-block.png'> </item>
+			<item name='WARN_4'> <img src='//files.jcink.net/themes/default/red-block.png'> <img src='//files.jcink.net/themes/default/red-block.png'> <img src='//files.jcink.net/themes/default/red-block.png'> <img src='//files.jcink.net/themes/default/red-block.png'> <img src='//files.jcink.net/themes/default/gray-block.png'> </item>
+			<item name='WARN_5'> <img src='//files.jcink.net/themes/default/red-block.png'> <img src='//files.jcink.net/themes/default/red-block.png'> <img src='//files.jcink.net/themes/default/red-block.png'> <img src='//files.jcink.net/themes/default/red-block.png'> <img src='//files.jcink.net/themes/default/red-block.png'> </item>
+			<item name='WARN_ADD'><img src='//files.jcink.net/themes/default/red-block-plus.png'></item>
+			<item name='WARN_MINUS'><img src='//files.jcink.net/themes/default/red-block-minus.png'></item>
+			<item name='LOGO'></item>
+			<item name='CUST_PROF'><div class="postbit"><div align='center'><!-- |avatar| --><br><!-- |title| --><br></div></div><div class="postbit"><img src='//files.jcink.net/themes/default/users.png'> Group: <!-- |member_group| --> </div><div class="postbit"><img src='//files.jcink.net/themes/default/posts.png'> Posts: <!-- |posts| --></div><div class="postbit"><img src='//files.jcink.net/themes/default/joined.png'> Joined: <!-- |member_joined| --></div><div class="postbit">Age: <!-- |age| --><br>Location: <!-- |location| --><br>Status: <!-- |status| --><br></div><br><div style="margin-left: 14px;"><!-- |warn_text| --> <!-- |warn_minus| --><!-- |warn_img| --><!-- |warn_add| --></div></item>
+			<item name='B_PLUS_SHOW'></item>
+			<item name='B_MINUS_HIDE'></item>
+			
+		</macros>
+
+		<templates>
+		 <item name='topic_row'><div id="wtttopicframe">
+  <div class="wtttopicbox">
+    <div class="wtttopicmac"><!-- |macro_img| --></div>
+    <div class="wtttopicdetails">
+      <!-- |views| --> views<br>
+      <!-- |replies_int| --> replies
+    </div>
+  </div>
+
+  <div class="wttcheck"><!-- |mod_checkbox| --></div>
+
+  <div class="wtttopictitle"><!-- |topic| --></div>
+
+  <div class="wtttopicdesc"><!-- |topic_desc| --></div>
+
+  <div class="wtttopicbar">
+    <span style="float: left;">started by <!-- |starter| --> on <!-- |start_date| --></span>
+    <span style="float: right;">last post by <!-- |last_poster| --> on <!-- |last_post| --> <!-- |pages| --></span>
+  </div>
+</div>
+
+
+</item>
+ <item name='forum_row'><div id="wttindexframe" class="new-row">
+
+  <div class="wttindexbox">
+    <div class="wttindexmac">
+       <!-- |img_new_post| --> 
+
+    </div>
+    </div>
+  
+  <div class="wtttitle"> <!-- |name| --> </div>
+
+  <div class="wttindexdetails"> <span class="wttindexdeet"><!-- |topics| -->  topic</span><span class="wttindexdeet"> <!-- |replies| --> 
+ replies</span></div>
+  
+  <div class="wttindexav"><!-- |last_poster_avatar| --></div>
+  
+  <div class="wttindexthread"> <!-- |last_topic| --> </div>
+  <div class="wttindexby">by <!-- |last_poster| --><br>on  <!-- |last_post| --> 
+
+</div>
+  
+  <div class="wttindexbar"><!-- |subforums_list| --></div>
+  
+</div></item>
+ <item name='post_row'><div id="wttpostframe">
+
+	<div id="entry#<!-- |pid| -->" class="new-post mg-<!-- |g_id| -->">
+
+		<div id="outerpost">
+
+
+	<div class="wttpostbar"><span style="float: left;"><!-- |mod_checkbox| --> <a title="Show the link to this post" href="#" onclick="link_to_post(<!-- |pid| -->); return false;">Posted on</a>: <!-- |post_date| --></span><span style="float: right;"><!-- |report_link| --><!-- |delete_button| --><!-- |edit_button| --><!-- |quote_button| --></span></div>
+
+
+	<div class="miniprofilepost"><!-- |mini_profile| --></div>
+
+
+	<div class="wttpostcontent">
+	<div id="pid_<!-- |pid| -->"><!-- THE POST <!-- |pid| --> --><div class='postcolor'><!-- |post| --></div><!-- |signature| --><!-- THE POST --></div>
+
+</div>
+
+
+</div></div></div>
+</item>
+ <item name='mini_profile'><div class="outertopmini">
+
+  <div class="wttpostavbox"><!-- |avatar| --></div>
+  <div class="wttpostname"><!-- |name| --></a>
+    <div class="mpfbox">
+
+
+      <a href="" title="Member Board">
+        <div class="wttpostdot mplink"><i class="fas fa-portrait"></i></div>
+      </a>
+
+      <a href="" title="Application">
+        <div class="wttpostdot mplink"><i class="fas fa-address-card"></i></div>
+      </a>
+
+      <a href="/index.php?act=Msg&amp;CODE=04&amp;MID=1" title="PM">
+        <div class="wttpostdot mplink"><i class="fas fa-envelope"></i></div>
+      </a>
+
+      <div class="wttpostdot mpstat"><!-- |points| --><br>POINTS</div>
+      <div class="wttpostdot mpstat"><!-- |posts| --><br>POSTS</div>
+      <div class="wttpostdot mpstat"><!-- |age| --><br>YEARS</div>
+
+    </div>
+  </div>
+
+  <div class="wttpostdeet mpdtop mpdleft"><b>member group</b><!-- |g_title| --></div>
+  <div class="wttpostdeet mpdtop mpdmid"> <b>Alias</b> <a href="<!-- |field_14| -->"><!-- |field_9| --></a></div>
+  <div class="wttpostdeet mpdtop mpdright"> <b>Location</b><!-- |field_3| --></div>
+  <div class="wttpostdeet mpdbottom mpdright"> <b>occupation</b><!-- |field_7| --> at <!-- |field_8| --></a></div>
+  <div class="wttpostdeet mpdbottom mpdleft"> <b>relationship status</b><!-- |field_4| --> <a href="<!-- |field_6| -->"><!-- |field_5| --></a></div>
+
+</div>
+
+
+<div class="wttpostlarge"><img src="<!-- |field_1| -->"></div>
+
+<div class="wttbottombox"><!-- |awards| --></div>
+
+<div class="outerbottommini"></div>
+</item>
+ <item name='profile'><div id="wttprframe" class="mg-<!-- |g_id| -->">
+  
+  <div class="wttpravbox">
+ <!-- |avatar| --> 
+  </div>
+  <div class="wttprname"> <!-- |name| --> 
+  
+    <div class="wttprlinkbox">
+      
+      <a href="/index.php?act=Search&CODE=getalluser&mid=<!-- |id| -->" title="Find All Posts by This Member">
+	<div class="wttprlink"><i class="fas fa-pen-square"></i></div></a>
+
+      <a href="/index.php?act=Search&CODE=getalluser&mid=<!-- |id| -->&type=topics" title="Find Topics Posts by This Member">
+	<div class="wttprlink"><i class="fas fa-th-list"></i></div></a>
+
+      <a href="/index.php?act=Msg&CODE=04&MID=<!-- |id| -->" title="PM"><div class="wttprlink"><i class="fas fa-envelope"></i></div></a>
+
+      <a href="<!-- |field_12| -->" title="Application"><div class="wttprlink"><i class="fas fa-address-card"></i></div></a>
+	<a href="<!-- |field_13| -->" title="Member Board"><div class="wttprlink"><i class="fas fa-portrait"></i></div></a>
+
+      
+      
+    </div>
+  </div>
+  
+  <div class="wttprbar">
+    <span style="float: left"><b>Joined:</b>  <!-- |joined| --></span>
+	<b>Last seen:</b>  <!-- |last_activity| --> 
+    <span style="float: right"><b>Last Post:</b> <!-- |last_post| --></span>
+      </div>
+  
+  <div class="wttpralias" style="top: 185px; left: 10px; right: 280px;">Character info</div>
+ 
+  <div class="wttprdeet wttprleft" style="top: 250px;"><b>Nickname</b><!-- |field_2| --></div>
+  
+    <div class="wttprdeet wttprleft" style="top: 290px;"><b>Age</b><!-- |age| -->
+</div>
+  
+      <div class="wttprdeet wttprleft" style="top: 330px;"><b>Member Group</b><!-- |group| --></div>
+   
+      <div class="wttprdeet wttprleft" style="top: 370px;"><b>Posts</b> <!-- |posts| --> </div> 
+  
+      <div class="wttprdeet wttprleft" style="top: 410px;"><b>Points</b> <!-- |points| --> </div> 
+  
+      <div class="wttprdeet wttprleft" style="top: 450px;"><b>Relationship Status</b><!-- |field_4| --></div>
+  
+      <div class="wttprdeet wttprleft" style="top: 490px;"><b>Partner's Name</b><a href="<!-- |field_6| -->"><!-- |field_5| --></a></div>
+  
+      <div class="wttprdeet wttprleft" style="top: 530px;"><b>Occupation</b><!-- |field_7| --></div>
+  
+      <div class="wttprdeet wttprleft" style="top: 570px;"><b>Job Location</b><!-- |field_8| --></div>
+  
+  <div class="wttprlarge"><img src="<!-- |field_1| -->"></div>
+  
+    <div class="wttpralias" style="top: 600px; left: 330px; right: 10px;">Player info</div>
+  
+    <div class="wttprdeet wttprright" style="top: 665px;"><b>Alias</b><!-- |field_9| --></div>
+  
+    <div class="wttprdeet wttprright" style="top: 705px;"><b>Timezone</b><!-- |field_10| --></div>
+
+  <div class="wttprdeet wttprright" style="top: 745px;"><b>Activity</b> <!-- |activity| --></div>
+  
+      <div class="wttprdeet wttprright" style="top: 785px;"><b>Contact</b><!-- |field_11| --></div>
+  
+  <div class="wttprbox"><!-- |awards| --></div>
+  
+</div></item>
+ <item name='memberlist_row'><div id="wttmlframe" class="mg-<!-- |g_id| -->">
+
+<div class="wttmlhead">
+
+	<div class="wttmlavbox"> <!-- |avatar| --></div>
+	<div class="wttmlname"> <!-- |name| --></div>
+
+      <a href= <!-- |pm| -->" title="PM"><div class="wttmllink"><i class="fas fa-envelope"></i></div></a>
+      <a href="<!-- |field_12| -->" title="Application"><div class="wttmllink"><i class="fas fa-address-card"></i></div></a>
+      <a href="<!-- |field_13| -->" title="Member Board"><div class="wttmllink"><i class="fas fa-portrait"></i></div></a>
+      <a href="/index.php?act=Search&CODE=getalluser&mid=<!-- |id| -->" title="Find All Posts by This Member"><div class="wttmllink"><i class="fas fa-pen-square"></i></div></a>
+
+</div>
+
+
+
+    <div class="wttmlbar">
+      <span style="float: left;"><b>Alias:</b> <a href="<!-- |field_14| -->"><!-- |field_9| --></a> </span>
+      <span style="float: right;"><b>Member Group:</b> <!-- |group| --></span>
+
+    </div>
+
+    <div class="wttmllarge"><img src=" <!-- |field_1| --> " alt="large image"></div>
+
+    <div class="wttmldeet wttmldw" style="top: 90px;"><b>Nickname</b><!-- |field_2| --></div>
+
+    <div class="wttmldeet wttmldn" style="top: 90px;"><b>Age</b> <!-- |age| --></div>
+
+    <div class="wttmldeet wttmldw" style="top: 135px;"><b>Dating Status</b><!-- |field_4| --> <a href="<!-- |field_6| -->" title="<!-- |field_5| -->'s Profile"><!-- |field_5| --></a></div>
+
+    <div class="wttmldeet wttmldn" style="top: 135px;"><b>Posts</b><!-- |posts| --> </div>
+
+    <div class="wttmldeet wttmldw" style="top: 180px;"><b>Occupation</b><!-- |field_7| --> at <!-- |field_8| --></div>
+
+    <div class="wttmldeet wttmldn" style="top: 180px;"><b>Timezone</b><!-- |field_10| --></div>
+
+
+
+    <div class="wttmldeet wttml50l" style="top: 230px;"><b>Last Seen</b><!-- |last_activity| --></div>
+
+    <div class="wttmldeet wttml50r" style="top: 230px;"><b>Last Post</b><!-- |last_post| --></div>
+
+    <div class="wttmldeet wttml50l" style="top: 268px;"><b>Join Date</b> <!-- |joined| --></div>
+
+    <div class="wttmldeet wttml50r" style="top: 268px;"><b>Birthday</b><!-- |birthday| --></div>
+
+</div></item>
+ <item name='board_stats'><div id="wttbsframe">
+  <div class="wttbshead">
+    <div class="wttbsavbox"><mac><i class="fas fa-chart-bar"></i></mac></div>
+    <div class="wttprhdtx">Board Stats</div>
+    
+    <a href="index.php?act=Online&amp;CODE=listall&amp;sort_key=click"><div class="wttbslink" style="margin-right: 15px;" Title="Sort By Last Click"><i class="fas fa-mouse"></i></div></a>
+    <a href='index.php?act=Online&amp;CODE=listall&amp;sort_key=name&amp;sort_order=asc&amp;show_mem=reg' title="Sort By Member Name"><div class="wttbslink"><i class="fas fa-sort-alpha-down"></i></div></a>
+    <a href="/index.php?act=Search&CODE=getnew" Title="New Pots"><div class="wttbslink"><i class="fas fa-folder-plus"></i></div></a>
+    <a href="/index.php?act=Search&CODE=getactive" title="Active Topics"><div class="wttbslink"><i class="fas fa-fire"></i></div></a>
+    <a href="/index.php?act=Stats" title="Today's Top Ten Posters"><div class="wttbslink"><i class="fas fa-calendar-plus"></i></div></a>
+    <a href="/index.php?act=Members&max_results=10&sort_key=posts&sort_order=desc" title="Overall Top Ten Posters"><div class="wttbslink"><i class="fas fa-sort-amount-up-alt"></i></div></a>
+      
+  </div>
+  
+  <div class="wttbsbar">
+    <span style="float: left;"><b>Currently Online:</b> <!-- |total_mems| --> Members <b>|</b> <!-- |total_guests| --> Guests <b>|</b> <!-- |total_anons| --> Anons </span>
+  </div>
+  
+  <div class="wttbsdeet wttbson"><b><!-- |total_mems| --> Members Online Now</b><div class="wttbsdt">
+    
+   <!-- |online_list| -->
+    
+    </div></div>
+  
+  <div class="wttbsdeet wttbsot"><b>  <!-- |online_today| --> Members Online Today</b><div class="wttbsdt">
+    
+    <!-- |online_today_list| -->
+    
+    </div></div>
+
+  <div class="wttbsdeet wttbsnm">
+    <b>newest member</b><!-- |newest_member| -->
+  </div>  
+  
+  <div class="wttbsdeet wttbstp">
+    <b>Total posts</b> <!-- |total_posts| -->  Posts
+  </div>  
+  
+  <div class="wttbsdeet wttbstm">
+    <b>Total members</b><!-- |total_mem_reg| --> Members
+  </div>  
+  
+  <div class="wttbsdeet wttbsrt"><b> Recent Topics</b><div class="wttbsdt">
+    
+<div id='recent-topics-clip'></div>    
+    
+</div></div>
+</div></item>
+ <item name='memberlist_head'><form action='index.php' method='post'><input name='act' type='hidden' value='Members'>
+  <div align="left">
+    <!-- |pages| -->
+  </div>
+
+  <div class='tableborder category' id='member-list'>
+    <div class="maintitle">Member List</div>
+    <div id="wttmlback">
+      <% MEMBERLIST_ROWS %>
+
+      <div id="wttmldropframe">
+        <div class="wttmldrophead">
+          <div class="wttmldropbox">
+            <mac><i class="fas fa-sort-amount-down"></i></mac>
+          </div>
+
+          <div class="wttmldroph">Sort & Filter Member List</div>
+        </div>
+
+        <div class="wttmlcontbox">
+          <b>Showing</b>
+          <!-- |group_dropdown| -->
+
+          <b>by</b>
+          <!-- |sortby_dropdown| -->
+
+          <b>in</b>
+          <!-- |order_dropdown| -->
+
+          <b>with</b>
+          <!-- |max_dropdown| -->
+
+          <b>results per page</b>
+
+<p>&nbsp;<input type="submit" value="Go" class="wttmlbutton" />
+
+        </div>
+      </div>
+
+
+      <div id="wttmlsearchframe">
+        <div class="wttmldrophead">
+          <div class="wttmldropbox">
+            <mac><i class="fas fa-search"></i></mac>
+          </div>
+
+          <div class="wttmldroph">Search for Members</div>
+        </div>
+
+        <div class="wttmlcontbox">
+           <!-- |search_input| --> 
+<p>&nbsp;<input type="submit" value="Go" class="wttmlbutton" />
+
+        </div>
+      </div>
+
+
+
+
+
+    </div>
+  </div>
+
+</form></item>
+ <item name='topic_list_head'></item>
+ <item name='cat_head'></item>
+ <item name='redirect_row'></item>
+ <item name='subf_head'></item>
+
+		</templates>
+		
+		</skin>

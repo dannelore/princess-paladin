@@ -1,0 +1,64 @@
+<form action='index.php' method='post'><input name='act' type='hidden' value='Members'>
+  <div align="left">
+    <!-- |pages| -->
+  </div>
+
+  <div class='tableborder category' id='member-list'>
+    <div class="maintitle">Member List</div>
+    <div id="wttmlback">
+      <% MEMBERLIST_ROWS %>
+
+      <div id="wttmldropframe">
+        <div class="wttmldrophead">
+          <div class="wttmldropbox">
+            <mac><i class="fas fa-sort-amount-down"></i></mac>
+          </div>
+
+          <div class="wttmldroph">Sort & Filter Member List</div>
+        </div>
+
+        <div class="wttmlcontbox">
+          <b>Showing</b>
+          <!-- |group_dropdown| -->
+
+          <b>by</b>
+          <!-- |sortby_dropdown| -->
+
+          <b>in</b>
+          <!-- |order_dropdown| -->
+
+          <b>with</b>
+          <!-- |max_dropdown| -->
+
+          <b>results per page</b>
+
+<p>&nbsp;<input type="submit" value="Go" class="wttmlbutton" />
+
+        </div>
+      </div>
+
+
+      <div id="wttmlsearchframe">
+        <div class="wttmldrophead">
+          <div class="wttmldropbox">
+            <mac><i class="fas fa-search"></i></mac>
+          </div>
+
+          <div class="wttmldroph">Search for Members</div>
+        </div>
+
+        <div class="wttmlcontbox">
+           <!-- |search_input| --> 
+<p>&nbsp;<input type="submit" value="Go" class="wttmlbutton" />
+
+        </div>
+      </div>
+
+
+
+
+
+    </div>
+  </div>
+
+</form>

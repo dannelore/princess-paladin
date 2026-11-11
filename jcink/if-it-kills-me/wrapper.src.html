@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+    <head> 
+	<title><% TITLE %></title> 
+	<% CSS %> 
+	<% JAVASCRIPT %> 
+		<link rel="preconnect" href="https://fonts.gstatic.com">
+		<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;500;600;700&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Oswald:wght@300;400;500;600;700&family=Pacifico&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&display=swap" rel="stylesheet">
+
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.1/css/all.css" integrity="sha384-vp86vTRFVJgpjF9jiIGPEEqYqlDwgyBgEF109VFjmqGmIY/Y4HV4d3Gp2irVfcrp" crossorigin="anonymous">
+
+    </head> 
+        <body class="mg-<!-- |g_id| -->">
+
+<div class="g-<!-- |g_id| -->" style="display: none;" align='center'>
+<div class="wttheaderbar">
+  <div class="wtthavbox"> <div class="wtthav"></div></div>
+  <div class="wttmemname">Welcome, Guest!</div>
+
+  <a href='/index.php?act=Login&CODE=00'><div class="wtthlink" title="Login"><i class="fas fa-sign-in-alt"></div></i></a>
+  <a href='/index.php?act=Reg&CODE=00'><div class="wtthlink" title="Register"><i class="fas fa-user-plus"></i></div></a>
+
+</div></div>
+
+<div class="m-<!-- |g_id| -->" align='center'>
+
+<div class="wttheaderbar">
+  <div class="wtthavbox"> 
+	<div class="wtthav" style="background-image: url('<!-- |avatar_url| -->'); background-size: cover;"> 
+		<!-- |avatar| -->
+
+</div></div>
+
+  <div class="wttmemname" data-color="<!-- |field_1| -->"><a href='index.php?showuser=<!-- |id| -->'><!-- |name| --></a> </div>
+  
+
+  <a href="?act=Login&CODE=03&key=<!-- |auth_key| -->"><div class="wtthlink" title="Logout"><i class="fas fa-sign-out-alt"></i></div></a>
+  <a href='/index.php?act=Reg&CODE=00'><div class="wtthlink"><i class="fas fa-user-plus" title="Create New Character"></i></div></a>
+  <a href='/index.php?&act=Members'><div class="wtthlink"><i class="fas fa-users" title="Members List"></i></div></a>
+  <a href="index.php?act=Search&CODE=getnew"><div class="wtthlink" title="View New Posts"><i class="fas fa-folder-plus"></i></div></a>
+
+  <a class="alerts-<!-- |new_alerts| -->" href="index.php?act=UserCP&CODE=alerts"><div class="wtthlink" title="Alerts"><i class="fas fa-bell"></i><div class="alerts-bubble"><!-- |new_alerts| --></div></div></a>
+
+  <a class="inbox-<!-- |new_msg| -->" href="index.php?act=Msg&CODE=01"><div class="wtthlink"title="Inbox"><i class="fas fa-envelope"></i><div class="inbox-bubble"><!-- |new_msg| --></div></div></a>
+
+  <a href="index.php?act=UserCP&CODE=24"><div class="wtthlink" title="Update Avatar"><i class="fas fa-camera"></i></div></a>
+  <a href="index.php?act=UserCP"><div class="wtthlink" title="User Settings"><i class="fas fa-cog"></i></div></a>
+  <a href="index.php?act=modcp" class="mcp-<!-- |g_is_supmod| -->"><div class="wtthlink" title="MCP"><i class="fas fa-toolbox"></i></div></a>
+  <a href="admin.php" target="_blank" class="acp-<!-- |g_access_cp| -->"><div class="wtthlink" title="ACP"><i class="fas fa-tools"></i></i></div></a>
+
+
+  
+</div></div>
+
+
+
+
+</div>
+
+<div id="wttnavbar"><% NAVIGATION %><% SUBACCOUNTS %></div>
+
+<div id="iikmwrapper">
+
+
+<div id="wtthead"><!-- |board_name| --></div>
+
+
+<div id="iikmsidebar">
+
+  <!-- one row per role. The numbers fill themselves in from the member list. -->
+  <div id="mg-6" class="iikmstat" style="margin-top: 15px;">
+    <div class="iikmstatnbox" style="left: -2px;">
+      <div class="iikmstatnum" data-role-count="6">00</div>
+    </div>
+    <div class="iikmstattx" style="right: 0px;">main</div>
+  </div>
+
+  <div id="mg-7" class="iikmstat">
+    <div class="iikmstatnbox" style="right: -2px;">
+      <div class="iikmstatnum" data-role-count="7">00</div>
+    </div>
+    <div class="iikmstattx" style="left: 0px;">secondary</div>
+  </div>
+
+  <div id="mg-8" class="iikmstat">
+    <div class="iikmstatnbox" style="left: -2px;">
+      <div class="iikmstatnum" data-role-count="8">00</div>
+    </div>
+    <div class="iikmstattx" style="right: 0px;">tertiary</div>
+  </div>
+
+  <div id="mg-9" class="iikmstat" style="margin-bottom: 10px;">
+    <div class="iikmstatnbox" style="right: -2px;">
+      <div class="iikmstatnum" data-role-count="9">00</div>
+    </div>
+    <div class="iikmstattx" style="left: 0px;">background</div>
+  </div>
+
+  <div class="iikmtabs">
+
+    <!-- story links. A link marked iikmsoon is a placeholder: to switch it
+         on, remove iikmsoon and add href="the page address" -->
+    <div class="iikmtab">
+      <input type="radio" id="iikmtab-1" name="iikmtab-group-1" checked>
+      <label for="iikmtab-1" style="left: 10px;"><i class="fas fa-link"></i></label>
+      <div class="iikmcontent">
+	<a class="iikmlinks" href="index.php">Home</a>
+	<a class="iikmlinks iikmsoon" title="Not set up yet">Wiki</a>
+	<a class="iikmlinks iikmsoon" title="Not set up yet">Timeline</a>
+	<a class="iikmlinks" href="index.php?act=Members">Cast</a>
+	<a class="iikmlinks iikmsoon" title="Not set up yet">Relationships</a>
+	<a class="iikmlinks iikmsoon" title="Not set up yet">Family Trees</a>
+	<a class="iikmlinks iikmsoon" title="Not set up yet">Plot Notes</a>
+	<a class="iikmlinks" href="https://princessandpaladin.com/dannelore/rp/" target="_blank" rel="noopener">Writing Room</a>
+      </div>
+    </div>
+
+    <!-- notes to yourself. Copy a line to add another. -->
+    <div class="iikmtab">
+      <input type="radio" id="iikmtab-3" name="iikmtab-group-1">
+      <label for="iikmtab-3" style="left: 90px;"><i class="fas fa-bookmark"></i></label>
+      <div class="iikmcontent">
+	<span class="iikmdate">Note</span> Your notes go here. Edit them in the board wrapper.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+	<div id="wrapper">
+	    <div id="logo">
+		<a href="index.php"><{LOGO}></a>
+		<div id="searchbar">
+		    <div class="search-container">
+			<form action="index.php?act=Search&amp;CODE=01" method="post">
+				<input type="hidden" name="forums" value="all">
+				<input type="text" name="keywords" class="search-input" onfocus="this.value=''" value="Search...">
+				<input type="submit" class="search-button">
+		        </form>
+		    </div>
+		</div>
+	    </div>
+	    <% BOARD HEADER %>
+	    <div id="innerwrapper"> 
+
+
+	    	<% BOARD %> 
+	    	<div id="skin_selector">
+	    	    <% SKIN_SELECTOR %>
+	    	</div>
+	    	<% COPYRIGHT %>
+	    	<script>$('#logo a img[src="style_images/1/spacer.gif"]').replaceWith('<!-- |board_name| -->');</script>
+		<script>$("#recent-topics").appendTo("#recent-topics-clip");</script>
+	    </div>
+	</div></div>
+   
+
+<script>
+/*SKIN_JS*/
+Alv.run();
+</script>
+</body> 
+
+
+</html>

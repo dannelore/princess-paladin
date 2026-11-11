@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Alvstonia skin preview</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Jost:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="skin.css">
+<script src="skin.js"></script>
+<style>
+  /* preview-only controls, not part of the skin */
+  .pv-bar { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; padding: 8px 16px; background: #2E241F; color: #FFFDF8; font: 13px 'Jost', sans-serif; }
+  .pv-bar select { padding: 3px 6px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- This page imitates Jcink's own markup so the skin can be tried
+     before it goes on the board. Sample details are made up. -->
+<div class="pv-bar">
+  <strong>Preview only</strong>
+  <label>Section <select id="pvSection">
+    <option>Book 1</option><option>Prequel</option><option>History</option><option>Book 2</option><option>Reference</option>
+  </select></label>
+  <label>Thread's story date <select id="pvDate">
+    <option>May 15, 2023</option><option>July 14, 2026</option><option value="">none</option>
+  </select></label>
+</div>
+
+<div id="wrapper">
+  <div id="logo">
+    <a href="#">Alvstonia</a>
+    <div id="searchbar"><div class="search-container"><form onsubmit="return false">
+      <input type="text" class="search-input" placeholder="Search..."><input type="submit" class="search-button" value="Search">
+    </form></div></div>
+  </div>
+  <div id="logostrip"></div>
+  <table id="submenu" cellpadding="0" cellspacing="0"><tr>
+    <td><a href="#">Home</a></td>
+    <td align="right"><a href="#">Help</a><a href="#">Search</a><a href="#">Members</a><a href="#">Calendar</a></td>
+  </tr></table>
+  <table id="userlinks" cellpadding="0" cellspacing="0"><tr>
+    <td><strong>Logged in as:</strong> <a href="#">Danni</a> ( <a href="#">Log Out</a> · <a href="#">Admin CP</a> )</td>
+    <td align="right"><a href="#">My Controls</a> · <a href="#">0 New Messages</a> · <a href="#">View New Posts</a></td>
+  </tr></table>
+
+  <div id="innerwrapper">
+    <div id="navi"><div id="navstrip">» <a href="index.php?act=idx">Alvstonia</a> → <a href="index.php?act=SC&c=3" id="pvCat">Book 1</a> → <a href="index.php?showforum=4">Chapters</a></div></div>
+    <script>
+      var pv = new URLSearchParams(location.search);
+      var pvSection = pv.get('section') || 'Book 1';
+      var pvDate = pv.has('date') ? pv.get('date') : 'May 15, 2023';
+      document.getElementById('pvCat').textContent = pvSection;
+      Alv.section();
+    </script>
+
+    <!-- topic view -->
+    <div class="tableborder">
+      <div class="maintitle"><span class="topic-title">My First Kiss Went a Little Like This</span><span class="topic-desc" id="pvDesc"></span></div>
+      <div class="postlinksbar"><strong><a href="#">Track This Topic</a> | <a href="#">Email This Topic</a> | <a href="#">Print This Topic</a></strong></div>
+      <div id="pvPosts"></div>
+      <div class="activeuserstrip">1 User(s) are reading this topic</div>
+    </div>
+
+    <div><a href="#"><div class="button-large">Add Reply</div></a><a href="#"><div class="button-large">New Topic</div></a></div>
+    <br>
+
+    <!-- board index, one block per category -->
+    <div class="tableborder">
+      <div class="maintitle"><a href="index.php?act=SC&c=2">Prequel</a></div>
+      <table width="100%" cellspacing="0" cellpadding="4">
+        <tr><th class="titlemedium" colspan="2">Forum</th><th class="titlemedium">Topics</th><th class="titlemedium">Replies</th><th class="titlemedium">Last Post Info</th></tr>
+        <tr><td class="row4" width="4%"></td><td class="row4"><b><a href="#">Chapters</a></b><br><span class="desc">Scenes set before Book 1.</span></td><td class="row2">1</td><td class="row2">1</td><td class="row2"><span class="desc">Oct 15 2026, 05:56 PM<br>In: <a href="#">My First Kiss…</a><br>By: <a href="#">Ophelia Montgomery</a></span></td></tr>
+      </table>
+    </div>
+    <div class="tableborder">
+      <div class="maintitle"><a href="index.php?act=SC&c=3">Book 1</a></div>
+      <table width="100%" cellspacing="0" cellpadding="4">
+        <tr><th class="titlemedium" colspan="2">Forum</th><th class="titlemedium">Topics</th><th class="titlemedium">Replies</th><th class="titlemedium">Last Post Info</th></tr>
+        <tr><td class="row4" width="4%"></td><td class="row4"><b><a href="#">Chapters</a></b><br><span class="desc">The main story.</span></td><td class="row2">1</td><td class="row2">1</td><td class="row2"><span class="desc">Nov 11 2026, 01:07 PM<br>In: <a href="#">The First Fracture</a><br>By: <a href="#">Ezra Everhart</a></span></td></tr>
+        <tr><td class="row4"></td><td class="row4"><b><a href="#">Drafts</a></b><br><span class="desc">Scenes still being worked out.</span></td><td class="row2">0</td><td class="row2">0</td><td class="row2"><span class="desc">--</span></td></tr>
+      </table>
+    </div>
+    <div class="tableborder">
+      <div class="maintitle"><a href="index.php?act=SC&c=5">Reference</a></div>
+      <table width="100%" cellspacing="0" cellpadding="4">
+        <tr><th class="titlemedium" colspan="2">Forum</th><th class="titlemedium">Topics</th><th class="titlemedium">Replies</th><th class="titlemedium">Last Post Info</th></tr>
+        <tr><td class="row4" width="4%"></td><td class="row4"><b><a href="#">Wiki</a></b><br><span class="desc">A category with no color of its own uses the default gold.</span></td><td class="row2">1</td><td class="row2">0</td><td class="row2"><span class="desc">--</span></td></tr>
+      </table>
+    </div>
+
+    <div class="copyright" align="center">Powered by Invision Power Board (Jcink.com Forum Hosting)</div>
+  </div>
+</div>
+
+<script>
+  /* Fills the real templates with sample characters, the way Jcink would. */
+  var pvCast = [
+    { id: 2, name: 'Ezra Everhart', title: 'Main character', color: '#6D8259', born: '2010-03-17',
+      facts: 'Goes by: Ez<br>Best friend: Phey<br>2024-07-14 Best friend:',
+      post: 'Ezra had rehearsed this in the mirror, which in hindsight was the first mistake.<br><br>"So," he said, and then forgot every word that was supposed to come after it.' },
+    { id: 3, name: 'Ophelia Montgomery', title: 'Main character', color: '#C85D87', born: '2010-05-23',
+      facts: 'Goes by: Phey<br>School: Middle school<br>2024-09-01 School: High school',
+      post: 'Phey watched him flounder for a full three seconds before taking pity on him.<br><br>"So," she agreed.' },
+    { id: 1, name: 'Danni', title: 'Administrator', color: '', born: '', facts: '',
+      post: 'A post from an account with no color or birthday falls back to the section color.' }
+  ];
+
+  function fill(template, values) {
+    return template.replace(/<!-- \|([a-z_0-9]+)\| -->/g, function (whole, key) {
+      return key in values ? values[key] : '';
+    });
+  }
+
+  document.getElementById('pvSection').value = pvSection;
+  document.getElementById('pvDate').value = pvDate;
+  document.getElementById('pvDesc').textContent = pvDate ? ', ' + pvDate : '';
+  ['pvSection', 'pvDate'].forEach(function (id) {
+    document.getElementById(id).onchange = function () {
+      location.search = '?section=' + encodeURIComponent(document.getElementById('pvSection').value) +
+        '&date=' + encodeURIComponent(document.getElementById('pvDate').value);
+    };
+  });
+
+  Promise.all(['templates/post_row.html', 'templates/mini_profile.html'].map(function (url) {
+    return fetch(url).then(function (r) { return r.text(); });
+  })).then(function (templates) {
+    document.getElementById('pvPosts').innerHTML = pvCast.map(function (c, i) {
+      var mini = fill(templates[1], {
+        avatar: '', name: '<a href="#">' + c.name + '</a>', title: c.title,
+        field_1: c.color, field_2: c.born, field_3: c.facts
+      });
+      return fill(templates[0], {
+        pid: String(i + 1), g_id: '3', mini_profile: mini, post: c.post,
+        post_date: 'Nov 11 2026, 01:0' + i + ' PM',
+        edit_button: '<a href="#"><span class="button-small">Edit</span></a>',
+        quote_button: '<a href="#"><span class="button-small">Quote</span></a>'
+      });
+    }).join('');
+    Alv.run();
+  });
+</script>
+</body>
+</html>

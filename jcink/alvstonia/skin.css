@@ -1,0 +1,794 @@
+/* ==========================================================
+   THE ALVSTONIA CHRONICLES - board skin
+   Paste into: Admin CP > Skins & Templates > Style Sheets
+
+   1. Colors & fonts      6. Blocks & tables
+   2. Books (sections)    7. Posts
+   3. Page frame          8. Forms & buttons
+   4. Header bar, sidebar 9. Small bits
+   5. Homepage
+   ========================================================== */
+
+/* ---------- 1. Colors & fonts ---------- */
+
+:root {
+  --page:   #151515;   /* background */
+  --panel:  #222222;   /* boxes that sit on the background */
+  --inset:  #2C2C2C;   /* boxes inside boxes */
+  --line:   #343434;   /* thin dividing lines */
+  --bar:    #0C0C0C;   /* header bar */
+  --strip:  #262626;   /* thin strip under the header bar */
+
+  --ink:      #E9E3D8; /* writing */
+  --ink-soft: #A39C90; /* quiet text and labels */
+  --head:     #F2EEE6; /* headings */
+
+  --accent:     #C9A461; /* gold */
+  --accent-ink: #241A08; /* text on gold */
+  --link:       #D9B877;
+
+  --font-head: 'Cormorant Garamond', Georgia, serif;
+  --font-text: 'EB Garamond', Georgia, serif;
+  --font-name: 'Playfair Display', Georgia, serif;
+  --font-ui:   'Jost', 'Segoe UI', sans-serif;
+
+  --radius: 8px;
+
+  /* The homepage banner picture. Replace none with url(https://...) */
+  --banner-image: none;
+
+  /* Role colors. Main characters use their own Color field instead. */
+  --role-secondary:  #C09A5E; /* bronze */
+  --role-tertiary:   #8496A6; /* slate */
+  --role-background: #8E887E; /* grey */
+}
+
+/* Roles are member groups: mg-7 Secondary, mg-8 Tertiary, mg-9 Background.
+   (mg-6 is Main.) A character with a Color of their own keeps it. */
+.alv-post.mg-7, .alv-castcard.mg-7, .alv-cast-list .mg-7 { --char: var(--role-secondary); }
+.alv-post.mg-8, .alv-castcard.mg-8, .alv-cast-list .mg-8 { --char: var(--role-tertiary); }
+.alv-post.mg-9, .alv-castcard.mg-9, .alv-cast-list .mg-9 { --char: var(--role-background); }
+body.mg-7 #alv-bar { --me: var(--role-secondary); }
+body.mg-8 #alv-bar { --me: var(--role-tertiary); }
+body.mg-9 #alv-bar { --me: var(--role-background); }
+
+/* ---------- 2. Books (sections) ----------
+   One line per category, darkest last. The name is the category's
+   name in lowercase with dashes for spaces: "Book 1" becomes book-1. */
+
+[data-section="history"] { --page: #1F1F1F; --panel: #2D2D2D; --inset: #373737; --line: #404040; }
+[data-section="prequel"] { --page: #1B1B1B; --panel: #282828; --inset: #323232; --line: #3B3B3B; }
+[data-section="book-1"]  { --page: #161616; --panel: #232323; --inset: #2D2D2D; --line: #353535; }
+[data-section="book-2"]  { --page: #121212; --panel: #1E1E1E; --inset: #282828; --line: #303030; }
+[data-section="book-3"]  { --page: #0E0E0E; --panel: #191919; --inset: #232323; --line: #2C2C2C; }
+[data-section="book-4"]  { --page: #0A0A0A; --panel: #141414; --inset: #1E1E1E; --line: #282828; }
+[data-section="book-5"]  { --page: #050505; --panel: #0F0F0F; --inset: #191919; --line: #252525; }
+
+/* ---------- 3. Page frame ---------- */
+
+html { overflow-x: auto; }
+form { display: inline; }
+
+body {
+  margin: 0;
+  padding: 78px 0 0 190px;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+table, tr, td, th {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--ink);
+}
+table { border-spacing: 0; }
+
+#wrapper {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 16px 40px;
+  text-align: left;
+}
+#innerwrapper { padding: 0; }
+
+a:link, a:visited, a:active { color: var(--link); text-decoration: none; }
+a:hover { color: var(--head); text-decoration: none; }
+
+img { vertical-align: middle; border: 0; max-width: 100%; }
+img.attach { border: 1px solid var(--line); padding: 2px; }
+
+.alv-label, .titlemedium, th, .pformstrip, .alv-forum-count {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* ---------- 4. Header bar ---------- */
+
+#logostrip, #submenu, #userlinks, .newstext, .toplinks { display: none; }
+
+#alv-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 900;
+  --me: var(--accent);
+}
+.alv-bar-main {
+  display: flex;
+  align-items: center;
+  height: 52px;
+  background: var(--bar);
+}
+.alv-bar-av {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  background: var(--me);
+}
+.alv-bar-av span {
+  display: block;
+  width: 36px;
+  height: 36px;
+  overflow: hidden;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--inset);
+}
+.alv-bar-av img { width: 100%; height: 100%; object-fit: cover; }
+.alv-bar-name {
+  min-width: 0;
+  padding: 0 14px;
+  overflow: hidden;
+  font-family: var(--font-name);
+  font-size: 22px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--me);
+}
+.alv-bar-name a:link, .alv-bar-name a:visited { color: var(--me); }
+.alv-bar-icons { display: flex; gap: 7px; margin-left: auto; padding-right: 12px; }
+.alv-ic {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #333;
+}
+a.alv-ic:link, a.alv-ic:visited { color: var(--ink); }
+a.alv-ic:hover { background: var(--accent); color: var(--accent-ink); }
+.alv-ic svg, .alv-dot svg, #alv-side svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.alv-bubble {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  background: var(--accent);
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+  color: var(--accent-ink);
+}
+.n-0 .alv-bubble, .acp-0, .mcp-0 { display: none; }
+
+/* guests see the g-only pieces, members the m-only ones */
+.mg-2 .m-only { display: none; }
+body:not(.mg-2) .g-only { display: none; }
+
+.alv-bar-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 26px;
+  padding: 0 12px;
+  background: var(--strip);
+}
+#navi br { display: none; }
+#navstrip {
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ink-soft);
+}
+#navstrip img { display: none; }
+.alv-bar-switch select, .alv-bar-switch .forminput {
+  padding: 1px 6px;
+  background: transparent;
+  border: 1px solid #444;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--ink);
+}
+.alv-bar-switch option { background: var(--strip); color: var(--ink); }
+
+/* sidebar: story links down the left. Folds to an icon rail. */
+#alv-side {
+  position: fixed;
+  top: 78px;
+  left: 0;
+  bottom: 0;
+  z-index: 800;
+  display: flex;
+  flex-direction: column;
+  width: 190px;
+  box-sizing: border-box;
+  padding: 6px 0;
+  overflow: hidden auto;
+  background: var(--bar);
+}
+#alv-side a, #alv-side-toggle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 40px;
+  padding: 0 15px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+#alv-side a:link, #alv-side a:visited { color: var(--link); }
+#alv-side a:hover { background: var(--strip); color: var(--head); }
+#alv-side a.alv-soon { color: #6F6A62; cursor: default; }
+#alv-side svg { flex: none; width: 18px; height: 18px; }
+#alv-side-toggle {
+  justify-content: flex-end;
+  width: 100%;
+  background: none;
+  border: 0;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+#alv-side-toggle:hover { color: var(--head); }
+[data-side="closed"] body { padding-left: 48px; }
+[data-side="closed"] #alv-side { width: 48px; }
+[data-side="closed"] #alv-side span { display: none; }
+[data-side="closed"] #alv-side-toggle svg { transform: rotate(180deg); }
+
+/* ---------- 5. Homepage ---------- */
+
+#alv-banner { display: none; }
+[data-page="home"] #alv-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 230px;
+  margin: 0 -16px;
+  padding: 20px;
+  background-color: var(--panel);
+  background-image: linear-gradient(rgba(12, 12, 12, 0.45), rgba(12, 12, 12, 0.45)), var(--banner-image);
+  background-position: center;
+  background-size: cover;
+  text-align: center;
+}
+#alv-banner a:link, #alv-banner a:visited {
+  font-family: var(--font-head);
+  font-size: 54px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--head);
+}
+
+/* a book and its forum cards */
+.category.tableborder { background: none; margin-bottom: 26px; overflow: visible; }
+.category > .maintitle {
+  margin-bottom: 12px;
+  padding: 0 0 6px;
+  background: none;
+  border-bottom: 2px solid var(--accent);
+  border-radius: 0;
+  font-size: 30px;
+}
+.category > div[id^="cat_"] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.category > div[id^="cat_"] > table { display: none; }
+
+.alv-forum {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  background: var(--panel);
+  border-radius: var(--radius);
+}
+.alv-forum-name { font-family: var(--font-head); font-size: 24px; font-weight: 600; line-height: 1.15; }
+.alv-forum-name a:link, .alv-forum-name a:visited { color: var(--head); }
+.alv-forum-name a:hover { color: var(--link); }
+.alv-forum:has(.alv-forum-mark img[alt="New Posts"]) .alv-forum-name::after {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: middle;
+}
+.alv-forum-mark { display: none; }
+.alv-forum-desc { flex: 1; font-size: 13px; color: var(--ink-soft); }
+.alv-forum-subs { font-size: 12px; color: var(--ink-soft); }
+.alv-forum-subs:empty { display: none; }
+.alv-forum-last {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.alv-forum-av {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  overflow: hidden;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: var(--inset);
+}
+.alv-forum-av:empty, .alv-forum-av:has(img[src="https://"]), .alv-forum-av:has(img[src=""]) { display: none; }
+.alv-forum-av img { width: 100%; height: 100%; object-fit: cover; }
+.alv-forum-lt { min-width: 0; flex: 1; font-size: 13px; color: var(--ink-soft); }
+.alv-forum-topic { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.alv-forum-count { flex: none; }
+
+/* recent scenes and cast, side by side at the bottom */
+.alv-foot { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px; }
+.alv-foot > .tableborder, .alv-castbox { margin: 0; padding: 14px 16px; background: var(--panel); border-radius: var(--radius); }
+.alv-foot .maintitle, .alv-castbox .alv-h {
+  margin-bottom: 8px;
+  padding: 0;
+  background: none;
+  border: 0;
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--head);
+}
+#recent-topics table, #recent-topics tbody { display: block; width: 100%; }
+#recent-topics tr { display: block; padding: 4px 0; }
+#recent-topics td { display: inline; padding: 0; border: 0; background: none; font-size: 13px; color: var(--ink-soft); }
+#recent-topics strong { font-weight: 400; }
+.recent-topics-date { display: none !important; }
+#boardstats:has(.alv-castbox) { display: contents; }
+#boardstats:has(.alv-castbox) > .maintitle { display: none; }
+.alv-cast-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.alv-cast-list a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 2px solid var(--char, var(--accent));
+  border-radius: 50%;
+  background: var(--inset);
+  font-family: var(--font-name);
+  font-size: 15px;
+  color: var(--char, var(--accent));
+}
+.alv-cast-list img { width: 100%; height: 100%; object-fit: cover; }
+.alv-cast-none { font-size: 13px; color: var(--ink-soft); }
+
+/* cast page (member list) cards */
+.alv-castcard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px;
+  padding: 10px 14px;
+  background: var(--panel);
+  border-left: 4px solid var(--char, var(--accent));
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.alv-castcard-av { flex: none; width: 44px; height: 44px; overflow: hidden; border-radius: 50%; background: var(--inset); }
+.alv-castcard-av img { width: 100%; height: 100%; object-fit: cover; }
+.alv-castcard-name, .alv-castcard-name a:link, .alv-castcard-name a:visited { font-family: var(--font-name); font-size: 19px; color: var(--char, var(--head)); }
+.alv-castcard-meta { margin-left: auto; font-size: 12px; color: var(--ink-soft); }
+
+/* ---------- 6. Blocks & tables ---------- */
+
+.tableborder {
+  margin: 0 0 22px;
+  overflow: hidden;
+  background: var(--panel);
+  border-radius: var(--radius);
+}
+
+.maintitle {
+  padding: 14px 18px 11px;
+  border-bottom: 2px solid var(--accent);
+  font-family: var(--font-head);
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--head);
+}
+.maintitle a:link, .maintitle a:visited, .maintitle a:active { color: var(--head); }
+.maintitle a:hover { color: var(--link); }
+.maintitle img { display: none; }
+.topic-desc { font-size: 18px; font-style: italic; font-weight: 500; color: var(--link); }
+
+.titlemedium, th {
+  padding: 8px 12px;
+  background: transparent;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+.titlemedium a:link, .titlemedium a:visited, .titlemedium a:active { color: var(--ink-soft); }
+
+.row1, .row2, .row3, .row4, .post1, .post2 {
+  padding: 11px 12px;
+  background: transparent;
+  border-bottom: 1px solid var(--line);
+}
+.hlight, .dlight { background: var(--inset); }
+
+.darkrow1, .darkrow2, .darkrow3 {
+  padding: 8px 12px;
+  background: var(--inset);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.tablefill, .tablepad { background: var(--panel); padding: 12px; }
+.tablebasic { width: 100%; padding: 0; margin: 0; border: 0; }
+.plainborder { border: 1px solid var(--line); background: var(--panel); }
+
+.desc { font-size: 13px; color: var(--ink-soft); }
+.postdetails { font-size: 13px; }
+.postlinksbar {
+  padding: 8px 18px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.activeuserstrip { padding: 8px 12px; background: var(--inset); font-size: 13px; }
+#boardstats .row2 { text-align: left; }
+.thin {
+  padding: 8px 0;
+  margin: 4px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  line-height: 1.5;
+}
+
+/* pages 1 2 3 */
+.pagination_pagetxt { display: none; }
+.pagination a:link, .pagination a:visited, .pagination a:active, .pagination .pagination_current {
+  display: inline-block;
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.pagination a:hover { border-color: var(--accent); color: var(--link); }
+.pagination .pagination_current { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+/* ---------- 7. Posts ----------
+   Each post picks up its character's color as --char: from the Color
+   field if there is one (brightened when too dark), else from the role.
+
+   Shape: a bar with the date, a band with the round picture, name,
+   round buttons and tags, then the tall portrait beside the writing. */
+
+.tableborder:has(.alv-post) { background: none; overflow: visible; }
+.tableborder:has(.alv-post) > .maintitle { background: var(--panel); border-radius: var(--radius) var(--radius) 0 0; }
+.tableborder:has(.alv-post) > .postlinksbar {
+  margin-bottom: 14px;
+  background: var(--panel);
+  border: 0;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.alv-post {
+  --char: var(--accent);
+  --char-soft: color-mix(in srgb, var(--char) 16%, var(--panel));
+  --char-mid: color-mix(in srgb, var(--char) 36%, var(--panel));
+  --char-ink: color-mix(in srgb, var(--char) 82%, #fff);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  margin: 0 0 18px;
+  background: var(--panel);
+  border-left: 4px solid var(--char);
+}
+
+.alv-posthead {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 6px 14px;
+  background: var(--bar);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* the band */
+.alv-mp { display: contents; }
+.alv-band { grid-column: 1 / -1; display: flex; }
+.alv-band-av {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 124px;
+  min-height: 124px;
+  background: var(--char-soft);
+}
+.alv-band-av img {
+  width: 92px;
+  height: 92px;
+  box-sizing: border-box;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  object-fit: cover;
+}
+.alv-band-av:empty::after {
+  content: "";
+  width: 92px;
+  height: 92px;
+  box-sizing: border-box;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--char-mid);
+}
+.alv-band-main { flex: 1; min-width: 0; padding: 12px 16px 14px; }
+.alv-band-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--line);
+}
+.alv-mp-name, .alv-mp-name a:link, .alv-mp-name a:visited, .alv-mp-name a:active {
+  font-family: var(--font-name);
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--char-ink);
+}
+
+/* round buttons: age, posts, profile, wiki, relationships */
+.alv-dots { display: flex; gap: 6px; flex: none; }
+.alv-dot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--char-mid);
+  font-size: 13px;
+  line-height: 1;
+  color: var(--ink);
+}
+.alv-dot[hidden] { display: none; }
+a.alv-dot:link, a.alv-dot:visited { color: var(--ink); }
+a.alv-dot:hover { background: var(--char); color: #111; }
+.alv-dot b { font-weight: 500; }
+.alv-dot i { margin-top: 1px; font-size: 8px; font-style: normal; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* labelled tags. They come from the Details field, one per line. */
+.alv-tags { display: flex; flex-wrap: wrap; gap: 16px 8px; margin-top: 18px; }
+.alv-tag {
+  position: relative;
+  min-width: 96px;
+  padding: 8px 10px 5px;
+  background: var(--inset);
+  border: 1px solid var(--char-mid);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-align: right;
+  text-transform: uppercase;
+}
+.alv-tag b {
+  position: absolute;
+  top: -9px;
+  left: 6px;
+  padding: 1px 5px;
+  background: var(--char-mid);
+  font-weight: 400;
+}
+
+/* "In this scene": relationships to the others in the thread */
+.alv-with { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; margin-top: 12px; font-size: 13px; }
+.alv-with[hidden] { display: none; }
+.alv-with-item a:link, .alv-with-item a:visited { color: color-mix(in srgb, var(--char, var(--accent)) 82%, #fff); }
+
+/* the tall portrait and the writing */
+.alv-portrait {
+  grid-column: 1;
+  align-self: start;
+  width: 220px;
+  margin: 16px 0 16px 16px;
+  border: 4px solid var(--char-mid);
+}
+.alv-portrait img { display: block; width: 100%; max-height: 440px; object-fit: cover; }
+.alv-body { grid-column: 2; min-width: 0; padding: 16px 24px 22px; }
+
+.postcolor {
+  font-family: var(--font-text);
+  font-size: 18px;
+  line-height: 1.4;
+  overflow-wrap: break-word;
+}
+.signature {
+  margin-top: 18px;
+  padding-top: 10px;
+  border-top: 1px dotted var(--line);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.edit { font-size: 11px; color: var(--ink-soft); }
+
+/* default mini profile, used wherever the custom one is not */
+.postbit { padding: 4px 0; font-size: 12px; color: var(--ink-soft); }
+.normalname, .normalname a { font-family: var(--font-name); font-size: 19px; }
+.unreg { font-size: 13px; font-weight: 500; color: var(--ink-soft); }
+
+/* ---------- 8. Forms & buttons ---------- */
+
+.forminput, .textinput, .codebuttons, select, textarea,
+input[type=text], input[type=password] {
+  padding: 6px 9px;
+  background: var(--inset);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--ink);
+  box-shadow: none;
+  vertical-align: middle;
+}
+textarea { font-family: var(--font-text); font-size: 17px; line-height: 1.4; }
+.forminput:focus, .textinput:focus, textarea:focus, select:focus { border-color: var(--accent); outline: none; }
+.codebuttons { padding: 3px 7px; font-size: 12px; cursor: pointer; }
+
+.button-large, .button-small,
+input[type=submit], input[type=button], input[type=reset] {
+  display: inline-block;
+  margin: 2px;
+  padding: 7px 16px;
+  background: var(--accent);
+  border: 0;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  cursor: pointer;
+  box-shadow: none;
+}
+.button-small {
+  padding: 2px 10px;
+  background: transparent;
+  border: 1px solid #444;
+  font-size: 10.5px;
+  color: var(--ink-soft);
+}
+a:hover .button-small { border-color: var(--accent); color: var(--link); }
+.button-large.closed { background: #444; color: var(--ink-soft); }
+.post-buttons-top { margin-top: 3px; }
+
+.pformstrip { padding: 8px 12px; background: var(--inset); }
+.pformleft, .pformleftw, .pformright {
+  padding: 10px 12px;
+  background: transparent;
+  border-top: 1px solid var(--line);
+}
+.pformleft { width: 25%; }
+.pformleftw { width: 40%; }
+
+/* My Controls */
+#ucpmenu, #ucpcontent { background: var(--panel); border-radius: var(--radius); line-height: 1.6; }
+#ucpmenu { width: 22%; }
+#ucpmenu p { padding: 2px 12px 6px; margin: 0; }
+#ucpcontent { width: auto; }
+#ucpcontent p { padding: 10px; margin: 0; }
+
+/* ---------- 9. Small bits ---------- */
+
+#QUOTE, #CODE {
+  padding: 12px 16px;
+  background: var(--inset);
+  border: 0;
+  border-left: 3px solid var(--accent);
+  font-size: 15px;
+  color: var(--ink);
+  white-space: normal;
+}
+#CODE { font-family: Consolas, 'Courier New', monospace; font-size: 13px; overflow-wrap: anywhere; }
+
+#profilename { font-family: var(--font-name); font-size: 32px; }
+#photowrap { padding: 6px; }
+#phototitle { font-size: 24px; border-bottom: 1px solid var(--line); }
+#photoimg { text-align: center; margin-top: 15px; }
+
+.caldate { padding: 4px; margin: 0; background: var(--inset); font-size: 12px; text-align: right; color: var(--ink-soft); }
+#calendarname { font-family: var(--font-head); font-size: 26px; font-weight: 600; }
+#padandcenter { margin: 0 auto; padding: 14px 0; text-align: center; }
+
+.opentab, .closedtab {
+  float: left;
+  margin: 6px 2px 0 0;
+  padding: 7px 12px;
+  background: var(--accent);
+  border-radius: 6px 6px 0 0;
+  font-size: 12px;
+  color: var(--accent-ink);
+}
+.closedtab { background: var(--inset); color: var(--ink-soft); }
+.positiontab { height: 34px; margin-left: 2px; }
+
+#delcookiesrow, #mark-as-read-subto { padding: 6px 0; font-size: 12px; text-align: right; color: var(--ink-soft); }
+.searchlite { background: var(--accent); color: var(--accent-ink); }
+.warngood { color: #8FBF8F; }
+.warnbad { color: #E08080; }
+.wrapmini { float: left; }
+#skin_selector { margin: 10px 0; }
+#mobile { background: var(--page); }
+
+/* Copyright: removal is against Jcink's terms */
+.copyright { font-size: 11px; line-height: 1.4; color: var(--ink-soft); }
+
+@media (max-width: 900px) {
+  body, [data-side] body { padding-left: 48px; }
+  #alv-side, [data-side] #alv-side { width: 48px; }
+  #alv-side span, #alv-side-toggle { display: none; }
+}
+
+@media (max-width: 720px) {
+  .alv-post { grid-template-columns: 1fr; }
+  .alv-band-av { width: 84px; min-height: 84px; }
+  .alv-band-av img, .alv-band-av:empty::after { width: 60px; height: 60px; }
+  .alv-mp-name { font-size: 22px; }
+  .alv-portrait { width: 140px; }
+  .alv-body { grid-column: 1; }
+  .category > div[id^="cat_"], .alv-foot { grid-template-columns: 1fr; }
+  .alv-bar-name { display: none; }
+  #alv-banner a:link, #alv-banner a:visited { font-size: 38px; }
+}

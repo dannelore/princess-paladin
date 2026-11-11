@@ -1,0 +1,46 @@
+<div class="outertopmini" data-alv="post" data-uid="<!-- |id| -->">
+
+  <div class="wttpostavbox"><!-- |avatar| --></div>
+  <div class="wttpostname"><span class="alv-name"><!-- |name| --></span>
+    <div class="mpfbox">
+
+      <!-- these float right, so the first one here is the furthest right -->
+      <a href="index.php?showuser=<!-- |id| -->#relationships" title="Relationships">
+        <div class="wttpostdot mplink"><i class="fas fa-heart"></i></div>
+      </a>
+
+      <a class="alv-wiki" href="#" title="Wiki page" style="display: none;">
+        <div class="wttpostdot mplink"><i class="fas fa-book-open"></i></div>
+      </a>
+
+      <a href="index.php?showuser=<!-- |id| -->" title="Profile">
+        <div class="wttpostdot mplink"><i class="fas fa-address-card"></i></div>
+      </a>
+
+      <div class="wttpostdot mpstat"><!-- |posts| --><br>POSTS</div>
+      <div class="wttpostdot mpstat alv-age" title="Age at this scene" style="display: none;"><span></span><br>YEARS</div>
+
+    </div>
+  </div>
+
+  <!-- data-slot lists the Details labels a box can show; the first one found wins -->
+  <div class="wttpostdeet mpdtop mpdleft"><b>role</b><!-- |g_title| --></div>
+  <div class="wttpostdeet mpdtop mpdmid" data-slot="School|Grade|Job|Occupation"><b>school</b><span></span></div>
+  <div class="wttpostdeet mpdtop mpdright" data-slot="Family"><b>family</b><span></span></div>
+  <div class="wttpostdeet mpdbottom mpdright alv-scene"><b>in this scene</b><span></span></div>
+  <div class="wttpostdeet mpdbottom mpdleft" data-slot="Status|Relationship status" data-also="Partner"><b>relationship status</b><span></span></div>
+
+  <div hidden data-src="color"><!-- |field_1| --></div>
+  <div hidden data-src="born"><!-- |field_2| --></div>
+  <div hidden data-src="facts"><!-- |field_3| --></div>
+  <div hidden data-src="wiki"><!-- |field_5| --></div>
+  <div hidden data-src="ties"><!-- |field_6| --></div>
+
+</div>
+
+
+<div class="wttpostlarge"><img src="<!-- |field_4| -->" alt="" onerror="this.style.display='none'"></div>
+
+<div class="wttbottombox"><!-- |awards| --></div>
+
+<div class="outerbottommini"></div>

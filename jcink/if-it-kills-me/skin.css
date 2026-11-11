@@ -1,0 +1,2425 @@
+/* ========================================================== *
+ 
+		 	WELCOME TO TRENCH 
+
+ * ========================================================== *
+			  skin by danni
+ * ========================================================== */
+
+
+html { overflow-x: auto; } 
+form { display:inline; }
+
+/****************************************
+ Body Background & Text Style
+*****************************************/
+
+body { 
+	font: normal 400 12px/16px montserrat; 
+	color: rgba(var(--ltbase),1); margin:0px;
+	padding:0px;
+        background: rgb(var(--page));
+	/* for a picture behind everything, put url(https://...) here in place of none */
+	background-image: none;
+	text-align:center;
+        background-repeat: no-repeat;
+ 	background-size: cover;
+	background-attachment: fixed;
+
+}
+
+::-webkit-scrollbar {
+  display: none
+}
+
+/***=============================
+	BOARD COLORS
+=============================***/
+
+:root {
+  --btaccent: 201, 164, 97;   /* gold: buttons, links, titles */
+  --onaccent: 36, 26, 8;      /* writing on top of gold */
+  --dnaccent: 98, 98, 98;     /* grey: thin bars and label boxes */
+  --dkbase: 44, 44, 44;       /* boxes, a step lighter than the page */
+  --ltbase: 233, 227, 216;    /* warm cream: writing and outlines */
+  --page: 21, 21, 21;         /* soft black: the page behind everything */
+}
+
+/* The page gets a step darker with each book. The name is the forum's
+   name in lowercase with dashes for spaces: "Book 1" becomes book-1. */
+[data-section="history"] { --page: 31, 31, 31; }
+[data-section="prequel"] { --page: 27, 27, 27; }
+[data-section="book-1"]  { --page: 22, 22, 22; }
+[data-section="book-2"]  { --page: 18, 18, 18; }
+[data-section="book-3"]  { --page: 14, 14, 14; }
+[data-section="book-4"]  { --page: 10, 10, 10; }
+[data-section="book-5"]  { --page: 5, 5, 5; }
+
+
+/***=============================
+	MEMBER COLORS
+=============================***/
+
+
+/* guest color */
+
+#mg-2, .mg-2 {
+  --mg: 103, 153, 116;}
+
+
+/* member color */
+
+#mg-3, .mg-3 {
+  --mg: 103, 153, 116;}
+
+
+/* admin color */
+
+#mg-4, .mg-4 {
+  --mg: 0, 179, 179; } 
+
+
+
+/* banned color */
+
+#mg-5, .mg-5 {
+  --mg: 103, 153, 116; } 
+
+
+
+/* main characters: used only until they have a Color of their own */
+
+#mg-6, .mg-6 {
+  --mg: 55, 112, 142;}
+
+
+/* secondary characters: bronze */
+
+#mg-7, .mg-7 {
+  --mg: 192, 154, 94;}
+
+/* tertiary characters: slate */
+
+#mg-8, .mg-8 {
+  --mg: 132, 150, 166;}
+
+
+/* background characters: grey */
+
+#mg-9, .mg-9 {
+  --mg: 142, 136, 126;}
+
+
+
+
+/****************************************
+  	 Table Styles
+*****************************************/
+
+table, tr, td {
+	font-family: Arial, sans-serif; 
+	font-size: 12px; 
+	color: rgba(var(--ltbase),1); 
+}
+
+.forum-subheader { display: none; }
+
+/****************************************
+   Board Width
+*****************************************/
+
+#iikmwrapper { 
+   width: 1320px;
+   position: relative;
+   margin: 0px auto;
+}
+
+#wrapper { 
+	text-align:left;
+        width: 1040px;
+        padding: 15px;
+	margin: 0px 0px 30px 280px;
+}
+
+#innerwrapper { 
+	padding: 0 10px;
+}
+
+/****************************************
+   Link colors
+*****************************************/
+
+a:link, a:visited, a:active { 
+	text-decoration: none;
+	color: rgba(var(--btaccent),1);
+
+}
+a:hover { 
+	color: rgba(var(--ltbase), 1); 
+	text-decoration: none; 
+}
+
+
+/****************************************
+   Profile styles 
+*****************************************/
+
+#profilename { 
+	font-size:28px;
+	font-weight:bold; 
+}
+
+#photowrap { 
+	padding:6px; 
+}
+
+#phototitle { 
+	font-size:24px; 
+	border-bottom:1px solid black;
+}
+
+#photoimg   { 
+	text-align:center; margin-top:15px; 
+} 
+
+/****************************************
+   UserCP/My Controls styles
+*****************************************/
+
+#ucpmenu { 
+	line-height:150%;
+	width:22%; 
+	border:1px solid rgba(var(--ltbase),1);
+  	background: rgba(var(--dkbase), .6); 
+	color: rgba(var(--ltbase),1);
+}
+
+#ucpmenu p  { 
+	padding:2px 5px 6px 9px; 
+	margin:0px;  
+}
+
+#ucpcontent { 
+	background-color: transparent; 
+	border:1px solid rgba(var(--ltbase),1);
+	line-height:150%; width:auto; 
+	background: rgba(var(--dkbase), .6); 
+	color: rgba(var(--ltbase),1);
+}
+
+#ucpcontent p  { 
+	padding:10px;
+	margin:0px; 
+}
+
+
+#field-website, #field-location, #field-interests {
+display: none;
+}
+
+
+/****************************************
+  Logo Strip
+*****************************************/
+
+#logostrip { 
+	display: none;
+}
+
+/****************************************
+  Search Bar 
+*****************************************/
+
+#searchbar {
+	display: none;	
+	float: right;
+	position: relative;
+	right: 10px;
+	top: 8px;
+}
+
+#searchbar .search-container {
+    background-color: rgba(var(--ltbase),1);
+    box-shadow: 0 1px 3px rgba(var(--dkbase),0.4) inset;
+    border: 1px solid rgba(var(--dkbase), 1);
+    display: block;
+    height: 26px;
+    position: relative;
+    width: 200px;
+}
+
+#searchbar .search-input {
+	background: none repeat scroll 0 0 transparent;
+	border: 0;
+	color: rgba(var(--dkbase), 1);
+	font-size: 12px;
+	width: 192px;
+	height: 26px;
+	font-family: oswald;
+	padding: 1px 0 0 8px;
+}
+
+#searchbar .search-input:focus {
+    color: rgba(var(--dkbase),1);
+}
+
+#searchbar .search-button {
+	border: 0;
+	bottom: 0;
+	margin: 0;
+	border-radius: 0;
+	display: block;
+	height: 26px;
+	padding: 0;
+	position: absolute;
+	right: 0;
+	text-indent: -3000em;
+	top: 0;
+	width: 26px;
+	cursor: pointer;
+	box-shadow: none;
+}
+
+/****************************************
+  Navigation Bar / Submenu
+*****************************************/
+
+#submenu  {
+	display: none;
+}
+
+#submenu img { 
+	display: none; 
+}
+
+#submenu a:link, #submenu a:visited, #submenu a:active { 
+	text-decoration: none;
+	color: rgba(var(--ltbase),1) !important; 
+        padding: 7px 7px;
+        font-weight: bold;
+}
+
+#submenu a:hover { 
+	color: rgba(var(--ltbase),1) !important; 
+	text-decoration: underline; 
+}
+
+#navi br { 
+	display: none; 
+}
+
+#navstrip  { 
+	font-weight:bold;
+	padding: 5px 0px; 
+
+}
+
+/****************************************
+   Calendar styling
+*****************************************/
+
+.caldate   { 
+	text-align:right;
+	font-weight:bold;
+	font-size:11px;
+	color:#555;
+	background-color:#F2F2F2;
+	padding:4px; margin:0px; 
+}
+
+#calendarname { 
+	font-size:22px;
+	font-weight:bold; 
+}
+
+#padandcenter { 
+	margin-left:auto;
+	margin-right:auto;
+	text-align:center;
+	padding:14px 0px 14px 0px; 
+}
+
+
+/**************************************************
+ User Links Menu (Messages / View new posts / etc )
+***************************************************/
+
+#userlinks { 
+	display: none;
+}
+
+#userlinks td { 
+	color: #333; 
+}
+
+#userlinks a { 
+	text-decoration: underline; padding: 1px; 
+}
+
+#userlinks a:hover { 
+	text-decoration: none; 
+}
+
+
+/****************************************
+   Topic View styles
+*****************************************/
+
+.activeuserstrip { 
+	background: rgba(var(--dkbase), .8);
+	padding:6px;
+}
+
+.normalname { 
+	display: none;
+}
+
+
+.unreg { 
+	font-size: 11px; 
+	font-weight: bold; 
+	color: #900; 
+}
+
+.post1 { 
+	background-color: rgba(var(--dkbase),1); 
+}
+
+.post2 { 
+	background-color: rgba(var(--dkbase),1); 
+}
+
+.postdetails { 
+	font-size: 10px; 
+}
+
+.postcolor   { 
+	font-size: 12px; line-height: 160%; 
+}
+
+.postlinksbar {
+	width: 100%;
+	padding: 5px 15px;
+	margin: 10px 0px;
+}
+
+
+.postlinksbar a {
+	background: rgba(var(--btaccent),.8);
+	border-radius:3px;
+	color: rgba(var(--ltbase),1);
+	font-size: 12px;
+	font-weight: 600;
+	margin: 3px;
+	padding: 10px;
+	text-decoration: none;
+	border: none; 
+        min-width: 75px;
+        display: inline-block;
+	text-align: center;
+}
+
+.signature   { 
+	font-size: 10px; 
+	color: #339; 
+	line-height:150%;  
+}
+
+
+/*******************************
+ Pagination e.g. [1],2,3 ...
+*******************************/
+
+.pagination .pagination_current, .pagination a {
+     padding: 2px 5px;
+}
+
+.pagination a:link, .pagination a:visited, .pagination a:active {
+     border: 1px solid rgba(var(--dnaccent),1);
+     border-radius:3px;
+     background-color: rgba(var(--dnaccent),.6);
+     padding-left:6px;
+     padding-right:6px;
+     color:rgba(var(--ltbase),1);
+     text-decoration:none;
+     box-shadow: 0pt 2px 3px rgba(var(--dkbase),0.4);
+}
+
+.pagination a:hover {
+	background: rgba(var(--btaccent),1);
+	text-decoration: none;
+	color: rgba(var(--dkbase),1);
+	box-shadow: 0pt 2px 3px rgba(var(--dkbase),0.4);
+
+}
+
+.pagination .pagination_current {
+     background: none repeat scroll 0% 0% rgba(var(--ltbase),1);
+     border: 1px solid #545454;
+     border-radius:3px;
+     padding-left:6px;
+     padding-right:6px; 
+}
+
+.pagination_first, .pagination_last, .pagination_page {
+     background: none repeat scroll 0% 0% #740300;
+     border: 1px solid #800000;
+}
+
+.pagination_pagetxt {
+    display:none;
+}
+
+/****************************************
+   Global general table/div row styles
+*****************************************/
+
+.row1, .row3 { 
+	background: rgba(var(--dkbase), .4);
+	padding: 5px;
+	color: rgba(var(--ltbase),1); 
+
+}
+
+.row4, .row2 { padding: 5px; }
+
+
+#boardstats .row2 { 
+	text-align: center; 
+	
+}
+
+.darkrow1 { 
+	background: rgba(var(--dnaccent),1); 
+	color: rgba(var(--dkbase),1); 
+}
+
+.darkrow2 { 
+	 color: rgba(var(--dkbase),1); 
+}
+
+td.darkrow2 { 
+	display: none; 
+}
+
+.darkrow3 { 
+	background: rgba(var(--dnaccent),1); 
+	color: rgba(var(--dkbase),1); 
+	padding: 3px; 
+}
+
+.hlight, .dlight { background: rgba(var(--dkbase), .4); color: rgba(var(--ltbase), 1); }
+
+
+.tablebasic {
+	background: rgba(var(--dkbase), .8);
+}
+
+/****************************************
+   Top table bars / gradient holders 
+*****************************************/
+
+.maintitle { 
+	text-decoration: none; 
+	color: rgba(var(--btaccent),1);
+        text-shadow: 2px 2px 2px rgba(var(--dnaccent),.85);
+	margin-top:1px; 
+ 	padding: 40px;
+	text-transform: uppercase;
+	font: normal 500 52px/60px 'Playfair Display', serif;
+	text-align: center; !important; 
+	background: rgba(var(--dkbase), .8);
+	border-radius: 10px;
+	
+}
+
+.maintitle a:link, .maintitle  a:visited, .maintitle  a:active { 
+	text-decoration: none; 
+	color: rgba(var(--btaccent),1);
+}
+
+
+.maintitle a:hover { 
+	color: rgba(var(--ltbase),1)
+	text-decoration: none;  
+}
+
+/****************************************
+  Bar directly below the maintitles 
+*****************************************/
+
+.titlemedium { 
+	font-weight:bold; 
+	padding: 2px 6px; margin:0px;
+	background: rgba(var(--dnaccent), 1);
+	font: normal normal normal 13px/20px montserrat;
+	color:rgba(var(--ltbase),1);
+	text-align: center;
+ }
+
+.titlemedium  a:link, .titlemedium  a:visited, .titlemedium  a:active  { 
+	text-decoration: none; 
+	color: rgba(var(--btaccent), .8); 
+}
+
+/****************************************
+  Table & Div Borders 
+*****************************************/
+
+.tableborder { 
+
+padding:0px; margin:0; 
+}
+
+.tablefill { 
+
+	border:1px solid #555; 
+	padding:6px; 
+}
+
+.tablepad {
+
+	padding:6px;
+}
+
+.tablebasic {
+	width:100%; padding:0; margin:0px; border:0px; 
+}
+
+.plainborder { 
+	border:1px solid #555; 
+
+}
+
+/****************************************
+  QUOTE and CODE BBCode boxes
+*****************************************/
+
+#QUOTE { 
+	white-space: normal; 
+	font-family: montserrat;
+	font-size: 13px; 
+	padding:10px;
+	border: 1px solid rgba(var(--mg),1); 
+	margin-top: 2px; 
+}
+
+/****************************************
+CODE AREA CSS
+*****************************************/
+
+#CODE  {
+white-space:normal;
+font-family: montserrat; 
+font-size: 12px;
+padding: 10px;
+margin-top:2px;
+     word-break: break-word;
+}
+
+.code-scroll {
+max-height: 250px;
+overflow: auto;
+padding-right: 5px;
+}
+
+
+.code-top {
+background-color:rgba(var(--mg),0.5); 
+margin: 0;
+padding: 0;
+text-align: center;
+overflow: hidden;
+color: rgba(var(--ltbase),1);
+}
+
+.code-highlight {
+font: normal normal normal 8px/100% montserrat;
+color:rgba(var(--mg),1);
+padding: 4px 6px 2px; margin:0px;
+background-color:rgba(var(--ltbase),1);
+text-align: center;
+text-transform: uppercase;
+letter-spacing: 1px;
+cursor: crosshair;
+}
+
+.code-top .code-title {
+margin: 20px;
+font: italic normal 300 20px/100% montserrat;
+text-transform: lowercase;
+}
+
+.code-toggle {
+cursor: crosshair;
+}
+
+.code-scroll.auto-code {
+height: auto;
+max-height: none;
+}
+
+#CODE-WRAP.nicole-code { border-collapse: collapse; }
+
+/**********************************************
+  Input buttons, e.g. submit, text input, etc
+***********************************************/
+
+.button-large {
+	background: rgba(var(--btaccent),.8);
+	border-radius:3px;
+	color: rgba(var(--ltbase),1);
+	font-size: 12px;
+	font-weight: 600;
+	margin: 3px;
+	padding: 10px;
+	text-decoration: none;
+	border: none; 
+        min-width: 75px;
+        display: inline-block;
+	text-align: center;
+}
+
+
+.button-small {
+	background: rgba(var(--btaccent),.8);
+	border-radius:3px;
+	color: rgba(var(--ltbase),1);
+	font-size: 10px;
+	font-weight: 500;
+	margin: 3px;
+	padding: 10px;
+	text-decoration: none;
+	border: none; 
+        min-width: 50px;
+        max-width: 80px;
+	text-align: center;
+}
+
+.post-buttons-top { margin-top: 3px; }
+
+.button-large.closed {
+	display: nonse;
+}
+
+.forminput, .codebuttons, .textinput, .radiobutton, .checkbox {
+	border-radius: 10px;
+	background: rgba(var(--dnaccent),.8);
+	border: 1px solid rgba(var(--ltbase),1);
+	color: rgba(var(--ltbase),1);
+	font-family: montserrat, sans-serif;
+	font-size: 12px;
+	padding: 10px;
+	vertical-align: middle;
+}
+
+
+input[type=submit], input[type=button], input[type=reset] {
+	background: rgba(var(--btaccent),.85);
+	border-radius:3px;
+	color: rgba(var(--ltbase),1);
+	font-size: 12px;
+	font-weight: bold;
+	margin: 3.5px;
+	padding: 10px;
+	text-decoration: none;
+	border: none; 
+	text-transform: lowercase;
+}
+
+.codebuttons  { 
+	font-size: 10px; 
+}
+
+
+/****************************************
+  Form table cell styles, left/right/top
+*****************************************/
+
+.pformstrip {
+	background-color: rgba(var(--dnaccent),.85);
+	color: rgba(var(--ltbase),1);
+	height: 40px;
+	margin-top:1px; 
+ 	padding: 10px;
+	text-transform: lowercase;
+	font: normal 500 14px/20px montserrat;
+	text-align: center;
+}
+
+.pformleft  { 
+	background: rgba(var(--dkbase),.85);
+	color: rgba(var(--ltbase), 1);
+	padding:6px; 
+	margin-top:1px; width:25%;  
+}
+
+.pformleftw { 
+	background-color: rgba(var(--dkbase), .45); 
+	padding:6px; 
+	margin-top:1px;width:40%; 
+	border-top:1px solid rgba(var(--dnaccent),.85); 
+	border-right:1px solid rgba(var(--dnaccent),.85); 
+}
+
+.pformright { 
+	background-color: rgba(var(--dkbase), .45);
+	color: rgba(var(--ltbase), 1);
+	padding:6px; margin-top:1px;
+	border-top:1px solid  rgba(var(--dnaccent),.85);
+}
+
+.topic-subheader, .wrapmini { display: none; }
+
+#modcp-content { background: rgba(var(--dkbase), .6); }
+
+
+
+/****************************************
+ Tabs on the portal profiles + sections
+*****************************************/
+
+.opentab {
+	color: rgba(var(--ltbase),1);
+	padding:8px;float: left; width: auto;
+	background-color: #800000;
+	margin-top:3px;
+	margin-right:2px;
+	font-size:11px;
+	border: #545454 1px solid;	
+}
+
+.closedtab {
+	color: rgba(var(--ltbase),1);
+	padding:7px;float: left;width: auto;
+	background-color: #800000;
+
+	margin-top:6px;
+	margin-right:2px;
+	font-size:11px;
+	border-top:   #545454 1px solid;
+	border-right: #545454 1px solid;
+	border-left:  #545454 1px solid;
+}
+
+.positiontab { 
+	height: 34px; margin-left: 2px;
+}
+
+/****************************************
+   Delete all cookies / mark read
+*****************************************/
+
+#delcookiesrow, #mark-as-read-subto {
+	background-color: transparent;
+	border-bottom: 1px solid rgba(var(--ltbase),1);
+	font-size: 11px;
+	padding: 5px;
+        width: 350px;
+        float: right;
+        margin-top:15px;
+        padding-left:1px;
+}
+
+#mark-as-read-subto {
+	float: none;
+	padding-top: 3px;
+}
+
+
+/*******************************
+     Board Statistics Links
+*******************************/
+
+.toplinks a {
+	color: rgba(var(--ltbase),1);
+	font-size: 11px;
+	text-decoration: none;
+}
+
+.toplinks {
+	margin: 0 11px -37px 0;
+	text-align: right;
+	color: transparent;
+}
+
+/*******************************
+ Mini Profile Seperators
+*******************************/
+
+.postbit { 
+	border-bottom: solid 1px #C0C0C0; 
+	color: black;
+	background: #EFEFEF;
+	font-size: 11px;
+        padding: 6px 7px;
+}
+
+/********************************
+	Miscellaneous
+********************************/
+
+/* image tag styles */
+img        { vertical-align:middle; border:0px }
+img.attach { border:2px outset #555;padding:2px }
+
+/* Forum Descriptions */
+.desc { font-size:11px; color: rgba(var(--dkbase),1); }
+
+/* Edited by text */
+.edit { font-size: 9px }
+
+/* Topic Macros */
+
+.wrapmini { float: left; }
+
+/* Warning CSS */
+.warngood { color:green }
+.warnbad  { color:red }
+
+/* Skin selector dropdown */
+#skin_selector { 
+	margin: 10px 0; 
+}
+
+
+/* Online users list row */
+.thin { 
+	padding:6px 0px 6px 0px;
+	line-height:140%;
+	margin:2px 0px 2px 0px;
+	border-top:1px solid #545454;
+	border-bottom:1px solid #545454;
+}
+
+/* Latest news area */
+.newstext { 
+	display: none;
+}
+
+/* Highlighted text in search */
+.searchlite { 
+	color:#F00;
+	font-weight:bold;  
+	background-color:#FF0; 
+}
+
+/****************************************
+ Mobile-specific Styles
+*****************************************/
+
+#mobile { 
+	background-color: #FBFBFB;
+}
+
+/***********************************
+ Copyright: Removal is against Terms
+************************************/
+
+.copyright { 
+	font-size: 10px; line-height: 12px; 
+}
+
+
+/*=========================================================
+  =========================================================
+		Danni's Custom Codes
+  =========================================================
+  =========================================================*/
+
+
+/****************************************
+	CUSTOM MINI PROFILE
+****************************************/
+/*******don't touch this unless you make the middle section of the mini taller. if you do, change the min-height to whatever to appropriate height would be*******/
+
+#outerpost {
+position:relative;
+min-height: 600px!important;
+}
+
+/****this makes space for the top and bottom info bars******/
+
+.borderout {
+padding-top:180px;
+}
+
+
+
+/*******this is inside the HTML profile template. any heights or margins you change in the top and bottom info bars must be reflected in the padding of the above .borderout class*******/
+
+
+.outertopmini {
+width:1020px;
+position: absolute;
+height:180px;
+top:-190px;
+left: -10px;
+}
+
+.outerbottommini {
+width:1020px;
+position: absolute;
+left: 0px; 
+bottom: -15px;
+height: 5px;
+  margin-bottom: 50px;  
+}
+
+/*******this is your middle mini section. any changes to width needs to be reflected in both of these classes- any changes to height must be reflect in the #outerpost min-height******/
+
+.miniprofilepost {
+   width:250px;
+   padding-left: 10px;
+}
+
+.insidemiddlemini {
+	width:250px;
+	height:400px;
+	position: absolute;
+	right: 0px;
+}
+
+
+/***************************
+ Board Stats
+**************************/
+
+.recent-topics-date { display: none; }
+
+
+#wttbsframe {
+  width: 1000px;
+  min-height: 265px;
+  padding: 10px;
+  background: rgba(var(--dkbase), 0.6);
+  position: relative;
+  border: 2px solid rgba(var(--ltbase), 1);
+}
+
+.wttbshead {
+  width: 100%;
+  height: 75px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--dkbase), .8);
+}
+
+.wttbsavbox {
+  width: 75px;
+  height: 75px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--btaccent), .8);
+}
+
+.wttbsavbox mac {
+  width: 60px;
+  height: 60px;
+  border: 2px rgba(var(--ltbase), 1) solid;
+  border-radius: 100%;
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  overflow: hidden;
+  font: normal 400 33px/60px oswald;
+  text-align: center;
+  background: rgba(var(--dkbase), .8);
+  color:  rgba(var(--btaccent), 1);
+}
+
+.wttbslink {
+  width: 35px;
+  height: 35px;
+  background: rgba(var(--dnaccent), .8);
+  border-radius: 100%;
+  position: relative;
+  float: right;
+  color: rgba(var(--ltbase), 1);
+  font: normal 400 18px/35px oswald;
+  text-align: center;
+  margin: 30px 5px 0px;
+}
+
+.wttbslink:hover {
+    background: rgba(var(--btaccent), .8);
+}
+
+.wttprhdtx {
+  position: absolute;
+  top: 0px;
+  left: 75px;
+  padding: 5px 15px;
+  font: normal 500 30px/65px oswald;
+  text-align: left;
+  text-transform: uppercase;
+  color: rgba(var(--ltbase), 1);
+
+}
+
+.wttbsbar {
+  width: 1000px;
+  height: 20px;
+  padding: 0px 10px;
+  position: absolute;
+  left: 0px;
+  top: 75px;
+  background: rgba(var(--dnaccent), .8);
+  color: rgba(var(--ltbase), 1);
+  font: normal 600 10px/20px Montserrat;
+  text-align: left;
+  text-transform: uppercase;
+  
+}
+
+.wttbsbar b { 
+  color: rgba(var(--btaccent),1);
+}
+
+.wttbsdeet {
+  padding: 10px;
+  background: rgba(var(--dnaccent), .8);
+  border: 1px solid rgba(var(--btaccent), .4);
+  position: absolute;
+  color: rgba(var(--ltbase), 1);
+  text-transform: uppercase;
+
+}
+
+.wttbsdeet b {
+  font-weight: normal;
+  display: block;
+  position: absolute;
+  top: -10px;
+  left: 5px;
+  padding: 3px 5px;
+  background: rgba(var(--btaccent), .75);
+  z-index: 80;
+  font: normal 600 11px/12px Montserrat;
+}
+
+.wttbsdt {
+  width: 100%;
+  height: 100%;
+  overflow: scroll;
+  overflow-x: hidden;
+  text-align: justify;
+  font: normal 600 11px/13px Montserrat;
+}
+
+.wttbsdt::-webkit-scrollbar {
+  width: 0px;
+}
+
+.wttbson {
+  width: 300px;
+  height: 50px;
+  top: 110px;
+  left: 10px;
+}
+
+.wttbsot {
+  width: 300px;
+  height: 50px;
+  top: 200px;
+  left: 10px;
+}
+
+.wttbsnm {
+  width: 290px;
+  height: 20px;
+  top: 110px;
+  left: 345px;
+  text-align: right;
+  font: normal 600 15px/20px Montserrat;
+}
+
+.wttbstp {
+  width: 290px;
+  height: 20px;
+  top: 170px;
+  left: 345px;
+  text-align: right;
+  font: normal 600 14px/20px Montserrat;
+}
+
+.wttbstm {
+  width: 290px;
+  height: 20px;
+  top: 230px;
+  left: 345px;
+  text-align: right;
+  font: normal 600 14px/20px Montserrat;
+}
+
+.wttbsrt {
+  width: 320px;
+  height: 140px;
+  top: 110px;
+  right: 10px;
+}
+
+.wttbsrt .maintitle { display: none; }
+
+
+
+/***************************
+ Forum Row
+**************************/
+
+
+.new-category { clear: both; overflow: hidden; } 
+.new-row { margin: 100px; float: left; }
+
+#wttindexframe {
+  width: 481px;
+  height: 180px;
+  background: rgba(var(--dkbase), 0.6); 
+  position: relative;
+  margin: 15px 5px 15px 15px;
+  border: 2px rgba(var(--ltbase),1) solid;
+}
+
+.wtttitle {
+  width: 401px;
+  height: 40px;
+  font: normal 600 27px/40px Montserrat;
+  padding: 5px 0px;
+  background: rgba(var(--dkbase),.8);
+  position: absolute;
+  top: 0px;
+  left: 80px;
+  color: rgba(var(--btaccent),1);
+  text-transform: lowercase;
+  text-align: center;
+  text-shadow: 2px 2px rgba(var(--dnaccent),1);
+
+}
+
+.wtttitle a {text-decoration: none; color: rgba(var(--btaccent),1);}
+
+.wttindexbox {
+  width: 80px;
+  height: 80px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--btaccent),.8);
+}
+
+.wttindexmac {
+  width: 55px;
+  height: 55px;
+  background: rgba(var(--dkbase),1);
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  border: rgba(var(--ltbase),1) 2px solid;
+  border-radius: 100%;
+}
+
+.wttnonewlg { font-size: 30px; line-height: 55px; color: rgba(var(--ltbase),1); text-align: center; }
+.wttnewlg { font-size: 35px; line-height: 55px; color: rgba(var(--btaccent),1); text-align: center; }
+.wttspin {animation:wttspin 2s infinite linear}@keyframes wttspin{0%{transform:rotate(0deg)}100%{transform:rotate(359deg)}}
+
+.wttindexdetails {
+  width: 381px;
+  height: 20px;
+  padding: 5px 10px;
+  position: absolute;
+  top: 50px;
+  left: 80px;
+  background: rgba(var(--dnaccent),.8);
+  color: rgba(var(--ltbase),1);
+  font: normal 600 10px/20px Montserrat;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.wttindexdeet {
+  width: 50%;
+  float: left;
+}
+
+.wttindexthread {
+  width: 401px;
+  font: normal 500 21px/35px montserrat;
+  padding: 5px 0px;
+  position: absolute;
+  top: 80px;
+  left: 0px;
+  color: rgba(var(--btaccent),.8);
+  text-transform: none;
+  text-align: center;
+}
+
+.wttindexby { 
+  width: 391px;
+  height: 35px;
+  font: normal 400 13px/15px ubuntu;
+  position: absolute;
+  top: 115px;
+  left: 0px;
+  bottom: 30px;
+  padding: 5px;
+  text-align: center;
+  color: rgba(var(--ltbase),1);
+  text-transform: none;
+}
+
+
+.wttindexav {
+  width: 60px;
+  height: 60px;
+  background: rgba(var(--dkbase),1);
+  position: absolute;
+  bottom: 26px;
+  right: 10px;
+  border: rgba(var(--btaccent),.8) 3px solid;
+  border-radius: 100%;
+  overflow: hidden;
+}
+
+.wttindexav img { max-width: 60px; max-height: 60px; }
+
+.wttindexbar {
+  width: 461px;
+  height: 20px;
+  padding: 0px 10px;
+  position: absolute;
+  left: 0px;
+  bottom: 0px;
+  background: rgba(var(--dkbase), .4);
+  color: rgba(var(--ltbase),1);
+  font: normal 600 10px/20px Montserrat;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.wttindexbar a { color: rgba(var(--btaccent),.8) }
+
+
+/***************************
+ Main Profile
+**************************/
+
+
+#wttprframe {
+  width: 600px;
+  height: 820px;
+  background: rgba(var(--dkbase), .8);
+  position: relative;
+  margin: 0px auto 30px;
+}
+
+.wttprname {
+  width: 370px;
+  position: absolute;
+  top:0px;
+  right: 0px;
+  text-decoration: none; 
+	color: rgba(var(--mg), 0.7);
+  text-shadow: 2px 2px rgba(var(--dnaccent),1);
+ 	padding: 45px 40px 85px;
+	text-transform: uppercase;
+	font: normal 500 34px/36px 'Playfair Display', serif;
+	text-align: center; !important; 
+	background: rgba(var(--dkbase), 0.8);
+}
+
+.wttpravbox {
+  width: 150px;
+  height: 150px;
+   position: absolute;
+  top: 0px;
+  left: 0px;
+  background: rgba(var(--mg), 0.4);
+}
+
+.wttpravbox img {
+  max-width: 110px;
+  max-height: 110px;
+  position: absolute;
+  top: 17px;
+  left: 17px;
+  border: 3px solid rgba(var(--ltbase),1);
+  border-radius: 100%;
+}
+
+.wttprlinkbox {
+  width: 100%;
+  height: 55px;
+  position: absolute;
+  left: 0px;
+  bottom: 0px;
+}
+  
+.wttprlink{
+  width: 35px;
+  height: 35px;
+  background: rgba(var(--dnaccent),.8);
+  border-radius: 100%;
+  position: relative;
+  float: right;
+  color: rgba(var(--ltbase),1);
+  font: normal 400 18px/35px oswald;
+  text-align: center;
+  margin: 10px 10px 10px 0px;
+  text-transform: uppercase;
+}
+
+.wttprlink:hover {
+    background: rgba(var(--mg),.8);
+}
+
+.wttprbar { 
+  width: 570px;;
+  height: 20px;
+  padding: 5px 15px;
+  position: absolute;
+  left: 0px;
+  top: 150px;
+  background: rgba(var(--dnaccent),.8);
+  color: rgba(var(--ltbase),1);
+  font: normal 600 11px/20px Montserrat;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.wttprbar b { 
+  color: rgba(var(--mg), 1);
+  font-weight: 700;
+}
+
+.wttprlarge {
+  width: 250px;
+  height: 400px;
+  position: absolute;
+  border: 5px solid rgba(var(--mg), .4);
+  top: 185px;
+  right: 10px;
+}
+
+.wttprlarge img {
+  max-width: 250px;
+  max-height: 400px;
+}
+
+.wttprleft { 
+  left: 10px;
+  width: 290px;
+}
+
+.wttprright { right: 10px; }
+
+.wttpralias {
+  position: absolute;
+  padding: 3px 15px;
+  color: rgba(var(--ltbase),1);
+  font: normal 500 25px/40px oswald;
+  text-align: center;
+  text-transform: uppercase;
+  border-bottom: rgba(var(--ltbase),1) 1px solid;
+}
+
+.wttprdeet {
+  height: 10px;
+  padding: 5px 10px;
+  background: rgba(var(--dnaccent),.8);
+  border: 1px solid rgba(var(--mg), .4);
+  position: absolute;
+  text-align: right;
+  color: rgba(var(--ltbase),1);
+  font: normal 600 10px/10px Montserrat;
+  text-transform: uppercase;
+}
+
+.wttprdeet b {
+  font-weight: normal;
+  display: block;
+  position: absolute;
+  top: -10px;
+  left: 5px;
+  padding: 3px 5px;
+  background-color: rgba(var(--mg), .6) ;
+}
+
+.wttprleft { 
+  left: 10px;
+  width: 290px;
+}
+
+.wttprright { 
+  right: 10px;
+  width: 230px;
+}
+
+.wttprbox {
+  width: 283px;
+  height: 170px;
+  padding: 10px;
+  position: absolute;
+  top: 610px;
+  left: 10px;
+  color: rgba(var(--ltbase),1);
+  border: 5px solid rgba(var(--mg), .4);
+  background: rgba(var(--mg), .2);
+}
+
+/**************************
+Member List Headers
+**************************/
+
+#wttmlback {
+  width: 1000px;
+  min-height: 650px;
+  padding: 10px;
+  position: relative;
+}
+
+
+#wttmldropframe {
+  width: 365px;
+  height: 425px;
+  position: absolute;
+  top: 25px;
+  right: 10px;
+  background: rgba(var(--dkbase), 0.4);
+  border: 2px rgba(var(--ltbase),1) solid;
+
+}
+
+
+.wttmldrophead {
+   width: 100%;
+  height: 55px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--dkbase), .8);
+  margin-bottom: 5px;
+}
+
+.wttmldropbox {
+  width: 55px;
+  height: 55px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--btaccent), .8);
+}
+
+.wttmldropbox mac {
+  width: 40px;
+  height: 40px;
+  border: 2px rgba(var(--ltbase), 1) solid;
+  border-radius: 100%;
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  overflow: hidden;
+  font: normal 400 20px/37px oswald;
+  text-align: center;
+  background: rgba(var(--dkbase), .8);
+  color:  rgba(var(--ltbase),1);
+}
+
+.wttmldroph {
+  width: 285px;
+  position: absolute;
+  top: 0px;
+  left: 55px;
+  padding: 5px 15px;
+  font: normal 500 20px/45px oswald;
+  text-align: center;
+  text-transform: uppercase;
+  color: rgba(var(--ltbase),1);
+}
+
+
+.wttmlcontbox {
+  width: 365px;
+  height: 100%;
+  position: absolute;
+  top: 65px;
+  left: 0px;
+  text-align: center;
+}
+
+#wttmldropframe .forminput {
+  width: 345px;
+  margin: 0px 10px 10px; 
+  background: rgba(var(--dkbase), .8);
+
+}
+
+.wttmlcontbox b {
+  font: normal 600 15px/20px Montserrat;
+  text-transform: uppercase;
+}
+
+.wttmlbutton { 
+  width: 155px; 
+  padding: 5px;
+  margin: 0px 50px;
+  background: rgba(var(--btaccent), .7);
+  font: normal 600 14px/20px Montserrat;
+  text-transform: uppercase;
+}
+
+
+#wttmlsearchframe {
+  width: 365px;
+  height: 160px;
+  position: absolute;
+  top: 470px;
+  right: 10px;
+  background: rgba(var(--skbase), 0.4);
+  border: 2px rgba(var(--ltbase),1) solid;
+
+}
+
+#wttmlsearchframe .forminput {
+  width: 325px;
+  margin: -3px 10px;
+  background: rgba(var(--dnaccent), .8);
+
+}
+
+
+/**************************
+Member List
+**************************/
+
+
+#wttmlframe {
+  width: 600px;
+  height: 300px;
+  background: rgba(var(--dkbase), 0.75);
+  position: relative;
+  margin: 15px;
+  border: 2px rgba(var(--ltbase),1) solid;
+}
+
+.wttmlhead {
+   width: 100%;
+  height: 55px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--dkbase), .8);
+}
+
+.wttmlavbox {
+  width: 55px;
+  height: 55px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--mg),.8);
+}
+
+.wttmlavbox img {
+  width: 40px;
+  height: 40px;
+  border: 2px rgba(var(--ltbase),1) solid;
+  border-radius: 100%;
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  overflow: hidden;
+}
+
+.wttmlname {
+  position: absolute;
+  top: 0px;
+  left: 55px;
+  padding: 5px 15px;
+  font: normal 500 30px/45px oswald;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.wttmllink {
+  width: 35px;
+  height: 35px;
+  background: rgba(var(--dnaccent), .8);
+  border-radius: 100%;
+  position: relative;
+  float: right;
+  color: rgba(var(--ltbase),1);
+  font: normal 400 18px/35px oswald;
+  text-align: center;
+  margin: 10px 10px 10px 0px;
+}
+
+.wttmllink:hover {
+    background: rgba(var(--mg), .8);
+}
+
+.wttmlbar {
+   width: 580px;
+  height: 20px;
+  padding: 0px 10px;
+  position: absolute;
+  left: 0px;
+  top: 55px;
+  background: rgba(var(--dnaccent), .8);
+  color: rgba(var(--ltbase),1);
+  font: normal 600 10px/20px Montserrat;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.wttmlbar b { 
+  color: rgba(var(--mg),1);
+}
+
+
+.wttmlbar a { 
+  color: rgba(var(--ltbase),1);
+}
+
+.wttmlbar a:hover { 
+  color: rgba(var(--mg),1);
+  text-decoration: underline;
+}
+
+.wttmldeet {
+  padding: 5px 10px;
+  background: rgba(var(--dnaccent), .8);
+  border: 1px solid rgba(var(--mg), .4);
+  position: absolute;
+  text-align: right;
+  color: rgba(var(--ltbase),1);
+  text-transform: uppercase;
+}
+
+.wttmldeet b {
+  font-weight: normal;
+  display: block;
+  position: absolute;
+  top: -10px;
+  left: 5px;
+  padding: 3px 5px;
+  background-color: rgba(var(--mg),.6) ;
+}
+
+.wttmldw {
+  height: 15px;
+  width: 270px;
+  left: 10px;
+  font: normal 600 10px/15px Montserrat;
+
+}
+
+.wttmldn {
+  height: 15px;
+  width: 120px;
+  left: 310px;
+  font: normal 600 10px/15px Montserrat;
+
+}
+
+.wttml50l {
+  height: 10px;
+  width: 195px;
+  left: 10px;
+  font: normal 600 10px/10px Montserrat;
+
+}
+
+.wttml50r {
+  height: 10px;
+  width: 195px;
+  left: 235px;
+  font: normal 600 10px/10px Montserrat;
+
+}
+
+
+.wttmllarge {
+  width: 125px;
+  height: 200px;
+  position: absolute;
+  right: 10px;
+  top: 85px;
+  border: 3px rgba(var(--mg),.4) solid;
+}
+
+.wttmllarge img {
+  max-width: 125px;
+  max-height: 200px;
+}
+
+
+/***************************
+ Post Row & Mini Profile
+**************************/
+
+#wttpostframe {
+  width: 1000px;
+  min-height: 750px;
+  padding: 10px;
+  background: rgba(var(--dkbase), 0.8);
+  position: relative;
+  margin-bottom: 30px;
+}
+
+
+.wttpostcontent {
+  width: 685px;
+  position: relative;
+  margin: 180px 0px 0px 285px;
+  min-height: 535px;
+  padding: 15px;
+}
+
+.wttpostavbox { 
+  width: 165px;
+  height: 165px;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  background: rgba(var(--mg), 0.4);
+}
+
+
+.wttpostavbox img {
+  max-width: 135px;
+  max-height: 135px;
+  position: absolute;
+  top: 13px;
+  left: 13px;
+  border: 2px solid rgba(var(--ltbase), 1);
+  border-radius: 100%;
+}
+
+.wttpostname {
+  position: absolute;
+  top: 0px;
+  left: 175px;
+  right: 10px;
+  padding: 10px 10px 10px 20px;
+  font: normal 500 40px/49px oswald;
+  text-align: left;
+  text-transform: uppercase;
+  color: rgba(var(--ltbase), 1);
+  border-bottom: 1px solid rgba(var(--ltbase), 1);
+  background: rgba(0,0,0, .2);
+}
+			
+.wttpostdot {
+  width: 25px;
+  height: 25px;
+  padding: 5px;
+  background: rgba(var(--mg), 0.3);
+  border-radius: 100%;
+  position: relative;
+  color: rgba(var(--ltbase), 1);
+  text-align: center;
+  float: right;
+  margin: 0px 5px 10px 0px;
+}
+
+.mplink { font: normal 400 18px/25px oswald; }
+.mplink a { color: rgba(var(--ltbase), 1); }
+.mplink:hover { background: rgba(var(--mg), 0.8); }
+.mpstat { font: normal 400 10px/11px oswald;}
+
+.mpfbox {
+  position: absolute;
+  bottom: 0px;
+  right: 5px;
+}
+
+
+.wttpostdeet {
+  height: 10px;
+  padding: 6px 10px;
+  background: rgba(var(--dnaccent), .8);
+  border: 1px solid rgba(var(--mg), .4);
+  position: absolute;
+  text-align: right;
+  color: #fff;
+  font: normal 600 10px/10px Montserrat;
+  text-transform: uppercase;
+}
+
+.wttpostdeet b {
+  font-weight: normal;
+  display: block;
+  position: absolute;
+  top: -10px;
+  left: 5px;
+  padding: 3px 5px;
+  background-color: rgba(var(--mg), .6) ;
+}
+
+.wttpostdeet a { color: rgba(var(--mg), 1); }
+.wttpostdeet a:hover { color: rgba(var(--ltbase), 1); }
+
+.mpdtop {
+  top: 85px;
+  width: 250px;
+}
+
+.mpdbottom {
+  top: 125px;
+  width: 390px;
+}
+
+.mpdleft { left: 175px; }
+.mpdmid { left: 457px; }
+.mpdright { right: 10px; }
+
+
+.wttpostbar {
+  width: 1000px;
+  height: 30px;
+  padding: 0px 10px;
+  position: absolute;
+  top: -25px;
+  left: -10px;
+  background: rgba(var(--dnaccent),.8);
+  color: rgba(var(--ltbase),1);
+  font: normal 600 10px/30px Montserrat;
+  text-align: left;
+  text-transform: uppercase;
+  z-index: 90;
+}
+
+.wttpostbar .button-small {
+  background: transparent;
+  height: 30px;
+  padding: 0px 10px;
+  font: normal 600 10px/30px Montserrat;
+  color: rgba(var(--btaccent),.8);
+
+}
+
+.wttpostbar .button-small:hover { 
+	color: rgba(var(--ltbase),1); 
+	text-decoration: none;  }
+
+
+.wttpostlarge {
+  width: 250px;
+  height: 400px;
+  position: absolute;
+  border: 5px solid rgba(var(--mg), 0.5);
+  top: 10px;
+  left: 5px;
+}
+
+.wttpostlarge img {
+  max-width: 250px;
+  max-height: 400px;
+}
+
+.wttbottombox {
+  width: 230px;
+  height: 130px;
+  padding: 10px;
+  position: absolute;
+  top: 430px;
+  left: 5px;
+  color: rgba(var(--ltbase),1);
+  border: 5px solid rgba(var(--mg), 0.4);
+  background: rgba(var(--mg), 0.2);
+}
+
+/* Alerts Coding Here */
+
+.alerts-0 .alerts-bubble { display: none; }
+.inbox-0 .inbox-bubble { display: none; }
+
+.alerts-bubble, .inbox-bubble {
+  width: 11px;
+  height: 11px;
+  padding: 3px;
+  background: rgba(var(--mg), 0.85);
+  border-radius: 100%;
+  position: absolute;
+  color: rgba(var(--ltbase), 1);
+  text-align: center;
+  float: right;
+  top: -5px;
+  right: -5px;
+  font: normal 600 10px/11px Montserrat;
+}
+
+
+
+/*********************************
+ Topic Row
+**********************************/
+
+#wtttopicframe {
+ width: 1020px;  /** edit with wrapper width **/
+  height: 140px;
+  background: rgba(var(--dkbase), .6);
+  margin: 15px auto 5px;
+  position: relative;
+  border: 2px rgba(var(--ltbase),1) solid;
+}
+
+.wtttopicbox {
+  width: 100px;
+  height: 120px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--btaccent),.8);
+}
+
+.wtttopicmac {
+  width: 55px;
+  height: 55px;
+  background: #000;
+  position: absolute;
+  top: 10px;
+  left: 20px;
+  border: rgba(var(--ltbase),1) 2px solid;
+  border-radius: 100%;
+  object-fit: cover;
+}
+
+.wtttopicdetails {
+  width: 100px;
+  position: absolute;
+  top: 75px;
+  font: normal 600 15px/15px Montserrat;
+  text-align: center;
+  color: rgba(var(--ltbase),1);  
+}
+
+.wtttopictitle {
+  width: 850px;
+  height: 24px;
+  font: normal 500 23px/25px montserrat;
+  position: absolute;
+  top: 20px;
+  left: 120px;
+  padding: 5px 15px;
+  text-align: center;
+  color: rgba(var(--btaccent),1);
+  border-bottom: rgba(var(--ltbase),1) solid 1px;
+  text-transform: none;
+}
+
+.wttcheck { 
+  position: absolute; 
+  top: 25px; 
+  right: 30px; 
+  z-index: 300;
+}
+
+.wtttopicdesc {
+  width: 830px;
+  font: normal 400 14px/15px ubuntu;
+  position: absolute;
+  top: 55px;
+  left: 120px;
+  bottom: 30px;
+  padding: 5px 15px;
+  text-align: center;
+  color: rgba(var(--ltbase),1);
+  text-transform: none;
+}
+
+.wtttopicbar {
+  width: 1000px;
+  height: 20px;
+  padding: 0px 10px;
+  position: absolute;
+  left: 0px;
+  bottom: 0px;
+  background: rgba(var(--dnaccent),.8);
+  color: rgba(var(--ltbase),1);
+  font: normal 600 10px/20px Montserrat;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+
+
+/*******************************************
+
+	Homepage Base Code
+
+*******************************************/
+
+#wtthead {
+	width: 1320px;
+	height: 450px;
+	padding: 0px;
+	/* banner picture: put url('https://...') here in place of none */
+	background-image: none;
+	background-color: rgba(var(--dkbase), .8);
+	background-size: cover;
+	background-position: center;
+	position: relative; 
+	margin: 110px auto 25px;
+	z-index: 700;
+	font: normal 700 84px/450px 'Playfair Display', serif;
+	color: rgba(var(--ltbase), .9);
+	text-transform: uppercase;
+	text-align: center;
+
+}
+
+
+
+/*******
+Login Area
+********/
+
+.mcp-0, .acp-0, .m-2 { display: none; } .g-2 { display: block !important; }
+
+.wtthlink {
+  width: 35px;
+  height: 35px;
+  background: rgba(var(--dnaccent),.8);
+  border-radius: 100%;
+  position: relative;
+  float: right;
+  color: rgba(var(--ltbase),1);
+  font: normal 400 18px/35px oswald;
+  text-align: center;
+  margin: 10px 10px 10px 0px;
+}
+
+.wtthlink:hover {
+    background: rgba(var(--btaccent),.8);
+}
+
+.wttheaderbar {
+  width: 100%;
+  height: 55px;
+  position: fixed;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--dkbase), .8);
+  z-index: 9999;
+  
+}
+
+.wtthavbox {
+  width: 55px;
+  height: 55px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background: rgba(var(--btaccent),.8);
+}
+
+.wtthav {
+  width: 40px;
+  height: 40px;
+  border: 2px rgba(var(--ltbase),1) solid;
+  border-radius: 100%;
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  overflow: hidden;
+  object-fit: cover;
+}
+
+.wtthav img { max-width: 40px; max-height: 40px; }
+
+.wttmemname {
+  position: absolute;
+  top: 0px;
+  left: 55px;
+  padding: 5px 15px;
+  font: normal 500 30px/45px oswald;
+  text-align: left;
+  text-transform: uppercase;
+
+}
+
+.wttmemname a {
+  color: rgba(var(--mg),1);
+}
+
+.wttmemname a:hover {
+  color: rgba(var(--ltbase),1);
+}
+
+
+#wttnavbar {
+  width: 100%;
+  height: 22px;
+  padding: 0px 10px;
+  position: fixed;
+  left: 0px;
+  top: 55px;
+  background: rgba(var(--dnaccent),.8);
+  color: rgba(var(--ltbase),1);
+  font: normal 600 10px/10px Montserrat;
+  text-align: left;
+  text-transform: uppercase;
+  z-index: 9999;
+  
+}
+
+#wttnavbar a { 
+  color: rgba(var(--btaccent),1);
+}
+
+#wttnavbar a:hover {
+  color: rgba(var(--ltbase),1);
+}
+
+#wttnavbar .forminput {
+	background: rgba(var(--dnaccent),.6);
+	border: 0px;
+	color: rgba(var(--ltbase),1);
+	font-family: montserrat, sans-serif;
+	font-size: 10px;
+	padding: 2px;
+	vertical-align: middle;
+	float: right;
+	border-radius: 0px;
+	margin: -40px 20px auto 0px;
+}
+
+
+
+/*************************** SIDEBAR ***************************/
+
+#iikmsidebar {
+  width: 260px;
+  height: auto;
+  padding-bottom: 5px;
+  position: absolute;
+  top: 500px;
+  left: 0px;
+  border: 2px rgba(var(--ltbase),1) solid;
+  background: rgba(var(--dkbase),.8);
+}
+
+
+.iikmstat {
+  width: 216px;
+  height: 21px;
+  padding: 5px;
+  margin: 5px 15px;
+  background: rgba(var(--ltbase),1);
+  position: relative;
+  border: 2px solid rgba(var(--mg),1);  
+
+  
+}
+
+.iikmstatnbox {
+  width: 35px;
+  height: 35px;
+  top: -2px;
+  position: absolute;
+  background: rgba(var(--mg),1);
+  font: normal 400 13px/35px oswald; 
+}
+
+.iikmstatnum {
+  width: 15px;
+  height: 15px;
+  background: #fff;
+  padding: 5px;
+  margin: 5px;
+  line-height: 15px;
+  text-align: center;
+  border-radius: 100%;
+  color: rgba(var(--mg),1);
+
+
+}
+
+.iikmstattx {
+  width: 178px;
+  height: 21px;
+  padding: 5px;
+  top: 0px;
+  position: absolute;
+  background: rgba(var(--ltbase),1);
+  color: rgba(var(--mg),1);
+  font: normal 600 13px/21px montserrat; 
+  letter-spacing: 2px;
+}
+
+.iikmtabs {
+position: relative;  
+width: 250px;
+height:  375px;
+margin: 0px 5px;
+}
+
+.iikmtab {
+float: right;
+
+}
+
+.iikmtab label {
+background: rgba(var(--dnaccent),1);
+padding: 10px;
+position: absolute;
+border-radius: 3px;
+  top: 0px;
+   width: 50px;
+  height: 15px;
+  line-height: 15px;
+  text-align: center;
+  font: normal 600 17px/15px montserrat; 
+
+}
+
+.iikmtab [type=radio] {
+display: none;  
+}
+
+.iikmcontent {
+position: absolute;
+top: 35px;
+bottom: 0px;
+left: 0px;
+right: 0px;
+background: rgba(var(--dkbase),1);
+padding: 10px;
+text-align: left;
+
+}
+
+.iikmtab [type=radio]:checked ~ label {
+background: rgba(var(--btaccent),1);
+z-index: 2;
+}
+
+.iikmtab [type=radio]:checked ~ label ~ .iikmcontent {
+z-index: 1;
+}
+
+
+.iikmlinks {
+  width: 220px;
+  height: 17px;
+  padding: 5px;
+  margin: 5px 0px;
+  background: rgba(var(--btaccent),1);
+  color: rgba(var(--ltbase),1);
+  font: normal 500 14px/17px oswald; 
+  display: block;
+  border-radius: 3px;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.iikmcontent a { color: rgba(var(--ltbase),1); }
+
+.iikmlinks:hover {
+  background: rgba(var(--dnaccent),.8);
+}
+
+.iikmdate {
+  padding: 5px;
+  margin: 2px 5px;
+  background: rgba(var(--btaccent),1);
+  color: rgba(var(--ltbase),1);
+  font: normal 500 14px/17px oswald; 
+  display: block;
+  border-radius: 3px;
+  text-transform: uppercase;
+  float: left;
+}
+
+
+/*=========================================================
+		Alvstonia additions
+  =========================================================*/
+
+/* dark writing wherever the background is gold */
+.postlinksbar a, .button-large, .button-small,
+input[type=submit], input[type=button], input[type=reset],
+.wttbsavbox, .wttbsdeet b, .wttindexbox, .wttmldropbox, .wttmlbutton,
+.wtttopicbox, .wtthlink:hover, .wttbslink:hover,
+.iikmtab [type=radio]:checked ~ label, .iikmlinks, .iikmdate {
+  color: rgb(var(--onaccent)) !important;
+}
+.iikmlinks:hover { color: rgba(var(--ltbase), 1) !important; }
+
+/* the header bar stays near-black on every page */
+.wttheaderbar { background: rgb(12, 12, 12); }
+
+/* sidebar links that have no page yet */
+.iikmsoon, .iikmsoon:hover {
+  background: rgba(var(--dnaccent), .5);
+  color: rgba(var(--ltbase), .5) !important;
+  cursor: default;
+}
+
+/* the header bar name takes the character's own color */
+.wttmemname { color: rgba(var(--mg), 1); }
+
+/* boxes that the story script fills in: keep long text on one line */
+.wttpostdeet span, .wttmldeet span {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.alv-scene a { font-weight: 700; }
+
+/* profile page: the Details and Relationships lists */
+.alv-tall {
+  line-height: 15px;
+  text-align: left;
+}
+.alv-tall [data-lines] { height: 100%; box-sizing: border-box; padding-top: 10px; overflow: auto; }
+.alv-tall i {
+  font-style: normal;
+  color: rgba(var(--mg), 1);
+}
+
+/* character names take the character's own color */
+.wttpostname .alv-name, .wttpostname .alv-name a:link, .wttpostname .alv-name a:visited,
+.wttmlname, .wttmlname a:link, .wttmlname a:visited {
+  color: rgba(var(--mg), 1);
+}
+.wttpostname .alv-name a:hover, .wttmlname a:hover { color: rgba(var(--ltbase), 1); }
+
+/* homepage: forum boxes with nothing in them yet, and missing pictures */
+.alv-empty .wttindexby, .alv-empty .wttindexav { display: none; }
+.wttindexav img[src="https://"], .wttindexav img[src=""] { display: none; }
+
+/* homepage: the cast box in the bottom block */
+.wttbscast {
+  width: 300px;
+  height: 140px;
+  top: 110px;
+  left: 10px;
+}
+.alv-cast {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-content: flex-start;
+  box-sizing: border-box;
+  padding-top: 8px;
+}
+.alv-castdot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 2px solid rgba(var(--mg), 1);
+  border-radius: 100%;
+  background: rgba(var(--dkbase), 1);
+  font: normal 500 16px/1 oswald;
+  color: rgba(var(--mg), 1) !important;
+}
+.alv-castdot img { width: 100%; height: 100%; object-fit: cover; }
