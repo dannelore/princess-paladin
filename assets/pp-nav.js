@@ -121,7 +121,10 @@ window.PPNav = (function(){
           note:'Week plan and shopping list', pages:[
           { label:'Recipe Book',         href:'/castle/recipe-book.html',         note:'Everything we cook' },
           { label:'Recipe Construction', href:'/castle/recipe-construction.html', note:'Build a new recipe entry' }
-        ]}
+        ]},
+
+        { name:'Cleaning Schedule', href:'/castle/cleaning-schedule.html', indexLabel:'Cleaning Schedule',
+          note:'Who does what, and when', pages:[] }
       ]
     },
 
