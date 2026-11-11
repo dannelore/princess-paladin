@@ -70,7 +70,7 @@ const Q=[
 ["scrooge-mcduck--village-project-gear-loose-and-fancy-free","Base Game","Scrooge McDuck","Eternity Isle","Village Project: Gear Loose and Fancy Free"],
 ["scrooge-mcduck--ghost-town","Base Game","Scrooge McDuck","Wishblossom Ranch","Ghost Town"],
 ["scrooge-mcduck--water-tower-of-terror","Base Game","Scrooge McDuck","Wishblossom Ranch","Water Tower of Terror"],
-["scrooge-mcduck--dreamlight-parks-fest-dig-it","Base Game","Scrooge McDuck","Events & extras","Dreamlight Parks Fest: Dig It"],
+["scrooge-mcduck--dreamlight-parks-fest-dig-it","Base Game","Scrooge McDuck","Past event","Dreamlight Parks Fest: Dig It"],
 ["merlin--friendship-is-everything","Base Game","Merlin","Main Story","Friendship is Everything"],
 ["merlin--with-great-power","Base Game","Merlin","Main Story","With Great Power..."],
 ["merlin--secrets-schemes","Base Game","Merlin","Main Story","Secrets & Schemes"],
@@ -128,7 +128,7 @@ const Q=[
 ["maui--a-tale-of-stone-and-fire","Base Game","Maui","","A Tale of Stone and Fire"],
 ["maui--demigod-of-the-wind-and-sun","Base Game","Maui","","Demigod of the Wind and Sun"],
 ["maui--the-heart-of-dreamlight-valley","Base Game","Maui","","The Heart of Dreamlight Valley"],
-["maui--training-games-the-shapeshifter","Base Game","Maui","Events & extras","Training Games: The Shapeshifter"],
+["maui--training-games-the-shapeshifter","Base Game","Maui","Starts during Mulan's Training Games","Training Games: The Shapeshifter"],
 ["remy--an-important-night-at-the-restaurant","Base Game","Remy","","An Important Night at the Restaurant"],
 ["remy--a-restaurant-makeover","Base Game","Remy","","A Restaurant Makeover"],
 ["remy--remy-s-recipe-book","Base Game","Remy","","Remy's Recipe Book"],
@@ -140,20 +140,20 @@ const Q=[
 ["ursula--magic-moments","Base Game","Ursula","","Magic Moments"],
 ["ursula--the-ritual","Base Game","Ursula","","The Ritual"],
 ["ursula--a-deal-with-ursula","Base Game","Ursula","","A Deal With Ursula"],
-["ursula--villager-of-the-month-ursula","Base Game","Ursula","Events & extras","Villager of the Month: Ursula"],
+["ursula--villager-of-the-month-ursula","Base Game","Ursula","Starts during Sulley's Villager of the Month","Villager of the Month: Ursula"],
 ["kristoff--lost-in-the-dark-grove","Base Game","Kristoff","","Lost in the Dark Grove"],
 ["kristoff--leaving-the-woods-behind","Base Game","Kristoff","","Leaving the Woods Behind"],
 ["kristoff--village-project-a-mountain-man-s-stall","Base Game","Kristoff","","Village Project: A Mountain Man's Stall"],
 ["kristoff--a-broken-sled","Base Game","Kristoff","","A Broken Sled"],
 ["kristoff--frozen-memories","Base Game","Kristoff","","Frozen Memories"],
-["kristoff--a-romantic-in-the-making","Base Game","Kristoff","","Kristoff: A Romantic in the Making"],
+["kristoff--a-romantic-in-the-making","Base Game","Kristoff","Starts during Daisy's Ask Daisy","Kristoff: A Romantic in the Making"],
 ["donald-duck--a-house-fit-for-a-duck","Base Game","Donald Duck","","A House Fit For A Duck"],
 ["donald-duck--a-fishy-dispute","Base Game","Donald Duck","","A Fishy Dispute"],
 ["donald-duck--the-forgotten-project","Base Game","Donald Duck","","The Forgotten Project"],
 ["donald-duck--the-dreamlight-fountain","Base Game","Donald Duck","","The Dreamlight Fountain"],
 ["donald-duck--the-sock-stealing-space-alien-strikes-again","Base Game","Donald Duck","","The Sock-Stealing Space Alien Strikes Again!"],
 ["donald-duck--built-to-destroy","Base Game","Donald Duck","","Built to Destroy!"],
-["donald-duck--villager-of-the-month-donald","Base Game","Donald Duck","Events & extras","Villager of the Month: Donald"],
+["donald-duck--villager-of-the-month-donald","Base Game","Donald Duck","Starts during Sulley's Villager of the Month","Villager of the Month: Donald"],
 ["mother-gothel--the-curse","Base Game","Mother Gothel","","The Curse"],
 ["mother-gothel--my-kingdom-for-a-scroll","Base Game","Mother Gothel","","My Kingdom For A Scroll"],
 ["mother-gothel--shine-a-light","Base Game","Mother Gothel","","Shine a Light"],
@@ -190,7 +190,7 @@ const Q=[
 ["scar--the-circle-of-life","Base Game","Scar","","The Circle of Life"],
 ["scar--the-making-of-a-monarch","Base Game","Scar","","The Making of a Monarch"],
 ["scar--scar-s-campaign-a-suspicious-stew","Base Game","Scar","","Scar's Campaign: A Suspicious Stew"],
-["scar--a-holiday-treat-for-scar","Base Game","Scar","Events & extras","A Holiday Treat for Scar"],
+["scar--a-holiday-treat-for-scar","Base Game","Scar","Starts during Jack's The Holiday Poll","A Holiday Treat for Scar"],
 ["buzz-lightyear--a-secret-mission-in-uncharted-space","Base Game","Buzz Lightyear","","A Secret Mission in Uncharted Space"],
 ["buzz-lightyear--a-space-ranger-recruit","Base Game","Buzz Lightyear","","A Space Ranger Recruit"],
 ["buzz-lightyear--a-space-ranger-reputation","Base Game","Buzz Lightyear","","A Space Ranger Reputation"],
@@ -200,7 +200,7 @@ const Q=[
 ["buzz-lightyear--collect-em-all-strangers-from-the-outside","Base Game","Buzz Lightyear","","Collect 'Em All: Strangers from the Outside!"],
 ["buzz-lightyear--collect-em-all-attic-mode","Base Game","Buzz Lightyear","","Collect 'Em All: Attic Mode"],
 ["buzz-lightyear--we-are-eternally-grateful","Base Game","Buzz Lightyear","","We Are Eternally Grateful!"],
-["buzz-lightyear--training-games-the-space-ranger","Base Game","Buzz Lightyear","Events & extras","Training Games: The Space Ranger"],
+["buzz-lightyear--training-games-the-space-ranger","Base Game","Buzz Lightyear","Starts during Mulan's Training Games","Training Games: The Space Ranger"],
 ["woody--you-re-my-favorite-deputy","Base Game","Woody","","You're My Favorite Deputy"],
 ["woody--failing-better","Base Game","Woody","","Failing Better"],
 ["woody--a-bit-of-a-fixer-upper","Base Game","Woody","","A Bit of a Fixer Upper"],
@@ -222,20 +222,20 @@ const Q=[
 ["olaf--grand-exhibition-diorama","Base Game","Olaf","","Grand Exhibition: Diorama"],
 ["olaf--grand-exhibition-aquarium","Base Game","Olaf","","Grand Exhibition: Aquarium"],
 ["olaf--grand-exhibition-habitat","Base Game","Olaf","","Grand Exhibition: Habitat"],
-["olaf--a-holiday-treat-for-olaf","Base Game","Olaf","Events & extras","A Holiday Treat for Olaf"],
+["olaf--a-holiday-treat-for-olaf","Base Game","Olaf","Starts during Jack's The Holiday Poll","A Holiday Treat for Olaf"],
 ["mirabel--the-golden-doorknob","Base Game","Mirabel","","The Golden Doorknob"],
 ["mirabel--healing-house","Base Game","Mirabel","","Healing House"],
 ["mirabel--a-taste-of-home","Base Game","Mirabel","","A Taste Of Home"],
 ["mirabel--meddling-mirabel","Base Game","Mirabel","","Meddling Mirabel"],
 ["mirabel--a-festival-of-friendship","Base Game","Mirabel","","A Festival Of Friendship"],
 ["mirabel--a-letter-for-antonio","Base Game","Mirabel","","A Letter for Antonio"],
-["mirabel--dreamlight-parks-fest-critter-snaps","Base Game","Mirabel","Events & extras","Dreamlight Parks Fest: Critter Snaps"],
+["mirabel--dreamlight-parks-fest-critter-snaps","Base Game","Mirabel","Past event","Dreamlight Parks Fest: Critter Snaps"],
 ["nala--eyes-in-the-dark","Base Game","Nala","","Eyes in the Dark"],
 ["nala--staking-your-territory","Base Game","Nala","","Staking Your Territory"],
 ["nala--fishy-business","Base Game","Nala","","Fishy Business"],
 ["nala--heart-of-a-lioness","Base Game","Nala","","The Heart of a Lioness"],
 ["nala--here-and-there-and-back-again","Base Game","Nala","","Here and There and Back Again"],
-["nala--training-games-the-lioness","Base Game","Nala","Events & extras","Training Games: The Lioness"],
+["nala--training-games-the-lioness","Base Game","Nala","Starts during Mulan's Training Games","Training Games: The Lioness"],
 ["simba--stars-to-guide-us","Base Game","Simba","","Stars to Guide Us"],
 ["simba--hakuna-matata","Base Game","Simba","","Hakuna Matata"],
 ["simba--the-great-gathering","Base Game","Simba","","The Great Gathering"],
@@ -261,7 +261,7 @@ const Q=[
 ["vanellope-von-schwee--the-next-level","Base Game","Vanellope von Schweetz","","Vanellope: The Next Level"],
 ["vanellope-von-schwee--press-start","Base Game","Vanellope von Schweetz","","Press Start"],
 ["vanellope-von-schwee--questination-unknown","Base Game","Vanellope von Schweetz","","Questination Unknown"],
-["vanellope-von-schwee--a-holiday-treat-for-vanellope","Base Game","Vanellope von Schweetz","Events & extras","A Holiday Treat for Vanellope"],
+["vanellope-von-schwee--a-holiday-treat-for-vanellope","Base Game","Vanellope von Schweetz","Starts during Jack's The Holiday Poll","A Holiday Treat for Vanellope"],
 ["belle--into-the-west-wing","Base Game","Belle","","Into The West Wing!"],
 ["belle--a-prince-in-disguise","Base Game","Belle","","A Prince In Disguise"],
 ["belle--book-hunt","Base Game","Belle","","Book Hunt"],
@@ -292,7 +292,7 @@ const Q=[
 ["mike-wazowski--monstrously-good-taste","Base Game","Mike Wazowski","","Monstrously Good Taste"],
 ["mike-wazowski--a-comedic-proposition","Base Game","Mike Wazowski","","A Comedic Proposition"],
 ["mike-wazowski--have-your-people-talk-to-my-people","Base Game","Mike Wazowski","","Have Your People Talk To My People"],
-["mike-wazowski--villager-of-the-month-mike","Base Game","Mike Wazowski","Events & extras","Villager of the Month: Mike"],
+["mike-wazowski--villager-of-the-month-mike","Base Game","Mike Wazowski","Starts during Sulley's Villager of the Month","Villager of the Month: Mike"],
 ["sulley--monster-movie-night","Base Game","Sulley","","Monster Movie Night"],
 ["sulley--villager-of-the-month","Base Game","Sulley","","Villager Of The Month"],
 ["sulley--the-power-of-knowledge","Base Game","Sulley","","The Power Of Knowledge"],
@@ -319,9 +319,9 @@ const Q=[
 ["mushu--the-mushu-program","Base Game","Mushu","","The MUSHU Program"],
 ["mushu--the-guardian-party","Base Game","Mushu","","The Guardian Party"],
 ["mushu--the-tiny-villager-society","Base Game","Mushu","","The Tiny Villagers Society"],
-["mushu--the-red-pouch-hunt","Base Game","Mushu","Events & extras","The Red Pouch Hunt"],
-["mushu--cooking-sesame-balls","Base Game","Mushu","Events & extras","Cooking Sesame Balls"],
-["mushu--mushu-s-pinata-extravaganza","Base Game","Mushu","Events & extras","Mushu's Piñata Extravaganza"],
+["mushu--the-red-pouch-hunt","Base Game","Mushu","Starts during The Guardian Party","The Red Pouch Hunt"],
+["mushu--cooking-sesame-balls","Base Game","Mushu","Starts during The Guardian Party","Cooking Sesame Balls"],
+["mushu--mushu-s-pinata-extravaganza","Base Game","Mushu","Starts during The Guardian Party","Mushu's Piñata Extravaganza"],
 ["tiana--a-taste-for-literature","Base Game","Tiana","","A Taste for Literature"],
 ["tiana--back-from-the-bayou","Base Game","Tiana","","Back from the Bayou"],
 ["tiana--little-louis-s-big-break","Base Game","Tiana","","Little Louis's Big Break"],
@@ -468,7 +468,7 @@ const Q=[
 ["rapunzel--home-is-where-the-art-is","A Rift in Time","Rapunzel","","Home Is Where The Art Is"],
 ["rapunzel--all-the-right-notes","A Rift in Time","Rapunzel","","All The Right Notes"],
 ["rapunzel--use-your-imagination-rapunzel","A Rift in Time","Rapunzel","","Use Your Imagination: Rapunzel"],
-["rapunzel--rapunzel-s-challenge","A Rift in Time","Rapunzel","Events & extras","Rapunzel's Challenge"],
+["rapunzel--rapunzel-s-challenge","A Rift in Time","Rapunzel","Starts during Oswald's A Cockamamie Contest","Rapunzel's Challenge"],
 ["gaston--the-wanderer-of-the-dunes","A Rift in Time","Gaston","","The Wanderer Of The Dunes"],
 ["gaston--the-wild-tangle-s-swarm","A Rift in Time","Gaston","","The Wild Tangle's Swarm"],
 ["gaston--diamond-in-the-rough","A Rift in Time","Gaston","","Diamond in the Rough"],
@@ -478,7 +478,7 @@ const Q=[
 ["gaston--dreamlight-valley-s-next-top-lefou","A Rift in Time","Gaston","","Dreamlight Valley's Next Top LeFou"],
 ["gaston--hero-pose","A Rift in Time","Gaston","","Hero Pose"],
 ["gaston--use-your-imagination-gaston","A Rift in Time","Gaston","","Use Your Imagination: Gaston"],
-["gaston--gaston-s-challenge","A Rift in Time","Gaston","Events & extras","Gaston's Challenge"],
+["gaston--gaston-s-challenge","A Rift in Time","Gaston","Starts during Oswald's A Cockamamie Contest","Gaston's Challenge"],
 ["eve--directive-danger","A Rift in Time","EVE","","Directive: Danger!"],
 ["eve--a-new-directive","A Rift in Time","EVE","","A New Directive"],
 ["eve--lasers-and-crafts","A Rift in Time","EVE","","Lasers and Crafts"],
@@ -486,7 +486,7 @@ const Q=[
 ["eve--when-things-go-boom","A Rift in Time","EVE","","When Things Go Boom"],
 ["eve--does-not-compute","A Rift in Time","EVE","","Does Not Compute"],
 ["eve--use-your-imagination-eve","A Rift in Time","EVE","","Use Your Imagination: EVE"],
-["eve--eve-s-challenge","A Rift in Time","EVE","Events & extras","EVE's Challenge"],
+["eve--eve-s-challenge","A Rift in Time","EVE","Starts during Oswald's A Cockamamie Contest","EVE's Challenge"],
 ["oswald--the-spark-of-imagination","A Rift in Time","Oswald","","The Spark Of Imagination"],
 ["oswald--oswald-s-many-dimensions","A Rift in Time","Oswald","","Oswald's Many Dimensions"],
 ["oswald--an-alarming-development","A Rift in Time","Oswald","","An Alarming Development"],
@@ -645,7 +645,9 @@ const Q=[
    they don't count against her progress. Take a name out of this list once
    it's bought and its quests come back, with any saved progress. */
 const NOT_OWNED_BUNDLES = ["Once Upon a Dance (Dream Bundle)","Dapper WALL-E (Dream Bundle)"];
-for(let i=Q.length-1;i>=0;i--)if(NOT_OWNED_BUNDLES.includes(Q[i][2]))Q.splice(i,1);
+/* Quests from limited-time events that have ended, so they can't be done any more. */
+const PAST_EVENT_QUESTS = ["scrooge-mcduck--dreamlight-parks-fest-dig-it","mirabel--dreamlight-parks-fest-critter-snaps"];
+for(let i=Q.length-1;i>=0;i--)if(NOT_OWNED_BUNDLES.includes(Q[i][2])||PAST_EVENT_QUESTS.includes(Q[i][0]))Q.splice(i,1);
 
 /* Friendship level a villager's quest needs before it starts, by quest id,
    from the Dreamlight Valley Wiki (Oct 25, 2026). 0 means no friendship
@@ -856,15 +858,14 @@ const loose=r=>UNORDERED.includes(r[2])||/\(Dream Bundle\)$/.test(r[2])||LOOSE.i
 
 /* Whether a quest can be played on this save: in an expansion Danni owns
    (a section named after an expansion needs that one too, like Scrooge's
-   Wishblossom Ranch quests), not an event that's over, and not a seasonal
-   extra unless its note says it starts during another quest (Training
-   Games' challenges, say). note is the quest's tracker note. */
+   Wishblossom Ranch quests), and not an event that's over. Quests that
+   start during another one (their section says which) are as playable as
+   that quest. note is the quest's tracker note. */
 const EXP_PACKS=["A Rift in Time","Storybook Vale","Wishblossom Ranch","Honeyglow Woods"];
 const SECTION_EXP={"Eternity Isle":"A Rift in Time","Wishblossom Ranch":"Wishblossom Ranch"};
 const daysLeft=id=>Math.ceil((new Date(DEADLINE[id]+"T23:59:59")-Date.now())/864e5);
 function playableFor(r,note){
   if(DEADLINE[r[0]]&&daysLeft(r[0])<0)return false;
-  if(r[3]==="Events & extras"&&!/starts during/i.test(note||""))return false;
   const e=SECTION_EXP[r[3]]||r[1];return OWNED.includes(e)||!EXP_PACKS.includes(e);
 }
 
