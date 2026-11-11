@@ -64,7 +64,7 @@
 
   /* ---- today: lunch, dinner and chores ----
      Filled in by the script at the bottom. Read-only: meals are changed in
-     the Meal Planner and chores are ticked off on each quest log, which is
+     the Meal Planner and chores come from the Cleaning Schedule, which is
      where the cells link to. */
   .home-today{ margin-bottom: var(--gap); }
   .home-today-head{
@@ -117,8 +117,20 @@
     font-size: 1.05rem;
     color: var(--ink-soft);
   }
+  .home-today-chore + .home-today-chore{
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--line);
+  }
+  .home-today-chore-name{
+    display: block;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.2rem;
+    line-height: 1.3;
+  }
   .home-today-who{
-    display: inline-block;
+    display: block;
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--burgundy);
@@ -133,9 +145,7 @@
     font-size: 0.95rem;
     line-height: 1.5;
   }
-  .home-today-chores li::before{ content: "\2610"; color: var(--ink-soft); }
-  .home-today-chores li.is-done{ color: var(--ink-soft); text-decoration: line-through; }
-  .home-today-chores li.is-done::before{ content: "\2611"; color: var(--sage-deep); text-decoration: none; }
+  .home-today-chores li::before{ content: "\2022"; color: var(--sage-deep); }
 
   /* ---- seasonal callout: hidden until its dates come round ---- */
   .home-season{ margin-bottom: var(--gap); }
@@ -350,9 +360,9 @@
   </div>
 
   <!-- Today. Lunch and dinner come from the Meal Planner's plan; chores are
-       each quest log's dailies tagged "Chore" that fall on today (plus any
-       Chore to-do due today or overdue). The script at the bottom fills it
-       in, and it only reads: nothing here saves. -->
+       whatever the Cleaning Schedule has on today (/assets/pp-cleaning.js).
+       The script at the bottom fills it in, and it only reads: nothing
+       here saves. -->
   <section class="pp-panel home-today" aria-labelledby="today-title">
     <div class="home-today-head">
       <h2 id="today-title">Today</h2>
@@ -367,10 +377,10 @@
         <span class="pp-label">Dinner</span>
         <span class="home-today-value is-none" id="today-dinner">&hellip;</span>
       </a>
-      <div class="home-today-cell home-today-chores">
+      <a class="home-today-cell home-today-chores" href="/castle/cleaning-schedule.html">
         <span class="pp-label">Chores</span>
         <div id="today-chores"><span class="home-today-none">&hellip;</span></div>
-      </div>
+      </a>
     </div>
   </section>
 
@@ -605,20 +615,20 @@
 </script>
 
 <!-- The Today panel. pp-meals.js knows what a day's lunch and dinner are;
-     pp-quest.js knows which dailies fall on today and whether they're done. -->
+     pp-cleaning.js knows which chores fall on today. -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="/assets/pp-firebase.js"></script>
 <script src="/assets/pp-meals.js"></script>
-<script src="/assets/pp-quest.js"></script>
+<script src="/assets/pp-cleaning.js"></script>
 <script>
   (function(){
     var now = new Date();
     var $ = function(id){ return document.getElementById(id); };
     $('today-date').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-    /* The same-device copies the Meal Planner and the quest logs keep, so the
-       panel has something to show at once if this device has opened them. */
+    /* The same-device copy the Meal Planner keeps, so the panel has
+       something to show at once if this device has opened it. */
     function cached(key){
       try{ return JSON.parse(localStorage.getItem(key)); }catch(e){ return null; }
     }
@@ -634,55 +644,31 @@
       showMeal('today-dinner', m.dinner);
     }
 
-    /* One person's chores for today, from their quest log. */
-    function choresOf(state){
-      var tag = (state.tags || []).filter(function(t){ return /^chores?$/i.test(String(t.name || '').trim()); })[0];
-      if(!tag) return [];
-      if(!state.completions) state.completions = {};
-      var out = [];
-      (state.dailies || []).forEach(function(t){
-        if(t.tag === tag.id && PQ.isScheduled(t, now)) out.push({ title: t.title, done: PQ.isDoneOn(state, t, now) });
-      });
-      /* A to-do counts once it's due; one ticked off today stays, crossed out. */
-      (state.todos || []).forEach(function(t){
-        if(t.tag !== tag.id || !t.due || t.due > PQ.TODAY_KEY) return;
-        if(t.done && t.doneDate !== PQ.TODAY_KEY) return;
-        out.push({ title: t.title, done: !!t.done });
-      });
-      return out;
-    }
-
-    var BOARDS = [
-      { who: 'danni',   href: '/quest-log/' },
-      { who: 'brendon', href: '/vmprman/quest-log/' }
-    ];
-    var boardState = {};   // who -> quest log state, once it's known
-
+    /* Today's chores, straight from the Cleaning Schedule: each one's name,
+       then who does which part of it. Nothing to wait for — the schedule
+       is a file, not something in the database. */
     function showChores(){
+      var chores = PPCleaning.choresOn(now);
+      if(!chores.length){ fail('today-chores', 'No chores today'); return; }
       var box = $('today-chores');
-      var known = BOARDS.filter(function(b){ return boardState[b.who]; });
-      if(!known.length) return;
       box.textContent = '';
-      var any = false;
-      known.forEach(function(b){
-        var chores = choresOf(boardState[b.who]);
-        if(!chores.length) return;
-        any = true;
-        var who = document.createElement('a');
-        who.className = 'home-today-who';
-        who.href = b.href;
-        who.textContent = PQ.PEOPLE[b.who].name;
-        var list = document.createElement('ul');
-        chores.forEach(function(c){
-          var li = document.createElement('li');
-          li.textContent = c.title;
-          if(c.done) li.className = 'is-done';
-          list.appendChild(li);
+      function add(parent, tag, cls, text){
+        var n = document.createElement(tag);
+        if(cls) n.className = cls;
+        if(text != null) n.textContent = text;
+        parent.appendChild(n);
+        return n;
+      }
+      chores.forEach(function(chore){
+        var block = add(box, 'div', 'home-today-chore');
+        if(chore.name) add(block, 'span', 'home-today-chore-name', chore.name);
+        chore.parts.forEach(function(part){
+          if(!part.tasks.length) return;   // the name says it all (Date Night)
+          add(block, 'span', 'home-today-who', PPCleaning.PEOPLE[part.who] || part.who);
+          var list = add(block, 'ul');
+          part.tasks.forEach(function(t){ add(list, 'li', '', t); });
         });
-        box.appendChild(who);
-        box.appendChild(list);
       });
-      if(!any) fail('today-chores', 'No chores today');
     }
 
     function fail(id, words){
@@ -698,11 +684,8 @@
     /* First whatever this device already has… */
     var mealCopy = cached('pp-mealplanning-v1');
     if(mealCopy) showMeals(mealCopy);
-    BOARDS.forEach(function(b){
-      var copy = cached('questlog-v6-' + b.who);
-      if(copy) boardState[b.who] = copy;
-    });
-    showChores();
+    try{ showChores(); }
+    catch(err){ console.error('Today: chores failed', err); fail('today-chores', "Couldn't load"); }
 
     /* …then the real thing. */
     try{
@@ -716,22 +699,9 @@
         console.error('Today: meal plan failed to load', err);
         if(!mealCopy){ fail('today-lunch', "Couldn't load"); fail('today-dinner', "Couldn't load"); }
       });
-
-      Promise.all(BOARDS.map(function(b){
-        return db.collection('questlog').doc(PQ.PEOPLE[b.who].doc).get().then(function(snap){
-          if(snap.exists) boardState[b.who] = snap.data();
-        });
-      })).then(function(){
-        if(BOARDS.some(function(b){ return boardState[b.who]; })) showChores();
-        else fail('today-chores', 'No chores today');
-      }).catch(function(err){
-        console.error('Today: quest logs failed to load', err);
-        if(!BOARDS.some(function(b){ return boardState[b.who]; })) fail('today-chores', "Couldn't load");
-      });
     }catch(err){
       console.error('Today: could not start', err);
       if(!mealCopy){ fail('today-lunch', "Couldn't load"); fail('today-dinner', "Couldn't load"); }
-      if(!BOARDS.some(function(b){ return boardState[b.who]; })) fail('today-chores', "Couldn't load");
     }
   })();
 </script>
