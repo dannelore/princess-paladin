@@ -1206,17 +1206,19 @@ const respawnMin=r=>{const m=/(\d+)\s*(min|h)/.exec(r.respawn||"");return m?(+m[
 const spawnCell=(r,k)=>r[k]?esc(r[k])+((r.unsure||[]).includes(k)?' <span class="unsure" title="Only one guide says so, or guides disagree">?</span>':""):"—";
 const R_ROWS=RESOURCES.map(x=>({...x,biomes:[...x.biomes].sort()}));
 const R_AREAS=[...new Set(Object.values(BIOME_AREA))];
-const R_CATS=[...new Set(RESOURCES.map(x=>x.category))];
+// the wiki's ingredient categories first, in its order, then everything else
+const R_CAT_ORDER=["Vegetables","Fruit","Grains","Dairy and Oil","Spices","Sweets","Seafood","Fish","Flowers","Gems","Minerals","Wood","Crafting Materials"];
+const R_CATS=[...new Set(RESOURCES.map(x=>x.category))].sort((a,b)=>((R_CAT_ORDER.indexOf(a)+1)||99)-((R_CAT_ORDER.indexOf(b)+1)||99));
 let rArea="all",rBiome="all",rCat="all",rHow="all",rQuery="",rSort={col:"biome",dir:1};
-try{const p=JSON.parse(localStorage.getItem(R_KEY)||"null");if(p){rArea=p.area||"all";rBiome=p.biome||"all";rCat=p.cat||"all";rHow=p.how||"all";if(p.sort)rSort=p.sort}}catch(e){}
+try{const p=JSON.parse(localStorage.getItem(R_KEY)||"null");if(p){rArea=p.area||"all";rBiome=p.biome||"all";rCat=R_CATS.includes(p.cat)?p.cat:"all";rHow=p.how||"all";if(p.sort)rSort=p.sort}}catch(e){}
 function saveRPrefs(){try{localStorage.setItem(R_KEY,JSON.stringify({area:rArea,biome:rBiome,cat:rCat,how:rHow,sort:rSort}))}catch(e){}}
 const rAreaOk=a=>rArea==="all"||(rArea==="owned"?OWNED.includes(AREA_EXP[a]||a):a===rArea);
 {const sel=$("r-area");for(const a of R_AREAS){const o=document.createElement("option");o.value=a;o.textContent=a;sel.append(o)}
   if(![...sel.options].some(o=>o.value===rArea))rArea="all";sel.value=rArea;
   sel.onchange=()=>{rArea=sel.value;rBiome="all";saveRPrefs();renderResources()};
   $("r-biome").onchange=e=>{rBiome=e.target.value;saveRPrefs();renderResources()};
-  // Grow is the crops: seeds from the biome's stall
-  {const hs=$("r-how");for(const w of [...new Set(RESOURCES.map(x=>x.how))].sort()){const o=document.createElement("option");o.value=w;o.textContent=w==="Grow"?"Grow (crops)":w;hs.append(o)}
+  // Grow is the crops: anything planted from a seed
+  {const hs=$("r-how");for(const w of [...new Set(RESOURCES.map(x=>x.how))].sort()){const o=document.createElement("option");o.value=w;o.textContent=w==="Grow"?"Crops (from seed)":w;hs.append(o)}
     if(![...hs.options].some(o=>o.value===rHow))rHow="all";hs.value=rHow;
     hs.onchange=()=>{rHow=hs.value;saveRPrefs();renderResources()}}
   $("r-q").addEventListener("input",e=>{rQuery=e.target.value.trim().toLowerCase();renderResources()})}
