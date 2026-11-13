@@ -17,6 +17,7 @@
 .weeknav{ display:flex; justify-content:center; align-items:center; gap:14px; margin-bottom:16px; }
 .weeknav strong{ font-family:var(--font-serif); font-size:1.1rem; }
 .toolbar{ text-align:center; margin-bottom:20px; }
+.done-line{ margin:8px 0 0; font-size:.8rem; color:var(--ink-soft); }
 
 .day-block{ padding:12px 0; border-bottom:1px solid var(--line); }
 .day-block:last-child{ border-bottom:none; }
@@ -155,6 +156,8 @@
     <button class="btn" id="buildBtn">🪄 Build My Week</button>
     <button class="btn secondary" id="clearAllBtn">Clear All</button>
     <button class="btn secondary" id="viewWeekBtn">📄 View as Page</button>
+    <button class="btn" id="doneBtn" title="Send this week's plan to Brendon on Discord">✅ Done</button>
+    <p class="done-line"><span id="doneStatus" role="status"></span> <button type="button" class="lf-reset" id="discordSetupBtn">Discord setup</button></p>
   </div>
 
   <div class="two-col plan-and-shop">
@@ -1245,66 +1248,80 @@ document.getElementById('clearAllBtn').addEventListener('click', () => {
   render();
 });
 
-// The week as a page of its own: a plain table, one row a day, lunch and
-// dinner in words. It's a complete little HTML document, opened in a new tab
-// by "View as Page". Nothing is saved anywhere — close the tab and it's gone.
-function weekPageHtml(){
-  const days = getWeekDays(currentWeek);
-  const lunches = computeLunches(days);
-  const cell = words => words ? escHtml(words) : '<span class="none">—</span>';
-  const rows = DAY_KEYS.map((k, i) => {
-    const day = days[k];
-    const lunch = day.lunch ? lunchWords(day) : (lunches.labels[i] === '—' ? '' : lunches.labels[i]);
-    const date = new Date(addDays(currentWeek, i) + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    return `<tr><td class="day">${DAY_LABELS[k]}<small>${date}</small></td><td data-label="Lunch">${cell(lunch)}</td><td data-label="Dinner">${cell(dinnerName(day))}</td></tr>`;
-  }).join('');
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Meal Plan — ${fmtLabel(currentWeek)}</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Jost:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  body{ margin:0; padding:32px 16px; background:#FBF7F0; color:#2E241F; font-family:'Jost', sans-serif; font-size:1.05rem; }
-  main{ max-width:760px; margin:0 auto; }
-  h1{ font-family:'Cormorant Garamond', serif; font-size:2.4rem; font-weight:600; margin:0; text-align:center; }
-  .week{ text-align:center; margin:4px 0 24px; color:#6B5D55; }
-  table{ width:100%; border-collapse:collapse; }
-  th{ text-align:left; font-size:.72rem; font-weight:500; text-transform:uppercase; letter-spacing:.06em; color:#6B5D55; padding:0 12px 8px; border-bottom:2px solid #2E241F; }
-  td{ padding:14px 12px; border-bottom:1px solid #DDD3C6; vertical-align:top; }
-  tr{ break-inside:avoid; }
-  .day{ width:24%; font-family:'Cormorant Garamond', serif; font-size:1.3rem; font-weight:600; white-space:nowrap; }
-  .day small{ display:block; font-family:'Jost', sans-serif; font-size:.78rem; font-weight:400; color:#6B5D55; }
-  .none{ color:#9A8E85; }
-  /* On a phone each day stacks: the day, then lunch, then dinner. */
-  @media (max-width: 560px){
-    thead{ display:none; }
-    tr{ display:block; padding:12px 0; border-bottom:1px solid #DDD3C6; }
-    td{ display:block; padding:2px 4px; border:none; }
-    .day{ width:auto; margin-bottom:4px; }
-    td[data-label]::before{ content:attr(data-label); display:inline-block; width:64px; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:#6B5D55; }
-  }
-  @media print{ body{ background:#fff; padding:0; } }
-</style>
-</head>
-<body>
-<main>
-  <h1>Meal Plan</h1>
-  <p class="week">${fmtLabel(currentWeek)}</p>
-  <table>
-    <thead><tr><th>Day</th><th>Lunch</th><th>Dinner</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
-</main>
-</body>
-</html>`;
-}
+// The week on a page of its own (/castle/week.html): a plain table, one row
+// a day, with a link to the Amazon Fresh cart. It reads the saved plan, so
+// its address can be sent to someone else — which is what "Done" does.
+const SITE = 'https://princessandpaladin.com'; // links in a message have to work off this device
+const AMAZON_FRESH_CART = 'https://www.amazon.com/cart/localmarket?almBrandId=QW1hem9uIEZyZXNo';
+function weekPagePath(){ return '/castle/week.html?week=' + currentWeek; }
+
 document.getElementById('viewWeekBtn').addEventListener('click', () => {
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); // save a box still being typed in
-  const url = URL.createObjectURL(new Blob([weekPageHtml()], { type: 'text/html' }));
-  window.open(url, '_blank');
-  setTimeout(() => URL.revokeObjectURL(url), 60000); // the open tab keeps its copy
+  window.open(weekPagePath(), '_blank');
+});
+
+/* ============ "DONE" — TELL BRENDON ON DISCORD ============
+   Posts a message with the week's page and the Amazon Fresh cart to a Discord
+   channel, through a webhook (in Discord: channel settings → Integrations →
+   Webhooks → New Webhook → Copy Webhook URL).
+
+   The webhook address is a secret — anyone holding it can post to that
+   channel — and everything this site ships is public. So it's kept in this
+   browser only, the same way the quest board keeps its paste helper
+   settings: asked for the first time you press Done, once per device. */
+const DISCORD_KEY = 'pp-meal-discord-webhook';
+const DISCORD_WEBHOOK_RE = /^https:\/\/(?:(?:canary|ptb)\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[\w-]+$/;
+
+function getDiscordWebhook(){
+  try { return localStorage.getItem(DISCORD_KEY) || ''; } catch(e){ return ''; }
+}
+// Asks for the webhook address and saves it. Returns it, or '' if cancelled.
+function askDiscordWebhook(){
+  const current = getDiscordWebhook();
+  const typed = prompt(
+    'Paste the Discord webhook URL for the channel Brendon should get the message in.\n\n' +
+    'In Discord: channel settings → Integrations → Webhooks → New Webhook → Copy Webhook URL.\n\n' +
+    'It\'s saved on this device only. Clear the box to remove it.', current);
+  if (typed === null) return '';
+  const url = typed.trim();
+  if (!url){ localStorage.removeItem(DISCORD_KEY); return ''; }
+  if (!DISCORD_WEBHOOK_RE.test(url)){
+    alert('That doesn\'t look like a Discord webhook URL. It should start with https://discord.com/api/webhooks/');
+    return '';
+  }
+  localStorage.setItem(DISCORD_KEY, url);
+  return url;
+}
+function doneMessage(){
+  // <…> around the cart link stops Discord unfurling it into a big preview.
+  return `🍽️ The meal plan for **${fmtLabel(currentWeek)}** is ready: ${SITE}${weekPagePath()}\n🛒 Amazon Fresh cart: <${AMAZON_FRESH_CART}>`;
+}
+
+const doneBtn = document.getElementById('doneBtn');
+const doneStatus = document.getElementById('doneStatus');
+doneBtn.addEventListener('click', async () => {
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); // save a box still being typed in
+  const webhook = getDiscordWebhook() || askDiscordWebhook();
+  if (!webhook) return;
+
+  doneBtn.disabled = true;
+  doneStatus.textContent = 'Sending…';
+  try {
+    const res = await fetch(webhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: doneMessage(), allowed_mentions: { parse: [] } })
+    });
+    if (!res.ok) throw new Error('Discord answered ' + res.status);
+    doneStatus.textContent = `Sent to Brendon ✓ (${fmtLabel(currentWeek)})`;
+  } catch (err) {
+    console.error('Sending to Discord failed:', err);
+    doneStatus.textContent = 'Couldn\'t send — check the Discord setup and try again.';
+  }
+  doneBtn.disabled = false;
+});
+document.getElementById('discordSetupBtn').addEventListener('click', () => {
+  if (askDiscordWebhook()) doneStatus.textContent = 'Discord webhook saved on this device.';
 });
 
 function render(){ renderWeekPanel(); renderPantryRail(); renderPantryList(); renderShopList(); }
