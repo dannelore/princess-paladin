@@ -98,26 +98,6 @@
 .pantry-close{ background:none; border:none; font-size:1.4rem; line-height:1; cursor:pointer; color:var(--ink-soft); }
 .pantry-close:hover{ color:var(--sage-deep); }
 
-/* ---- the printed week ----
-   A plain one-page table of the week, filled in by renderPrintSheet(). It's
-   hidden on screen; on paper (or "Save as PDF") it's the only thing shown. */
-.print-sheet{ display:none; }
-@media print{
-  @page{ margin:16mm; }
-  body{ background:#fff !important; }
-  .pp-ribbon, .weeknav, .toolbar, .plan-and-shop, .pantry-rail, .pantry-overlay, .pantry-sidebar{ display:none !important; }
-  .shell{ max-width:none; margin:0; padding:0; }
-  .print-sheet{ display:block; color:#000; }
-  .print-sheet h1{ font-family:var(--font-serif); font-size:26pt; font-weight:600; margin:0; text-align:center; }
-  .print-week{ font-family:var(--font-body); font-size:12pt; text-align:center; margin:4pt 0 16pt; }
-  .print-sheet table{ width:100%; border-collapse:collapse; font-family:var(--font-body); font-size:12pt; }
-  .print-sheet th{ text-align:left; font-size:9pt; text-transform:uppercase; letter-spacing:.06em; padding:0 10pt 6pt; border-bottom:1.5pt solid #000; }
-  .print-sheet td{ padding:11pt 10pt; border-bottom:.5pt solid #999; vertical-align:top; }
-  .print-sheet tr{ break-inside:avoid; }
-  .print-sheet .print-day{ width:24%; font-family:var(--font-serif); font-size:14pt; font-weight:600; white-space:nowrap; }
-  .print-sheet .print-day small{ display:block; font-family:var(--font-body); font-size:9pt; font-weight:400; }
-  .print-sheet .print-none{ color:#777; }
-}
 </style>
 </head>
 <body class="pp-castle">
@@ -172,10 +152,8 @@
   <div class="toolbar">
     <button class="btn" id="buildBtn">🪄 Build My Week</button>
     <button class="btn secondary" id="clearAllBtn">Clear All</button>
-    <button class="btn secondary" id="printBtn">🖨 Print / PDF</button>
+    <button class="btn secondary" id="viewWeekBtn">📄 View as Page</button>
   </div>
-
-  <div class="print-sheet" id="printSheet"></div>
 
   <div class="two-col plan-and-shop">
 
@@ -1264,32 +1242,66 @@ document.getElementById('clearAllBtn').addEventListener('click', () => {
   render();
 });
 
-// The week as a plain table: one row a day, lunch and dinner in words. Only
-// shown when printing (see .print-sheet in the styles above).
-function renderPrintSheet(){
+// The week as a page of its own: a plain table, one row a day, lunch and
+// dinner in words. It's a complete little HTML document, opened in a new tab
+// by "View as Page". Nothing is saved anywhere — close the tab and it's gone.
+function weekPageHtml(){
   const days = getWeekDays(currentWeek);
   const lunches = computeLunches(days);
-  const cell = words => words ? escHtml(words) : '<span class="print-none">—</span>';
+  const cell = words => words ? escHtml(words) : '<span class="none">—</span>';
   const rows = DAY_KEYS.map((k, i) => {
     const day = days[k];
     const lunch = day.lunch ? lunchWords(day) : (lunches.labels[i] === '—' ? '' : lunches.labels[i]);
     const date = new Date(addDays(currentWeek, i) + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    return `<tr><td class="print-day">${DAY_LABELS[k]}<small>${date}</small></td><td>${cell(lunch)}</td><td>${cell(dinnerName(day))}</td></tr>`;
+    return `<tr><td class="day">${DAY_LABELS[k]}<small>${date}</small></td><td data-label="Lunch">${cell(lunch)}</td><td data-label="Dinner">${cell(dinnerName(day))}</td></tr>`;
   }).join('');
-  document.getElementById('printSheet').innerHTML = `
-    <h1>Meal Plan</h1>
-    <p class="print-week">${fmtLabel(currentWeek)}</p>
-    <table>
-      <thead><tr><th>Day</th><th>Lunch</th><th>Dinner</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>`;
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meal Plan — ${fmtLabel(currentWeek)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Jost:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body{ margin:0; padding:32px 16px; background:#FBF7F0; color:#2E241F; font-family:'Jost', sans-serif; font-size:1.05rem; }
+  main{ max-width:760px; margin:0 auto; }
+  h1{ font-family:'Cormorant Garamond', serif; font-size:2.4rem; font-weight:600; margin:0; text-align:center; }
+  .week{ text-align:center; margin:4px 0 24px; color:#6B5D55; }
+  table{ width:100%; border-collapse:collapse; }
+  th{ text-align:left; font-size:.72rem; font-weight:500; text-transform:uppercase; letter-spacing:.06em; color:#6B5D55; padding:0 12px 8px; border-bottom:2px solid #2E241F; }
+  td{ padding:14px 12px; border-bottom:1px solid #DDD3C6; vertical-align:top; }
+  tr{ break-inside:avoid; }
+  .day{ width:24%; font-family:'Cormorant Garamond', serif; font-size:1.3rem; font-weight:600; white-space:nowrap; }
+  .day small{ display:block; font-family:'Jost', sans-serif; font-size:.78rem; font-weight:400; color:#6B5D55; }
+  .none{ color:#9A8E85; }
+  /* On a phone each day stacks: the day, then lunch, then dinner. */
+  @media (max-width: 560px){
+    thead{ display:none; }
+    tr{ display:block; padding:12px 0; border-bottom:1px solid #DDD3C6; }
+    td{ display:block; padding:2px 4px; border:none; }
+    .day{ width:auto; margin-bottom:4px; }
+    td[data-label]::before{ content:attr(data-label); display:inline-block; width:64px; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:#6B5D55; }
+  }
+  @media print{ body{ background:#fff; padding:0; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Meal Plan</h1>
+  <p class="week">${fmtLabel(currentWeek)}</p>
+  <table>
+    <thead><tr><th>Day</th><th>Lunch</th><th>Dinner</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+</main>
+</body>
+</html>`;
 }
-// Typed lunches and "Other" dinners save without a full redraw, so the sheet
-// is rebuilt right before every print — the button's, or Ctrl+P.
-window.addEventListener('beforeprint', renderPrintSheet);
-document.getElementById('printBtn').addEventListener('click', () => {
+document.getElementById('viewWeekBtn').addEventListener('click', () => {
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); // save a box still being typed in
-  window.print();
+  const url = URL.createObjectURL(new Blob([weekPageHtml()], { type: 'text/html' }));
+  window.open(url, '_blank');
+  setTimeout(() => URL.revokeObjectURL(url), 60000); // the open tab keeps its copy
 });
 
 function render(){ renderWeekPanel(); renderPantryRail(); renderPantryList(); renderShopList(); }
