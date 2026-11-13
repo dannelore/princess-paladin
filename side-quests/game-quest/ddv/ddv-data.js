@@ -642,9 +642,12 @@ const Q=[
 ["dapper-wall-e-dream--sprouting-a-story","Dream Bundles","Dapper WALL-E (Dream Bundle)","","Sprouting a Story"]
 ];
 /* Paid Dream Bundles Danni doesn't own are left out of the tracker entirely, so
-   they don't count against her progress. Take a name out of this list once
-   it's bought and its quests come back, with any saved progress. */
-const NOT_OWNED_BUNDLES = ["Once Upon a Dance (Dream Bundle)","Dapper WALL-E (Dream Bundle)"];
+   they don't count against the progress totals. Take a name out of this list
+   once it's bought and its quests come back, with any saved progress.
+   Owned (Nov 13, 2026): Once Upon a Dance, Dapper WALL-E, Ursula's
+   Transformation, plus Purrfectly Regal Lucifer and Starlight House, which
+   have no quests. */
+const NOT_OWNED_BUNDLES = [];
 /* Quests from limited-time events that have ended, so they can't be done any more. */
 const PAST_EVENT_QUESTS = ["scrooge-mcduck--dreamlight-parks-fest-dig-it","mirabel--dreamlight-parks-fest-critter-snaps"];
 for(let i=Q.length-1;i>=0;i--)if(NOT_OWNED_BUNDLES.includes(Q[i][2])||PAST_EVENT_QUESTS.includes(Q[i][0]))Q.splice(i,1);
