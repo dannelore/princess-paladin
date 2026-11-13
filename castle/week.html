@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meal Plan — Princess & Paladin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Jost:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<style>
+/* A week of the meal plan on a page of its own: one row a day, lunch and
+   dinner in words. It's what "View as Page" on the Meal Planner opens and
+   what the "Done" message links to, so it's kept plain on purpose — no
+   ribbon, nothing to click but the cart.
+
+   Which week: ?week=2026-11-15 (the Sunday it starts on). Left off, it's
+   the current week. */
+body{ margin:0; padding:32px 16px; background:#FBF7F0; color:#2E241F; font-family:'Jost', sans-serif; font-size:1.05rem; }
+main{ max-width:760px; margin:0 auto; }
+h1{ font-family:'Cormorant Garamond', serif; font-size:2.4rem; font-weight:600; margin:0; text-align:center; }
+.week{ text-align:center; margin:4px 0 24px; color:#6B5D55; }
+table{ width:100%; border-collapse:collapse; }
+th{ text-align:left; font-size:.72rem; font-weight:500; text-transform:uppercase; letter-spacing:.06em; color:#6B5D55; padding:0 12px 8px; border-bottom:2px solid #2E241F; }
+td{ padding:14px 12px; border-bottom:1px solid #DDD3C6; vertical-align:top; }
+tr{ break-inside:avoid; }
+.day{ width:24%; font-family:'Cormorant Garamond', serif; font-size:1.3rem; font-weight:600; white-space:nowrap; }
+.day small{ display:block; font-family:'Jost', sans-serif; font-size:.78rem; font-weight:400; color:#6B5D55; }
+.none{ color:#9A8E85; }
+.status{ text-align:center; color:#6B5D55; font-style:italic; }
+.links{ text-align:center; margin:28px 0 0; }
+.cart{ display:inline-block; padding:10px 22px; border-radius:999px; background:#8FA37E; color:#fff; font-weight:500; text-decoration:none; }
+.cart:hover{ background:#6D8259; }
+.back{ display:block; margin-top:14px; font-size:.82rem; color:#6B5D55; }
+/* On a phone each day stacks: the day, then lunch, then dinner. */
+@media (max-width: 560px){
+  thead{ display:none; }
+  tr{ display:block; padding:12px 0; border-bottom:1px solid #DDD3C6; }
+  td{ display:block; padding:2px 4px; border:none; }
+  .day{ width:auto; margin-bottom:4px; }
+  td[data-label]::before{ content:attr(data-label); display:inline-block; width:64px; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:#6B5D55; }
+}
+@media print{ body{ background:#fff; padding:0; } .links{ display:none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Meal Plan</h1>
+  <p class="week" id="weekLabel"></p>
+  <div id="plan"><p class="status">Loading…</p></div>
+  <p class="links">
+    <a class="cart" href="https://www.amazon.com/cart/localmarket?almBrandId=QW1hem9uIEZyZXNo" target="_blank" rel="noopener">🛒 Amazon Fresh cart</a>
+    <a class="back" href="/castle/meal-planner.html">Open the Meal Planner</a>
+  </p>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-firebase.js"></script>
+<script src="/assets/pp-meals.js"></script>
+<script>
+const { DAY_KEYS, DAY_LABELS } = PPMeals;
+
+// The week to show: ?week= if it's a real date (snapped back to its Sunday),
+// otherwise this week.
+const asked = new URLSearchParams(location.search).get('week') || '';
+const askedDate = /^\d{4}-\d{2}-\d{2}$/.test(asked) ? new Date(asked + 'T00:00:00') : null;
+const week = PPMeals.weekStartOf(askedDate && !isNaN(askedDate) ? askedDate : new Date());
+
+function dateOf(i){ const d = new Date(week + 'T00:00:00'); d.setDate(d.getDate() + i); return d; }
+const short = { month: 'short', day: 'numeric' };
+const label = dateOf(0).toLocaleDateString(undefined, short) + ' – ' + dateOf(6).toLocaleDateString(undefined, short);
+document.getElementById('weekLabel').textContent = label;
+document.title = 'Meal Plan — ' + label;
+
+function escHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
+}
+
+// mealState is the whole meal-planning document: { recipes, mealplan, … }.
+function show(mealState){
+  const recipes = (mealState && mealState.recipes) || [];
+  const getRecipe = id => recipes.find(r => r.id === id);
+  const saved = ((mealState && mealState.mealplan) || {})[week] || {};
+  const days = {};
+  DAY_KEYS.forEach(k => days[k] = PPMeals.normalizeDay(saved[k]));
+  const lunches = PPMeals.computeLunches(days, getRecipe);
+
+  const cell = words => words ? escHtml(words) : '<span class="none">—</span>';
+  const rows = DAY_KEYS.map((k, i) => {
+    const day = days[k];
+    const lunch = day.lunch ? PPMeals.lunchWords(day, getRecipe) : (lunches.labels[i] === '—' ? '' : lunches.labels[i]);
+    return `<tr><td class="day">${DAY_LABELS[k]}<small>${dateOf(i).toLocaleDateString(undefined, short)}</small></td><td data-label="Lunch">${cell(lunch)}</td><td data-label="Dinner">${cell(PPMeals.dinnerName(day, getRecipe))}</td></tr>`;
+  }).join('');
+  document.getElementById('plan').innerHTML = `
+    <table>
+      <thead><tr><th>Day</th><th>Lunch</th><th>Dinner</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// This device's saved copy first (if it has one), so there's something to
+// read straight away; then the real thing from Firestore.
+let cached = null;
+try { cached = JSON.parse(localStorage.getItem('pp-mealplanning-v1')); } catch(e){}
+if (cached) show(cached);
+
+firebase.initializeApp(window.PPFirebaseConfig);
+firebase.firestore().collection('mealplanning').doc('danni-meal-plan').get()
+  .then(snap => show(snap.exists ? snap.data() : null))
+  .catch(err => {
+    console.error('Could not load the meal plan:', err);
+    if (!cached) document.getElementById('plan').innerHTML = '<p class="status">Couldn\'t load the meal plan. Check your connection and reload.</p>';
+  });
+</script>
+</body>
+</html>
