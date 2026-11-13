@@ -10,7 +10,8 @@
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <style>
 /* A week of the meal plan on a page of its own: one row a day, lunch and
-   dinner in words. It's what "View as Page" on the Meal Planner opens and
+   dinner in words, then that week's shopping list. It's what "View as Page"
+   on the Meal Planner opens and
    what the "Done" message links to, so it's kept plain on purpose — no
    ribbon, nothing to click but the cart.
 
@@ -28,6 +29,17 @@ tr{ break-inside:avoid; }
 .day small{ display:block; font-family:'Jost', sans-serif; font-size:.78rem; font-weight:400; color:#6B5D55; }
 .none{ color:#9A8E85; }
 .status{ text-align:center; color:#6B5D55; font-style:italic; }
+h2{ font-family:'Cormorant Garamond', serif; font-size:1.7rem; font-weight:600; margin:36px 0 12px; text-align:center; }
+/* The shopping list is for reading here — it's ticked off on the Meal
+   Planner. Lines already ticked there show crossed out. */
+.shop{ columns:2 260px; column-gap:36px; }
+.shop-cat{ break-inside:avoid; margin:0 0 18px; }
+.shop-cat h3{ font-size:.72rem; font-weight:500; text-transform:uppercase; letter-spacing:.06em; color:#6D8259; margin:0 0 6px; padding-bottom:4px; border-bottom:1px solid #DDD3C6; }
+.shop-cat ul{ list-style:none; margin:0; padding:0; }
+.shop-cat li{ padding:4px 0; font-size:.98rem; }
+.shop-cat li small{ display:block; font-size:.74rem; color:#6B5D55; }
+.shop-cat li.got, .shop-cat li.got small{ text-decoration:line-through; color:#9A8E85; }
+.qty{ font-weight:500; }
 .links{ text-align:center; margin:28px 0 0; }
 .cart{ display:inline-block; padding:10px 22px; border-radius:999px; background:#8FA37E; color:#fff; font-weight:500; text-decoration:none; }
 .cart:hover{ background:#6D8259; }
@@ -48,6 +60,8 @@ tr{ break-inside:avoid; }
   <h1>Meal Plan</h1>
   <p class="week" id="weekLabel"></p>
   <div id="plan"><p class="status">Loading…</p></div>
+  <h2>Shopping List</h2>
+  <div id="shop"></div>
   <p class="links">
     <a class="cart" href="https://www.amazon.com/cart/localmarket?almBrandId=QW1hem9uIEZyZXNo" target="_blank" rel="noopener">🛒 Amazon Fresh cart</a>
     <a class="back" href="/castle/meal-planner.html">Open the Meal Planner</a>
@@ -58,6 +72,7 @@ tr{ break-inside:avoid; }
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="/assets/pp-firebase.js"></script>
 <script src="/assets/pp-meals.js"></script>
+<script src="/assets/pp-shopping.js"></script>
 <script>
 const { DAY_KEYS, DAY_LABELS } = PPMeals;
 
@@ -98,6 +113,18 @@ function show(mealState){
       <thead><tr><th>Day</th><th>Lunch</th><th>Dinner</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
+
+  // The same list the Meal Planner builds for this week, to read.
+  const list = PPShopping.forWeek(mealState, week);
+  document.getElementById('shop').innerHTML = list.aisles.length
+    ? '<div class="shop">' + list.aisles.map(aisle => `
+        <section class="shop-cat">
+          <h3>${escHtml(aisle.cat)}</h3>
+          <ul>${aisle.items.map(item => `
+            <li class="${list.checked[item.key] ? 'got' : ''}">${item.qty ? `<span class="qty">${escHtml(item.qty)}</span> ` : ''}${escHtml(item.name)}<small>${escHtml(item.sources.join(', '))}</small></li>`).join('')}
+          </ul>
+        </section>`).join('') + '</div>'
+    : '<p class="status">Nothing on the list for this week.</p>';
 }
 
 // This device's saved copy first (if it has one), so there's something to
