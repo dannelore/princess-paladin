@@ -55,6 +55,8 @@
 .plan-and-shop > .panel{ flex:1 1 400px; }
 @media (max-width: 900px){ .plan-and-shop > .panel + .panel{ margin-top:18px; } }
 
+.cart-link{ margin:0 0 16px; }
+.cart-link a{ display:inline-block; text-decoration:none; }
 .shop-cat{ margin-bottom:16px; }
 .shop-cat h4{ color:var(--sage-deep); margin-bottom:6px; }
 .shop-item{ display:flex; align-items:flex-start; gap:8px; padding:4px 0; font-size:.92rem; }
@@ -162,6 +164,7 @@
   <div class="panel">
     <h2>Shopping List</h2>
     <p class="tagline" style="font-size:.85rem;">Built from this week's meals — updates automatically.</p>
+    <p class="cart-link"><a class="btn secondary small" href="https://www.amazon.com/cart/localmarket?almBrandId=QW1hem9uIEZyZXNo" target="_blank" rel="noopener">🛒 Amazon Fresh cart</a></p>
     <div id="shopList"></div>
     <div class="addextra">
       <input type="text" id="exName" placeholder="Add something else…">
