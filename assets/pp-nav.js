@@ -150,7 +150,8 @@ window.PPNav = (function(){
         { name:'Game Quest', href:'/side-quests/game-quest.html', indexLabel:'Game Quest',
           note:'The backlog', pages:[
           { label:'Dreamlight Valley', href:'/side-quests/game-quest/ddv/', note:'Every DDV quest, the to-do list and what is still locked' },
-          { label:'Quest Flow', href:'/side-quests/game-quest/ddv/flow.html', note:'A flowchart of every step to finish a DDV character or quest, in order' }
+          { label:'Quest Flow', href:'/side-quests/game-quest/ddv/flow.html', note:'A flowchart of every step to finish a DDV character or quest, in order' },
+          { label:'The Dark Urge Run', href:'/side-quests/game-quest/bg3/', note:"A Baldur's Gate 3 route as the Dark Urge, in under 60 hours" }
         ]},
 
         /* Flight Rising is a Game Quest child, but gets a section of its own
