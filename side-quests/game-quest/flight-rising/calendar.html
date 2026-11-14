@@ -58,7 +58,7 @@
   .nc-sync{ text-align: center; font-size: .78rem; color: var(--ink-soft); margin: 0; }
 
   /* the weeks */
-  .nc-layout{ display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--gap); align-items: start; }
+  .nc-layout{ display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: var(--gap); align-items: start; }
   @media (max-width: 1000px){ .nc-layout{ grid-template-columns: 1fr; } .nc-day{ order: -1; } }
   .nc-cal{ display: grid; min-width: 0; }
   .nc-dow, .nc-grid{ display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
@@ -75,13 +75,23 @@
   .nc-cell.today .nc-date b{ background: var(--accent-deep); color: var(--on-accent); border-radius: 999px; padding: 0 6px; }
   .nc-date em{ font-style: normal; font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-deep); }
   .nc-nl{
-    display: grid; grid-template-columns: 11px minmax(0, 1fr); gap: 4px; align-items: center; font-size: .72rem; line-height: 1.35;
+    display: grid; grid-template-columns: 11px auto minmax(0, 1fr); gap: 4px; align-items: center; font-size: .72rem; line-height: 1.35;
     border-radius: 3px; padding: 1px 4px 1px 3px; background: color-mix(in srgb, var(--pc) 15%, transparent); border-left: 3px solid var(--pc);
   }
   .nc-nl i{ font-style: normal; font-size: .62rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .nc-nl span{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .nc-nl.start span{ font-weight: 600; }
-  .nc-nl.open{ --pc: var(--line); background: none; color: var(--ink-soft); }
+  .nc-nl.open{ --pc: var(--line); background: none; color: var(--ink-soft); grid-template-columns: 11px minmax(0, 1fr); }
+
+  /* dragon pictures: a Flight Rising render cropped to a circle */
+  .nc-pic{
+    position: relative; display: inline-grid; place-items: center; flex: none; width: var(--sz); height: var(--sz);
+    border-radius: 50%; overflow: hidden; background: var(--panel-tint); border: 1px solid var(--line);
+  }
+  .nc-pic img{ position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(1.35); }
+  .nc-pic .ini{ font-size: calc(var(--sz) * .45); font-weight: 600; color: var(--ink-soft); line-height: 1; }
+  .nc-pics{ display: inline-flex; align-items: center; }
+  .nc-pics .nc-pic + .nc-pic{ margin-left: calc(var(--sz) * -.3); }
   .nc-free{ font-size: .72rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .nc-free b{ color: var(--ink); font-weight: 600; }
   @media (max-width: 640px){
@@ -94,25 +104,38 @@
   }
 
   /* the chosen day */
-  .nc-day{ display: grid; gap: 14px; position: sticky; top: 90px; min-width: 0; }
-  @media (max-width: 1000px){ .nc-day{ position: static; } }
+  .nc-day{ display: grid; gap: 14px; position: sticky; top: 120px; min-width: 0; max-height: calc(100vh - 136px); overflow-y: auto; overscroll-behavior: contain; }
+  @media (max-width: 1000px){ .nc-day{ position: static; max-height: none; overflow: visible; } }
   .nc-day .pp-panel-title{ margin: 0; }
   .nc-day h3{ margin: 0; font-family: var(--font-body); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--gold-deep); font-weight: 600; }
   .nc-sec{ display: grid; gap: 8px; }
   .nc-nests{ list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
   .nc-nests li{
-    display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 8px; align-items: start; padding: 6px 8px 6px 6px;
+    display: grid; grid-template-columns: 14px auto minmax(0, 1fr); gap: 8px; align-items: center; padding: 6px 8px 6px 6px;
     border-radius: 6px; background: color-mix(in srgb, var(--pc) 12%, transparent); border-left: 3px solid var(--pc);
   }
   .nc-nests li.open{ --pc: var(--line); background: none; color: var(--ink-soft); }
   .nc-nests .num{ font-size: .78rem; color: var(--ink-soft); padding-top: 2px; font-variant-numeric: tabular-nums; }
-  .nc-nests b, .nc-who b{ font-weight: 600; overflow-wrap: anywhere; display: block; }
-  .nc-nests small, .nc-who small{ display: block; color: var(--ink-soft); font-size: .8rem; }
-  .nc-who{ list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-  .nc-who li{ display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
-  .nc-who li:last-child{ border-bottom: 0; }
-  .nc-who .tag{ font-size: .68rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; color: var(--accent-deep); }
-  .nc-who .tag.idle{ color: var(--ink-soft); }
+  .nc-nests b{ font-weight: 600; overflow-wrap: anywhere; display: block; }
+  .nc-nests small{ display: block; color: var(--ink-soft); font-size: .8rem; }
+  /* free to breed: sires and dams side by side, booked ones lit up */
+  .nc-split{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .nc-col{ display: grid; gap: 6px; align-content: start; min-width: 0; }
+  .nc-col h4{ margin: 0; font-family: var(--font-serif); font-size: 1rem; font-weight: 600; }
+  .nc-col h4 span{ font-family: var(--font-body); font-size: .74rem; font-weight: 500; color: var(--ink-soft); }
+  .nc-mons{ list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .nc-mons li{
+    display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: center; padding: 5px 6px;
+    border: 1px solid var(--line); border-radius: 8px; background: var(--panel);
+  }
+  .nc-mons li.booked{ background: var(--accent-soft); border-color: var(--accent-deep); }
+  .nc-mons li.booked .nc-pic{ border: 2px solid var(--accent-deep); }
+  .nc-mons b{ font-weight: 600; font-size: .86rem; overflow-wrap: anywhere; display: block; line-height: 1.25; }
+  .nc-mons small{ display: block; color: var(--ink-soft); font-size: .74rem; line-height: 1.3; overflow-wrap: anywhere; }
+  .nc-mons .nc-tag{ display: block; margin-top: 2px; font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-deep); }
+  .nc-mons .nc-tag.idle{ color: var(--ink-soft); font-weight: 500; }
+  .nc-legend{ display: flex; align-items: center; gap: 6px; font-size: .76rem; }
+  .nc-legend .swatch{ width: 12px; height: 12px; border-radius: 3px; background: var(--accent-soft); border: 1px solid var(--accent-deep); }
   .nc-muted{ margin: 0; font-size: .84rem; color: var(--ink-soft); }
   @media (prefers-reduced-motion: no-preference){ .nc-cell{ transition: border-color .15s, background .15s; } }
 </style>
@@ -198,8 +221,21 @@ function schedule(doc){
   const cd = d => COOLDOWNS[d.breed];
 
   const nests = Array.from({ length: nestCount }, () => []);
-  (plan.busy || []).map(dayNum).filter(n => n > today).sort((a, b) => b - a).slice(0, nestCount)
-    .forEach((n, i) => nests[i].push({ from: today, to: n, kind: "eggs" }));
+  const busy = (plan.busy || []).map(dayNum).filter(n => n > today).sort((a, b) => b - a).slice(0, nestCount)
+    .map((n, i) => ({ from: today, to: n, kind: "eggs", nest: i }));
+  /* A busy nest only knows when it frees. Its parents come from the eggs:
+     each clutch of eggs with the same sire and dam, the newest clutches
+     matched in order to the nests, the soonest to hatch with the oldest. */
+  const everyone = {}; (doc && doc.items || []).forEach(d => everyone[d.id] = d);
+  const clutches = {};
+  (doc && doc.items || []).filter(e => e.status === "egg" && e.sire && e.dam && everyone[e.sire.id] && everyone[e.dam.id]).forEach(e => {
+    const k = e.sire.id + ":" + e.dam.id;
+    const c = clutches[k] = clutches[k] || { s: everyone[e.sire.id], m: everyone[e.dam.id], added: Infinity, eggs: 0 };
+    c.added = Math.min(c.added, e.added || 0); c.eggs++;
+  });
+  const recent = Object.values(clutches).sort((a, b) => a.added - b.added).slice(-busy.length || Infinity);
+  busy.slice().sort((a, b) => a.to - b.to).forEach((b, j) => { const c = recent[j]; if(c){ b.s = c.s; b.m = c.m; b.eggs = c.eggs; } });
+  busy.forEach(b => nests[b.nest].push(b));
   const held = {};
   const clear = (list, a, b) => list.every(x => b <= x.from || a >= x.to);
   const freeFor = (d, day) => clear(held[d.id] || [], day, day + cd(d));
@@ -246,7 +282,13 @@ function schedule(doc){
 }
 
 /* ---------------- drawing ---------------- */
-const pairName = (b, full) => b.kind === "eggs" ? "Eggs" : `${esc(full ? b.s.name : short(b.s.name))} × ${esc(full ? b.m.name : short(b.m.name))}`;
+const pairName = (b, full) => !b.s ? "Eggs" : `${esc(full ? b.s.name : short(b.s.name))} × ${esc(full ? b.m.name : short(b.m.name))}`;
+
+/* Flight Rising files renders in folders of 100 ids (same as index.html).
+   The picture sits over the dragon's initial, which shows if it won't load. */
+const renderUrl = frId => `https://www1.flightrising.com/rendern/350/${Math.floor(frId / 100) + 1}/${frId}_350.png`;
+const pic = (d, size) => `<span class="nc-pic" style="--sz:${size}px" title="${esc(d.name)}"><span class="ini" aria-hidden="true">${esc(short(d.name).charAt(0))}</span>${d.frId ? `<img src="${renderUrl(d.frId)}" alt="" onerror="this.remove()">` : ""}</span>`;
+const pics = (b, size) => b.s ? `<span class="nc-pics">${pic(b.s, size)}${pic(b.m, size)}</span>` : "";
 
 function renderGrid(){
   let h = "";
@@ -256,9 +298,10 @@ function renderGrid(){
     if(t < S.today){ h += `<div class="nc-cell past" aria-hidden="true">${label}</div>`; continue; }
     const ns = S.nestOn(t), free = S.freeOn(t), full = ns.filter(Boolean).length;
     const lines = ns.map((b, i) => b
-      ? `<span class="nc-nl${b.from === t && b.kind !== "eggs" ? " start" : ""}" style="--pc:${S.pc(b)}" title="Nest ${i + 1}: ${pairName(b, true)}"><i>${i + 1}</i><span>${pairName(b)}</span></span>`
+      ? `<span class="nc-nl${b.from === t && b.kind !== "eggs" ? " start" : ""}" style="--pc:${S.pc(b)}" title="Nest ${i + 1}: ${pairName(b, true)}"><i>${i + 1}</i>${pics(b, 16)}<span>${pairName(b)}</span></span>`
       : `<span class="nc-nl open"><i>${i + 1}</i><span>open</span></span>`).join("");
-    h += `<button type="button" class="nc-cell${t === S.today ? " today" : ""}${t === sel ? " sel" : ""}" data-t="${t}" aria-pressed="${t === sel}" aria-label="${fmt(t, { weekday: "long" })}: ${full} of ${ns.length} nests full, ${free.length} free to breed">${label}${lines}<span class="nc-free"><b>${free.length}</b> free to breed</span></button>`;
+    const sires = free.filter(d => d.gender === "M").length, dams = free.length - sires;
+    h += `<button type="button" class="nc-cell${t === S.today ? " today" : ""}${t === sel ? " sel" : ""}" data-t="${t}" aria-pressed="${t === sel}" aria-label="${fmt(t, { weekday: "long" })}: ${full} of ${ns.length} nests full, ${sires} sires and ${dams} dams free to breed">${label}${lines}<span class="nc-free"><b>${sires}</b> ♂ · <b>${dams}</b> ♀ free</span></button>`;
   }
   $("grid").innerHTML = h;
   $("grid").querySelectorAll("button.nc-cell").forEach(c => c.addEventListener("click", () => {
@@ -270,19 +313,28 @@ function renderGrid(){
 function renderDay(){
   const t = sel, ns = S.nestOn(t), free = S.freeOn(t), rest = S.resting(t);
   const nestHtml = ns.map((b, i) => {
-    if(!b) return `<li class="open"><span class="num">${i + 1}</span><div>Open</div></li>`;
-    const what = b.kind === "eggs" ? `Hatch ${fmt(b.to)}`
+    if(!b) return `<li class="open"><span class="num">${i + 1}</span><span></span><div>Open</div></li>`;
+    const what = b.kind === "eggs" ? `${b.eggs ? `${b.eggs} egg${b.eggs > 1 ? "s" : ""} · ` : ""}hatch ${fmt(b.to)}`
       : `${b.kind === "ancient" ? `${esc(b.s.breed)}, ancient · ` : ""}${b.from === t ? "Goes in today" : `In since ${fmt(b.from)}`} · hatch ${fmt(b.to)}`;
-    return `<li style="--pc:${S.pc(b)}"><span class="num">${i + 1}</span><div><b>${pairName(b, true)}</b><small>${what}</small></div></li>`;
+    return `<li style="--pc:${S.pc(b)}"><span class="num">${i + 1}</span>${pics(b, 40) || "<span></span>"}<div><b>${pairName(b, true)}</b><small>${what}</small></div></li>`;
   }).join("");
-  const freeHtml = free.map(d => {
-    const today = S.books.some(b => b.from === t && (b.s === d || b.m === d)), nx = S.nextNest(d, t);
-    const tag = today ? `<span class="tag">Nests today</span>` : nx ? `<span class="tag">Nests ${fmt(nx.from)}</span>` : `<span class="tag idle">Nothing planned</span>`;
-    return `<li><div><b>${esc(d.name)}</b><small>${d.gender === "F" ? "♀" : "♂"} ${esc(d.breed)}</small></div>${tag}</li>`;
-  }).join("");
+  /* booked first, soonest first; then everyone with nothing planned */
+  const when = d => { const b = S.books.find(b => b.from === t && (b.s === d || b.m === d)) || S.nextNest(d, t); return b ? { b, mate: b.s === d ? b.m : b.s } : null; };
+  const tile = d => {
+    const w = when(d);
+    const tag = w ? `<span class="nc-tag">${w.b.from === t ? "Nests today" : `Nests ${fmt(w.b.from)}`}</span><small>with ${esc(w.mate.name)}</small>`
+      : `<span class="nc-tag idle">Nothing planned</span>`;
+    return `<li class="${w ? "booked" : ""}">${pic(d, 36)}<div><b>${esc(d.name)}</b><small>${esc(d.breed)}</small>${tag}</div></li>`;
+  };
+  const column = (label, list) => {
+    list = list.map(d => ({ d, w: when(d) })).sort((a, b) => (a.w ? a.w.b.from : Infinity) - (b.w ? b.w.b.from : Infinity) || a.d.name.localeCompare(b.d.name)).map(x => x.d);
+    return `<div class="nc-col"><h4>${label} <span>${list.length}</span></h4>${list.length ? `<ul class="nc-mons">${list.map(tile).join("")}</ul>` : `<p class="nc-muted">None free</p>`}</div>`;
+  };
   $("day").innerHTML = `<h2 class="pp-panel-title">${fmt(t, { weekday: "long" })}</h2>
     <div class="nc-sec"><h3>Nests</h3><ol class="nc-nests">${nestHtml}</ol></div>
-    <div class="nc-sec"><h3>Free to breed (${free.length})</h3>${free.length ? `<ul class="nc-who">${freeHtml}</ul>` : `<p class="nc-muted">No modern dragon is free this day.</p>`}
+    <div class="nc-sec"><h3>Free to breed (${free.length})</h3>
+      ${free.length ? `<div class="nc-split">${column("Sires", free.filter(d => d.gender === "M"))}${column("Dams", free.filter(d => d.gender === "F"))}</div>
+      <p class="nc-muted nc-legend"><span class="swatch"></span>Has a nest coming up in the planner</p>` : `<p class="nc-muted">No modern dragon is free this day.</p>`}
     ${rest ? `<p class="nc-muted">${rest} more ${rest === 1 ? "is" : "are"} on cooldown or still growing up.</p>` : ""}</div>`;
 }
 
