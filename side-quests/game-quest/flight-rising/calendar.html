@@ -128,14 +128,26 @@
     display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: center; padding: 5px 6px;
     border: 1px solid var(--line); border-radius: 8px; background: var(--panel);
   }
-  .nc-mons li.booked{ background: var(--accent-soft); border-color: var(--accent-deep); }
-  .nc-mons li.booked .nc-pic{ border: 2px solid var(--accent-deep); }
+  /* booked dragons, coloured by the priority of their next planned nest
+     (the planner's chips: gold for high, the accent for normal, dashed for low) */
+  .pri-high{ --hi: var(--gold-deep); --hi-bg: color-mix(in srgb, var(--gold) 16%, var(--panel)); }
+  .pri-normal{ --hi: var(--accent-deep); --hi-bg: var(--accent-soft); }
+  .pri-low{ --hi: var(--ink-soft); --hi-bg: var(--panel-tint); }
+  .nc-mons li.booked{ background: var(--hi-bg); border-color: var(--hi); }
+  .nc-mons li.booked.pri-high{ border-width: 2px; padding: 4px 5px; }
+  .nc-mons li.booked.pri-low{ border-style: dashed; }
+  .nc-mons li.booked .nc-pic{ border: 2px solid var(--hi); }
+  .nc-mons li.booked .nc-tag{ color: var(--hi); }
+  .nc-pri{ border: 1px solid currentColor; border-radius: 999px; padding: 0 5px; margin-right: 2px; }
+  .pri-low .nc-pri{ border-style: dashed; }
   .nc-mons b{ font-weight: 600; font-size: .86rem; overflow-wrap: anywhere; display: block; line-height: 1.25; }
   .nc-mons small{ display: block; color: var(--ink-soft); font-size: .74rem; line-height: 1.3; overflow-wrap: anywhere; }
   .nc-mons .nc-tag{ display: block; margin-top: 2px; font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-deep); }
   .nc-mons .nc-tag.idle{ color: var(--ink-soft); font-weight: 500; }
-  .nc-legend{ display: flex; align-items: center; gap: 6px; font-size: .76rem; }
-  .nc-legend .swatch{ width: 12px; height: 12px; border-radius: 3px; background: var(--accent-soft); border: 1px solid var(--accent-deep); }
+  .nc-legend{ display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: .76rem; }
+  .nc-legend .key{ display: inline-flex; align-items: center; gap: 4px; }
+  .nc-legend .swatch{ width: 12px; height: 12px; border-radius: 3px; background: var(--hi-bg); border: 1px solid var(--hi); }
+  .nc-legend .pri-low .swatch{ border-style: dashed; }
   .nc-muted{ margin: 0; font-size: .84rem; color: var(--ink-soft); }
   @media (prefers-reduced-motion: no-preference){ .nc-cell{ transition: border-color .15s, background .15s; } }
 </style>
@@ -193,6 +205,7 @@ const COOLDOWNS = {
 };
 const NEST_DAYS = 5;
 const WEEKS = 9;
+const PRI_LABEL = { high: "High", normal: "Normal", low: "Low" };
 const PAIR_COLOURS = ["--dusk","--sea","--sage-deep","--pink-deep","--pumpkin","--pine","--burgundy","--sea-deep"];
 
 const frToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date());
@@ -249,7 +262,7 @@ function schedule(doc){
   };
   const books = [];
   const book = (x, sl, kind) => {
-    const b = { from: sl.day, to: sl.day + NEST_DAYS, s: x.s, m: x.m, kind, key: x.key };
+    const b = { from: sl.day, to: sl.day + NEST_DAYS, s: x.s, m: x.m, kind, key: x.key, pri: x.pri };
     nests[sl.n].push(b); books.push(b);
     [x.s, x.m].forEach(d => (held[d.id] = held[d.id] || []).push({ from: sl.day, to: sl.day + cd(d) }));
   };
@@ -322,9 +335,9 @@ function renderDay(){
   const when = d => { const b = S.books.find(b => b.from === t && (b.s === d || b.m === d)) || S.nextNest(d, t); return b ? { b, mate: b.s === d ? b.m : b.s } : null; };
   const tile = d => {
     const w = when(d);
-    const tag = w ? `<span class="nc-tag">${w.b.from === t ? "Nests today" : `Nests ${fmt(w.b.from)}`}</span><small>with ${esc(w.mate.name)}</small>`
+    const tag = w ? `<span class="nc-tag"><span class="nc-pri">${PRI_LABEL[w.b.pri]}</span> ${w.b.from === t ? "Nests today" : `Nests ${fmt(w.b.from)}`}</span><small>with ${esc(w.mate.name)}</small>`
       : `<span class="nc-tag idle">Nothing planned</span>`;
-    return `<li class="${w ? "booked" : ""}">${pic(d, 36)}<div><b>${esc(d.name)}</b><small>${esc(d.breed)}</small>${tag}</div></li>`;
+    return `<li class="${w ? "booked pri-" + w.b.pri : ""}">${pic(d, 36)}<div><b>${esc(d.name)}</b><small>${esc(d.breed)}</small>${tag}</div></li>`;
   };
   const column = (label, list) => {
     list = list.map(d => ({ d, w: when(d) })).sort((a, b) => (a.w ? a.w.b.from : Infinity) - (b.w ? b.w.b.from : Infinity) || a.d.name.localeCompare(b.d.name)).map(x => x.d);
@@ -334,7 +347,10 @@ function renderDay(){
     <div class="nc-sec"><h3>Nests</h3><ol class="nc-nests">${nestHtml}</ol></div>
     <div class="nc-sec"><h3>Free to breed (${free.length})</h3>
       ${free.length ? `<div class="nc-split">${column("Sires", free.filter(d => d.gender === "M"))}${column("Dams", free.filter(d => d.gender === "F"))}</div>
-      <p class="nc-muted nc-legend"><span class="swatch"></span>Has a nest coming up in the planner</p>` : `<p class="nc-muted">No modern dragon is free this day.</p>`}
+      <p class="nc-muted nc-legend">Next planned nest:
+        <span class="key pri-high"><span class="swatch"></span>High</span>
+        <span class="key pri-normal"><span class="swatch"></span>Normal</span>
+        <span class="key pri-low"><span class="swatch"></span>Low</span></p>` : `<p class="nc-muted">No modern dragon is free this day.</p>`}
     ${rest ? `<p class="nc-muted">${rest} more ${rest === 1 ? "is" : "are"} on cooldown or still growing up.</p>` : ""}</div>`;
 }
 
