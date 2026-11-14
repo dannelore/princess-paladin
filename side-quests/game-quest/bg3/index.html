@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Dark Urge Run &middot; Baldur's Gate 3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/themes/side-quests.css">
+
+<style>
+  /* ======================================================================
+     THE DARK URGE RUN
+
+     Danni's route for one Baldur's Gate 3 playthrough as the Dark Urge:
+     mostly giving in to it, with every Urge-only scene, one romance and
+     the funniest bad decisions, in under 60 hours. Everything that isn't
+     on the list is side content to walk past.
+
+     The route itself is in bg3-data.js (RUN: the acts, their steps and
+     the choices). This page only draws it: a tick per step, one pick per
+     choice, a progress bar per act.
+
+     Late-game details sit behind "What happens" so the page can be read
+     ahead without spoiling Act 3.
+
+     Firestore: sidequest/bg3-durge  { done:{stepId:true}, picks:{choiceId:optionKey} }
+     ====================================================================== */
+
+  .du [hidden]{ display: none !important; }
+  .du{
+    --du-main:    var(--gold-deep);
+    --du-urge:    var(--blade-deep);
+    --du-romance: var(--pink-deep);
+    --du-chaos:   var(--pumpkin-deep);
+    --du-choice:  var(--dusk-deep);
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .du-intro{
+    font-family: var(--font-serif); font-style: italic; font-size: 1.05rem; color: var(--ink-soft);
+    text-align: center; max-width: 660px; margin: -18px auto 0; line-height: 1.5;
+  }
+  .du a{ color: var(--accent-deep); }
+  .du button:focus-visible, .du input:focus-visible, .du summary:focus-visible, .du a:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- the run at a glance ---- */
+  .du-glance{ display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
+  .du-fact{
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
+    padding: 14px 16px; box-shadow: var(--lift); display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  }
+  .du-fact span{ font-size: .64rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
+  .du-fact b{ font-family: var(--font-serif); font-weight: 600; font-size: 1.2rem; line-height: 1.2; color: var(--ink); }
+  .du-fact small{ font-size: .8rem; color: var(--ink-soft); line-height: 1.35; }
+
+  /* ---- overall progress, filters ---- */
+  .du-bar{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .du-spacer{ flex: 1 1 auto; }
+  .du-sync{ font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .du-sync[data-state="saving"]{ color: var(--gold-deep); }
+  .du-sync[data-state="error"]{ color: var(--blade); }
+  .du-total{ display: flex; align-items: center; gap: 12px; }
+  .du-total p{ margin: 0; font-family: var(--font-serif); font-style: italic; font-size: 1rem; color: var(--ink-soft); white-space: nowrap; }
+  .du-meter{ flex: 1 1 auto; height: 8px; border-radius: 999px; background: rgba(46,36,31,.1); overflow: hidden; }
+  .du-meter i{ display: block; height: 100%; width: 0; border-radius: 999px; background: var(--du-urge); transition: width .25s ease; }
+
+  /* ---- the house rules ---- */
+  .du-rules{ margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px 26px; }
+  .du-rules li{ font-size: .92rem; line-height: 1.45; color: var(--ink); padding-left: 16px; position: relative; }
+  .du-rules li::before{ content: ""; position: absolute; left: 0; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--du-urge); }
+  .du-rules b{ font-weight: 600; }
+
+  /* ---- an act ---- */
+  .du-act{ padding: 0; overflow: hidden; }
+  .du-act>summary{
+    list-style: none; cursor: pointer; padding: 20px 26px 18px; display: grid;
+    grid-template-columns: minmax(0,1fr) auto; gap: 4px 16px; align-items: center;
+  }
+  .du-act>summary::-webkit-details-marker{ display: none; }
+  .du-act-kick{ grid-column: 1 / -1; font-size: .66rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--du-urge); }
+  .du-act h3{ font-family: var(--font-serif); font-weight: 600; font-size: 1.6rem; line-height: 1.15; margin: 0; }
+  .du-act-count{ font-family: var(--font-serif); font-style: italic; font-size: 1rem; color: var(--ink-soft); white-space: nowrap; }
+  .du-act-count::after{ content: "\25BE"; font-style: normal; margin-left: 10px; display: inline-block; transition: transform .15s; }
+  .du-act:not([open]) .du-act-count::after{ transform: rotate(-90deg); }
+  .du-act>summary .du-meter{ grid-column: 1 / -1; height: 5px; margin-top: 8px; }
+  .du-act-in{ padding: 0 26px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .du-act-blurb{ margin: 0; font-size: .95rem; line-height: 1.5; color: var(--ink-soft); max-width: 720px; }
+  .du-act-meta{ display: flex; flex-wrap: wrap; gap: 6px; }
+  .du-chip{
+    font-size: .68rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft);
+    background: rgba(46,36,31,.06); border-radius: 999px; padding: 4px 10px;
+  }
+
+  /* ---- a step ---- */
+  .du-steps{ margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .du-step{
+    --c: var(--du-main);
+    display: grid; grid-template-columns: auto minmax(0,1fr); gap: 4px 12px;
+    background: var(--white); border: 1px solid var(--line); border-left: 4px solid var(--c);
+    border-radius: var(--radius-sm); padding: 12px 14px 13px;
+  }
+  .du-step[data-type="urge"]{ --c: var(--du-urge); }
+  .du-step[data-type="romance"]{ --c: var(--du-romance); }
+  .du-step[data-type="chaos"]{ --c: var(--du-chaos); }
+  .du-step[data-type="choice"]{ --c: var(--du-choice); background: var(--panel-tint); grid-template-columns: minmax(0,1fr); }
+  .du-step[data-type="choice"]>*{ grid-column: 1 !important; }
+  .du-tick{ grid-row: 1 / span 4; padding-top: 2px; }
+  .du-tick input{ width: 19px; height: 19px; accent-color: var(--c); cursor: pointer; margin: 0; }
+  .du-step>*:not(.du-tick){ grid-column: 2; }
+  .du-kick{ display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; font-size: .64rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+  .du-kick b{ color: var(--c); font-weight: 600; }
+  .du-kick span{ color: var(--ink-soft); font-weight: 500; }
+  .du-step h4{ font-family: var(--font-serif); font-weight: 600; font-size: 1.22rem; line-height: 1.2; margin: 0; color: var(--ink); }
+  .du-step p{ margin: 0; font-size: .92rem; line-height: 1.5; color: var(--ink); }
+  .du-step.done{ background: transparent; border-color: var(--line); border-left-color: var(--line-strong); }
+  .du-step.done h4{ color: var(--ink-soft); text-decoration: line-through; text-decoration-thickness: 1px; }
+  .du-step.done p, .du-step.done .du-opts, .du-step.done details{ opacity: .55; }
+  .du-step.done .du-kick b{ color: var(--ink-soft); }
+
+  /* what happens — tucked away so reading ahead doesn't spoil it */
+  .du-step details{ font-size: .88rem; }
+  .du-step details summary{ cursor: pointer; color: var(--accent-deep); font-weight: 500; width: fit-content; }
+  .du-step details p{ margin-top: 6px; padding: 9px 12px; background: var(--accent-soft); border-radius: 8px; font-size: .88rem; }
+
+  /* a choice: two or three ways to go, one picked */
+  .du-opts{ display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 8px; margin-top: 4px; }
+  .du-opt{
+    font: inherit; text-align: left; cursor: pointer; background: var(--white); color: var(--ink);
+    border: 1px solid var(--line-strong); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .du-opt:hover{ box-shadow: var(--lift); }
+  .du-opt b{ font-family: var(--font-serif); font-weight: 600; font-size: 1.08rem; line-height: 1.2; }
+  .du-opt span{ font-size: .86rem; line-height: 1.45; color: var(--ink-soft); }
+  .du-opt em{ font-style: normal; font-size: .6rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--du-choice); }
+  .du-opt[aria-pressed="true"]{ border-color: var(--du-choice); box-shadow: inset 0 0 0 1px var(--du-choice); background: #FBF8FD; }
+  .du-opt[aria-pressed="true"] b::before{ content: "\2713\00a0"; color: var(--du-choice); }
+
+  /* what to walk past */
+  .du-skip{ border: 1px dashed var(--line-strong); border-radius: var(--radius-sm); padding: 12px 16px 14px; }
+  .du-skip h4{ margin: 0 0 6px; font-size: .68rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft); font-family: var(--font-body); }
+  .du-skip ul{ margin: 0; padding-left: 18px; font-size: .9rem; line-height: 1.5; color: var(--ink-soft); }
+  .du-skip li + li{ margin-top: 2px; }
+
+  .du-none{ margin: 0; font-family: var(--font-serif); font-style: italic; color: var(--ink-soft); }
+  .du-foot{ font-family: var(--font-serif); font-style: italic; font-size: .92rem; color: var(--ink-soft); text-align: center; max-width: 660px; margin: 4px auto 0; line-height: 1.5; }
+  .du-reset{ background: none; border: 0; padding: 0; font: inherit; color: var(--accent-deep); cursor: pointer; text-decoration: underline; }
+
+  @media (max-width: 760px){
+    .du-glance{ grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .du-rules{ grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px){
+    .du-act>summary{ padding: 18px 18px 16px; }
+    .du-act-in{ padding: 0 14px 18px; }
+    .du-act h3{ font-size: 1.35rem; }
+    .du-step{ padding: 11px 11px 12px; gap: 4px 10px; }
+  }
+  @media (prefers-reduced-motion: reduce){ .du *{ transition: none !important; } }
+  @media print{
+    .du-bar, .du-reset{ display: none; }
+    .du-act-in{ display: flex !important; }
+  }
+</style>
+</head>
+<body class="pp-sidequest" data-nav-eyebrow="Game Quest" data-nav-title="The Dark Urge Run">
+
+<div class="pp-wrap">
+
+  <div class="pp-page-title">
+    <h2>The Dark Urge Run</h2>
+  </div>
+
+  <div class="du">
+    <p class="du-intro">Baldur's Gate 3, start to credits, as the Dark Urge: mostly giving in, with every scene only the Urge gets, one romance and the funniest bad decisions. Anything not on this list is something to walk past.</p>
+
+    <div class="du-glance" id="glance"></div>
+
+    <section class="pp-panel">
+      <h2 class="pp-panel-title">House rules</h2>
+      <ul class="du-rules" id="rules"></ul>
+    </section>
+
+    <div class="du-total">
+      <p id="totalText"></p>
+      <div class="du-meter" aria-hidden="true"><i id="totalBar"></i></div>
+    </div>
+
+    <div class="du-bar">
+      <button class="pp-pill" type="button" data-show="all"     aria-pressed="true">Everything</button>
+      <button class="pp-pill" type="button" data-show="urge"    aria-pressed="false">The Urge</button>
+      <button class="pp-pill" type="button" data-show="romance" aria-pressed="false">Romance</button>
+      <button class="pp-pill" type="button" data-show="chaos"   aria-pressed="false">Chaos</button>
+      <button class="pp-pill" type="button" data-show="choice"  aria-pressed="false">Choices</button>
+      <span class="du-spacer"></span>
+      <button class="pp-pill" type="button" id="hideDone" aria-pressed="false">Hide done</button>
+      <span class="du-sync" id="sync" data-state="idle">Connecting</span>
+    </div>
+
+    <div id="acts" style="display:flex;flex-direction:column;gap:20px;"></div>
+
+    <p class="du-foot">Checked against <a href="https://bg3.wiki/" target="_blank" rel="noopener">bg3.wiki</a> on 13 November 2026. Starting a new run? <button class="du-reset" type="button" id="reset">Clear every tick</button>.</p>
+  </div>
+
+  <footer class="pp-footer">
+    <p class="pp-footer-flourish">&#9813; &mdash;&mdash;&mdash;&mdash; &#9876; &mdash;&mdash;&mdash;&mdash; &#9813;</p>
+    <p class="pp-footer-estab">Princess &amp; Paladin</p>
+    <p>Est. 2021</p>
+  </footer>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-firebase.js"></script>
+<script src="bg3-data.js"></script>
+<script>
+"use strict";
+
+const DOC_PATH  = "sidequest/bg3-durge";
+const CACHE_KEY = "pp_bg3_durge";
+const FOLD_KEY  = "pp_bg3_durge_folds";
+const VIEW_KEY  = "pp_bg3_durge_view";
+
+const $ = id => document.getElementById(id);
+const TYPE_LABEL = { main:"Story", urge:"The Urge", romance:"Romance", chaos:"Chaos", choice:"Your call" };
+
+let state = { done:{}, picks:{} };
+let docRef = null, saving = false, saveTimer = null;
+let show = "all", hideDone = false;
+let folds = new Set();
+
+try{ folds = new Set(JSON.parse(localStorage.getItem(FOLD_KEY) || "[]")); }catch(e){}
+try{
+  const v = JSON.parse(localStorage.getItem(VIEW_KEY) || "null");
+  if(v){ show = TYPE_LABEL[v.show] ? v.show : "all"; hideDone = !!v.hideDone; }
+}catch(e){}
+
+/* a choice is done once one of its options is picked */
+const isDone = s => s.options ? !!state.picks[s.id] : !!state.done[s.id];
+const allSteps = () => RUN.flatMap(a => a.steps);
+
+/* ---------------- storage ---------------- */
+function setSync(st, text){ const el = $("sync"); el.textContent = text; el.setAttribute("data-state", st); }
+function writeCache(){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(state)); }catch(e){} }
+function loadCache(){
+  try{
+    const p = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+    if(p) state = { done: p.done || {}, picks: p.picks || {} };
+  }catch(e){}
+}
+function save(){
+  writeCache();
+  render();
+  if(!docRef) return;
+  setSync("saving","Saving");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saving = true;
+    docRef.set({ done: state.done, picks: state.picks, updated: Date.now() })
+      .then(() => setSync("idle","Synced"))
+      .catch(e => { console.error(e); setSync("error","Couldn't save"); })
+      .finally(() => { saving = false; });
+  }, 500);
+}
+function startFirebase(){
+  try{
+    firebase.initializeApp(window.PPFirebaseConfig);
+    docRef = firebase.firestore().doc(DOC_PATH);
+    docRef.onSnapshot(snap => {
+      if(saving) return;
+      const d = snap.data();
+      if(d){ state = { done: d.done || {}, picks: d.picks || {} }; writeCache(); render(); }
+      setSync("idle","Synced");
+    }, err => { console.error(err); setSync("error","Offline — saved here"); });
+  }catch(err){
+    console.error("Firestore unavailable, working from the local copy:", err);
+    setSync("error","Offline");
+  }
+}
+
+/* ---------------- the fixed parts ---------------- */
+function renderFixed(){
+  $("glance").innerHTML = GLANCE.map(g =>
+    `<div class="du-fact"><span>${g.label}</span><b>${g.value}</b><small>${g.note}</small></div>`).join("");
+  $("rules").innerHTML = RULES.map(r => `<li>${r}</li>`).join("");
+}
+
+/* ---------------- a step ---------------- */
+function stepHTML(s){
+  const done = isDone(s);
+  const kick = `<div class="du-kick"><b>${s.options ? TYPE_LABEL.choice : (TYPE_LABEL[s.type] || TYPE_LABEL.main)}</b>${s.where ? `<span>${s.where}</span>` : ""}</div>`;
+  const more = s.more ? `<details><summary>${s.moreLabel || "What happens"}</summary><p>${s.more}</p></details>` : "";
+
+  if(s.options){
+    const picked = state.picks[s.id];
+    const opts = s.options.map(o =>
+      `<button class="du-opt" type="button" data-pick="${s.id}" data-key="${o.key}" aria-pressed="${picked === o.key}">
+        ${o.mine ? "<em>The plan</em>" : ""}<b>${o.label}</b><span>${o.text}</span>
+      </button>`).join("");
+    return `<li class="du-step${done ? " done" : ""}" data-type="choice">
+      ${kick}<h4>${s.title}</h4>${s.text ? `<p>${s.text}</p>` : ""}
+      <div class="du-opts">${opts}</div>${more}
+    </li>`;
+  }
+
+  return `<li class="du-step${done ? " done" : ""}" data-type="${s.type || "main"}">
+    <label class="du-tick"><input type="checkbox" data-step="${s.id}"${done ? " checked" : ""} aria-label="${s.title.replace(/"/g,"&quot;")}"></label>
+    ${kick}<h4>${s.title}</h4><p>${s.text}</p>${more}
+  </li>`;
+}
+
+const shown = s => {
+  const type = s.options ? "choice" : (s.type || "main");
+  if(show !== "all" && type !== show) return false;
+  if(hideDone && isDone(s)) return false;
+  return true;
+};
+
+/* ---------------- render ----------------
+   Open <details> inside steps are remembered across a redraw, so ticking a
+   box doesn't snap shut whatever was being read. */
+function render(){
+  const openMore = new Set([...document.querySelectorAll(".du-step details[open]")].map(d => d.closest(".du-step").dataset.id));
+
+  const steps = allSteps(), n = steps.filter(isDone).length;
+  $("totalText").textContent = `${n} of ${steps.length} done`;
+  $("totalBar").style.width = (steps.length ? Math.round(n / steps.length * 100) : 0) + "%";
+
+  $("acts").innerHTML = RUN.map(a => {
+    const d = a.steps.filter(isDone).length;
+    const rows = a.steps.filter(shown);
+    const chips = [a.hours, a.level].filter(Boolean).map(c => `<span class="du-chip">${c}</span>`).join("");
+    const skip = (a.skip && show === "all")
+      ? `<div class="du-skip"><h4>Walk past</h4><ul>${a.skip.map(x => `<li>${x}</li>`).join("")}</ul></div>` : "";
+    return `<details class="pp-panel du-act" data-act="${a.id}"${folds.has(a.id) ? "" : " open"}>
+      <summary>
+        <span class="du-act-kick">${a.kicker}</span>
+        <h3>${a.title}</h3>
+        <span class="du-act-count">${d} of ${a.steps.length}</span>
+        <div class="du-meter" aria-hidden="true"><i style="width:${Math.round(d / a.steps.length * 100)}%"></i></div>
+      </summary>
+      <div class="du-act-in">
+        ${show === "all" ? `<p class="du-act-blurb">${a.blurb}</p>` : ""}
+        ${chips ? `<div class="du-act-meta">${chips}</div>` : ""}
+        ${rows.length ? `<ol class="du-steps">${rows.map(stepHTML).join("")}</ol>` : `<p class="du-none">Nothing of that kind left here.</p>`}
+        ${skip}
+      </div>
+    </details>`;
+  }).join("");
+
+  /* tag each step with its id, and reopen what was open */
+  const byId = new Map(allSteps().map(s => [s.id, s]));
+  document.querySelectorAll(".du-step").forEach(li => {
+    const el = li.querySelector("[data-step],[data-pick]");
+    const id = el.dataset.step || el.dataset.pick;
+    li.dataset.id = id;
+    if(openMore.has(id) && byId.get(id).more) li.querySelector("details").open = true;
+  });
+
+  document.querySelectorAll("[data-show]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.show === show)));
+  $("hideDone").setAttribute("aria-pressed", String(hideDone));
+}
+
+/* ---------------- events ---------------- */
+$("acts").addEventListener("change", e => {
+  const cb = e.target.closest("[data-step]");
+  if(!cb) return;
+  if(cb.checked) state.done[cb.dataset.step] = true; else delete state.done[cb.dataset.step];
+  save();
+});
+$("acts").addEventListener("click", e => {
+  const opt = e.target.closest("[data-pick]");
+  if(!opt) return;
+  const id = opt.dataset.pick;
+  if(state.picks[id] === opt.dataset.key) delete state.picks[id]; else state.picks[id] = opt.dataset.key;
+  save();
+});
+/* toggle doesn't bubble, so listen on the way down; only act panels count */
+$("acts").addEventListener("toggle", e => {
+  const act = e.target;
+  if(!act.classList || !act.classList.contains("du-act")) return;
+  if(act.open) folds.delete(act.dataset.act); else folds.add(act.dataset.act);
+  try{ localStorage.setItem(FOLD_KEY, JSON.stringify([...folds])); }catch(err){}
+}, true);
+
+function saveView(){ try{ localStorage.setItem(VIEW_KEY, JSON.stringify({ show, hideDone })); }catch(e){} }
+document.querySelectorAll("[data-show]").forEach(b => b.onclick = () => { show = b.dataset.show; saveView(); render(); });
+$("hideDone").onclick = () => { hideDone = !hideDone; saveView(); render(); };
+$("reset").onclick = () => {
+  if(!confirm("Clear every tick and every choice on this page?")) return;
+  state = { done:{}, picks:{} };
+  save();
+};
+
+loadCache();
+renderFixed();
+render();
+startFirebase();
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>
