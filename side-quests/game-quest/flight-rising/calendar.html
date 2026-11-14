@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nest Calendar &middot; Flight Rising</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/pp.css">
+<link rel="stylesheet" href="/assets/themes/side-quests.css">
+
+<style>
+  /* ======================================================================
+     NEST CALENDAR
+
+     What sits in each nest day by day, worked out from the breeding
+     planner on the Flight Rising page. It only reads the lairs; every
+     change is made there.
+       sidequest/fr-danni, sidequest/fr-brendon  { items, plan }
+       plan: { nests, pairs: [{ id, dam, sire, pri? }], busy: [FR date a nest frees] }
+
+     The rules:
+       - Ancient pairs in the planner go first, on the first day both
+         dragons and a nest are free, and again every time their cooldowns
+         end, for as long as the calendar runs.
+       - Then the planner's modern pairs, high priority first, each on its
+         first free day — the same booking the planner's agenda does.
+       - A nest is taken for five days and opens again on hatch day.
+       - "Free to breed" lists modern dragons only. A dragon stays there
+         from the day its cooldown ends until the day it goes into a nest.
+
+     COOLDOWNS, NEST_DAYS and the date helpers are copies of the ones in
+     index.html; keep them in step.
+     ====================================================================== */
+
+  .nc [hidden]{ display: none !important; }
+  .nc{ display: flex; flex-direction: column; gap: 20px; }
+  .nc button:focus-visible, .nc a:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+  .nc-intro{
+    font-family: var(--font-serif); font-style: italic; font-size: 1.02rem; color: var(--ink-soft);
+    text-align: center; max-width: 680px; margin: -18px auto 4px; line-height: 1.5;
+  }
+  .nc-tabs{ display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+  .nc-tab{
+    font-family: var(--font-body); font-size: .78rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--gold); background: var(--panel); border: 1px solid var(--line-gold); border-radius: 999px; padding: 8px 18px; cursor: pointer;
+  }
+  .nc-tab:hover{ color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
+  .nc-tab[aria-selected="true"]{ color: var(--on-accent); background: var(--accent-deep); border-color: var(--accent-deep); }
+
+  .nc-key{ display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; font-size: .82rem; color: var(--ink-soft); }
+  .nc-key span{ display: inline-flex; align-items: center; gap: 6px; }
+  .nc-key i{ width: 12px; height: 12px; border-radius: 3px; background: color-mix(in srgb, var(--pc) 22%, transparent); border-left: 3px solid var(--pc); }
+  .nc-notes{ list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; text-align: center; font-size: .88rem; color: var(--ink-soft); }
+  .nc-notes b{ color: var(--ink); font-weight: 600; }
+  .nc-sync{ text-align: center; font-size: .78rem; color: var(--ink-soft); margin: 0; }
+
+  /* the weeks */
+  .nc-layout{ display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--gap); align-items: start; }
+  @media (max-width: 1000px){ .nc-layout{ grid-template-columns: 1fr; } .nc-day{ order: -1; } }
+  .nc-cal{ display: grid; min-width: 0; }
+  .nc-dow, .nc-grid{ display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+  .nc-dow{ font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; padding-bottom: 6px; }
+  .nc-cell{
+    font: inherit; color: inherit; text-align: left; background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius-sm); padding: 6px; display: grid; gap: 4px; align-content: start; cursor: pointer; min-width: 0;
+  }
+  .nc-cell:hover{ border-color: var(--accent); }
+  .nc-cell.sel{ border-color: var(--accent-deep); box-shadow: inset 0 0 0 1px var(--accent-deep); background: var(--panel-tint); }
+  .nc-cell.past{ background: none; border-style: dashed; cursor: default; opacity: .45; }
+  .nc-date{ display: flex; justify-content: space-between; align-items: baseline; gap: 4px; font-size: .82rem; font-variant-numeric: tabular-nums; }
+  .nc-date b{ font-weight: 600; }
+  .nc-cell.today .nc-date b{ background: var(--accent-deep); color: var(--on-accent); border-radius: 999px; padding: 0 6px; }
+  .nc-date em{ font-style: normal; font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-deep); }
+  .nc-nl{
+    display: grid; grid-template-columns: 11px minmax(0, 1fr); gap: 4px; align-items: center; font-size: .72rem; line-height: 1.35;
+    border-radius: 3px; padding: 1px 4px 1px 3px; background: color-mix(in srgb, var(--pc) 15%, transparent); border-left: 3px solid var(--pc);
+  }
+  .nc-nl i{ font-style: normal; font-size: .62rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .nc-nl span{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nc-nl.start span{ font-weight: 600; }
+  .nc-nl.open{ --pc: var(--line); background: none; color: var(--ink-soft); }
+  .nc-free{ font-size: .72rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .nc-free b{ color: var(--ink); font-weight: 600; }
+  @media (max-width: 640px){
+    .nc-dow{ display: none; }
+    .nc-grid{ grid-template-columns: 1fr; }
+    .nc-cell.past{ display: none; }
+    .nc-cell{ grid-template-columns: 58px minmax(0, 1fr); column-gap: 10px; }
+    .nc-cell .nc-date{ grid-row: span 7; flex-direction: column; justify-content: flex-start; }
+    .nc-nl{ font-size: .8rem; }
+  }
+
+  /* the chosen day */
+  .nc-day{ display: grid; gap: 14px; position: sticky; top: 90px; min-width: 0; }
+  @media (max-width: 1000px){ .nc-day{ position: static; } }
+  .nc-day .pp-panel-title{ margin: 0; }
+  .nc-day h3{ margin: 0; font-family: var(--font-body); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--gold-deep); font-weight: 600; }
+  .nc-sec{ display: grid; gap: 8px; }
+  .nc-nests{ list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .nc-nests li{
+    display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 8px; align-items: start; padding: 6px 8px 6px 6px;
+    border-radius: 6px; background: color-mix(in srgb, var(--pc) 12%, transparent); border-left: 3px solid var(--pc);
+  }
+  .nc-nests li.open{ --pc: var(--line); background: none; color: var(--ink-soft); }
+  .nc-nests .num{ font-size: .78rem; color: var(--ink-soft); padding-top: 2px; font-variant-numeric: tabular-nums; }
+  .nc-nests b, .nc-who b{ font-weight: 600; overflow-wrap: anywhere; display: block; }
+  .nc-nests small, .nc-who small{ display: block; color: var(--ink-soft); font-size: .8rem; }
+  .nc-who{ list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .nc-who li{ display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+  .nc-who li:last-child{ border-bottom: 0; }
+  .nc-who .tag{ font-size: .68rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; color: var(--accent-deep); }
+  .nc-who .tag.idle{ color: var(--ink-soft); }
+  .nc-muted{ margin: 0; font-size: .84rem; color: var(--ink-soft); }
+  @media (prefers-reduced-motion: no-preference){ .nc-cell{ transition: border-color .15s, background .15s; } }
+</style>
+</head>
+<body class="pp-sidequest" data-nav-eyebrow="Flight Rising" data-nav-title="Nest Calendar">
+
+<div class="pp-wrap-wide nc">
+
+  <div class="pp-page-title">
+    <h2>Nest Calendar</h2>
+  </div>
+
+  <p class="nc-intro">Every nest, day by day, from the pairs in the breeding planner. Ancient pairs go in the moment they're free; everyone else waits in the free list until their nest comes up.</p>
+
+  <div class="nc-tabs" role="tablist" aria-label="Whose lair">
+    <button class="nc-tab" role="tab" id="tab-danni" data-lair="danni" aria-selected="true">Danni's nests</button>
+    <button class="nc-tab" role="tab" id="tab-brendon" data-lair="brendon" aria-selected="false">Brendon's nests</button>
+  </div>
+
+  <div class="nc-key">
+    <span><i style="--pc:var(--dusk)"></i>Planned pair</span>
+    <span><i style="--pc:var(--gold-deep)"></i>Ancient pair, as soon as possible</span>
+    <span><i style="--pc:var(--ink-soft)"></i>Eggs already in the nest</span>
+  </div>
+  <ul class="nc-notes" id="notes"></ul>
+
+  <div class="nc-layout">
+    <section class="nc-cal" aria-label="Nest calendar">
+      <div class="nc-dow" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+      <div class="nc-grid" id="grid"></div>
+    </section>
+    <aside class="pp-panel pp-panel-tight nc-day" id="day" aria-live="polite"></aside>
+  </div>
+
+  <p class="nc-sync" id="sync">Connecting</p>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="/assets/pp-firebase.js"></script>
+<script>
+"use strict";
+
+const LAIRS = {
+  danni:   { doc: "sidequest/fr-danni",   cache: "pp_fr_danni" },
+  brendon: { doc: "sidequest/fr-brendon", cache: "pp_fr_brendon" }
+};
+const ANCIENT = ["Aberration","Aether","Auraboa","Banescale","Chorus","Cirrus","Dusthide","Everlux","Gaoler",
+  "Sandsurge","Thorntail","Undertide","Veilspun","Vigil"];
+const COOLDOWNS = {
+  Aberration:20, Aether:20, Auraboa:20, Banescale:20, Bogsneak:25, Chorus:20, Cirrus:20, Coatl:35,
+  Dusthide:20, Everlux:20, Fae:15, Fathom:25, Gaoler:20, Guardian:15, Imperial:30, Mirror:15,
+  Nocturne:30, Obelisk:25, Pearlcatcher:20, Ridgeback:20, Sandsurge:20, Skydancer:25, Snapper:20,
+  Spiral:20, Thorntail:20, Tundra:15, Undertide:20, Veilspun:20, Vigil:20, Wildclaw:35
+};
+const NEST_DAYS = 5;
+const WEEKS = 9;
+const PAIR_COLOURS = ["--dusk","--sea","--sage-deep","--pink-deep","--pumpkin","--pine","--burgundy","--sea-deep"];
+
+const frToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date());
+const dayNum = s => { const [y, m, d] = s.split("-").map(Number); return Date.UTC(y, m - 1, d) / 864e5; };
+const fmt = (n, o) => new Date(n * 864e5 + 432e5).toLocaleDateString("en-US", Object.assign({ month: "short", day: "numeric", timeZone: "UTC" }, o || {}));
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const short = n => String(n || "").replace(/^Unnamed /, "");
+const isAncient = d => ANCIENT.includes(d.breed);
+const plannable = d => d.status !== "egg" && d.status !== "gone" && (d.gender === "F" || d.gender === "M") && COOLDOWNS[d.breed];
+
+const data = { danni: null, brendon: null };
+let lair = "danni", sel = null, S = null;
+try{ const v = localStorage.getItem("pp_nc_lair"); if(LAIRS[v]) lair = v; }catch(e){}
+
+/* ---------------- the booking ---------------- */
+function schedule(doc){
+  const today = dayNum(frToday());
+  const start = today - ((new Date(today * 864e5).getUTCDay() + 6) % 7);
+  const end = start + WEEKS * 7;
+  const items = (doc && doc.items || []).filter(plannable);
+  const byId = {}; items.forEach(d => byId[d.id] = d);
+  const plan = doc && doc.plan || {};
+  const nestCount = Math.max(1, Math.min(5, +plan.nests || 3));
+  const ready = d => Math.max(today, d.breedOn ? dayNum(d.breedOn) : today);
+  const cd = d => COOLDOWNS[d.breed];
+
+  const nests = Array.from({ length: nestCount }, () => []);
+  (plan.busy || []).map(dayNum).filter(n => n > today).sort((a, b) => b - a).slice(0, nestCount)
+    .forEach((n, i) => nests[i].push({ from: today, to: n, kind: "eggs" }));
+  const held = {};
+  const clear = (list, a, b) => list.every(x => b <= x.from || a >= x.to);
+  const freeFor = (d, day) => clear(held[d.id] || [], day, day + cd(d));
+  const slot = x => {
+    for(let day = Math.max(ready(x.s), ready(x.m)); day < end; day++){
+      if(!freeFor(x.s, day) || !freeFor(x.m, day)) continue;
+      const n = nests.findIndex(l => clear(l, day, day + NEST_DAYS));
+      if(n >= 0) return { day, n };
+    }
+    return null;
+  };
+  const books = [];
+  const book = (x, sl, kind) => {
+    const b = { from: sl.day, to: sl.day + NEST_DAYS, s: x.s, m: x.m, kind, key: x.key };
+    nests[sl.n].push(b); books.push(b);
+    [x.s, x.m].forEach(d => (held[d.id] = held[d.id] || []).push({ from: sl.day, to: sl.day + cd(d) }));
+  };
+  const earliest = list => { let at = -1, best = null; list.forEach((x, i) => { const sl = slot(x); if(sl && (!best || sl.day < best.day)){ best = sl; at = i; } }); return [at, best]; };
+
+  const pairs = (plan.pairs || []).map(p => ({ s: byId[p.sire], m: byId[p.dam], pri: p.pri === "high" || p.pri === "low" ? p.pri : "normal", key: p.id }))
+    .filter(x => x.s && x.m);
+  const anc = pairs.filter(x => isAncient(x.s) || isAncient(x.m));
+  for(;;){ const [at, best] = earliest(anc); if(at < 0) break; book(anc[at], best, "ancient"); }
+  const modern = pairs.filter(x => !anc.includes(x));
+  ["high", "normal", "low"].forEach(pri => {
+    const left = modern.filter(x => x.pri === pri);
+    while(left.length){ const [at, best] = earliest(left); if(at < 0) break; book(left.splice(at, 1)[0], best, "planned"); }
+  });
+
+  const colour = {}; let ci = 0;
+  books.slice().sort((a, b) => a.from - b.from).forEach(b => { if(b.kind === "planned" && !(b.key in colour)) colour[b.key] = PAIR_COLOURS[ci++ % PAIR_COLOURS.length]; });
+  const pc = b => b.kind === "eggs" ? "var(--ink-soft)" : b.kind === "ancient" ? "var(--gold-deep)" : `var(${colour[b.key]})`;
+  const breeders = items.filter(d => !isAncient(d));
+  const busyOn = (d, t) => (held[d.id] || []).some(h => h.from <= t && t < h.to);
+  return {
+    today, start, end, nestCount, books, pc,
+    unpaired: items.filter(d => isAncient(d) && !anc.some(x => x.s === d || x.m === d)),
+    unplaced: modern.filter(x => !books.some(b => b.key === x.key)),
+    nestOn: t => nests.map(l => l.find(b => b.from <= t && t < b.to) || null),
+    freeOn: t => breeders.filter(d => t >= ready(d) && !busyOn(d, t)).sort((a, b) => a.name.localeCompare(b.name)),
+    resting: t => breeders.filter(d => t < ready(d) || (held[d.id] || []).some(h => h.from < t && t < h.to)).length,
+    nextNest: (d, t) => books.filter(b => (b.s === d || b.m === d) && b.from > t).sort((a, b) => a.from - b.from)[0]
+  };
+}
+
+/* ---------------- drawing ---------------- */
+const pairName = (b, full) => b.kind === "eggs" ? "Eggs" : `${esc(full ? b.s.name : short(b.s.name))} × ${esc(full ? b.m.name : short(b.m.name))}`;
+
+function renderGrid(){
+  let h = "";
+  for(let t = S.start; t < S.end; t++){
+    const d = new Date(t * 864e5), first = d.getUTCDate() === 1 || t === S.start;
+    const label = `<span class="nc-date"><b>${d.getUTCDate()}</b>${first ? `<em>${fmt(t, { day: undefined })}</em>` : ""}</span>`;
+    if(t < S.today){ h += `<div class="nc-cell past" aria-hidden="true">${label}</div>`; continue; }
+    const ns = S.nestOn(t), free = S.freeOn(t), full = ns.filter(Boolean).length;
+    const lines = ns.map((b, i) => b
+      ? `<span class="nc-nl${b.from === t && b.kind !== "eggs" ? " start" : ""}" style="--pc:${S.pc(b)}" title="Nest ${i + 1}: ${pairName(b, true)}"><i>${i + 1}</i><span>${pairName(b)}</span></span>`
+      : `<span class="nc-nl open"><i>${i + 1}</i><span>open</span></span>`).join("");
+    h += `<button type="button" class="nc-cell${t === S.today ? " today" : ""}${t === sel ? " sel" : ""}" data-t="${t}" aria-pressed="${t === sel}" aria-label="${fmt(t, { weekday: "long" })}: ${full} of ${ns.length} nests full, ${free.length} free to breed">${label}${lines}<span class="nc-free"><b>${free.length}</b> free to breed</span></button>`;
+  }
+  $("grid").innerHTML = h;
+  $("grid").querySelectorAll("button.nc-cell").forEach(c => c.addEventListener("click", () => {
+    sel = +c.dataset.t; renderGrid(); renderDay();
+    if(matchMedia("(max-width: 1000px)").matches) $("day").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  }));
+}
+
+function renderDay(){
+  const t = sel, ns = S.nestOn(t), free = S.freeOn(t), rest = S.resting(t);
+  const nestHtml = ns.map((b, i) => {
+    if(!b) return `<li class="open"><span class="num">${i + 1}</span><div>Open</div></li>`;
+    const what = b.kind === "eggs" ? `Hatch ${fmt(b.to)}`
+      : `${b.kind === "ancient" ? `${esc(b.s.breed)}, ancient · ` : ""}${b.from === t ? "Goes in today" : `In since ${fmt(b.from)}`} · hatch ${fmt(b.to)}`;
+    return `<li style="--pc:${S.pc(b)}"><span class="num">${i + 1}</span><div><b>${pairName(b, true)}</b><small>${what}</small></div></li>`;
+  }).join("");
+  const freeHtml = free.map(d => {
+    const today = S.books.some(b => b.from === t && (b.s === d || b.m === d)), nx = S.nextNest(d, t);
+    const tag = today ? `<span class="tag">Nests today</span>` : nx ? `<span class="tag">Nests ${fmt(nx.from)}</span>` : `<span class="tag idle">Nothing planned</span>`;
+    return `<li><div><b>${esc(d.name)}</b><small>${d.gender === "F" ? "♀" : "♂"} ${esc(d.breed)}</small></div>${tag}</li>`;
+  }).join("");
+  $("day").innerHTML = `<h2 class="pp-panel-title">${fmt(t, { weekday: "long" })}</h2>
+    <div class="nc-sec"><h3>Nests</h3><ol class="nc-nests">${nestHtml}</ol></div>
+    <div class="nc-sec"><h3>Free to breed (${free.length})</h3>${free.length ? `<ul class="nc-who">${freeHtml}</ul>` : `<p class="nc-muted">No modern dragon is free this day.</p>`}
+    ${rest ? `<p class="nc-muted">${rest} more ${rest === 1 ? "is" : "are"} on cooldown or still growing up.</p>` : ""}</div>`;
+}
+
+function renderNotes(){
+  const n = [`<li><b>${S.nestCount} nests</b> · ${S.books.filter(b => b.kind === "planned").length} planned nestings and ${S.books.filter(b => b.kind === "ancient").length} ancient ones in the next ${WEEKS} weeks.</li>`];
+  S.unpaired.forEach(d => n.push(`<li><b>${esc(d.name)}</b> (${esc(d.breed)}) isn't in a planner pair, so ${d.gender === "F" ? "she" : "he"} isn't on the calendar.</li>`));
+  S.unplaced.forEach(x => n.push(`<li><b>${esc(x.s.name)} × ${esc(x.m.name)}</b> doesn't fit before ${fmt(S.end - 1)}.</li>`));
+  $("notes").innerHTML = n.join("");
+}
+
+function render(){
+  document.querySelectorAll("[data-lair]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.lair === lair)));
+  S = schedule(data[lair]);
+  if(sel == null || sel < S.today || sel >= S.end) sel = S.today;
+  renderNotes(); renderGrid(); renderDay();
+}
+
+document.querySelectorAll("[data-lair]").forEach(b => b.addEventListener("click", () => {
+  lair = b.dataset.lair; try{ localStorage.setItem("pp_nc_lair", lair); }catch(e){}
+  render();
+}));
+
+/* ---------------- data: the Flight Rising page's own copy first, then Firestore ---------------- */
+Object.keys(LAIRS).forEach(k => {
+  try{ const c = JSON.parse(localStorage.getItem(LAIRS[k].cache) || "null"); if(c && Array.isArray(c.items)) data[k] = c; }catch(e){}
+});
+render();
+try{
+  firebase.initializeApp(window.PPFirebaseConfig);
+  const db = firebase.firestore();
+  Object.keys(LAIRS).forEach(k => db.doc(LAIRS[k].doc).onSnapshot(snap => {
+    const d = snap.data(); if(d && Array.isArray(d.items)){ data[k] = d; if(k === lair) render(); }
+    $("sync").textContent = "Read from the breeding planner, live";
+  }, err => { console.error(err); $("sync").textContent = "Offline, showing the last copy saved on this device"; }));
+}catch(err){
+  console.error(err); $("sync").textContent = "Offline, showing the last copy saved on this device";
+}
+
+/* the calendar rolls over at Flight Rising's midnight */
+let shown = frToday();
+setInterval(() => { if(frToday() !== shown){ shown = frToday(); sel = null; render(); } }, 60000);
+</script>
+<script src="/assets/pp-nav.js" defer></script>
+</body>
+</html>
