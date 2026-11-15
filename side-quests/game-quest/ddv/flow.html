@@ -181,7 +181,9 @@ for(const g of byChar){
   if(/\(Dream Bundle\)$/.test(g.ch)||VILLAGERS.some(v=>v.name===g.ch))continue;
   const k=slug(g.ch);if(!CH.has(k))CH.set(k,{k,name:g.ch,v:null,rows:[]});CH.get(k).rows.push(...g.rows)}
 const ownerOf=new Map();for(const c of CH.values())for(const r of c.rows)ownerOf.set(r[0],c.k);
-const met=c=>!c.v||lvl(c.k)>0||c.rows.some(r=>st(r[0])==="d");
+// met: lives in the Valley, so has a friendship level. Done realm quests don't
+// count (Cheshire Cat's Wonderland quests come before he moves in).
+const met=c=>!c.v||lvl(c.k)>0;
 const vKey=n=>{n=n.trim().toLowerCase();for(const c of CH.values())if(c.v&&(c.name.toLowerCase()===n||c.name.split(" ")[0].toLowerCase()===n))return c.k};
 const short=k=>{const c=CH.get(k);return c.k==="the-beast"?"Beast":c.k==="fairy-godmother"?"Fairy Godmother":c.k==="mother-gothel"?"Mother Gothel":c.name.split(" ")[0]};
 // "Oswald's A Cockamamie Contest" or "The Guardian Party" -> that quest's row
