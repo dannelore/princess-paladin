@@ -396,3 +396,44 @@ const RESOURCES = [
   {"name":"Dill","category":"Spices","biomes":["Wishing Alps"],"how":"Grow","sell":40,"note":"Seeds are found by foraging in Wishing Alps, not sold"},
   {"name":"Fairy Sprinkles","category":"Spices","biomes":["Pixie Acres"],"how":"Grow","sell":80,"note":"Seeds are found by foraging in Pixie Acres, not sold"}
 ];
+
+/* Things that come back on their own once a day (or every hour, in the newer
+   areas), from the Dreamlight Valley Wiki's Obstacles, Night Thorn, Daily
+   Moonstone Chest, Green and Yellow Reward Chest pages, checked Nov 15, 2026.
+   Obstacles in Dreamlight Valley, Eternity Isle and Storybook Vale come back
+   at 5 AM local time; biome ones only after you've cleared that biome once,
+   and they stay until you clear them. Wishblossom Ranch and Honeyglow Woods
+   ones come back every hour.
+   { group, name, area (null = any area), where, count, gives, tool } */
+const DAILY_SOURCE = "Daily spawns from the Dreamlight Valley Wiki's Obstacles and chest pages, checked Nov 15, 2026. Obstacles come back at 5 AM local time (every hour in Wishblossom Ranch and Honeyglow Woods) and stay until you clear them.";
+const DAILY = [
+  {group:"Chests",name:"Moonstone chest (blue)",area:"Dreamlight Valley",where:"Anywhere outdoors",count:"1 a day, up to 3 waiting",gives:"50 Moonstones",tool:"Your hands"},
+  {group:"Chests",name:"Green reward chest",area:"Dreamlight Valley",where:"Anywhere outdoors; digging Sparkling Mounds can turn one up too",count:"1 a day, up to 3 waiting",gives:"100–300 Star Coins (70%), or a clothing or furniture pouch",tool:"Your hands"},
+  {group:"Chests",name:"Yellow reward chest",area:null,where:"Catch all 8 red coins that fly out of a Night Thorn, Splinter of Fate, Inkie, Dead Wishblossom or Honey Swirl. Large obstacles \"with Treasure\" hold one too.",count:"Up to 1 every 12 hours in each area",gives:"100–300 Star Coins (70%), or a clothing or furniture pouch",tool:"Your hands"},
+
+  {group:"Night Thorns and the like",name:"Night Thorns",area:"Dreamlight Valley",where:"One random biome you've unlocked",count:"10 a day",gives:"Dream Shards (1–2), a Memory Shard, Coal Ore, 5–10 Star Coins, a seed for that biome",tool:"Your hands"},
+  {group:"Night Thorns and the like",name:"Splinters of Fate",area:"Eternity Isle",where:"Any biome",count:"Daily; the wiki doesn't say how many",gives:"Mist (about 200–250), Dream Shards, a Memory Shard, Coal Ore",tool:"Your hands"},
+  {group:"Night Thorns and the like",name:"Inkies",area:"Storybook Vale",where:"One unlocked biome",count:"A few a day",gives:"Dream Shards (1–2), a Memory Shard, 20–30 Star Coins",tool:"Your hands"},
+  {group:"Night Thorns and the like",name:"Dead Wishblossoms",area:"Wishblossom Ranch",where:"Every unlocked biome",count:"A few every hour",gives:"Pixie Dust, a Memory Shard, 20–30 Star Coins",tool:"Gallop through on your mount"},
+  {group:"Night Thorns and the like",name:"Honey Swirls",area:"Honeyglow Woods",where:"Anywhere in Honeyglow Woods",count:"Every hour",gives:"Golden Honey, a Memory Shard, 20–30 Star Coins",tool:"Your hands"},
+
+  {group:"Biome obstacles",name:"Rocks",area:"Dreamlight Valley",where:"Every biome",count:"A few a day",gives:"Stone: 2 small, 4 large",tool:"Pickaxe"},
+  {group:"Biome obstacles",name:"Mushroom patches",area:"Dreamlight Valley",where:"Peaceful Meadow, Glade of Trust, Sunlit Plateau",count:"A few a day",gives:"Mushroom: 1 small, 2 large",tool:"Royal Watering Can (upgrade 1)"},
+  {group:"Biome obstacles",name:"Sea debris",area:"Dreamlight Valley",where:"Dazzle Beach",count:"A few a day",gives:"Sand: 3 small, 8 large",tool:"Pickaxe (upgrade 1)"},
+  {group:"Biome obstacles",name:"Tree stumps",area:"Dreamlight Valley",where:"Forest of Valor (bare ground only)",count:"A few a day",gives:"Small: 3 Softwood. Large: 4 Softwood, 2 Hardwood",tool:"Shovel (upgrade 1)"},
+  {group:"Biome obstacles",name:"Wildebeest bones",area:"Dreamlight Valley",where:"Sunlit Plateau",count:"A few a day",gives:"Clay: 2 small, 4 large",tool:"Shovel (upgrade 2; large ones upgrade 3)"},
+  {group:"Biome obstacles",name:"Ice blocks",area:"Dreamlight Valley",where:"Frosted Heights",count:"A few a day",gives:"Snowballs: 2, or 4 from huge ones",tool:"Pickaxe (upgrade 3; huge ones upgrade 4)"},
+  {group:"Biome obstacles",name:"Green fire",area:"Dreamlight Valley",where:"Forgotten Lands",count:"A few a day",gives:"Glass: 1 small, 2 large",tool:"Royal Watering Can (upgrade 3)"},
+  {group:"Biome obstacles",name:"Swirling sands",area:"Eternity Isle",where:"Every biome",count:"A few a day",gives:"Mist: 45–55 small, 90–110 large",tool:"Royal Hourglass (upgrade 1)"},
+  {group:"Biome obstacles",name:"Copper rocks",area:"Eternity Isle",where:"Every biome",count:"A few a day",gives:"Copper: 1–2 small, 2–4 large",tool:"Pickaxe"},
+  {group:"Biome obstacles",name:"Rubble",area:"Eternity Isle",where:"Ancient's Landing",count:"A few a day",gives:"Soil and Plastic Scrap",tool:"Shovel"},
+  {group:"Biome obstacles",name:"Evil plants",area:"Eternity Isle",where:"Wild Tangle",count:"A few a day",gives:"Tropical Wood: 1–2 small, 2–4 large",tool:"Royal Watering Can"},
+  {group:"Biome obstacles",name:"Broken teacups",area:"Storybook Vale",where:"Teacup Falls",count:"A few a day",gives:"Mud (1–2)",tool:"Shovel"},
+  {group:"Biome obstacles",name:"Bubbling mushrooms",area:"Storybook Vale",where:"Everafter",count:"A few a day",gives:"Fairy Bubbles (1–2)",tool:"Royal Watering Can"},
+  {group:"Biome obstacles",name:"Hunks of marble",area:"Storybook Vale",where:"Mythopia",count:"A few a day",gives:"Marble (1–2)",tool:"Pickaxe"},
+  {group:"Biome obstacles",name:"Mossy logs",area:"Storybook Vale",where:"The Bind",count:"A few a day",gives:"Moss (1–2)",tool:"Shovel"},
+  {group:"Biome obstacles",name:"Mysterious flames",area:"Storybook Vale",where:"The Fiery Plains",count:"A few a day",gives:"Volcanic Rock (1–2)",tool:"Royal Watering Can"},
+  {group:"Biome obstacles",name:"Petrified wood rocks",area:"Storybook Vale",where:"The Library of Lore",count:"A few a day",gives:"Petrified Wood (1–2)",tool:"Pickaxe"},
+  {group:"Biome obstacles",name:"Amber brushwood",area:"Honeyglow Woods",where:"Anywhere in Honeyglow Woods",count:"Every hour",gives:"Tree Resin: 1–2 small, 2–4 large",tool:"Pickaxe"},
+  {group:"Biome obstacles",name:"Twistroots",area:"Honeyglow Woods",where:"Anywhere in Honeyglow Woods",count:"Every hour",gives:"Driftwood: 1–2 small, 2–4 large",tool:"Shovel"}
+];
