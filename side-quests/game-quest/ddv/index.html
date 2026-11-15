@@ -337,6 +337,7 @@
         <div class="dv-chips" id="f-chips"></div>
         <div class="dv-sels">
           <label class="dv-sel">Expansion <select id="f-exp"><option value="all">All</option><option value="owned">Ones I own</option></select></label>
+          <label class="dv-sel">Villagers <select id="f-val"><option value="all">All</option><option value="in">In my Valley</option><option value="out">Not in my Valley yet</option></select></label>
           <label class="dv-sel">Sort <select id="f-sort">
             <option value="game">Game order</option>
             <option value="az">Name A&ndash;Z</option>
@@ -425,6 +426,7 @@
       <div class="dv-chips" id="chips"></div>
       <div class="dv-sels">
         <label class="dv-sel">Expansion <select id="l-exp"><option value="all">All</option><option value="owned">Ones I own</option></select></label>
+        <label class="dv-sel">Characters <select id="l-val"><option value="all">All</option><option value="in">In my Valley</option><option value="out">Not in my Valley yet</option></select></label>
         <label class="dv-sel">Sort <select id="l-sort">
           <option value="game">Game order</option>
           <option value="az">Name A&ndash;Z</option>
@@ -726,7 +728,10 @@ function tchange(id,v){T={...T};if(v)T[id]=v;else delete T[id];tsave(v?()=>tdoc.
    COST below. The to-do list puts the best worth for the cost first. */
 const COST={start:1,finish:.5,level:1,unlock:3};
 const TOP=7;
-const metV=vl=>lvl(vl.k)>0||vl.rows.some(r=>st(r[0])==="d");
+/* In your Valley: they have a friendship level (1 or more) in the Friendship
+   tab. Finishing quests doesn't count, because a realm's first quests (like
+   Cheshire Cat's in Wonderland) are done before its villagers move in. */
+const metV=vl=>lvl(vl.k)>0;
 const vByKey=k=>VILLAGERS.find(x=>x.k===k);
 const vByName=n=>VILLAGERS.find(x=>x.name.toLowerCase()===n.toLowerCase()||x.name.split(" ")[0].toLowerCase()===n.toLowerCase());
 const villagerOf=r=>VILLAGERS.find(x=>x.rows.includes(r));
@@ -847,8 +852,9 @@ function autoTodos(P){
       if(b.f&&(!fl.has(b.f)||b.l<fl.get(b.f)))fl.set(b.f,b.l);
       if(b.u){const o=vByKey(b.u),name=o?o.name:b.u,realm=o&&REALMS.find(R=>R.v.includes(o.k));
         if(have.some(v=>v.u&&v.u.some(n=>n.toLowerCase()===name.toLowerCase())||v.t.toLowerCase().includes("unlock "+name.toLowerCase())))continue;
-        if(realm){const names=realm.v.map(k=>vByKey(k).name);
-          push("a-u-"+slug(realm.name),{t:`Befriend ${names.join(" and ")}`,h:neededFor(realm.v)+realm.how,g:"unlock",u:names})}
+        if(realm){const names=realm.v.map(k=>vByKey(k).name),opened=st(realm.start)!=="";
+          push("a-u-"+slug(realm.name),{t:opened?`Move ${names.join(" and ")} into the Valley`:`Befriend ${names.join(" and ")}`,
+            h:neededFor(realm.v)+(opened?"You've opened the realm. Once they've moved in, set their level in the Friendship tab. ":"")+realm.how,g:"unlock",u:names})}
         else push("a-u-"+slug(name),{t:`Unlock ${name}`,h:"The Guide link shows where to find them.",g:"unlock",u:[name]})}}}
   for(const[k,l]of fl){const o=vByKey(k),L=lvl(k);
     if(have.some(v=>v.f&&v.f.k===k&&v.f.l>L))continue;
@@ -864,7 +870,9 @@ let todoAll=false;
 function renderTodo(){
   const box=$("todo-groups");box.innerHTML="";
   const stored=new Set(Object.keys(T)),P=plan();
-  const all=[...Object.entries(T).filter(([,v])=>v&&v.t),...autoTodos(P)].map(([id,v])=>{
+  // a saved quest suggestion waits, unshown, while a villager it needs isn't in the Valley yet
+  const onHold=v=>{if(v.g!=="quest"||!v.q||st(v.q))return false;const r=Q.find(x=>x[0]===v.q);return !!r&&blockers(r).some(b=>b.u)};
+  const all=[...Object.entries(T).filter(([,v])=>v&&v.t&&!onHold(v)),...autoTodos(P)].map(([id,v])=>{
     const auto=autoDone(v,P),done=!!v.d||!!auto,mine=!v.g||v.g==="mine",x=done||mine?{w:0,quests:new Set(),cost:1}:worth(v,P);
     const soon=!done&&!!v.q&&!!DEADLINE[v.q]&&daysLeft(v.q)<=14;
     return{id,v,auto,done,mine,soon,qs:[...x.quests],score:x.w/x.cost,w:x.w}});
@@ -928,14 +936,19 @@ function renderChips(){
 }
 /* Expansion filter and sort, remembered in this browser only */
 const LIST_KEY="pp_ddv_list";
-let expF="all",sortBy="game";
-try{const p=JSON.parse(localStorage.getItem(LIST_KEY)||"null");if(p){expF=p.exp||"all";sortBy=p.sort||"game"}}catch(e){}
-function saveListPrefs(){try{localStorage.setItem(LIST_KEY,JSON.stringify({exp:expF,sort:sortBy}))}catch(e){}}
+let expF="all",sortBy="game",valF="all";
+try{const p=JSON.parse(localStorage.getItem(LIST_KEY)||"null");if(p){expF=p.exp||"all";sortBy=p.sort||"game";valF=p.val||"all"}}catch(e){}
+function saveListPrefs(){try{localStorage.setItem(LIST_KEY,JSON.stringify({exp:expF,sort:sortBy,val:valF}))}catch(e){}}
 {const sel=$("l-exp");for(const e of [...new Set(Q.map(r=>r[1]))]){const o=document.createElement("option");o.value=e;o.textContent=e;sel.append(o)}
   if(![...sel.options].some(o=>o.value===expF))expF="all";sel.value=expF;$("l-sort").value=sortBy;
+  if(!["all","in","out"].includes(valF))valF="all";$("l-val").value=valF;
   sel.onchange=()=>{expF=sel.value;saveListPrefs();renderList()};
-  $("l-sort").onchange=e=>{sortBy=e.target.value;saveListPrefs();renderList()}}
+  $("l-sort").onchange=e=>{sortBy=e.target.value;saveListPrefs();renderList()};
+  $("l-val").onchange=e=>{valF=e.target.value;saveListPrefs();renderList()}}
 const expOk=e=>expF==="all"||(expF==="owned"?OWNED.includes(e):e===expF);
+// Characters filter: villagers by whether they live in your Valley yet (metV).
+// Storylines that aren't villagers (Dream Bundles, Trials…) show with "In my Valley".
+const valOk=r=>{if(valF==="all")return true;const v=villagerOf(r);return valF==="in"?!v||metV(v):!!v&&!metV(v)};
 // within each expansion; the expansion headings always stay in game order
 const SORTS={
   az:(a,b)=>a.ch.localeCompare(b.ch),
@@ -943,7 +956,7 @@ const SORTS={
   close:(a,b)=>((a.c.d===a.c.t)-(b.c.d===b.c.t))||(b.c.d/b.c.t-a.c.d/a.c.t)
 };
 function keep(r){const s=st(r[0]);
-  if(!expOk(r[1]))return false;
+  if(!expOk(r[1])||!valOk(r))return false;
   if(filter==="open"&&s==="d")return false;
   if(["p","l","d"].includes(filter)&&s!==filter)return false;
   if(query){const h=(r[2]+" "+r[4]+" "+r[3]).toLowerCase();if(!h.includes(query))return false}
@@ -1032,21 +1045,24 @@ function openQuests(v,rows){
    Sorting is within each expansion panel, like the quest list. */
 const F_LIST_KEY="pp_ddv_friends_list";
 const F_FILTERS=[["all","All"],["notmax",`Not level ${MAX_LEVEL}`],["waiting","Quests locked"],["ready","Ready to open"],["unmet","Level 0"],["best",`Level ${MAX_LEVEL}`]];
-let fFilter="all",fExp="all",fSort="game",fQuery="";
-try{const p=JSON.parse(localStorage.getItem(F_LIST_KEY)||"null");if(p){fFilter=p.filter||"all";fExp=p.exp||"all";fSort=p.sort||"game"}}catch(e){}
-function saveFriendPrefs(){try{localStorage.setItem(F_LIST_KEY,JSON.stringify({filter:fFilter,exp:fExp,sort:fSort}))}catch(e){}}
+let fFilter="all",fExp="all",fSort="game",fVal="all",fQuery="";
+try{const p=JSON.parse(localStorage.getItem(F_LIST_KEY)||"null");if(p){fFilter=p.filter||"all";fExp=p.exp||"all";fSort=p.sort||"game";fVal=p.val||"all"}}catch(e){}
+function saveFriendPrefs(){try{localStorage.setItem(F_LIST_KEY,JSON.stringify({filter:fFilter,exp:fExp,sort:fSort,val:fVal}))}catch(e){}}
 {const sel=$("f-exp");for(const e of EXPS){if(!VILLAGERS.some(v=>v.exp===e))continue;const o=document.createElement("option");o.value=e;o.textContent=e;sel.append(o)}
   if(![...sel.options].some(o=>o.value===fExp))fExp="all";
   if(!F_FILTERS.some(([k])=>k===fFilter))fFilter="all";
   sel.value=fExp;$("f-sort").value=fSort;
   sel.onchange=()=>{fExp=sel.value;saveFriendPrefs();renderFriends()};
   $("f-sort").onchange=e=>{fSort=e.target.value;saveFriendPrefs();renderFriends()};
+  if(!["all","in","out"].includes(fVal))fVal="all";$("f-val").value=fVal;
+  $("f-val").onchange=e=>{fVal=e.target.value;saveFriendPrefs();renderFriends()};
   $("f-q").addEventListener("input",e=>{fQuery=e.target.value.trim().toLowerCase();renderFriends()})}
 const lockedCount=v=>v.rows.filter(r=>st(r[0])==="l").length;
 function friendKeep(v,info){
   const L=lvl(v.k);
   if(fExp!=="all"&&(fExp==="owned"?!OWNED.includes(v.exp):v.exp!==fExp))return false;
   if(fQuery&&!v.name.toLowerCase().includes(fQuery))return false;
+  if(fVal!=="all"&&(fVal==="in")!==metV(v))return false;
   if(fFilter==="notmax")return L<MAX_LEVEL;
   if(fFilter==="waiting")return lockedCount(v)>0;
   if(fFilter==="ready")return info.ready.length>0;
