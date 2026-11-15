@@ -256,6 +256,12 @@
   .dv-rtable td b{ font-weight: 600; }
   .dv-rtable td small{ display: block; color: var(--ink-soft); font-size: .8rem; }
   .dv-rtable .rarea{ color: var(--ink-soft); font-size: .8rem; display: block; }
+  /* what comes back each day, above the resource table */
+  #r-daily{ margin-bottom: 16px; }
+  #r-daily .dv-expbody{ padding: 0 24px 20px; display: grid; gap: 10px; }
+  #r-daily .dv-rtable th{ position: static; font-size: .7rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); padding: 8px 12px; }
+  #r-daily .dv-rtable tr.dgroup td{ background: var(--panel-tint); font-family: var(--font-serif); font-weight: 600; }
+  @media (max-width: 560px){ #r-daily .dv-expbody{ padding: 0 12px 16px; } }
   @media (max-width: 560px){ .dv-rtable th button, .dv-rtable td{ padding: 7px 8px; } .dv-rtable{ font-size: .85rem; } }
   .dv-sels{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; flex: 1 1 100%; }
   .dv-sel{ display: flex; align-items: center; gap: 8px; font-family: var(--font-body); font-size: .72rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
@@ -381,6 +387,7 @@
           <span class="dv-count" id="r-count"></span>
         </div>
       </div>
+      <div id="r-daily"></div>
       <div class="dv-rtable-wrap">
         <table class="dv-rtable">
           <thead><tr id="r-head"></tr></thead>
@@ -1266,6 +1273,23 @@ function renderResources(){
   // the wiki asks to be credited, so its name links back to it
   const foot=$("r-foot"),[pre,post]=RESOURCE_SOURCE.split("Dreamlight Valley Wiki");foot.textContent=pre;
   if(post!==undefined){const a=document.createElement("a");a.href="https://dreamlightvalleywiki.com/";a.target="_blank";a.rel="noopener";a.textContent="Dreamlight Valley Wiki";foot.append(a,post)}
+  renderDaily();
+}
+/* What comes back on its own each day (DAILY in ddv-resources.js): chests,
+   Night Thorns and the like, and each biome's obstacles. Follows the Area
+   filter; a chest that can turn up anywhere (area null) always shows. */
+function renderDaily(){
+  const box=$("r-daily");box.innerHTML="";
+  const rows=DAILY.filter(d=>!d.area||rAreaOk(d.area));
+  if(!rows.length)return;
+  const{det,body}=expPanel("daily","Comes back every day",plural(rows.length,"thing"),true);
+  let html='<div class="dv-rtable-wrap"><table class="dv-rtable"><thead><tr><th scope="col">What</th><th scope="col">Where</th><th scope="col">How many</th><th scope="col">Gives</th><th scope="col">Clear with</th></tr></thead><tbody>',g=null;
+  for(const d of rows){
+    if(d.group!==g){g=d.group;html+=`<tr class="dgroup"><td colspan="5">${esc(g)}</td></tr>`}
+    html+=`<tr><td><b>${esc(d.name)}</b><span class="rarea">${esc(d.area||"Any area")}</span></td><td>${esc(d.where)}</td><td>${esc(d.count)}</td><td>${esc(d.gives)}</td><td>${esc(d.tool)}</td></tr>`}
+  body.innerHTML=html+"</tbody></table></div>";
+  const p=document.createElement("p");p.className="dv-hint";p.textContent=DAILY_SOURCE;body.append(p);
+  box.append(det);
 }
 
 /* ---------------- tabs: #quests (default), #friendship, #critters, #resources ---------------- */
