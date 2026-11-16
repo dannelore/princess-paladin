@@ -44,6 +44,12 @@
                              1 to 10. Level 0 has no field.
        sidequest/ddv-critters one field per critter colour, keyed by the
                              variant id in CRITTERS below: true once befriended.
+       sidequest/ddv-daily   one field per row of DAILY (ddv-resources.js),
+                             keyed by dailyKey(): the game day it was ticked,
+                             e.g. "2026-11-15" (days start at 5 AM), or
+                             "2026-11-15 14h" for things that come back every
+                             hour. A tick from an earlier day just reads as
+                             unticked, so nothing has to clear them.
 
      Writes are per field (update), so ticking one quest never rewrites the
      others. Removing a to-do rewrites that whole document, since update can
@@ -135,6 +141,11 @@
     text-transform: uppercase; color: var(--dusk-deep); margin: 0;
   }
   .dv-count{ font-family: var(--font-serif); font-style: italic; font-size: .92rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .dv-hang{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding: 14px 24px; }
+  .dv-hang .dv-label{ margin: 0; }
+  .dv-hang-name{ margin: 0; font-family: var(--font-serif); font-size: 1.35rem; font-weight: 600; color: var(--ink); }
+  .dv-hang .dv-hint{ flex: 1 1 16rem; min-width: 0; }
+  @media (max-width: 560px){ .dv-hang{ padding: 12px 18px; } }
   .dv-hint{ margin: 0; font-family: var(--font-serif); font-style: italic; font-size: .95rem; color: var(--ink-soft); line-height: 1.4; }
   .dv button:focus-visible, .dv input:focus-visible, .dv summary:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
 
@@ -261,6 +272,11 @@
   #r-daily .dv-expbody{ padding: 0 24px 20px; display: grid; gap: 10px; }
   #r-daily .dv-rtable th{ position: static; font-size: .7rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); padding: 8px 12px; }
   #r-daily .dv-rtable tr.dgroup td{ background: var(--panel-tint); font-family: var(--font-serif); font-weight: 600; }
+#r-daily .dv-rtable .tick{ width: 1%; padding-right: 0; }
+#r-daily .dv-rtable input[type="checkbox"]{ width: 20px; height: 20px; margin: 0; accent-color: var(--sage-deep); cursor: pointer; }
+#r-daily .dv-rtable label{ cursor: pointer; display: block; }
+#r-daily .dv-rtable tr.ticked td:not(.tick){ opacity: .5; }
+#r-daily .dv-rtable tr.ticked b{ text-decoration: line-through; }
   @media (max-width: 560px){ #r-daily .dv-expbody{ padding: 0 12px 16px; } }
   @media (max-width: 560px){ .dv-rtable th button, .dv-rtable td{ padding: 7px 8px; } .dv-rtable{ font-size: .85rem; } }
   .dv-sels{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; flex: 1 1 100%; }
@@ -337,13 +353,14 @@
         </div>
         <div class="dv-regions" id="f-regions"></div>
       </section>
+      <section class="pp-panel dv-hang" id="f-hang" aria-label="Who to hang out with" aria-live="polite" hidden></section>
       <p class="dv-undo" id="f-undo" aria-live="polite" hidden></p>
       <div class="dv-tools pp-field">
         <input id="f-q" type="search" placeholder="Search villagers" aria-label="Search villagers">
         <div class="dv-chips" id="f-chips"></div>
         <div class="dv-sels">
           <label class="dv-sel">Expansion <select id="f-exp"><option value="all">All</option><option value="owned">Ones I own</option></select></label>
-          <label class="dv-sel">Villagers <select id="f-val"><option value="all">All</option><option value="in">In my Valley</option><option value="out">Not in my Valley yet</option></select></label>
+          <button type="button" class="pp-pill dv-unlk" id="f-val" aria-pressed="false" title="Hide villagers you haven't moved into your Valley yet">Unlocked only</button>
           <label class="dv-sel">Sort <select id="f-sort">
             <option value="game">Game order</option>
             <option value="az">Name A&ndash;Z</option>
@@ -408,6 +425,7 @@
       </div>
       <div class="dv-regions" id="regions"></div>
     </section>
+    <section class="pp-panel dv-hang" id="hang" aria-label="Who to hang out with" aria-live="polite" hidden></section>
 
     <section class="pp-panel dv-panel" data-fold="todo" aria-label="To-do">
       <button class="dv-fold" aria-expanded="true"><span class="dv-label">To-do</span><span class="dv-count" id="todo-count"></span></button>
@@ -433,7 +451,7 @@
       <div class="dv-chips" id="chips"></div>
       <div class="dv-sels">
         <label class="dv-sel">Expansion <select id="l-exp"><option value="all">All</option><option value="owned">Ones I own</option></select></label>
-        <label class="dv-sel">Characters <select id="l-val"><option value="all">All</option><option value="in">In my Valley</option><option value="out">Not in my Valley yet</option></select></label>
+        <button type="button" class="pp-pill dv-unlk" id="l-val" aria-pressed="false" title="Hide quests for characters you haven't moved into your Valley yet">Unlocked only</button>
         <label class="dv-sel">Sort <select id="l-sort">
           <option value="game">Game order</option>
           <option value="az">Name A&ndash;Z</option>
@@ -526,7 +544,8 @@ function fieldDoc(path,onChange){
 }
 const F=fieldDoc(FRIENDS_DOC,()=>{renderFriends();renderTodo()});
 const C=fieldDoc(CRITTERS_DOC,()=>renderCritters());
-const busy=()=>pending||tpending||F.pending||C.pending;
+const D=fieldDoc(DAILY_DOC,()=>renderDaily());
+const busy=()=>pending||tpending||F.pending||C.pending||D.pending;
 
 const st=id=>(S[id]&&S[id].s)||"";
 const nt=id=>(S[id]&&S[id].n)||"";
@@ -534,8 +553,8 @@ const $=id=>document.getElementById(id);
 
 /* ---------------- storage ---------------- */
 function setSync(state,text){const el=$("sync");el.textContent=text;el.setAttribute("data-state",state)}
-function writeCache(){try{localStorage.setItem(CACHE_KEY,JSON.stringify({S,T,F:F.data,C:C.data}))}catch(e){}}
-function loadCache(){try{const p=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");if(p){S=p.S||{};if(p.T){T=p.T;tloaded=true}F.data=p.F||{};C.data=p.C||{}}}catch(e){}}
+function writeCache(){try{localStorage.setItem(CACHE_KEY,JSON.stringify({S,T,F:F.data,C:C.data,D:D.data}))}catch(e){}}
+function loadCache(){try{const p=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");if(p){S=p.S||{};if(p.T){T=p.T;tloaded=true}F.data=p.F||{};C.data=p.C||{};D.data=p.D||{}}}catch(e){}}
 
 function write(id){
   const v=S[id]||{};writeCache();
@@ -874,9 +893,32 @@ const playable=r=>playableFor(r,nt(r[0]));
    at the top, then event quests about to go (DEADLINE). The rest wait behind "Show more". Ticked ones sit at the
    bottom until Refresh clears them. */
 let todoAll=false;
+/* Who to hang out with: the villager in your Valley whose next friendship
+   level opens the most quests for the levels it takes (the same sums as the
+   to-do list). If no quest is waiting on a level, the lowest-level villager. */
+function hangPicks(P){
+  const need=new Map();
+  for(const F of P.fronts)for(const b of F.bs)if(b.f){
+    const s=need.get(b.f)||{w:0,l:MAX_LEVEL,qs:new Set()};
+    s.w+=F.leads.size/F.bs.length;s.l=Math.min(s.l,b.l);for(const r of F.leads)s.qs.add(r);need.set(b.f,s)}
+  return VILLAGERS.filter(v=>metV(v)&&lvl(v.k)<MAX_LEVEL).map(v=>{
+    const s=need.get(v.k),L=lvl(v.k);
+    return{v,L,to:s?s.l:null,n:s?s.qs.size:0,score:s?s.w/Math.max(1,s.l-L):0}})
+    .sort((a,b)=>(b.score-a.score)||(a.L-b.L)||a.v.name.localeCompare(b.v.name));
+}
+function renderHang(P){
+  const picks=hangPicks(P),top=picks[0];
+  for(const id of ["hang","f-hang"]){const el=$(id);if(!el)continue;
+    el.hidden=!top;if(!top){el.innerHTML="";continue}
+    const why=top.n?`Level ${top.L} &rarr; ${top.to} opens up ${plural(top.n,"quest")}.`
+      :`No quests are waiting on a friendship level, so pick whoever's lowest: they're at level ${top.L}.`;
+    const next=picks.slice(1,3).filter(p=>p.n||!top.n).map(p=>esc(p.v.name));
+    el.innerHTML=`<p class="dv-label">Hang out with</p><p class="dv-hang-name">${esc(top.v.name)}</p><p class="dv-hint">${why}${next.length?` After them: ${next.join(" or ")}.`:""}</p>`}
+}
 function renderTodo(){
   const box=$("todo-groups");box.innerHTML="";
   const stored=new Set(Object.keys(T)),P=plan();
+  renderHang(P);
   // a saved quest suggestion waits, unshown, while a villager it needs isn't in the Valley yet
   const onHold=v=>{if(v.g!=="quest"||!v.q||st(v.q))return false;const r=Q.find(x=>x[0]===v.q);return !!r&&blockers(r).some(b=>b.u)};
   const all=[...Object.entries(T).filter(([,v])=>v&&v.t&&!onHold(v)),...autoTodos(P)].map(([id,v])=>{
@@ -948,12 +990,13 @@ try{const p=JSON.parse(localStorage.getItem(LIST_KEY)||"null");if(p){expF=p.exp|
 function saveListPrefs(){try{localStorage.setItem(LIST_KEY,JSON.stringify({exp:expF,sort:sortBy,val:valF}))}catch(e){}}
 {const sel=$("l-exp");for(const e of [...new Set(Q.map(r=>r[1]))]){const o=document.createElement("option");o.value=e;o.textContent=e;sel.append(o)}
   if(![...sel.options].some(o=>o.value===expF))expF="all";sel.value=expF;$("l-sort").value=sortBy;
-  if(!["all","in","out"].includes(valF))valF="all";$("l-val").value=valF;
+  if(valF!=="in")valF="all";$("l-val").setAttribute("aria-pressed",valF==="in");
   sel.onchange=()=>{expF=sel.value;saveListPrefs();renderList()};
   $("l-sort").onchange=e=>{sortBy=e.target.value;saveListPrefs();renderList()};
-  $("l-val").onchange=e=>{valF=e.target.value;saveListPrefs();renderList()}}
+  $("l-val").onclick=e=>{valF=valF==="in"?"all":"in";e.currentTarget.setAttribute("aria-pressed",valF==="in");saveListPrefs();renderList()}}
 const expOk=e=>expF==="all"||(expF==="owned"?OWNED.includes(e):e===expF);
-// Characters filter: villagers by whether they live in your Valley yet (metV).
+// Unlocked only: hides quests for villagers who don't live in your Valley yet (metV).
+// Quests with no villager always show.
 // Storylines that aren't villagers (Dream Bundles, Trials…) show with "In my Valley".
 const valOk=r=>{if(valF==="all")return true;const v=villagerOf(r);return valF==="in"?!v||metV(v):!!v&&!metV(v)};
 // within each expansion; the expansion headings always stay in game order
@@ -1061,8 +1104,8 @@ function saveFriendPrefs(){try{localStorage.setItem(F_LIST_KEY,JSON.stringify({f
   sel.value=fExp;$("f-sort").value=fSort;
   sel.onchange=()=>{fExp=sel.value;saveFriendPrefs();renderFriends()};
   $("f-sort").onchange=e=>{fSort=e.target.value;saveFriendPrefs();renderFriends()};
-  if(!["all","in","out"].includes(fVal))fVal="all";$("f-val").value=fVal;
-  $("f-val").onchange=e=>{fVal=e.target.value;saveFriendPrefs();renderFriends()};
+  if(fVal!=="in")fVal="all";$("f-val").setAttribute("aria-pressed",fVal==="in");
+  $("f-val").onclick=e=>{fVal=fVal==="in"?"all":"in";e.currentTarget.setAttribute("aria-pressed",fVal==="in");saveFriendPrefs();renderFriends()};
   $("f-q").addEventListener("input",e=>{fQuery=e.target.value.trim().toLowerCase();renderFriends()})}
 const lockedCount=v=>v.rows.filter(r=>st(r[0])==="l").length;
 function friendKeep(v,info){
@@ -1278,19 +1321,35 @@ function renderResources(){
 /* What comes back on its own each day (DAILY in ddv-resources.js): chests,
    Night Thorns and the like, and each biome's obstacles. Follows the Area
    filter; a chest that can turn up anywhere (area null) always shows. */
+/* Tick boxes: a row counts as done for the current game day, which starts at
+   5 AM local time, or for the current hour if it comes back every hour. */
+const dailyId=d=>(d.name+" "+(d.area||"any")).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const hourly=d=>/every hour/i.test(d.count);
+function dailyKey(d,now=new Date()){
+  const p=n=>String(n).padStart(2,"0"),ymd=t=>`${t.getFullYear()}-${p(t.getMonth()+1)}-${p(t.getDate())}`;
+  if(hourly(d))return `${ymd(now)} ${p(now.getHours())}h`;
+  return ymd(new Date(now.getTime()-5*3600e3));
+}
+const dailyDone=d=>D.data[dailyId(d)]===dailyKey(d);
 function renderDaily(){
-  const box=$("r-daily");box.innerHTML="";
+  const box=$("r-daily");if(!box)return;box.innerHTML="";
   const rows=DAILY.filter(d=>!d.area||rAreaOk(d.area));
   if(!rows.length)return;
-  const{det,body}=expPanel("daily","Comes back every day",plural(rows.length,"thing"),true);
-  let html='<div class="dv-rtable-wrap"><table class="dv-rtable"><thead><tr><th scope="col">What</th><th scope="col">Where</th><th scope="col">How many</th><th scope="col">Gives</th><th scope="col">Clear with</th></tr></thead><tbody>',g=null;
+  const done=rows.filter(dailyDone).length;
+  const{det,body}=expPanel("daily","Comes back every day",`${done} of ${rows.length} done today`,true);
+  let html='<div class="dv-rtable-wrap"><table class="dv-rtable"><thead><tr><th scope="col" class="tick"><span class="pp-sr-only">Done</span></th><th scope="col">What</th><th scope="col">Where</th><th scope="col">How many</th><th scope="col">Gives</th><th scope="col">Clear with</th></tr></thead><tbody>',g=null;
   for(const d of rows){
-    if(d.group!==g){g=d.group;html+=`<tr class="dgroup"><td colspan="5">${esc(g)}</td></tr>`}
-    html+=`<tr><td><b>${esc(d.name)}</b><span class="rarea">${esc(d.area||"Any area")}</span></td><td>${esc(d.where)}</td><td>${esc(d.count)}</td><td>${esc(d.gives)}</td><td>${esc(d.tool)}</td></tr>`}
+    if(d.group!==g){g=d.group;html+=`<tr class="dgroup"><td colspan="6">${esc(g)}</td></tr>`}
+    const on=dailyDone(d),id="dly-"+dailyId(d);
+    html+=`<tr class="${on?"ticked":""}"><td class="tick"><input type="checkbox" id="${id}" data-k="${dailyId(d)}" ${on?"checked":""} aria-label="${esc(d.name)}${d.area?" in "+esc(d.area):""}: done ${hourly(d)?"this hour":"today"}"></td><td><label for="${id}"><b>${esc(d.name)}</b><span class="rarea">${esc(d.area||"Any area")}</span></label></td><td>${esc(d.where)}</td><td>${esc(d.count)}</td><td>${esc(d.gives)}</td><td>${esc(d.tool)}</td></tr>`}
   body.innerHTML=html+"</tbody></table></div>";
-  const p=document.createElement("p");p.className="dv-hint";p.textContent=DAILY_SOURCE;body.append(p);
+  body.querySelectorAll("input[data-k]").forEach(cb=>cb.onchange=()=>{const d=rows.find(r=>dailyId(r)===cb.dataset.k);D.set(cb.dataset.k,cb.checked?dailyKey(d):null)});
+  const p=document.createElement("p");p.className="dv-hint";p.textContent="Ticks clear themselves at 5 AM, or on the hour for things that come back every hour. "+DAILY_SOURCE;body.append(p);
   box.append(det);
 }
+// clear the ticks on screen when the hour (and so maybe the day) turns over
+let dailyStamp=new Date().getHours();
+setInterval(()=>{const h=new Date().getHours();if(h!==dailyStamp){dailyStamp=h;renderDaily()}},60e3);
 
 /* ---------------- tabs: #quests (default), #friendship, #critters, #resources ---------------- */
 const TABS=["quests","friendship","critters","resources"];
@@ -1313,7 +1372,7 @@ function startFirebase(){
   try{
     firebase.initializeApp(window.PPFirebaseConfig);
     const db=firebase.firestore();
-    qdoc=db.doc(QUEST_DOC);tdoc=db.doc(TODO_DOC);F.listen(db);C.listen(db);
+    qdoc=db.doc(QUEST_DOC);tdoc=db.doc(TODO_DOC);F.listen(db);C.listen(db);D.listen(db);
     qdoc.onSnapshot(snap=>{if(pending)return;S=snap.exists?{...snap.data()}:{};writeCache();if(!editing&&!plateTyping)render();setSync("idle","Synced")},
       err=>{console.error(err);setSync("error","Offline — saved here")});
     tdoc.onSnapshot(snap=>{if(tpending)return;tloaded=true;T=snap.exists?{...snap.data()}:{};writeCache();renderTodo()},

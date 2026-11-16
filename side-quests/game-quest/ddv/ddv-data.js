@@ -17,6 +17,7 @@ const QUEST_DOC = "sidequest/ddv-quests";
 const TODO_DOC  = "sidequest/ddv-todo";
 const FRIENDS_DOC  = "sidequest/ddv-friends";
 const CRITTERS_DOC = "sidequest/ddv-critters";
+const DAILY_DOC = "sidequest/ddv-daily";
 const CACHE_KEY = "pp_ddv";
 /* Expansions Danni owns: open by default on the Friendship and Critters tabs. */
 const OWNED = ["Base Game","A Rift in Time"];
