@@ -2,11 +2,10 @@
    Princess & Paladin — shopping list shared logic
    /assets/pp-shopping.js
 
-   Loaded by the Meal Planner and by the week page (/castle/week.html), so
-   both build the same shopping list from the same week. Load it after
-   /assets/pp-meals.js. Nothing in here reads or writes Firestore or touches
-   the page: it's given the week's recipes, the pantry and the extras, and
-   hands back the list, sorted into aisles.
+   The Meal Planner's shopping list: which aisle an item goes under, and how
+   the week's ingredients merge into one line each. Nothing in here reads or
+   writes Firestore or touches the page: it's given the week's recipes, the
+   pantry and the extras, and hands back the list, sorted into aisles.
    ========================================================================== */
 
 window.PPShopping = (function(){
@@ -217,35 +216,5 @@ window.PPShopping = (function(){
       .map(cat => ({ cat, items: grouped[cat].sort((a, b) => a.name.localeCompare(b.name)) }));
   }
 
-  /* The list for one week, straight from the saved meal state (the whole
-     Firestore document). "week" is the date of its Sunday. Returns
-     { aisles, checked }: aisles as build() gives them, checked as
-     { key: true } for the lines already ticked off. Used by the week page. */
-  function forWeek(mealState, week){
-    const state = mealState || {};
-    const all = state.recipes || [];
-    const saved = (state.mealplan || {})[week] || {};
-    const ids = [];
-    // Dinners first, then lunches — only older weeks have a recipe picked for lunch.
-    ['dinner', 'lunch'].forEach(meal => PPMeals.DAY_KEYS.forEach(k => {
-      const v = PPMeals.normalizeDay(saved[k])[meal];
-      if (PPMeals.isRecipeChoice(v)) ids.push(v);
-    }));
-    // The pantry is saved as groups ({ Basics: […], Fridge: […] }); long ago it was one flat list.
-    const pantry = state.pantryItems;
-    const pantryItems = Array.isArray(pantry) ? pantry
-      : pantry && typeof pantry === 'object' ? [].concat(...Object.values(pantry).filter(Array.isArray))
-      : [];
-    return {
-      aisles: build({
-        recipes: ids.map(id => all.find(r => r.id === id)).filter(Boolean),
-        pantryItems,
-        extras: (state.shoppingExtras || {})[week],
-        pantryChecked: (state.pantryChecked || {})[week]
-      }),
-      checked: (state.shoppingChecked || {})[week] || {}
-    };
-  }
-
-  return { norm, mergeKey, categorize, formatQty, build, forWeek, CATEGORY_ORDER };
+  return { norm, mergeKey, categorize, formatQty, build, CATEGORY_ORDER };
 })();
