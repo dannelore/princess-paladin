@@ -10,6 +10,10 @@
    (Astarion) and the darkly funny options. The one place it holds back is
    Act 2, because sparing Isobel is what unlocks the best romance scene.
 
+   Played on PS5 with two mods that change the advice: a bigger party (six)
+   and a level cap of 20. So nobody is left at camp, empty seats go to
+   Withers' hirelings, and the level targets are minimums, not ceilings.
+
    RUN is a list of acts. Each act has steps, in the order to do them:
      { id, type, where, title, text, more?, moreLabel? }
        type   main | urge | romance | chaos   (colour and filter)
@@ -22,8 +26,8 @@
 
 const GLANCE = [
   { label:"You",     value:"Oathbreaker Paladin", note:"The Dark Urge origin. Any race; the white dragonborn is the canon look." },
-  { label:"Party",   value:"Astarion, Shadowheart, Lae'zel", note:"Minthara takes a seat in Act 2." },
-  { label:"Romance", value:"Astarion", note:"He is there from hour one and enjoys every bad idea." },
+  { label:"Party",   value:"A full six", note:"Astarion, Shadowheart, Lae'zel, then Minthara in Act 2. Hirelings fill the empty seats." },
+  { label:"Romance", value:"Astarion", note:"As always. He is there from hour one and enjoys every bad idea." },
   { label:"Time",    value:"About 45 hours", note:"13 for Act 1, 12 for Act 2, 20 for Act 3. That leaves 15 spare." }
 ];
 
@@ -31,11 +35,11 @@ const RULES = [
   "<b>Sleep often.</b> The Urge only speaks at night. Long rest whenever a step says to, and at least every couple of hours otherwise.",
   "<b>If it isn't on this list, walk past it.</b> The journal will fill with unfinished quests. Let it.",
   "<b>Take the Dark Urge lines.</b> They are tagged in the dialogue list and they are the reason for this run.",
-  "<b>Quicksave before every choice</b> (F5), so you can peek at the other branch and reload.",
-  "<b>Balanced difficulty.</b> Drop to Explorer the moment a fight needs a third try. Nobody is keeping score.",
+  "<b>Quicksave before every choice</b> (from the pause menu), so you can peek at the other branch and reload.",
+  "<b>Balanced difficulty.</b> With six in the party it will feel easy, and easy keeps fights short. Nobody is keeping score.",
   "<b>Eat every tadpole.</b> It suits the run and opens stronger options in conversations.",
-  "<b>Astarion never leaves the party.</b> Approval and romance scenes only build while he is with you.",
-  "<b>Levels to aim for:</b> 5 before the mountain pass, 9 before the city, 12 before the end."
+  "<b>Everyone comes along.</b> With six seats nobody waits at camp, so every companion sees everything and has an opinion about it.",
+  "<b>Levels to reach at least:</b> 5 before the mountain pass, 9 before the city, 12 before the end. Your cap is 20, so anything above is a bonus, but this route skips too much to get near it."
 ];
 
 const RUN = [
@@ -50,7 +54,7 @@ const RUN = [
       { id:"s-class", type:"main", where:"Character creation", title:"Make them a Paladin",
         text:"Tough, simple, and Charisma is your main talking stat, which matters because this run talks its way past a lot. Strength 16, Charisma 16, Constitution 14. Take any oath; it will not last the first hour.",
         moreLabel:"Levelling, kept simple",
-        more:"Stay Paladin all the way to 12. Great Weapon Fighting style, a two-handed sword, heavy armour. Feats: Great Weapon Master at 4, Strength +2 at 8, Savage Attacker at 12. In fights, hit things and spend spell slots on Divine Smite. If you would rather play the canon version, the default Dark Urge is a Sorcerer and that works just as well for conversations." },
+        more:"Stay Paladin all the way, past 12 if the run gets you there. Great Weapon Fighting style, a two-handed sword, heavy armour. Feats: Great Weapon Master at 4, Strength +2 at 8, Savage Attacker at 12. In fights, hit things and spend spell slots on Divine Smite. If you would rather play the canon version, the default Dark Urge is a Sorcerer and that works just as well for conversations." },
       { id:"s-diff", type:"main", where:"New game", title:"Start on Balanced",
         text:"You can change difficulty at any time from the menu, so there is no wrong pick here." }
     ]
@@ -83,6 +87,8 @@ const RUN = [
         text:"A bard is stuck on a song for her dead teacher. Encourage her and play along. It takes five minutes, it is lovely, and it makes a later night much worse." },
       { id:"a1-grove-urge", type:"urge", where:"Emerald Grove", title:"Let the Urge off the lead",
         text:"Three small ones, all optional: a squirrel near the druids' stone circle runs at you, Nettie the healer has a wounded bird on her table in the inner sanctum, and a paralysed tiefling called Pandirna guards the storeroom by the beach. The Urge has ideas about each." },
+      { id:"a1-withers", type:"main", where:"Camp, after your first few long rests", title:"Hire the spare seats",
+        text:"A dry old skeleton called Withers moves into camp on his own. He rents out hirelings for 100 gold each. You only have three companions in this act, so take two to fill your six. Pick a cleric and anyone who can pick locks." },
       { id:"a1-bite", type:"romance", where:"Camp, second or third long rest", title:"Wake up to Astarion",
         text:"You catch him leaning over you in the night. Let him feed. It is the first step of the romance and he fights better for it." },
       { id:"a1-bard", type:"urge", where:"Camp, first long rest after crossing the bridge west of the grove", title:"A visitor in the night",
@@ -151,7 +157,7 @@ const RUN = [
       { id:"a2-araj", type:"romance", where:"Moonrise Towers, ground floor, the room right of the entrance", title:"Back Astarion up",
         text:"A drow trader called Araj wants Astarion to bite her and he does not want to. Take his side, however good her bribe sounds. On your next long rest he comes to talk, and that conversation is where the romance turns real." },
       { id:"a2-minthara", type:"main", where:"Moonrise Towers prison, downstairs", title:"Get Minthara out",
-        text:"Do this on your first visit or she is lost. Two questioners are wiping her mind in a cell off the prison. Lie that you are taking over, or kill them, then walk her out on foot. She joins you at camp." },
+        text:"Do this on your first visit or she is lost. Two questioners are wiping her mind in a cell off the prison. Lie that you are taking over, or kill them, then walk her out on foot. She joins you at camp. Swap her in for a hireling." },
       { id:"a2-thorms", type:"chaos", where:"Reithwin Town, the middle of the valley", title:"Talk a family to death",
         text:"The general's three relatives each run a ruined building, and each can be beaten with words alone. The brewer wants a drinking contest and stories, and the Urge has stories about the grove. The toll collector can be argued out of her job. The surgeon can be told to demonstrate on himself. Do as many as amuse you; all three if you are behind on levels." },
       { id:"a2-mausoleum", type:"main", where:"Grand Mausoleum, north of Reithwin Town", title:"Open the tomb",
@@ -190,7 +196,7 @@ const RUN = [
   /* ------------------------------------------------------------------ */
   { id:"act3", kicker:"Act Three", title:"Baldur's Gate",
     blurb:"The city is where the game hides forty hours of side quests and where your own story finally gets told. Stick to the list. Details are tucked behind each step so you can read ahead safely.",
-    hours:"About 20 hours", level:"Finish at level 12",
+    hours:"About 20 hours", level:"Finish at level 12 or more",
     steps:[
       { id:"a3-circus", type:"chaos", where:"Rivington, the circus by the first waypoint", title:"Try to get into the circus",
         text:"The doorman's pet can smell what you are. Talk your way in as a reformed killer. Volunteer when the clown asks for a helper, then spin the genie's wheel and accuse him of cheating.",
@@ -207,7 +213,7 @@ const RUN = [
       { id:"a3-deal", type:"chaos", where:"Sharess' Caress, upstairs, on the bridge before the city gate", title:"Hear the devil's offer",
         text:"The devil from the tomb has a room here and a contract ready. Listen to all of it. Signing is optional and only matters if you plan to free the prisoner at the very end." },
       { id:"a3-city", type:"main", where:"Lower City", title:"Enter the city, lose a friend",
-        text:"Go through the gate to the Lower City and long rest once. Someone left at camp will be taken, and the kidnapper leaves an invitation. Keep Astarion in your party so it is not him." },
+        text:"Go through the gate to the Lower City and long rest once. Someone from your camp is taken, and the kidnapper leaves an invitation. Only people waiting at camp can be chosen, and with six seats your companions are all with you." },
       { id:"a3-cazador", where:"Cazador's Palace, on the city wall north of the Lower City", title:"Astarion's old master",
         text:"Climb to the ramparts and enter by the tower, with Astarion. Fight down to the dungeon. At the end he can take everything his master was after.",
         options:[
@@ -220,7 +226,7 @@ const RUN = [
         text:"In the back office, press the button behind the skull painting and give the password Sicarius. Take the right-hand path. They ask for proof of a kill, and you have been carrying one since the first hour.",
         more:"Gale's hand counts as your token, and his ghost is called up to testify against you. The judge is family and calls you the true heir. To join, kill the prisoner they offer you; it opens a shop of excellent assassin's gear. If you pulled Gale out instead, you need a hand from one of the city's murder victims." },
       { id:"a3-orin", type:"urge", where:"Temple of Bhaal, under the city through the sewers", title:"Answer the invitation",
-        text:"Follow the journal down through the sewers to the temple. Your butler is waiting at the door and lets you in. Be level 11 or 12. She offers a duel, one against one. Accept it.",
+        text:"Follow the journal down through the sewers to the temple. Your butler is waiting at the door and lets you in. Be level 11 or higher. She offers a duel, one against one. Accept it.",
         more:"Orin is your sister, and she is the one who put you on that ship. The duel is you alone against her monstrous form. Refusing it kills the hostage. Use everything: potions, scrolls, smites." },
       { id:"a3-bhaal", where:"Temple of Bhaal, straight after the duel", title:"An offer from your father",
         text:"Quicksave here. What you answer decides which endings are open to you.",
@@ -232,7 +238,7 @@ const RUN = [
       { id:"a3-stones", type:"main", where:"Wyrm's Rock Fortress, then the sewers", title:"Collect the last stone",
         text:"If you allied with Gortash, go back to him. He asks for your stones. Say no, twice; it is a test. Then take the boat in the sewers to the Morphic Pool and he meets you there. You will not have to fight him." },
       { id:"a3-ready", type:"main", where:"Camp", title:"Last night in the city",
-        text:"The boat ride is the point of no return. Before it: reach level 12, buy potions, long rest, and talk to everyone in camp one last time." },
+        text:"The boat ride is the point of no return. Before it: reach at least level 12, buy potions, long rest, and talk to everyone in camp one last time." },
       { id:"a3-prism", where:"The Astral Plane", title:"Who do you trust?",
         text:"Your guardian and the prisoner cannot both walk away.",
         options:[
