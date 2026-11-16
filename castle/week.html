@@ -9,8 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Jost:wght@400;500&display=swap" rel="stylesheet">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <style>
-/* A week of the meal plan on a page of its own: one row a day, lunch and
-   dinner in words, then that week's shopping list. It's what "View as Page"
+/* A week of the meal plan on a page of its own: one row a day, dinner and
+   lunch in words, then that week's shopping list. It's what "View as Page"
    on the Meal Planner opens and
    what the "Done" message links to, so it's kept plain on purpose — no
    ribbon, nothing to click but the cart.
@@ -44,7 +44,7 @@ h2{ font-family:'Cormorant Garamond', serif; font-size:1.7rem; font-weight:600; 
 .cart{ display:inline-block; padding:10px 22px; border-radius:999px; background:#8FA37E; color:#fff; font-weight:500; text-decoration:none; }
 .cart:hover{ background:#6D8259; }
 .back{ display:block; margin-top:14px; font-size:.82rem; color:#6B5D55; }
-/* On a phone each day stacks: the day, then lunch, then dinner. */
+/* On a phone each day stacks: the day, then dinner, then lunch. */
 @media (max-width: 560px){
   thead{ display:none; }
   tr{ display:block; padding:12px 0; border-bottom:1px solid #DDD3C6; }
@@ -106,11 +106,11 @@ function show(mealState){
   const rows = DAY_KEYS.map((k, i) => {
     const day = days[k];
     const lunch = day.lunch ? PPMeals.lunchWords(day, getRecipe) : (lunches.labels[i] === '—' ? '' : lunches.labels[i]);
-    return `<tr><td class="day">${DAY_LABELS[k]}<small>${dateOf(i).toLocaleDateString(undefined, short)}</small></td><td data-label="Lunch">${cell(lunch)}</td><td data-label="Dinner">${cell(PPMeals.dinnerName(day, getRecipe))}</td></tr>`;
+    return `<tr><td class="day">${DAY_LABELS[k]}<small>${dateOf(i).toLocaleDateString(undefined, short)}</small></td><td data-label="Dinner">${cell(PPMeals.dinnerName(day, getRecipe))}</td><td data-label="Lunch">${cell(lunch)}</td></tr>`;
   }).join('');
   document.getElementById('plan').innerHTML = `
     <table>
-      <thead><tr><th>Day</th><th>Lunch</th><th>Dinner</th></tr></thead>
+      <thead><tr><th>Day</th><th>Dinner</th><th>Lunch</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
 
