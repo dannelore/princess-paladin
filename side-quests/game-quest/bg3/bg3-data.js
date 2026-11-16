@@ -7,8 +7,11 @@
 
    The shape of the run, decided with Danni: give in to the Urge far more
    than fight it, under 60 hours, with the Urge-only scenes, one romance
-   (Astarion) and the darkly funny options. The one place it holds back is
-   Act 2, because sparing Isobel is what unlocks the best romance scene.
+   (Minthara, not Astarion: Danni always romances him and wanted a change)
+   and the darkly funny options. Minthara joins too late to be the one the
+   Urge comes for in Act 2, so there is no romantic reason to spare Isobel
+   and the plan gives in there too. Resisting stays on the page as the
+   other option.
 
    Played on PS5 with three mods that change the advice: a bigger party
    (six), a level cap of 20, and a feat at every even level. So nobody is left at camp, empty seats go to
@@ -27,7 +30,7 @@
 const GLANCE = [
   { label:"You",     value:"Oathbreaker Paladin", note:"The Dark Urge origin. Any race; the white dragonborn is the canon look." },
   { label:"Party",   value:"A full six", note:"Astarion, Shadowheart, Lae'zel, then Minthara in Act 2. Hirelings fill the empty seats." },
-  { label:"Romance", value:"Astarion", note:"As always. He is there from hour one and enjoys every bad idea." },
+  { label:"Romance", value:"Minthara", note:"Only possible on this route. Starts at the goblin party and picks up again in Act 2." },
   { label:"Time",    value:"About 45 hours", note:"13 for Act 1, 12 for Act 2, 20 for Act 3. That leaves 15 spare." }
 ];
 
@@ -89,8 +92,8 @@ const RUN = [
         text:"Three small ones, all optional: a squirrel near the druids' stone circle runs at you, Nettie the healer has a wounded bird on her table in the inner sanctum, and a paralysed tiefling called Pandirna guards the storeroom by the beach. The Urge has ideas about each." },
       { id:"a1-withers", type:"main", where:"Camp, after your first few long rests", title:"Hire the spare seats",
         text:"A dry old skeleton called Withers moves into camp on his own. He rents out hirelings for 100 gold each. You only have three companions in this act, so take two to fill your six. Pick a cleric and anyone who can pick locks." },
-      { id:"a1-bite", type:"romance", where:"Camp, second or third long rest", title:"Wake up to Astarion",
-        text:"You catch him leaning over you in the night. Let him feed. It is the first step of the romance and he fights better for it." },
+      { id:"a1-bite", type:"chaos", where:"Camp, second or third long rest", title:"Wake up to Astarion",
+        text:"You catch him leaning over you in the night. Let him feed. He fights better for it and it is a good scene, romance or not." },
       { id:"a1-bard", type:"urge", where:"Camp, first long rest after crossing the bridge west of the grove", title:"A visitor in the night",
         text:"Cross the stone bridge toward the Blighted Village, then long rest. Someone arrives at camp asking to stay. It does not matter what you answer.",
         more:"You wake up covered in blood with Alfira dead beside you. There is no way to prevent it. If Alfira is already dead a different bard comes instead. Choose how you explain it to the others; nobody leaves over it." },
@@ -114,7 +117,8 @@ const RUN = [
         text:"Speak to Zevlor on the ramparts above the gate, sound the war horn, and open the gate when Minthara tells you to. Then clear the grove with the goblins, one section at a time. This is the longest fight of the act.",
         more:"Everyone in the grove dies, including the druids. Wyll and Karlach will never join you now, and Halsin is gone. Minthara gives you a lyre and a tadpole and tells you to meet her at Moonrise Towers." },
       { id:"a1-party", type:"romance", where:"Camp, the long rest after the raid", title:"The goblin party",
-        text:"Walk around and talk to everyone before bed. When Astarion suggests spending the night together, say yes, then pick him when you go to sleep. Shadowheart drinks herself unconscious, which is its own small joy." },
+        text:"Walk around and talk to everyone before bed. Minthara invites you to join her later. Say yes and go to her; it is your only chance with her in this act. Shadowheart drinks herself unconscious, which is its own small joy.",
+        more:"In the morning the Urge offers you the chance to kill Minthara in her sleep. Do not take it. She is your romance and a companion for the rest of the game." },
       { id:"a1-level", type:"main", where:"The Risen Road, north of the Blighted Village", title:"Check you are level 5",
         text:"If you are short, the gnoll pack on the Risen Road is on your way and their leader can be turned on her own pack with your tadpole. The Urge has a line when you find them." },
       { id:"a1-creche", type:"main", where:"Mountain Pass, the monastery at the top", title:"Visit Lae'zel's people",
@@ -133,7 +137,7 @@ const RUN = [
 
   /* ------------------------------------------------------------------ */
   { id:"act2", kicker:"Act Two", title:"The Shadow-Cursed Lands",
-    blurb:"A cursed valley, a tower full of people who think you are on their side, and the one night this run fights the Urge instead of feeding it. This act holds the biggest choice of the run, so read Isobel's step before you get there.",
+    blurb:"A cursed valley, a tower full of people who think you are on their side, and a request from your butler that changes everything here. This act holds the biggest choice of the run, so read Isobel's step before you get there.",
     hours:"About 12 hours", level:"Leave at level 9",
     steps:[
       { id:"a2-convoy", type:"main", where:"The road in, just past the first fight", title:"Call the escort",
@@ -146,38 +150,38 @@ const RUN = [
       { id:"a2-order", type:"urge", where:"Camp, your first long rest in Act 2", title:"Your butler has a request",
         text:"He names someone at the inn and tells you what to do about her." },
       { id:"a2-isobel", where:"Last Light Inn, upstairs", title:"Isobel",
-        text:"Isobel is the cleric whose spell keeps the inn alive. When you talk to her a fight breaks out. This is the fork of the whole run, and the two rewards cannot both be had.",
+        text:"Isobel is the cleric whose spell keeps the inn alive. When you talk to her a fight breaks out. This is the fork of the whole run, and the two outcomes cannot both be had.",
         options:[
-          { key:"spare", mine:true, label:"Defend her", text:"The one time this run says no. It keeps the inn and its traders, and it sets up the best scene your romance gets. You must then also keep the Nightsong alive later on." },
-          { key:"kill", label:"Do as you were told", text:"Everyone in the inn dies and you fight what is left of them. Your butler rewards you with a monstrous new form a rest or two later. You lose the romance scene." }
+          { key:"kill", mine:true, label:"Do as you were told", text:"Everyone in the inn dies and you fight what is left of them. Your butler rewards you with a monstrous new form a rest or two later. Shop here first." },
+          { key:"spare", label:"Defend her", text:"The one way to say no. It keeps the inn and its traders, and later the Urge comes in the night for the companion who likes you most." }
         ],
-        more:"If you defend her, win the fight quickly: if her attacker carries her off, the inn still falls. The reward for killing her is Slayer form, a huge clawed shape you can turn into once per rest. If you spare her you can still earn it in Act 3." },
+        more:"The reward for killing her is Slayer form, a huge clawed shape you can turn into. Jaheira survives the fall of the inn; lie to her about what happened, because she attacks if you admit it. If you defend Isobel instead, win quickly: if her attacker carries her off, the inn still falls. You can still earn Slayer form in Act 3 either way." },
       { id:"a2-moonrise", type:"urge", where:"Moonrise Towers, at the west end of the valley", title:"Walk into the enemy's house",
         text:"The guards wave you through. Go to the throne room and watch the general pass sentence on Minthara. Several people here seem to know you. Afterwards, the Urge may help with the goblins being punished." },
-      { id:"a2-araj", type:"romance", where:"Moonrise Towers, ground floor, the room right of the entrance", title:"Back Astarion up",
-        text:"A drow trader called Araj wants Astarion to bite her and he does not want to. Take his side, however good her bribe sounds. On your next long rest he comes to talk, and that conversation is where the romance turns real." },
-      { id:"a2-minthara", type:"main", where:"Moonrise Towers prison, downstairs", title:"Get Minthara out",
-        text:"Do this on your first visit or she is lost. Two questioners are wiping her mind in a cell off the prison. Lie that you are taking over, or kill them, then walk her out on foot. She joins you at camp. Swap her in for a hireling." },
+      { id:"a2-araj", type:"chaos", where:"Moonrise Towers, ground floor, the room right of the entrance", title:"Astarion gets an offer",
+        text:"A drow trader called Araj wants Astarion to bite her and he does not want to. Back him and he respects you for it. Push him and you get a potion that raises your Strength for good, and a very unhappy vampire." },
+      { id:"a2-minthara", type:"romance", where:"Moonrise Towers prison, downstairs", title:"Get Minthara out",
+        text:"Do this on your first visit or she is lost. Two questioners are wiping her mind in a cell off the prison. Lie that you are taking over, or kill them, then walk her out on foot. She joins you at camp. Swap her in for a hireling, and talk to her that night to pick things back up." },
       { id:"a2-thorms", type:"chaos", where:"Reithwin Town, the middle of the valley", title:"Talk a family to death",
         text:"The general's three relatives each run a ruined building, and each can be beaten with words alone. The brewer wants a drinking contest and stories, and the Urge has stories about the grove. The toll collector can be argued out of her job. The surgeon can be told to demonstrate on himself. Do as many as amuse you; all three if you are behind on levels." },
       { id:"a2-mausoleum", type:"main", where:"Grand Mausoleum, north of Reithwin Town", title:"Open the tomb",
         text:"Inside, press the buttons under the three paintings in this order: Moonrise Towers, Grief, the General. A devil in a nice coat stops by to ask a favour. Take the lift down to the Gauntlet of Shar." },
       { id:"a2-yurgir", type:"chaos", where:"Gauntlet of Shar, the east side", title:"Read a devil his own contract",
         text:"Yurgir is the creature the devil wants dead. Ask him to recite his contract, then point out the loophole. With three good persuasion rolls he kills his followers, his pet, and then himself. Save first, and do not touch his chests beforehand. Take the gem from his lair." },
-      { id:"a2-scars", type:"romance", where:"Camp, the long rest after Yurgir", title:"Collect on the favour",
-        text:"The devil keeps his word and tells Astarion what the scars on his back mean. Have Astarion with you when he does." },
+      { id:"a2-scars", type:"main", where:"Camp, the long rest after Yurgir", title:"Collect on the favour",
+        text:"The devil keeps his word and tells Astarion what the scars on his back mean. It sets up his story in the city." },
       { id:"a2-trials", type:"main", where:"Gauntlet of Shar", title:"Three trials in the dark",
         text:"Bring Shadowheart. Finish the three trials for their gems: sneak through one, fight your own copies in one, walk an invisible path in the last. With Yurgir's gem you have four, which opens the way down. This is the point of no return for the valley." },
       { id:"a2-nightsong", where:"The Shadowfell, below the Gauntlet", title:"The Nightsong",
         text:"After a fight with a necromancer, Shadowheart is handed a spear and a prisoner and looks at you.",
         options:[
-          { key:"spare", mine:true, label:"Tell her to stop", text:"Goes with defending Isobel. The inn survives, you gain a powerful ally for the big fight, and Shadowheart's story turns away from her goddess." },
-          { key:"kill", label:"Let her strike", text:"Goes with killing Isobel. Shadowheart gets what she always wanted and becomes something colder. The big fight is harder alone." }
+          { key:"kill", mine:true, label:"Let her strike", text:"The embrace choice. Shadowheart gets what she always wanted and becomes something colder. With six of you the big fight is fine without help." },
+          { key:"spare", label:"Tell her to stop", text:"Shadowheart's story turns away from her goddess, and you gain a powerful ally for the big fight." }
         ],
-        more:"If the Nightsong dies, Isobel dies with her, and the game counts that as your kill: you get Slayer form and lose the night scene. So if you defended Isobel for the romance, the Nightsong has to live." },
-      { id:"a2-night", type:"urge", where:"Camp, a long rest after the Shadowfell", title:"The night the Urge comes for him",
-        text:"Only if you defended Isobel. Rest before storming the tower. Your butler is displeased and names a new victim. Warn him, and ask to be tied up.",
-        more:"The Urge tries to make you kill Astarion in his sleep. You need one Wisdom roll of 14 to wake him, then two of 18 while bound. Drink or cast anything that helps Wisdom rolls before bed, and save first. If you fail, he dies for good." },
+        more:"If the Nightsong dies, Isobel dies with her, and the game counts that as your kill. So if you defended Isobel and want the Urge's night scene, the Nightsong has to live." },
+      { id:"a2-night", type:"urge", where:"Camp, a long rest after the Shadowfell", title:"The night the Urge comes for a friend",
+        text:"Only if you defended Isobel and the Nightsong lived; otherwise tick this and move on. Rest before storming the tower. Your butler is displeased and names a new victim. Warn them, and ask to be tied up.",
+        more:"The Urge tries to make you kill the companion who likes you most, in their sleep. It is never Minthara; she joined too late to count. You need one Wisdom roll of 14 to wake them, then two of 18 while bound. Drink or cast anything that helps Wisdom rolls before bed, and save first. If you fail, they die for good." },
       { id:"a2-assault", type:"main", where:"Moonrise Towers", title:"Storm the tower",
         text:"Everyone you have not killed turns up to help. Fight to the roof, then follow the general down through the hole in the floor." },
       { id:"a2-kressa", type:"urge", where:"Under Moonrise, the laboratory north of the barracks", title:"Find the woman who remembers you",
@@ -214,11 +218,13 @@ const RUN = [
         text:"The devil from the tomb has a room here and a contract ready. Listen to all of it. Signing is optional and only matters if you plan to free the prisoner at the very end." },
       { id:"a3-city", type:"main", where:"Lower City", title:"Enter the city, lose a friend",
         text:"Go through the gate to the Lower City and long rest once. Someone from your camp is taken, and the kidnapper leaves an invitation. Only people waiting at camp can be chosen, and with six seats your companions are all with you." },
+      { id:"a3-minthara", type:"romance", where:"Camp, long rests in the city", title:"Nights with Minthara",
+        text:"Check in with her at camp whenever you rest in the city. Her later scenes come at night, and she has opinions about every deal you make here." },
       { id:"a3-cazador", where:"Cazador's Palace, on the city wall north of the Lower City", title:"Astarion's old master",
-        text:"Climb to the ramparts and enter by the tower, with Astarion. Fight down to the dungeon. At the end he can take everything his master was after.",
+        text:"Optional, about ninety minutes. Climb to the ramparts and enter by the tower. Fight down to the dungeon. At the end Astarion can take everything his master was after.",
         options:[
-          { key:"ascend", mine:true, label:"Help him take it", text:"The embrace ending for him: powerful, vain and delighted. He will ask something of you afterwards. Say yes if you want the romance to continue." },
-          { key:"spawn", label:"Talk him out of it", text:"He stays who he is, and the romance becomes the gentler version." }
+          { key:"ascend", mine:true, label:"Help him take it", text:"The embrace ending for him: powerful, vain and delighted with himself." },
+          { key:"spawn", label:"Talk him out of it", text:"He stays who he is, and is grateful for it in the end." }
         ] },
       { id:"a3-grief", type:"main", where:"House of Grief, north-west corner of the Lower City", title:"Shadowheart goes home",
         text:"Optional, about an hour. Bring Shadowheart and ask for a private session. Skip it if the clock is tight." },
