@@ -63,12 +63,15 @@
      nests and dragons first.
        dam / sire are dragon ids; busy is added by "Sent to nest".
 
-       daily: { picks: [daily id], custom: [{ id, t }], day, done: [daily id] }
+       daily: { picks: [daily id], custom: [{ id, t }], day, done: [daily id], low: [food] }
        picks are the DAILIES (below) this lair wants on its checklist,
        shown in DAILIES order, each name linking to its Flight Rising page;
        custom are their own. Gather also shows today's plan: turns split by
        what the lair's breeds eat, in the festival region during a festival
-       week and a different region each day otherwise.
+       week and a different region each day otherwise. low is the foods
+       ("meat", "seafood", "insects", "plants") tapped as running low under
+       Gather; while any are, every turn goes to them. The page can't see the
+       hoard as it is today, so this is how it finds out.
        done only counts while day is today in
        Flight Rising's time (Pacific, where its midnight reset happens),
        so the ticks clear themselves every day without a write.
@@ -241,6 +244,8 @@
   .fr-rm{ font: inherit; font-size: 1.1rem; line-height: 1; border: 0; background: none; color: var(--ink-soft); cursor: pointer; padding: 0 6px 4px; border-radius: 6px; }
   .fr-rm:hover{ color: var(--blade); }
   .fr-dl.ticks .fr-rm{ visibility: hidden; }
+  .fr-lows{ grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-left: 27px; font-size: .78rem; color: var(--ink-soft); }
+  .fr-lows .fr-chip{ font-size: .72rem; padding: 3px 10px; }
   /* these sit in .pp-field for its input styling, which also stacks them in a column */
   .fr-dadd{ display: flex; flex-direction: row; gap: 8px; flex-wrap: wrap; align-items: center; }
   .fr-dadd input{ flex: 1 1 180px; min-width: 0; }
@@ -683,6 +688,7 @@ const DIETS = {
 };
 /* in the order of Flight Rising's gathering links */
 const GATHER_FOR = { meat:"Hunting", seafood:"Fishing", insects:"Insect Catching", plants:"Foraging" };
+const LOW_NAMES  = { meat:"Meat", seafood:"Seafood", insects:"Insects", plants:"Plants" };
 
 /* Days a dragon can't breed for after breeding or hatching, from each
    breed's encyclopedia page. */
@@ -693,20 +699,30 @@ const COOLDOWNS = {
   Spiral:20, Thorntail:20, Tundra:15, Undertide:20, Veilspun:20, Vigil:20, Wildclaw:35
 };
 
-/* Turns per gathering type, in link order, or null if no dragon has a known diet. */
-function gatherPlan(items, turns){
-  const unit = 12;   /* a whole, half, third or quarter dragon are all whole twelfths */
+/* What the lair eats: each food's share in twelfths of a dragon (a whole,
+   half, third or quarter dragon are all whole twelfths), and how many
+   dragons count. */
+function appetite(items){
   const want = {};
   let fed = 0;
   items.forEach(d => {
     const diet = DIETS[d.breed];
     if(!diet || d.status === "gone") return;
     const foods = diet.split(" ");
-    foods.forEach(f => { want[f] = (want[f] || 0) + unit / foods.length; });
+    foods.forEach(f => { want[f] = (want[f] || 0) + 12 / foods.length; });
     fed++;
   });
-  if(!fed) return null;
-  const total = fed * unit;
+  return { want: want, fed: fed };
+}
+
+/* Turns per gathering type, in link order, or null if no dragon has a known
+   diet. Foods marked low that the lair eats get every turn between them. */
+function gatherPlan(items, turns, low){
+  const want = appetite(items).want;
+  if(!Object.keys(want).length) return null;
+  const short = (low || []).filter(f => want[f]);
+  if(short.length) Object.keys(want).forEach(f => { if(!short.includes(f)) delete want[f]; });
+  const total = Object.values(want).reduce((a, w) => a + w, 0);
   const rows = Object.keys(want).map(f => ({ f: f, n: Math.floor(want[f] * turns / total), rest: want[f] * turns % total, w: want[f] }));
   /* hand out the leftover turns by largest remainder, ties to the bigger appetite */
   let left = turns - rows.reduce((a, r) => a + r.n, 0);
@@ -746,7 +762,7 @@ function gatherHint(){
   /* 10 a day, or the number counted in hoard-data.js for a lair that has the
      5 extra for keeping its dragons' energy high */
   const counted = (window.FR_HOARD || {})[who];
-  const plan = gatherPlan(cur().items, counted && counted.turns || 10);
+  const plan = gatherPlan(cur().items, counted && counted.turns || 10, cur().daily.low);
   return plan
     ? plan.map(r => GATHER_FOR[r.f] + " ×" + r.n).join(" · ") + ", " + where
     : "Gather " + where + " Give your dragons their breeds to get a food mix.";
@@ -806,7 +822,8 @@ function cleanDaily(d){
     picks: Array.isArray(d.picks) ? d.picks.filter(p => DAILY_IDS.includes(p)) : [],
     custom: custom,
     day: typeof d.day === "string" ? d.day : "",
-    done: Array.isArray(d.done) ? d.done : []
+    done: Array.isArray(d.done) ? d.done : [],
+    low: Array.isArray(d.low) ? d.low.filter(f => GATHER_FOR[f]) : []
   };
 }
 
@@ -1099,8 +1116,14 @@ function renderDaily(){
      spells out today's plan; while choosing, they're plain */
   const name = r => r.u ? `<a href="${FR + r.u}" target="_blank" rel="noopener">${esc(r.t)}</a>` : esc(r.t);
   const hint = r => r.u && r.id === "gather" ? gatherHint() : r.h;
+  /* under Gather, the foods this lair eats, to tap when the hoard runs low */
+  const eats = appetite(cur().items).want;
+  const lows = r => r.u && r.id === "gather" && Object.keys(eats).length
+    ? `<div class="fr-lows">Low on${Object.keys(GATHER_FOR).filter(f => eats[f]).map(f =>
+        `<button class="fr-chip" type="button" data-low="${f}" aria-pressed="${dd.low.includes(f)}">${LOW_NAMES[f]}</button>`).join("")}</div>`
+    : "";
   const li = (r, checked, attr) => `<li class="fr-di${checked ? " done" : ""}">
-      <label><input type="checkbox" ${attr}="${esc(r.id)}"${checked ? " checked" : ""}><span><b>${name(r)}</b>${hint(r) ? `<small>${esc(hint(r))}</small>` : ""}</span></label>${rm(r)}</li>`;
+      <label><input type="checkbox" ${attr}="${esc(r.id)}"${checked ? " checked" : ""}><span><b>${name(r)}</b>${hint(r) ? `<small>${esc(hint(r))}</small>` : ""}</span></label>${rm(r)}${choose ? "" : lows(r)}</li>`;
 
   $("dList").className = "fr-dl" + (choose ? "" : " ticks");
   $("dList").innerHTML = choose
@@ -1129,6 +1152,13 @@ $("dList").onchange = e => {
 };
 
 $("dList").onclick = e => {
+  const lo = e.target.closest("[data-low]");
+  if(lo){
+    const dd = cur().daily, f = lo.dataset.low;
+    dd.low = dd.low.includes(f) ? dd.low.filter(x => x !== f) : dd.low.concat(f);
+    save(who);
+    return;
+  }
   const b = e.target.closest("[data-rm]");
   if(!b) return;
   const dd = cur().daily;
