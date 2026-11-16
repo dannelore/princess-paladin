@@ -10,8 +10,8 @@
    (Astarion) and the darkly funny options. The one place it holds back is
    Act 2, because sparing Isobel is what unlocks the best romance scene.
 
-   Played on PS5 with two mods that change the advice: a bigger party (six)
-   and a level cap of 20. So nobody is left at camp, empty seats go to
+   Played on PS5 with three mods that change the advice: a bigger party
+   (six), a level cap of 20, and a feat at every even level. So nobody is left at camp, empty seats go to
    Withers' hirelings, and the level targets are minimums, not ceilings.
 
    RUN is a list of acts. Each act has steps, in the order to do them:
@@ -54,7 +54,7 @@ const RUN = [
       { id:"s-class", type:"main", where:"Character creation", title:"Make them a Paladin",
         text:"Tough, simple, and Charisma is your main talking stat, which matters because this run talks its way past a lot. Strength 16, Charisma 16, Constitution 14. Take any oath; it will not last the first hour.",
         moreLabel:"Levelling, kept simple",
-        more:"Stay Paladin all the way, past 12 if the run gets you there. Great Weapon Fighting style, a two-handed sword, heavy armour. Feats: Great Weapon Master at 4, Strength +2 at 8, Savage Attacker at 12. In fights, hit things and spend spell slots on Divine Smite. If you would rather play the canon version, the default Dark Urge is a Sorcerer and that works just as well for conversations." },
+        more:"Stay Paladin all the way, past 12 if the run gets you there. Great Weapon Fighting style, a two-handed sword, heavy armour. You get a feat at every even level, so in order: Great Weapon Master at 2, Strength +2 at 4, Savage Attacker at 6, Strength +2 at 8, Alert at 10, Tough at 12, then Charisma +2 for any after that. In fights, hit things and spend spell slots on Divine Smite. If you would rather play the canon version, the default Dark Urge is a Sorcerer and that works just as well for conversations." },
       { id:"s-diff", type:"main", where:"New game", title:"Start on Balanced",
         text:"You can change difficulty at any time from the menu, so there is no wrong pick here." }
     ]
