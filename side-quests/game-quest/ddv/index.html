@@ -141,6 +141,11 @@
     text-transform: uppercase; color: var(--dusk-deep); margin: 0;
   }
   .dv-count{ font-family: var(--font-serif); font-style: italic; font-size: .92rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .dv-hang{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding: 14px 24px; }
+  .dv-hang .dv-label{ margin: 0; }
+  .dv-hang-name{ margin: 0; font-family: var(--font-serif); font-size: 1.35rem; font-weight: 600; color: var(--ink); }
+  .dv-hang .dv-hint{ flex: 1 1 16rem; min-width: 0; }
+  @media (max-width: 560px){ .dv-hang{ padding: 12px 18px; } }
   .dv-hint{ margin: 0; font-family: var(--font-serif); font-style: italic; font-size: .95rem; color: var(--ink-soft); line-height: 1.4; }
   .dv button:focus-visible, .dv input:focus-visible, .dv summary:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
 
@@ -348,6 +353,7 @@
         </div>
         <div class="dv-regions" id="f-regions"></div>
       </section>
+      <section class="pp-panel dv-hang" id="f-hang" aria-label="Who to hang out with" aria-live="polite" hidden></section>
       <p class="dv-undo" id="f-undo" aria-live="polite" hidden></p>
       <div class="dv-tools pp-field">
         <input id="f-q" type="search" placeholder="Search villagers" aria-label="Search villagers">
@@ -419,6 +425,7 @@
       </div>
       <div class="dv-regions" id="regions"></div>
     </section>
+    <section class="pp-panel dv-hang" id="hang" aria-label="Who to hang out with" aria-live="polite" hidden></section>
 
     <section class="pp-panel dv-panel" data-fold="todo" aria-label="To-do">
       <button class="dv-fold" aria-expanded="true"><span class="dv-label">To-do</span><span class="dv-count" id="todo-count"></span></button>
@@ -886,9 +893,32 @@ const playable=r=>playableFor(r,nt(r[0]));
    at the top, then event quests about to go (DEADLINE). The rest wait behind "Show more". Ticked ones sit at the
    bottom until Refresh clears them. */
 let todoAll=false;
+/* Who to hang out with: the villager in your Valley whose next friendship
+   level opens the most quests for the levels it takes (the same sums as the
+   to-do list). If no quest is waiting on a level, the lowest-level villager. */
+function hangPicks(P){
+  const need=new Map();
+  for(const F of P.fronts)for(const b of F.bs)if(b.f){
+    const s=need.get(b.f)||{w:0,l:MAX_LEVEL,qs:new Set()};
+    s.w+=F.leads.size/F.bs.length;s.l=Math.min(s.l,b.l);for(const r of F.leads)s.qs.add(r);need.set(b.f,s)}
+  return VILLAGERS.filter(v=>metV(v)&&lvl(v.k)<MAX_LEVEL).map(v=>{
+    const s=need.get(v.k),L=lvl(v.k);
+    return{v,L,to:s?s.l:null,n:s?s.qs.size:0,score:s?s.w/Math.max(1,s.l-L):0}})
+    .sort((a,b)=>(b.score-a.score)||(a.L-b.L)||a.v.name.localeCompare(b.v.name));
+}
+function renderHang(P){
+  const picks=hangPicks(P),top=picks[0];
+  for(const id of ["hang","f-hang"]){const el=$(id);if(!el)continue;
+    el.hidden=!top;if(!top){el.innerHTML="";continue}
+    const why=top.n?`Level ${top.L} &rarr; ${top.to} opens up ${plural(top.n,"quest")}.`
+      :`No quests are waiting on a friendship level, so pick whoever's lowest: they're at level ${top.L}.`;
+    const next=picks.slice(1,3).filter(p=>p.n||!top.n).map(p=>esc(p.v.name));
+    el.innerHTML=`<p class="dv-label">Hang out with</p><p class="dv-hang-name">${esc(top.v.name)}</p><p class="dv-hint">${why}${next.length?` After them: ${next.join(" or ")}.`:""}</p>`}
+}
 function renderTodo(){
   const box=$("todo-groups");box.innerHTML="";
   const stored=new Set(Object.keys(T)),P=plan();
+  renderHang(P);
   // a saved quest suggestion waits, unshown, while a villager it needs isn't in the Valley yet
   const onHold=v=>{if(v.g!=="quest"||!v.q||st(v.q))return false;const r=Q.find(x=>x[0]===v.q);return !!r&&blockers(r).some(b=>b.u)};
   const all=[...Object.entries(T).filter(([,v])=>v&&v.t&&!onHold(v)),...autoTodos(P)].map(([id,v])=>{
