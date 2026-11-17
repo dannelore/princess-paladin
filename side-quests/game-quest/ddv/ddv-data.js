@@ -40,7 +40,7 @@ const Q=[
 ["goofy--scrapbook-blitz","Base Game","Goofy","","Scrapbook Blitz"],
 ["goofy--give-me-a-sign","Base Game","Goofy","","Give Me A Sign"],
 ["goofy--the-ones-that-got-away","Base Game","Goofy","","The Ones That Got Away"],
-["goofy--wheel-big-trouble","Base Game","Goofy","","Wheel Big Trouble"],
+["goofy--wheel-big-trouble","Base Game","Goofy","Wishblossom Ranch","Wheel Big Trouble"],
 ["mickey--mickey-s-memories","Base Game","Mickey","","Mickey's Memories"],
 ["mickey--hangin-with-mickey","Base Game","Mickey","","Hangin' With Mickey"],
 ["mickey--missing-minnie","Base Game","Mickey","","Missing Minnie"],
@@ -503,18 +503,19 @@ const Q=[
 ["merida--archery-and-archrivals","Storybook Vale","Merida","","Archery and Archrivals"],
 ["merida--change-your-fate","Storybook Vale","Merida","","Change Your Fate"],
 ["merida--a-very-scottish-celebration","Storybook Vale","Merida","","A Very Scottish Celebration"],
-["flynn-rider--a-sheep-in-wolf-s-clothing","Storybook Vale","Flynn Rider","","A Sheep In Wolf's Clothing"],
+["flynn-rider--a-sheep-in-wolf-s-clothing","Storybook Vale","Flynn Rider","","A Sheep in Wolf's Clothing"],
 ["flynn-rider--not-by-the-hair-on-my-chinny-chin-chin","Storybook Vale","Flynn Rider","","Not by the Hair on My Chinny Chin Chin"],
 ["flynn-rider--curiouser-and-curiouser","Storybook Vale","Flynn Rider","","Curiouser and Curiouser"],
 ["flynn-rider--the-teapot-falls","Storybook Vale","Flynn Rider","","Teapot Falls"],
 ["flynn-rider--the-fallen-fortress","Storybook Vale","Flynn Rider","","The Fallen Fortress"],
 ["flynn-rider--the-knights-of-the-round-table","Storybook Vale","Flynn Rider","","The Knights of the Round Table"],
+["aurora--the-missing-princess","Storybook Vale","Flynn Rider","","The Missing Princess"],
 ["flynn-rider--the-company-of-the-wolf","Storybook Vale","Flynn Rider","","The Company of the Wolf"],
 ["flynn-rider--memory-lane","Storybook Vale","Flynn Rider","","Memory Lane"],
 ["flynn-rider--an-old-fashioned-heist","Storybook Vale","Flynn Rider","","An Old-Fashioned Heist"],
 ["flynn-rider--the-adventures-of-flynn-rider","Storybook Vale","Flynn Rider","","The Adventures of Flynn Rider"],
 ["flynn-rider--a-romantic-reunion","Storybook Vale","Flynn Rider","","A Romantic Reunion"],
-["hades--guts-and-glory","Storybook Vale","Hades","","Guts and Glory"],
+["hades--guts-and-glory","Storybook Vale","Hades","","Guts & Glory"],
 ["hades--a-moth-to-a-flame","Storybook Vale","Hades","","A Moth to a Flame"],
 ["hades--the-promethean-flame","Storybook Vale","Hades","","The Promethean Flame"],
 ["hades--the-marble-colossus","Storybook Vale","Hades","","The Marble Colossus"],
@@ -544,11 +545,8 @@ const Q=[
 ["aurora--redeeming-literature","Storybook Vale","Aurora","","Redeeming Literature"],
 ["aurora--the-princess-tour","Storybook Vale","Aurora","","The Princess Tour"],
 ["aurora--dreams-and-dark-designs","Storybook Vale","Aurora","","Dreams and Dark Designs"],
-["aurora--the-missing-princess","Storybook Vale","Aurora","","The Missing Princess"],
 ["snow-white--a-wishful-invitation","Wishblossom Ranch","Snow White","","A Wishful Invitation"],
 ["snow-white--tales-of-a-broken-heart","Wishblossom Ranch","Snow White","","Tales of a Broken Heart"],
-["snow-white--equine-delicacies","Wishblossom Ranch","Snow White","","Equine Delicacies"],
-["snow-white--reindeer-are-better-than-people","Wishblossom Ranch","Snow White","","Reindeer Are Better Than People"],
 ["snow-white--handle-with-care","Wishblossom Ranch","Snow White","","Handle with Care"],
 ["snow-white--making-peace","Wishblossom Ranch","Snow White","","Making Peace"],
 ["snow-white--the-copycat","Wishblossom Ranch","Snow White","","The Copycat"],
@@ -562,12 +560,12 @@ const Q=[
 ["cruella-de-vil--automotive-appeal","Wishblossom Ranch","Cruella de Vil","","Automotive Appeal"],
 ["cruella-de-vil--you-re-really-wearing-that","Wishblossom Ranch","Cruella de Vil","","You're Really Wearing THAT?"],
 ["cruella-de-vil--stripes-are-in-this-season","Wishblossom Ranch","Cruella de Vil","","Stripes Are In This Season"],
-["cruella-de-vil--headdress-to-impress","Wishblossom Ranch","Cruella de Vil","","Headdress To Impress"],
+["cruella-de-vil--headdress-to-impress","Wishblossom Ranch","Cruella de Vil","","Headdress to Impress"],
 ["tinker-bell--crystal-cavern-wishing-alps","Wishblossom Ranch","Tinker Bell","","Crystal Cavern: Wishing Alps"],
 ["tinker-bell--crystal-caverns-glamour-gulch","Wishblossom Ranch","Tinker Bell","","Crystal Caverns: Glamour Gulch"],
 ["tinker-bell--crystal-cavern-pixie-acres","Wishblossom Ranch","Tinker Bell","","Crystal Cavern: Pixie Acres"],
 ["tinker-bell--the-decay","Wishblossom Ranch","Tinker Bell","","The Decay"],
-["tinker-bell--home-is-where-the-heart-is","Wishblossom Ranch","Tinker Bell","","Home Is Where The Heart Is"],
+["tinker-bell--home-is-where-the-heart-is","Wishblossom Ranch","Tinker Bell","","Home Is Where the Heart Is"],
 ["tinker-bell--uneasy-neighbours","Wishblossom Ranch","Tinker Bell","","Uneasy Neighbors"],
 ["tinker-bell--tink-s-trinkets","Wishblossom Ranch","Tinker Bell","","Tink's Trinkets"],
 ["tinker-bell--time-to-fly","Wishblossom Ranch","Tinker Bell","","Time to Fly"],
@@ -581,9 +579,11 @@ const Q=[
 ["tigger--terribly-twitchy-tigger","Wishblossom Ranch","Tigger","","Terribly Twitchy Tigger"],
 ["tigger--woozle-bamboozle","Wishblossom Ranch","Tigger","","Woozle Bamboozle"],
 ["tigger--a-tiggerific-day","Wishblossom Ranch","Tigger","","A Tiggerific Day"],
-["daisy-duck--wishblossom-fair-horse-beauty-contest","Wishblossom Ranch","Daisy Duck","","Wishblossom Fair: Horse Beauty Contest"],
-["mulan--wishblossom-fair-riding-demonstration","Wishblossom Ranch","Mulan","","Wishblossom Fair: Riding Demonstration"],
-["tiana--wishblossom-fair-cooking-competition","Wishblossom Ranch","Tiana","","Wishblossom Fair: Cooking Competition"],
+["daisy-duck--wishblossom-fair-horse-beauty-contest","Wishblossom Ranch","Daisy Duck","Starts during Snow White's The Wishblossom Fair","Wishblossom Fair: Horse Beauty Contest"],
+["mulan--wishblossom-fair-riding-demonstration","Wishblossom Ranch","Mulan","Starts during Snow White's The Wishblossom Fair","Wishblossom Fair: Riding Demonstration"],
+["tiana--wishblossom-fair-cooking-competition","Wishblossom Ranch","Tiana","Starts during Snow White's The Wishblossom Fair","Wishblossom Fair: Cooking Competition"],
+["snow-white--equine-delicacies","Wishblossom Ranch","Remy","Starts during Goofy's Wheel Big Trouble","Equine Delicacies"],
+["snow-white--reindeer-are-better-than-people","Wishblossom Ranch","Kristoff","","Reindeer Are Better Than People"],
 ["winnie-the-pooh--prologue-childhood-treasures","Honeyglow Woods","Winnie the Pooh","","Prologue: Childhood Treasures"],
 ["winnie-the-pooh--chapter-1-all-you-need-is-honey","Honeyglow Woods","Winnie the Pooh","","Chapter 1: All You Need Is Honey"],
 ["winnie-the-pooh--chapter-2-about-thought-fog-and-light","Honeyglow Woods","Winnie the Pooh","","Chapter 2: About Thought, Fog, and Light"],
@@ -655,7 +655,8 @@ for(let i=Q.length-1;i>=0;i--)if(NOT_OWNED_BUNDLES.includes(Q[i][2])||PAST_EVENT
 
 /* Friendship level a villager's quest needs before it starts, by quest id,
    from the Dreamlight Valley Wiki (Oct 25, 2026). 0 means no friendship
-   level (story or realm quests). A villager's quest that isn't listed is
+   level (story or realm quests). Storybook Vale and Wishblossom Ranch from
+   the same pages on Nov 16, 2026. A villager's quest that isn't listed is
    treated as needing level 10, so the to-do list never suggests one that
    isn't open yet. */
 const FRIEND_REQ={
@@ -684,7 +685,19 @@ const FRIEND_REQ={
   "tramp--canine-courtship":0,"tramp--meatballs":0,"tramp--not-your-average-squeaky-toy":2,"tramp--cleanliness-is-next-to-dogliness":4,"tramp--and-how-did-that-make-you-feel":7,"tramp--canine-archaeology":10,
   "hercules--speedrun-crash-course":0,"hercules--thunderstruck":0,"hercules--the-grecian-urn":2,"hercules--aquatic-musings":4,"hercules--medicinal-mortality":7,"hercules--battle-of-the-coaches":10,
   "phil--moonlighting-as-a-hero":0,"phil--a-real-godly-mess":0,"phil--satyrical-theater":2,"phil--an-unlikely-hero":4,"phil--sweet-sweet-retirement":7,"phil--coach-s-commission":10,
-  "oogie-boogie--let-the-games-begin":0,"oogie-boogie--oogie-boogie-s-big-game":0
+  "oogie-boogie--let-the-games-begin":0,"oogie-boogie--oogie-boogie-s-big-game":0,
+  "merida--welcome-to-storybook-vale":0,"merida--a-new-chapter":0,"merida--a-land-of-myths-and-legends":0,"merida--the-wolf-of-the-wilds":0,"merida--clan-dunbroch-s-rules-of-the-hunt":2,"merida--archery-and-archrivals":4,"merida--change-your-fate":7,"merida--a-very-scottish-celebration":10,
+  "flynn-rider--a-sheep-in-wolf-s-clothing":0,"flynn-rider--not-by-the-hair-on-my-chinny-chin-chin":0,"flynn-rider--curiouser-and-curiouser":0,"flynn-rider--the-teapot-falls":0,"flynn-rider--the-fallen-fortress":0,"flynn-rider--the-knights-of-the-round-table":0,"flynn-rider--the-company-of-the-wolf":0,"flynn-rider--memory-lane":4,"flynn-rider--an-old-fashioned-heist":7,"flynn-rider--the-adventures-of-flynn-rider":10,"flynn-rider--a-romantic-reunion":10,
+  "hades--guts-and-glory":0,"hades--a-moth-to-a-flame":0,"hades--the-promethean-flame":0,"hades--the-marble-colossus":0,"hades--losing-your-marbles":0,"hades--mount-olympus":0,"hades--mythic-restoration":0,"hades--yes-your-lugubriousness":4,"hades--your-own-personal-hades":7,"hades--fine-i-ll-do-it-myself":10,
+  "maleficent--the-mistress-of-all-evil":0,"maleficent--a-long-awaited-invitation":0,"maleficent--the-unwritten-realms-maleficent-s-gift":0,"maleficent--the-unwritten-realms-the-spinning-wheel":0,"maleficent--the-unwritten-realms-maleficent-s-demise":0,"maleficent--the-corvid-companion":0,"maleficent--rekindling-the-fire":4,"maleficent--collateral-damage":7,"maleficent--the-two-flames-united":0,
+  "aurora--the-tales-that-bind":0,"aurora--the-family-recipe":2,"aurora--redeeming-literature":3,"aurora--the-princess-tour":7,"aurora--dreams-and-dark-designs":0,"aurora--the-missing-princess":0,
+  "snow-white--a-wishful-invitation":0,"snow-white--tales-of-a-broken-heart":0,"snow-white--handle-with-care":0,"snow-white--making-peace":4,"snow-white--the-copycat":7,"snow-white--the-wishblossom-fair":10,"snow-white--hold-your-horses-the-wishing-alps":0,"snow-white--hold-your-horses-glamour-gulch":0,"snow-white--hold-your-horses-pixie-acres":0,"snow-white--equine-delicacies":0,"snow-white--reindeer-are-better-than-people":0,
+  "cruella-de-vil--the-decay-of-fashion":0,"cruella-de-vil--the-de-vil-crash":0,"cruella-de-vil--the-skunk-rebellion":0,"cruella-de-vil--automotive-appeal":2,"cruella-de-vil--you-re-really-wearing-that":4,"cruella-de-vil--stripes-are-in-this-season":7,"cruella-de-vil--headdress-to-impress":10,
+  "tinker-bell--crystal-cavern-wishing-alps":0,"tinker-bell--crystal-caverns-glamour-gulch":0,"tinker-bell--crystal-cavern-pixie-acres":0,"tinker-bell--the-decay":0,"tinker-bell--home-is-where-the-heart-is":0,"tinker-bell--uneasy-neighbours":4,"tinker-bell--tink-s-trinkets":7,"tinker-bell--time-to-fly":10,
+  "tigger--bounce-up-never-down":0,"tigger--the-balloon-family":0,"tigger--fun-fun-fun":0,"tigger--test-your-strength":0,"tigger--catch-the-lucky-lily-pad":0,"tigger--solve-the-puzzle":0,"tigger--a-honey-of-a-problem":0,"tigger--terribly-twitchy-tigger":4,"tigger--woozle-bamboozle":7,"tigger--a-tiggerific-day":10,
+  "daisy-duck--wishblossom-fair-horse-beauty-contest":0,
+  "mulan--wishblossom-fair-riding-demonstration":0,
+  "tiana--wishblossom-fair-cooking-competition":0
 };
 /* What else a quest needs first, from the same wiki pages: villagers to have
    met (by key), at a level ("pumbaa@10"), or quests to have finished (by
@@ -775,7 +788,53 @@ const NEEDS={
   "jafar--the-trial-of-eternity":["remy"],
   "oswald--an-alarming-development":["stitch","olaf"],
   "oswald--a-cockamamie-contest":["gaston","rapunzel","eve"],
-  "oswald--the-lesser-evil":["merlin--the-now-and-then"]
+  "oswald--the-lesser-evil":["merlin--the-now-and-then"],
+  "flynn-rider--a-sheep-in-wolf-s-clothing":["merida--the-wolf-of-the-wilds"],
+  "hades--guts-and-glory":["merida--a-land-of-myths-and-legends"],
+  "aurora--the-tales-that-bind":["lorekeeper--the-ink-stained-world"],
+  "cruella-de-vil--the-decay-of-fashion":["tinker-bell--crystal-cavern-wishing-alps"],
+  "tigger--bounce-up-never-down":["cruella-de-vil--the-skunk-rebellion","tinker-bell--crystal-caverns-glamour-gulch"],
+  "merida--archery-and-archrivals":["flynn-rider"],
+  "merida--change-your-fate":["hades","mulan","moana","mirabel"],
+  "merida--a-very-scottish-celebration":["tiana"],
+  "flynn-rider--the-company-of-the-wolf":["kristoff","mirabel","wall-e"],
+  "flynn-rider--memory-lane":["hades"],
+  "flynn-rider--an-old-fashioned-heist":["stitch","vanellope-von-schwee","mulan","merida","buzz-lightyear","remy","olaf","mushu"],
+  "flynn-rider--the-adventures-of-flynn-rider":["belle"],
+  "flynn-rider--a-romantic-reunion":["rapunzel@10","rapunzel--home-is-where-the-art-is","flynn-rider--the-adventures-of-flynn-rider"],
+  "aurora--the-missing-princess":["maleficent--the-unwritten-realms-maleficent-s-demise"],
+  "hades--mythic-restoration":["remy","merida","mickey"],
+  "hades--yes-your-lugubriousness":["ursula","mother-gothel","vanellope-von-schwee","flynn-rider"],
+  "hades--your-own-personal-hades":["daisy-duck","scrooge-mcduck","flynn-rider","minnie"],
+  "hades--fine-i-ll-do-it-myself":["tiana","eric","mirabel"],
+  "maleficent--rekindling-the-fire":["daisy-duck","donald-duck"],
+  "maleficent--collateral-damage":["remy"],
+  "maleficent--the-two-flames-united":["maleficent--collateral-damage","aurora--dreams-and-dark-designs"],
+  "aurora--redeeming-literature":["belle","stitch"],
+  "aurora--the-princess-tour":["jasmine","tiana","mulan"],
+  "aurora--dreams-and-dark-designs":["aurora--the-princess-tour","maleficent--collateral-damage","remy"],
+  "snow-white--handle-with-care":["snow-white--tales-of-a-broken-heart"],
+  "snow-white--making-peace":["cruella-de-vil"],
+  "snow-white--the-copycat":["wall-e","olaf","goofy","cruella-de-vil"],
+  "snow-white--the-wishblossom-fair":["cruella-de-vil","mulan","daisy-duck","tiana"],
+  "snow-white--hold-your-horses-glamour-gulch":["snow-white--hold-your-horses-the-wishing-alps"],
+  "snow-white--hold-your-horses-pixie-acres":["snow-white--hold-your-horses-glamour-gulch"],
+  "snow-white--equine-delicacies":["goofy--wheel-big-trouble"],
+  "snow-white--reindeer-are-better-than-people":["tinker-bell--crystal-cavern-wishing-alps"],
+  "daisy-duck--wishblossom-fair-horse-beauty-contest":["snow-white--the-wishblossom-fair"],
+  "mulan--wishblossom-fair-riding-demonstration":["snow-white--the-wishblossom-fair"],
+  "tiana--wishblossom-fair-cooking-competition":["snow-white--the-wishblossom-fair"],
+  "cruella-de-vil--you-re-really-wearing-that":["daisy-duck","donald-duck","alice","moana","kristoff","ursula"],
+  "cruella-de-vil--stripes-are-in-this-season":["tigger"],
+  "cruella-de-vil--headdress-to-impress":["sally","mirabel"],
+  "tinker-bell--crystal-cavern-wishing-alps":["goofy--wheel-big-trouble"],
+  "tinker-bell--crystal-caverns-glamour-gulch":["cruella-de-vil--the-skunk-rebellion"],
+  "tinker-bell--crystal-cavern-pixie-acres":["tigger--fun-fun-fun"],
+  "tinker-bell--the-decay":["tinker-bell--crystal-cavern-pixie-acres"],
+  "snow-white--tales-of-a-broken-heart":["snow-white--a-wishful-invitation"],
+  "tinker-bell--home-is-where-the-heart-is":["tinker-bell--the-decay","tinker-bell--crystal-cavern-pixie-acres","tigger--fun-fun-fun"],
+  "tinker-bell--tink-s-trinkets":["olaf","fairy-godmother","buzz-lightyear","stitch"],
+  "tinker-bell--time-to-fly":["peter-pan"]
 };
 /* Villagers still to meet come in pairs from a Dream Castle realm, so the
    to-do is to open the realm. Door costs go up with each one opened.
@@ -830,10 +889,23 @@ const PROGRESS={
   "hercules--aquatic-musings":["merlin"],
   "hercules--medicinal-mortality":["scar"],
   "hercules--battle-of-the-coaches":["mike-wazowski"],
-  "jafar--the-optics-of-a-second-chance":["eve"]
+  "jafar--the-optics-of-a-second-chance":["eve"],
+  "flynn-rider--the-company-of-the-wolf":["kristoff"],
+  "flynn-rider--memory-lane":["merlin"],
+  "hades--mythic-restoration":["mickey"],
+  "hades--yes-your-lugubriousness":["scrooge-mcduck","remy","flynn-rider","ursula"],
+  "hades--your-own-personal-hades":["mickey"],
+  "maleficent--the-corvid-companion":["aurora","hades"],
+  "maleficent--rekindling-the-fire":["hades"],
+  "aurora--dreams-and-dark-designs":["hades","maleficent"],
+  "snow-white--the-copycat":["cruella-de-vil"],
+  "tigger--terribly-twitchy-tigger":["stitch","tinker-bell"]
 };
-/* Quests that bring a villager to the Valley (the realm ones, and Oswald's
-   The Lesser Evil for Jafar). Only the Quest Flow uses these. */
+/* Quests that bring a villager to the Valley (the realm ones, Oswald's
+   The Lesser Evil for Jafar, and the Storybook Vale and Wishblossom Ranch
+   villagers' own). The tracker uses them so that a villager's quests up to
+   this one don't wait on meeting them (introQuest), and the Quest Flow
+   draws them. */
 const UNLOCKS={
   "timon--where-s-pumbaa":["timon","pumbaa"],
   "alice--leaving-wonderland":["alice"],
@@ -845,7 +917,16 @@ const UNLOCKS={
   "tramp--meatballs":["tramp"],
   "phil--a-real-godly-mess":["hercules","phil"],
   "oogie-boogie--oogie-boogie-s-big-game":["oogie-boogie"],
-  "oswald--the-lesser-evil":["jafar"]
+  "oswald--the-lesser-evil":["jafar"],
+  "merida--a-new-chapter":["merida"],
+  "flynn-rider--a-sheep-in-wolf-s-clothing":["flynn-rider"],
+  "hades--guts-and-glory":["hades"],
+  "maleficent--the-unwritten-realms-maleficent-s-demise":["maleficent"],
+  "aurora--the-tales-that-bind":["aurora"],
+  "snow-white--tales-of-a-broken-heart":["snow-white"],
+  "cruella-de-vil--the-skunk-rebellion":["cruella-de-vil"],
+  "tinker-bell--home-is-where-the-heart-is":["tinker-bell"],
+  "tigger--fun-fun-fun":["tigger"]
 };
 
 /* A character's quests come one after another within a section, except
