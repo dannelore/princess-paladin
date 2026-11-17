@@ -20,7 +20,7 @@ const CRITTERS_DOC = "sidequest/ddv-critters";
 const DAILY_DOC = "sidequest/ddv-daily";
 const CACHE_KEY = "pp_ddv";
 /* Expansions Danni owns: open by default on the Friendship and Critters tabs. */
-const OWNED = ["Base Game","A Rift in Time"];
+const OWNED = ["Base Game","A Rift in Time","Storybook Vale","Wishblossom Ranch"];
 /* Quest-list "characters" that aren't villagers you can befriend. */
 const NOT_VILLAGERS = ["Introductory","Once Upon a Dance (Dream Bundle)","The Forgotten","Trials","Lorekeeper","Secret Potatoes"];
 
