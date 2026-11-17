@@ -580,7 +580,9 @@ const SUB_QUESTS={
   "mulan--training-games":["maui--training-games-the-shapeshifter","nala--training-games-the-lioness","buzz-lightyear--training-games-the-space-ranger"],
   "mushu--the-guardian-party":["mushu--the-red-pouch-hunt","mushu--cooking-sesame-balls","mushu--mushu-s-pinata-extravaganza"],
   "oswald--a-cockamamie-contest":["eve--eve-s-challenge","gaston--gaston-s-challenge","rapunzel--rapunzel-s-challenge"],
-  "daisy-duck--ask-daisy":["kristoff--a-romantic-in-the-making"]
+  "daisy-duck--ask-daisy":["kristoff--a-romantic-in-the-making"],
+  "snow-white--the-wishblossom-fair":["daisy-duck--wishblossom-fair-horse-beauty-contest","mulan--wishblossom-fair-riding-demonstration","tiana--wishblossom-fair-cooking-competition"],
+  "goofy--wheel-big-trouble":["snow-white--equine-delicacies"]
 };
 function moveSubQuests(id,s){
   if(!SUB_QUESTS[id]||(s!=="p"&&s!=="d"))return[];
@@ -774,10 +776,18 @@ function questNamed(text){
      {x: 1}                       locked for a reason the list can't read
    A villager's quest not started needs the level in FRIEND_REQ, or level
    10 when it isn't listed. Empty means it's open now. */
+/* A villager's own quests up to the one that moves them in (UNLOCKS) are how
+   you meet them, so they don't wait on it. Realm villagers have their own
+   "Befriend …" to-do instead (REALMS). */
+function introQuest(r,vl){
+  if(REALMS.some(R=>R.v.includes(vl.k)))return false;
+  const i=vl.rows.findIndex(x=>(UNLOCKS[x[0]]||[]).includes(vl.k));
+  return i>=0&&vl.rows.indexOf(r)<=i;
+}
 function blockers(r){
   const out=[],s=st(r[0]),vl=villagerOf(r),note=why(nt(r[0]));
   if(s==="p"||s==="d")return out;
-  if(vl&&!metV(vl))out.push({u:vl.k});
+  if(vl&&!metV(vl)&&!introQuest(r,vl))out.push({u:vl.k});
   for(const x of NEEDS[r[0]]||[]){
     if(x.includes("--")){if(st(x)!=="d")out.push({q:x});continue}
     const[k,l]=x.split("@"),o=vByKey(k);if(!o)continue;
@@ -881,7 +891,9 @@ function autoTodos(P){
         if(realm){const names=realm.v.map(k=>vByKey(k).name),opened=st(realm.start)!=="";
           push("a-u-"+slug(realm.name),{t:opened?`Move ${names.join(" and ")} into the Valley`:`Befriend ${names.join(" and ")}`,
             h:neededFor(realm.v)+(opened?"You've opened the realm. Once they've moved in, set their level in the Friendship tab. ":"")+realm.how,g:"unlock",u:names})}
-        else push("a-u-"+slug(name),{t:`Unlock ${name}`,h:"The Guide link shows where to find them.",g:"unlock",u:[name]})}}}
+        else{const via=o&&Object.keys(UNLOCKS).find(q=>UNLOCKS[q].includes(o.k)&&st(q)==="d"),vr=via&&Q.find(x=>x[0]===via);
+          push("a-u-"+slug(name),vr?{t:`Set ${name}'s friendship level`,h:`You've finished ${vr[4]}, so they live in the Valley now. Set their level in the Friendship tab and their quests open up here.`,g:"unlock",u:[name]}
+            :{t:`Unlock ${name}`,h:"The Guide link shows where to find them.",g:"unlock",u:[name]})}}}}
   for(const[k,l]of fl){const o=vByKey(k),L=lvl(k);
     if(have.some(v=>v.f&&v.f.k===k&&v.f.l>L))continue;
     push(`a-f-${k}-${l}`,{t:`${o.name} to level ${l}`,h:neededFor([k],true)+(L?`Level ${L} now. `:"Not set in the Friendship tab yet. ")+FRIEND_TIP,g:"friend",f:{k,l}})}
