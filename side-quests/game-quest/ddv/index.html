@@ -886,7 +886,8 @@ function autoTodos(P){
   for(const F of P.fronts){const r=F.r;
     if(!F.bs.length){if(have.some(v=>v.q===r[0]))continue;
       const ready=DEADLINE[r[0]]?`Event quest, only until ${fmtDay(DEADLINE[r[0]])}.`:
-        st(r[0])==="l"?`${villagerOf(r)?.name||r[2]} is level ${lvl(villagerOf(r)?.k)} now, so this should be open.`:"";
+        st(r[0])==="l"?`${villagerOf(r)?.name||r[2]} is level ${lvl(villagerOf(r)?.k)} now, so this should be open.`:
+        AREA_GATE[r[0]]&&!st(r[0])?`It starts by itself once you unlock ${AREA_GATE[r[0]][0]} for ${AREA_GATE[r[0]][1]} Storybook Magic.`:"";
       push("a-q-"+r[0],{t:`${st(r[0])==="p"?"Finish":"Start"} ${title(r)}`,h:ready,g:"quest",q:r[0]});continue}
     for(const b of F.bs){
       // one friendship step per villager: the lowest level anything needs
@@ -936,8 +937,8 @@ function renderTodo(){
   const box=$("todo-groups");box.innerHTML="";
   const stored=new Set(Object.keys(T)),P=plan();
   renderHang(P);
-  // a saved quest suggestion waits, unshown, while a villager it needs isn't in the Valley yet
-  const onHold=v=>{if(v.g!=="quest"||!v.q||st(v.q))return false;const r=Q.find(x=>x[0]===v.q);return !!r&&blockers(r).some(b=>b.u)};
+  // a saved quest suggestion waits, unshown, while the quest isn't open yet (a villager to meet, a level, or another quest first)
+  const onHold=v=>{if(v.g!=="quest"||!v.q||st(v.q))return false;const r=Q.find(x=>x[0]===v.q);return !!r&&blockers(r).length>0};
   const all=[...Object.entries(T).filter(([,v])=>v&&v.t&&!onHold(v)),...autoTodos(P)].map(([id,v])=>{
     const auto=autoDone(v,P),done=!!v.d||!!auto,mine=!v.g||v.g==="mine",x=done||mine?{w:0,quests:new Set(),cost:1}:worth(v,P);
     const soon=!done&&!!v.q&&!!DEADLINE[v.q]&&daysLeft(v.q)<=14;

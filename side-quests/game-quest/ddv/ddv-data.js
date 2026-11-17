@@ -844,6 +844,10 @@ const NEEDS={
   "tinker-bell--tink-s-trinkets":["olaf","fairy-godmother","buzz-lightyear","stitch"],
   "tinker-bell--time-to-fly":["peter-pan"]
 };
+/* Storybook Vale story quests that start by themselves when you unlock an
+   area with Storybook Magic, which the tracker can't see: [area, cost].
+   From the wiki's quest pages, Nov 17, 2026. The to-do list says so. */
+const AREA_GATE={"merida--a-land-of-myths-and-legends":["Mythopia","1,000"],"hades--a-moth-to-a-flame":["The Fiery Plains","2,000"],"hades--the-marble-colossus":["The Statue's Shadow","2,000"],"hades--mount-olympus":["Mount Olympus","4,000"],"merida--the-wolf-of-the-wilds":["Everafter","1,000"],"flynn-rider--curiouser-and-curiouser":["Teapot Falls","2,000"],"flynn-rider--the-fallen-fortress":["The Fallen Fortress","2,000"],"maleficent--the-mistress-of-all-evil":["The Beanstalk Marshes, in Everafter,","4,000"]};
 /* Villagers still to meet come in pairs from a Dream Castle realm, so the
    to-do is to open the realm. Door costs go up with each one opened.
    start is the realm's first quest, the one the door opens. */
