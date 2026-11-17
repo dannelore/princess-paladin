@@ -70,7 +70,7 @@ const Q=[
 ["scrooge-mcduck--a-garden-in-the-desert","Base Game","Scrooge McDuck","Eternity Isle","A Garden in the Desert"],
 ["scrooge-mcduck--village-project-gear-loose-and-fancy-free","Base Game","Scrooge McDuck","Eternity Isle","Village Project: Gear Loose and Fancy Free"],
 ["scrooge-mcduck--ghost-town","Base Game","Scrooge McDuck","Wishblossom Ranch","Ghost Town"],
-["scrooge-mcduck--water-tower-of-terror","Base Game","Scrooge McDuck","Wishblossom Ranch","Water Tower of Terror"],
+["scrooge-mcduck--water-tower-of-terror","Base Game","Scrooge McDuck","Starts during Goofy's Wheel Big Trouble","Water Tower of Terror"],
 ["scrooge-mcduck--dreamlight-parks-fest-dig-it","Base Game","Scrooge McDuck","Past event","Dreamlight Parks Fest: Dig It"],
 ["merlin--friendship-is-everything","Base Game","Merlin","Main Story","Friendship is Everything"],
 ["merlin--with-great-power","Base Game","Merlin","Main Story","With Great Power..."],
@@ -832,6 +832,9 @@ const NEEDS={
   "tinker-bell--crystal-cavern-pixie-acres":["tigger--fun-fun-fun"],
   "tinker-bell--the-decay":["tinker-bell--crystal-cavern-pixie-acres"],
   "snow-white--tales-of-a-broken-heart":["snow-white--a-wishful-invitation"],
+  "scrooge-mcduck--ghost-town":["snow-white--tales-of-a-broken-heart"],
+  "goofy--wheel-big-trouble":["scrooge-mcduck--ghost-town"],
+  "scrooge-mcduck--water-tower-of-terror":["goofy--wheel-big-trouble"],
   "tinker-bell--home-is-where-the-heart-is":["tinker-bell--the-decay","tinker-bell--crystal-cavern-pixie-acres","tigger--fun-fun-fun"],
   "tinker-bell--tink-s-trinkets":["olaf","fairy-godmother","buzz-lightyear","stitch"],
   "tinker-bell--time-to-fly":["peter-pan"]
