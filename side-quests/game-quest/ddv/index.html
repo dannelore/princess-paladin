@@ -50,6 +50,8 @@
                              "2026-11-15 14h" for things that come back every
                              hour. A tick from an earlier day just reads as
                              unticked, so nothing has to clear them.
+       sidequest/ddv-areas   one field per area in AREAS (ddv-data.js): true
+                             once you've ticked its "Unlock …" to-do.
 
      Writes are per field (update), so ticking one quest never rewrites the
      others. Removing a to-do rewrites that whole document, since update can
@@ -481,7 +483,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script src="/assets/pp-firebase.js"></script>
-<script src="ddv-data.js?v=2026-11-17"></script>
+<script src="ddv-data.js?v=2026-11-17b"></script>
 <script src="ddv-resources.js?v=2026-11-17"></script>
 <script>
 "use strict";
@@ -545,7 +547,8 @@ function fieldDoc(path,onChange){
 const F=fieldDoc(FRIENDS_DOC,()=>{renderFriends();renderTodo()});
 const C=fieldDoc(CRITTERS_DOC,()=>renderCritters());
 const D=fieldDoc(DAILY_DOC,()=>renderDaily());
-const busy=()=>pending||tpending||F.pending||C.pending||D.pending;
+const AR=fieldDoc(AREAS_DOC,()=>renderTodo());
+const busy=()=>pending||tpending||F.pending||C.pending||D.pending||AR.pending;
 
 const st=id=>(S[id]&&S[id].s)||"";
 const nt=id=>(S[id]&&S[id].n)||"";
@@ -553,8 +556,8 @@ const $=id=>document.getElementById(id);
 
 /* ---------------- storage ---------------- */
 function setSync(state,text){const el=$("sync");el.textContent=text;el.setAttribute("data-state",state)}
-function writeCache(){try{localStorage.setItem(CACHE_KEY,JSON.stringify({S,T,F:F.data,C:C.data,D:D.data}))}catch(e){}}
-function loadCache(){try{const p=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");if(p){S=p.S||{};if(p.T){T=p.T;tloaded=true}F.data=p.F||{};C.data=p.C||{};D.data=p.D||{}}}catch(e){}}
+function writeCache(){try{localStorage.setItem(CACHE_KEY,JSON.stringify({S,T,F:F.data,C:C.data,D:D.data,A:AR.data}))}catch(e){}}
+function loadCache(){try{const p=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");if(p){S=p.S||{};if(p.T){T=p.T;tloaded=true}F.data=p.F||{};C.data=p.C||{};D.data=p.D||{};AR.data=p.A||{}}}catch(e){}}
 
 function write(id){
   const v=S[id]||{};writeCache();
@@ -753,11 +756,11 @@ function tchange(id,v){T={...T};if(v)T[id]=v;else delete T[id];tsave(v?()=>tdoc.
    leads() what it leads to: itself, the rest of its storyline, and quests
    elsewhere waiting on any of those ("starts during …", "progress further
    with …", or a quest in NEEDS), and so on down the line.
-   Each blocker is something to do: reach a friendship level, or meet a
-   villager (open their realm, for the ones in REALMS). Its worth is the quests it leads to (shared out when a frontier
+   Each blocker is something to do: reach a friendship level, meet a
+   villager (open their realm, for the ones in REALMS), or unlock an area (AREAS). Its worth is the quests it leads to (shared out when a frontier
    has more than one blocker), and its cost is a rough guess at the effort:
    COST below. The to-do list puts the best worth for the cost first. */
-const COST={start:1,finish:.5,level:1,unlock:3};
+const COST={start:1,finish:.5,level:1,unlock:3,area:2};
 const TOP=7;
 /* In your Valley: they have a friendship level (1 or more) in the Friendship
    tab. Finishing quests doesn't count, because a realm's first quests (like
@@ -774,6 +777,7 @@ function questNamed(text){
 /* What's in the way of a quest, as a list of
      {f: villager key, l: level}  a friendship level to reach
      {u: villager key or name}    a villager to meet first
+     {a: area key}                an area to unlock first (the outermost one still closed)
      {q: quest id}                another quest to finish first
      {p: villager}                more progress with someone (their quests)
      {x: 1}                       locked for a reason the list can't read
@@ -782,6 +786,11 @@ function questNamed(text){
 /* A villager's own quests up to the one that moves them in (UNLOCKS) are how
    you meet them, so they don't wait on it. Realm villagers have their own
    "Befriend …" to-do instead (REALMS). */
+/* An area is open once its "Unlock …" to-do is ticked (ddv-areas), or it must
+   be: a quest that needs it is under way or done, or an area inside it is open. */
+const areaImplied=k=>Object.entries(AREA_NEEDS).some(([q,ks])=>ks.includes(k)&&(st(q)==="p"||st(q)==="d"))||
+  Object.keys(AREAS).some(c=>AREAS[c].in===k&&areaOpen(c));
+const areaOpen=k=>AR.data[k]===true||areaImplied(k);
 function introQuest(r,vl){
   if(REALMS.some(R=>R.v.includes(vl.k)))return false;
   const i=vl.rows.findIndex(x=>(UNLOCKS[x[0]]||[]).includes(vl.k));
@@ -797,6 +806,9 @@ function blockers(r){
     if(x.includes("--")){if(st(x)!=="d")out.push({q:x});continue}
     const[k,l]=x.split("@"),o=vByKey(k);if(!o)continue;
     if(!metV(o))out.push({u:k});else if(l&&lvl(k)<+l)out.push({f:k,l:+l})}
+  for(let k of AREA_NEEDS[r[0]]||[]){if(areaOpen(k))continue;
+    while(AREAS[k].in&&!areaOpen(AREAS[k].in))k=AREAS[k].in;
+    if(!out.some(b=>b.a===k))out.push({a:k})}
   if(s==="l"){let read=false,m;
     if((m=/friendship level (\d+)/i.exec(note))){read=true;if(vl&&lvl(vl.k)<+m[1])out.push({f:vl.k,l:+m[1]})}
     if((m=/unlock ([^,]+?)\s*(?:,|$)/i.exec(note))){read=true;const o=vByName(m[1]);if(!o)out.push({u:m[1]});else if(!metV(o))out.push({u:o.k})}
@@ -831,7 +843,7 @@ function plan(){
   const fronts=[];
   for(const L of lines){const r=L[0],bs=B.get(r);
     if(bs.some(b=>b.q||b.p||b.x))continue;
-    fronts.push({r,bs:bs.filter(b=>b.f||b.u),leads:leads(r)})}
+    fronts.push({r,bs:bs.filter(b=>b.f||b.u||b.a),leads:leads(r)})}
   return{fronts,leads};
 }
 /* A to-do's worth: the quests it leads to, shared out between blockers. */
@@ -849,16 +861,21 @@ function worth(v,P){
     // the blockers this clears, counting a realm's pair as one
     for(const F of P.fronts){const n=F.bs.filter(b=>ks.includes(b.u)).length;if(n)take(F,n/F.bs.length)}
     cost=COST.unlock}
+  else if(v.a){for(const F of P.fronts){const n=F.bs.filter(b=>b.a===v.a).length;if(n)take(F,n/F.bs.length)}
+    cost=COST.area}
   return{w,quests,cost};
 }
 /* A to-do ticks itself off when its linked quest is Done (q), its villager
    reaches the level in the friendship tracker (f: {k, l}), they're met (u),
-   or, for a friendship or unlock to-do, once nothing is waiting on it.
+   or, for a friendship or unlock to-do, once nothing is waiting on it. An
+   area to-do (a) is ticked by hand, since nothing else says the area's open,
+   unless a quest there has started.
    Returns the reason, or "" while it still needs doing by hand. */
 function autoDone(v,P){
   if(v.q&&st(v.q)==="d")return "Marked Done in the quest list.";
   if(v.f&&lvl(v.f.k)>=v.f.l)return `Level ${v.f.l} reached in the friendship tracker.`;
   if(v.u&&v.u.every(n=>{const o=vByKey(n)||vByName(n);return o&&metV(o)}))return "Met. Their quests are on the list now.";
+  if(v.a&&AREAS[v.a]&&!v.d&&areaOpen(v.a))return areaImplied(v.a)?"A quest there has started, so it's open.":"Unlocked.";
   if((v.f||v.u)&&!v.q&&!worth(v,P||plan()).quests.size)return "Nothing is waiting on this any more.";
   return "";
 }
@@ -887,11 +904,13 @@ function autoTodos(P){
     if(!F.bs.length){if(have.some(v=>v.q===r[0]))continue;
       const ready=DEADLINE[r[0]]?`Event quest, only until ${fmtDay(DEADLINE[r[0]])}.`:
         st(r[0])==="l"?`${villagerOf(r)?.name||r[2]} is level ${lvl(villagerOf(r)?.k)} now, so this should be open.`:
-        AREA_GATE[r[0]]&&!st(r[0])?`It starts by itself once you unlock ${AREA_GATE[r[0]][0]} for ${AREA_GATE[r[0]][1]} Storybook Magic.`:"";
+        !st(r[0])&&Object.values(AREAS).some(a=>a.q===r[0])?`It started by itself when you unlocked ${Object.values(AREAS).find(a=>a.q===r[0]).name}.`:"";
       push("a-q-"+r[0],{t:`${st(r[0])==="p"?"Finish":"Start"} ${title(r)}`,h:ready,g:"quest",q:r[0]});continue}
     for(const b of F.bs){
       // one friendship step per villager: the lowest level anything needs
       if(b.f&&(!fl.has(b.f)||b.l<fl.get(b.f)))fl.set(b.f,b.l);
+      if(b.a&&!have.some(v=>v.a===b.a)){const A=AREAS[b.a],qr=Q.find(x=>x[0]===A.q);
+        push("a-a-"+b.a,{t:`Unlock ${A.name}`,h:`Costs ${A.cost} Storybook Magic${A.in?`, inside ${AREAS[A.in].name}`:""}. ${qr?title(qr)+" starts by itself once it's open. ":""}Tick this off when you've unlocked it.`,g:"unlock",a:b.a})}
       if(b.u){const o=vByKey(b.u),name=o?o.name:b.u,realm=o&&REALMS.find(R=>R.v.includes(o.k));
         if(have.some(v=>v.u&&v.u.some(n=>n.toLowerCase()===name.toLowerCase())||v.t.toLowerCase().includes("unlock "+name.toLowerCase())))continue;
         if(realm){const names=realm.v.map(k=>vByKey(k).name),opened=st(realm.start)!=="";
@@ -953,17 +972,18 @@ function renderTodo(){
     const added=!stored.has(id);
     const li=document.createElement("li");li.className="dv-ti"+(done?" done":"");
     const lab=document.createElement("label");const cb=document.createElement("input");cb.type="checkbox";cb.checked=done;cb.disabled=!!auto;
-    cb.onchange=()=>tchange(id,{...v,d:cb.checked});
+    cb.onchange=()=>{if(v.a&&AREAS[v.a])AR.set(v.a,cb.checked?true:null);tchange(id,{...v,d:cb.checked})};
     const tx=document.createElement("span");
     const meta=document.createElement("span");meta.className="dv-tmeta";
     const tag=document.createElement("span");tag.className="dv-tag";tag.textContent=(TAG[v.g]||TAG.mine)+(added?" · added for you":"");meta.append(tag);
     if(qs.length){const o=document.createElement("span");o.className="dv-opens";o.textContent=`Leads to ${plural(qs.length,"quest")}`;
       o.title=qs.map(r=>`${r[2]}: ${r[4]}`).join("\n");meta.append(o)}
     const b=document.createElement("b");b.textContent=v.t;tx.append(meta,b);
-    const sub=auto||v.h,row=v.q&&!done&&Q.find(r=>r[0]===v.q),uname=v.u&&!done&&v.u[0];
-    if(sub||row||uname){const s=document.createElement("small");if(sub)s.append(sub+" ");
+    const sub=auto||v.h,row=v.q&&!done&&Q.find(r=>r[0]===v.q),uname=v.u&&!done&&v.u[0],aname=v.a&&!done&&AREAS[v.a]&&AREAS[v.a].name;
+    if(sub||row||uname||aname){const s=document.createElement("small");if(sub)s.append(sub+" ");
       if(row)s.append(guideLink(row,"Guide",""));
       else if(uname){const a=guideLink(["","","","",uname],"Guide","");a.setAttribute("aria-label",`How to unlock ${uname}, on the Dreamlight Valley Wiki (opens in a new tab)`);s.append(a)}
+      else if(aname){const a=guideLink(["","","","",aname],"Guide","");a.setAttribute("aria-label",`About ${aname}, on the Dreamlight Valley Wiki (opens in a new tab)`);s.append(a)}
       tx.append(s)}
     lab.append(cb,tx);
     const rm=document.createElement("button");rm.type="button";rm.className="dv-rm";rm.textContent="×";rm.setAttribute("aria-label",`Remove "${v.t}"`);
@@ -1390,7 +1410,7 @@ function startFirebase(){
   try{
     firebase.initializeApp(window.PPFirebaseConfig);
     const db=firebase.firestore();
-    qdoc=db.doc(QUEST_DOC);tdoc=db.doc(TODO_DOC);F.listen(db);C.listen(db);D.listen(db);
+    qdoc=db.doc(QUEST_DOC);tdoc=db.doc(TODO_DOC);F.listen(db);C.listen(db);D.listen(db);AR.listen(db);
     qdoc.onSnapshot(snap=>{if(pending)return;S=snap.exists?{...snap.data()}:{};writeCache();if(!editing&&!plateTyping)render();setSync("idle","Synced")},
       err=>{console.error(err);setSync("error","Offline — saved here")});
     tdoc.onSnapshot(snap=>{if(tpending)return;tloaded=true;T=snap.exists?{...snap.data()}:{};writeCache();renderTodo()},

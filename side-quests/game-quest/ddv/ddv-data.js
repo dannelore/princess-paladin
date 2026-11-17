@@ -18,6 +18,7 @@ const TODO_DOC  = "sidequest/ddv-todo";
 const FRIENDS_DOC  = "sidequest/ddv-friends";
 const CRITTERS_DOC = "sidequest/ddv-critters";
 const DAILY_DOC = "sidequest/ddv-daily";
+const AREAS_DOC = "sidequest/ddv-areas";
 const CACHE_KEY = "pp_ddv";
 /* Expansions Danni owns: open by default on the Friendship and Critters tabs. */
 const OWNED = ["Base Game","A Rift in Time","Storybook Vale","Wishblossom Ranch"];
@@ -789,6 +790,8 @@ const NEEDS={
   "oswald--an-alarming-development":["stitch","olaf"],
   "oswald--a-cockamamie-contest":["gaston","rapunzel","eve"],
   "oswald--the-lesser-evil":["merlin--the-now-and-then"],
+  "merida--the-wolf-of-the-wilds":["merida--a-new-chapter"],
+  "merida--a-land-of-myths-and-legends":["merida--a-new-chapter"],
   "flynn-rider--a-sheep-in-wolf-s-clothing":["merida--the-wolf-of-the-wilds"],
   "hades--guts-and-glory":["merida--a-land-of-myths-and-legends"],
   "aurora--the-tales-that-bind":["lorekeeper--the-ink-stained-world"],
@@ -844,10 +847,34 @@ const NEEDS={
   "tinker-bell--tink-s-trinkets":["olaf","fairy-godmother","buzz-lightyear","stitch"],
   "tinker-bell--time-to-fly":["peter-pan"]
 };
-/* Storybook Vale story quests that start by themselves when you unlock an
-   area with Storybook Magic, which the tracker can't see: [area, cost].
-   From the wiki's quest pages, Nov 17, 2026. The to-do list says so. */
-const AREA_GATE={"merida--a-land-of-myths-and-legends":["Mythopia","1,000"],"hades--a-moth-to-a-flame":["The Fiery Plains","2,000"],"hades--the-marble-colossus":["The Statue's Shadow","2,000"],"hades--mount-olympus":["Mount Olympus","4,000"],"merida--the-wolf-of-the-wilds":["Everafter","1,000"],"flynn-rider--curiouser-and-curiouser":["Teapot Falls","2,000"],"flynn-rider--the-fallen-fortress":["The Fallen Fortress","2,000"],"maleficent--the-mistress-of-all-evil":["The Beanstalk Marshes, in Everafter,","4,000"]};
+/* Areas of the Storybook Vale you open by spending Storybook Magic, which the
+   tracker can't see for itself, so each is a to-do of its own to tick off.
+   From the wiki's Everafter and Mythopia pages and the quest pages, Nov 17,
+   2026. { name, cost, in: the area it's inside, q: the story quest that
+   starts by itself when it opens }. Wishblossom Ranch's areas open during
+   its quests, so there's nothing to buy there. */
+const AREAS={
+  "everafter":{name:"Everafter",cost:"1,000",q:"merida--the-wolf-of-the-wilds"},
+  "teapot-falls":{name:"Teapot Falls",cost:"2,000",in:"everafter",q:"flynn-rider--curiouser-and-curiouser"},
+  "the-fallen-fortress":{name:"The Fallen Fortress",cost:"2,000",in:"everafter",q:"flynn-rider--the-fallen-fortress"},
+  "the-beanstalk-marshes":{name:"The Beanstalk Marshes",cost:"4,000",in:"everafter",q:"maleficent--the-mistress-of-all-evil"},
+  "mythopia":{name:"Mythopia",cost:"1,000",q:"merida--a-land-of-myths-and-legends"},
+  "the-fiery-plains":{name:"The Fiery Plains",cost:"2,000",in:"mythopia",q:"hades--a-moth-to-a-flame"},
+  "the-statue-s-shadow":{name:"The Statue's Shadow",cost:"2,000",in:"mythopia",q:"hades--the-marble-colossus"},
+  "mount-olympus":{name:"Mount Olympus",cost:"4,000",in:"mythopia",q:"hades--mount-olympus"}
+};
+/* The areas a quest needs open, by quest id: each area's own story quest,
+   plus the friendship quests whose wiki page lists a biome (The Wild Woods
+   comes with Everafter, The Elysian Fields with Mythopia). */
+const AREA_NEEDS={
+  "merida--archery-and-archrivals":["everafter"],
+  "flynn-rider--memory-lane":["mythopia"],
+  "flynn-rider--the-adventures-of-flynn-rider":["mount-olympus"],
+  "hades--mythic-restoration":["mythopia"],
+  "hades--yes-your-lugubriousness":["the-fiery-plains","everafter"],
+  "hades--your-own-personal-hades":["the-statue-s-shadow"]
+};
+for(const[k,a]of Object.entries(AREAS))(AREA_NEEDS[a.q]=AREA_NEEDS[a.q]||[]).push(k);
 /* Villagers still to meet come in pairs from a Dream Castle realm, so the
    to-do is to open the realm. Door costs go up with each one opened.
    start is the realm's first quest, the one the door opens. */
@@ -947,10 +974,12 @@ const UNLOCKS={
    and Pumbaa, Islands in the Sky doesn't). LOOSE_QUESTS are single quests
    listed in a story they don't follow on from: Cat Tree Catastrophe is how
    Cheshire Cat moves in, Drawings and The Spaghetti Incident start once
-   Timon or Lady live in the Valley (NEEDS says so). */
+   Timon or Lady live in the Valley (NEEDS says so). Merida's The Wolf of the
+   Wilds and A Land of Myths and Legends each start when you unlock their
+   area (AREAS), in either order, once A New Chapter is done. */
 const UNORDERED=["Secret Potatoes","Snow White","Tinker Bell"];
 const LOOSE=["Merlin|Side Story"];
-const LOOSE_QUESTS=["alice--cat-tree-catastrophe","timon--drawings","lady--the-spaghetti-incident"];
+const LOOSE_QUESTS=["alice--cat-tree-catastrophe","timon--drawings","lady--the-spaghetti-incident","merida--the-wolf-of-the-wilds","merida--a-land-of-myths-and-legends"];
 const loose=r=>UNORDERED.includes(r[2])||/\(Dream Bundle\)$/.test(r[2])||LOOSE.includes(r[2]+"|"+r[3])||LOOSE_QUESTS.includes(r[0]);
 
 /* Whether a quest can be played on this save: in an expansion Danni owns
