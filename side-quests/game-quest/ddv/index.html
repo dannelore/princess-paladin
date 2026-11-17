@@ -481,8 +481,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script src="/assets/pp-firebase.js"></script>
-<script src="ddv-data.js"></script>
-<script src="ddv-resources.js"></script>
+<script src="ddv-data.js?v=2026-11-17"></script>
+<script src="ddv-resources.js?v=2026-11-17"></script>
 <script>
 "use strict";
 
@@ -582,8 +582,11 @@ const SUB_QUESTS={
   "oswald--a-cockamamie-contest":["eve--eve-s-challenge","gaston--gaston-s-challenge","rapunzel--rapunzel-s-challenge"],
   "daisy-duck--ask-daisy":["kristoff--a-romantic-in-the-making"],
   "snow-white--the-wishblossom-fair":["daisy-duck--wishblossom-fair-horse-beauty-contest","mulan--wishblossom-fair-riding-demonstration","tiana--wishblossom-fair-cooking-competition"],
-  "goofy--wheel-big-trouble":["snow-white--equine-delicacies","scrooge-mcduck--water-tower-of-terror"]
+  "goofy--wheel-big-trouble":["snow-white--equine-delicacies","scrooge-mcduck--water-tower-of-terror"],
+  "lorekeeper--the-ink-stained-world":["lorekeeper--the-trial-of-virtue","lorekeeper--the-trial-of-truth","lorekeeper--the-trial-of-song"],
+  "tigger--fun-fun-fun":["tigger--test-your-strength","tigger--catch-the-lucky-lily-pad","tigger--solve-the-puzzle"]
 };
+const SUB_PARENT={};for(const[p,a]of Object.entries(SUB_QUESTS))for(const c of a)SUB_PARENT[c]=p;
 function moveSubQuests(id,s){
   if(!SUB_QUESTS[id]||(s!=="p"&&s!=="d"))return[];
   const prev=[];
@@ -787,6 +790,8 @@ function introQuest(r,vl){
 function blockers(r){
   const out=[],s=st(r[0]),vl=villagerOf(r),note=why(nt(r[0]));
   if(s==="p"||s==="d")return out;
+  const par=SUB_PARENT[r[0]];
+  if(par){if(!st(par)||st(par)==="l")out.push({q:par});return out} // it starts during that quest, whoever gives it
   if(vl&&!metV(vl)&&!introQuest(r,vl))out.push({u:vl.k});
   for(const x of NEEDS[r[0]]||[]){
     if(x.includes("--")){if(st(x)!=="d")out.push({q:x});continue}
@@ -881,7 +886,8 @@ function autoTodos(P){
   for(const F of P.fronts){const r=F.r;
     if(!F.bs.length){if(have.some(v=>v.q===r[0]))continue;
       const ready=DEADLINE[r[0]]?`Event quest, only until ${fmtDay(DEADLINE[r[0]])}.`:
-        st(r[0])==="l"?`${villagerOf(r)?.name||r[2]} is level ${lvl(villagerOf(r)?.k)} now, so this should be open.`:"";
+        st(r[0])==="l"?`${villagerOf(r)?.name||r[2]} is level ${lvl(villagerOf(r)?.k)} now, so this should be open.`:
+        AREA_GATE[r[0]]&&!st(r[0])?`It starts by itself once you unlock ${AREA_GATE[r[0]][0]} for ${AREA_GATE[r[0]][1]} Storybook Magic.`:"";
       push("a-q-"+r[0],{t:`${st(r[0])==="p"?"Finish":"Start"} ${title(r)}`,h:ready,g:"quest",q:r[0]});continue}
     for(const b of F.bs){
       // one friendship step per villager: the lowest level anything needs
@@ -931,8 +937,8 @@ function renderTodo(){
   const box=$("todo-groups");box.innerHTML="";
   const stored=new Set(Object.keys(T)),P=plan();
   renderHang(P);
-  // a saved quest suggestion waits, unshown, while a villager it needs isn't in the Valley yet
-  const onHold=v=>{if(v.g!=="quest"||!v.q||st(v.q))return false;const r=Q.find(x=>x[0]===v.q);return !!r&&blockers(r).some(b=>b.u)};
+  // a saved quest suggestion waits, unshown, while the quest isn't open yet (a villager to meet, a level, or another quest first)
+  const onHold=v=>{if(v.g!=="quest"||!v.q||st(v.q))return false;const r=Q.find(x=>x[0]===v.q);return !!r&&blockers(r).length>0};
   const all=[...Object.entries(T).filter(([,v])=>v&&v.t&&!onHold(v)),...autoTodos(P)].map(([id,v])=>{
     const auto=autoDone(v,P),done=!!v.d||!!auto,mine=!v.g||v.g==="mine",x=done||mine?{w:0,quests:new Set(),cost:1}:worth(v,P);
     const soon=!done&&!!v.q&&!!DEADLINE[v.q]&&daysLeft(v.q)<=14;
