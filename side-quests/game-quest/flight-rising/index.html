@@ -58,10 +58,14 @@
 
      The breeding planner turns chosen pairs into an agenda of when to send
      them to the nest, from their cooldowns and the lair's free nests.
-       plan: { nests, pairs: [{ id, dam, sire, pri? }], busy: [FR date a nest frees] }
+       plan: { nests, pairs: [{ id, dam, sire, pri? }], busy: [FR date a nest frees],
+               nested: [{ dam, sire, to }] }
      A pair's pri is "high" or "low" (none means normal); higher ones get
      nests and dragons first.
-       dam / sire are dragon ids; busy is added by "Sent to nest".
+       dam / sire are dragon ids; busy is added by "Sent to nest", and nested
+       says who went in (to is the same date as their busy entry), for the
+       Nest Calendar. A modern pair leaves the plan when it's sent; an
+       ancient pair stays, for its next turn once the cooldowns end.
 
        daily: { picks: [daily id], custom: [{ id, t }], day, done: [daily id], low: [food] }
        picks are the DAILIES (below) this lair wants on its checklist,
@@ -832,7 +836,8 @@ function cleanPlan(p){
   return {
     nests: Math.max(1, Math.min(5, parseInt(p.nests, 10) || 2)),
     pairs: Array.isArray(p.pairs) ? p.pairs.filter(x => x && x.id && x.dam && x.sire) : [],   /* each may carry pri: "high" | "low" */
-    busy: Array.isArray(p.busy) ? p.busy.filter(x => typeof x === "string") : []
+    busy: Array.isArray(p.busy) ? p.busy.filter(x => typeof x === "string") : [],
+    nested: Array.isArray(p.nested) ? p.nested.filter(x => x && typeof x.to === "string" && x.dam && x.sire) : []
   };
 }
 
@@ -1831,8 +1836,10 @@ $("agenda").onclick = e => {
   const today = frToday();
   dam.breedOn = addDays(today, COOLDOWNS[dam.breed]);
   sire.breedOn = addDays(today, COOLDOWNS[sire.breed]);
-  plan.busy = plan.busy.filter(b => dayNum(b) > dayNum(today)).concat(addDays(today, NEST_DAYS));
-  plan.pairs = plan.pairs.filter(x => x.id !== p.id);
+  const hatch = addDays(today, NEST_DAYS);
+  plan.busy = plan.busy.filter(b => dayNum(b) > dayNum(today)).concat(hatch);
+  plan.nested = plan.nested.filter(x => dayNum(x.to) > dayNum(today)).concat({ dam: dam.id, sire: sire.id, to: hatch });
+  if(!isAncient(dam) && !isAncient(sire)) plan.pairs = plan.pairs.filter(x => x.id !== p.id);
   save(who);
 };
 

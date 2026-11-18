@@ -19,7 +19,8 @@
      planner on the Flight Rising page. It only reads the lairs; every
      change is made there.
        sidequest/fr-danni, sidequest/fr-brendon  { items, plan }
-       plan: { nests, pairs: [{ id, dam, sire, pri? }], busy: [FR date a nest frees] }
+       plan: { nests, pairs: [{ id, dam, sire, pri? }], busy: [FR date a nest frees],
+               nested: [{ dam, sire, to }] }
 
      The rules:
        - Ancient pairs in the planner go first, on the first day both
@@ -236,9 +237,10 @@ function schedule(doc){
   const nests = Array.from({ length: nestCount }, () => []);
   const busy = (plan.busy || []).map(dayNum).filter(n => n > today).sort((a, b) => b - a).slice(0, nestCount)
     .map((n, i) => ({ from: today, to: n, kind: "eggs", nest: i }));
-  /* A busy nest only knows when it frees. Its parents come from the eggs:
-     each clutch of eggs with the same sire and dam, the newest clutches
-     matched in order to the nests, the soonest to hatch with the oldest. */
+  /* Who is in a busy nest: the pair "Sent to nest" recorded for that hatch
+     day. A nest sent before that was recorded only knows when it frees, so
+     its parents are guessed from a clutch of eggs (same sire and dam) laid
+     in the days before it, never from older eggs. */
   const everyone = {}; (doc && doc.items || []).forEach(d => everyone[d.id] = d);
   const clutches = {};
   (doc && doc.items || []).filter(e => e.status === "egg" && e.sire && e.dam && everyone[e.sire.id] && everyone[e.dam.id]).forEach(e => {
@@ -246,8 +248,22 @@ function schedule(doc){
     const c = clutches[k] = clutches[k] || { s: everyone[e.sire.id], m: everyone[e.dam.id], added: Infinity, eggs: 0 };
     c.added = Math.min(c.added, e.added || 0); c.eggs++;
   });
-  const recent = Object.values(clutches).sort((a, b) => a.added - b.added).slice(-busy.length || Infinity);
-  busy.slice().sort((a, b) => a.to - b.to).forEach((b, j) => { const c = recent[j]; if(c){ b.s = c.s; b.m = c.m; b.eggs = c.eggs; } });
+  const laid = c => Math.floor(c.added / 864e5);
+  const inTime = (c, b) => laid(c) >= b.to - NEST_DAYS - 1 && laid(c) <= b.to;
+  const guesses = Object.values(clutches).sort((a, b) => a.added - b.added);
+  const nested = (plan.nested || []).filter(x => x && typeof x.to === "string" && everyone[x.dam] && everyone[x.sire]);
+  busy.slice().sort((a, b) => a.to - b.to).forEach(b => {
+    const i = nested.findIndex(x => dayNum(x.to) === b.to);
+    if(i >= 0){
+      const x = nested.splice(i, 1)[0];
+      b.s = everyone[x.sire]; b.m = everyone[x.dam];
+      const c = guesses.find(c => c.s === b.s && c.m === b.m && inTime(c, b));
+      if(c) b.eggs = c.eggs;
+      return;
+    }
+    const j = guesses.findIndex(c => inTime(c, b));
+    if(j >= 0){ const c = guesses.splice(j, 1)[0]; b.s = c.s; b.m = c.m; b.eggs = c.eggs; }
+  });
   busy.forEach(b => nests[b.nest].push(b));
   const held = {};
   const clear = (list, a, b) => list.every(x => b <= x.from || a >= x.to);
