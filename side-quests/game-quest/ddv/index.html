@@ -201,7 +201,7 @@
   .dv-add{ display: flex; flex-direction: row; gap: 8px; flex-wrap: wrap; align-items: center; }
   .dv-add input{ flex: 1 1 140px; min-width: 0; }
 
-  /* ---- on your plate + locked ---- */
+  /* ---- on your plate ---- */
   .dv-plate{ list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill,minmax(230px,1fr)); gap: 8px; align-items: start; }
   .dv-card{ display: flex; flex-direction: column; border-radius: var(--radius-sm); background: var(--dv-prog-soft); font-size: .9rem; min-width: 0; border: 1px solid transparent; }
   .dv-card.note{ background: var(--accent-soft); }
@@ -233,13 +233,6 @@
   .dv-undo{ display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; font-size: .88rem; color: var(--ink-soft); }
   .dv-toast{ position: sticky; bottom: 12px; z-index: 2; margin-top: 10px; padding: 8px 12px; background: var(--white); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 4px 14px rgba(46,36,31,.12); }
   .dv-undo button{ font: inherit; font-weight: 600; color: var(--accent-deep); background: none; border: 0; padding: 2px 4px; cursor: pointer; border-radius: 4px; }
-  .dv-lklist{ display: flex; flex-direction: column; border-top: 1px solid var(--line); }
-  .dv-lk{ border-bottom: 1px solid var(--line); }
-  .dv-lk>summary{ list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; padding: 10px 2px; cursor: pointer; }
-  .dv-lk>summary::-webkit-details-marker{ display: none; }
-  .dv-lk>summary b{ font-weight: 600; display: flex; align-items: center; gap: 8px; }
-  .dv-lk>summary .meta{ font-size: .84rem; color: var(--ink-soft); min-width: 0; }
-  .dv-lk .dv-plate{ padding: 0 0 10px; }
 
   /* chevron shared by the locked groups and the character list */
   .dv-chev::before{
@@ -442,12 +435,6 @@
       <p class="dv-undo" id="undo" aria-live="polite" hidden></p>
     </section>
 
-    <section class="pp-panel dv-panel" id="locked" data-fold="locked" aria-label="Locked quests" hidden>
-      <button class="dv-fold" aria-expanded="true"><span class="dv-label">Locked</span><span class="dv-count" id="locked-count"></span></button>
-      <p class="dv-hint">Waiting on friendship or another quest. When one opens up, tap it and mark it In progress.</p>
-      <div class="dv-lklist" id="locked-list"></div>
-    </section>
-
     <div class="dv-tools pp-field">
       <input id="q" type="search" placeholder="Search quests or characters" aria-label="Search quests or characters">
       <div class="dv-chips" id="chips"></div>
@@ -466,7 +453,7 @@
 
     <main id="list"></main>
     <p class="dv-undo dv-toast" id="l-undo" aria-live="polite" hidden></p>
-    <p class="dv-foot">Quest list from IGN's Disney Dreamlight Valley quests page, checked against the Dreamlight Valley Wiki on Oct 19, 2026. Tap a status to change it: blank, In progress, Done, Not unlocked. Marking a quest Done also marks the character's earlier quests Done. Or tap a quest under "On your plate" to pick its status directly. Not connected to the game save, so everything here is ticked off by hand. Guide links open that quest on the Dreamlight Valley Wiki.</p>
+    <p class="dv-foot">Quest list from IGN's Disney Dreamlight Valley quests page, checked against the Dreamlight Valley Wiki on Oct 19, 2026. Tap a status to change it: blank, In progress, Done, Not unlocked. Marking a quest In progress or Done also marks the character's earlier quests Done. Or tap a quest under "On your plate" to pick its status directly. Not connected to the game save, so everything here is ticked off by hand. Guide links open that quest on the Dreamlight Valley Wiki.</p>
     </div>
   </div>
 
@@ -483,7 +470,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script src="/assets/pp-firebase.js"></script>
-<script src="ddv-data.js?v=2026-11-17b"></script>
+<script src="ddv-data.js?v=2026-11-20"></script>
 <script src="ddv-resources.js?v=2026-11-17"></script>
 <script>
 "use strict";
@@ -523,7 +510,7 @@ const FOLD_KEY  = "pp_ddv_folds";
 const LABEL={"":"To do",p:"In progress",d:"Done",l:"Not unlocked"};
 const CYCLE={"":"p",p:"d",d:"l",l:""};
 let S={}, filter="open", query="", qdoc=null, openSet=new Set(), first=true, editing=null;
-let queue=Promise.resolve(), pending=0, plateOpen=null, plateTyping=false, undoTimer={}, lockOpen=new Set();
+let queue=Promise.resolve(), pending=0, plateOpen=null, plateTyping=false, undoTimer={};
 let T={}, tdoc=null, tpending=0, tqueue=Promise.resolve(), tloaded=false;
 
 /* Friendship and critters are flat documents too, one field per villager or
@@ -602,30 +589,33 @@ function moveSubQuests(id,s){
   return prev;
 }
 
-/* A character's quests come one after another, so finishing one means the ones
+/* A character's quests come one after another, so starting or finishing one means the ones
    before it (in the same section) are done too. Secret Potatoes, Snow White's and
    Tinker Bell's quests, and the Dream Bundles can be done in any order. Quests that start
    partway through another one (Holiday Treats, Villager of the Month, Training
    Games…) sit in a "Starts during …" section of their own, so finishing one
    doesn't tick the villager's story. loose() (in ddv-data.js) says which quests
    don't follow on. */
-function doneBefore(r){
-  if(loose(r))return[];
+function doneBefore(r,s="d"){
+  // quests that start during another all start at once, so starting one says nothing about the rest
+  if(loose(r)||(s==="p"&&SUB_PARENT[r[0]]))return[];
   const rows=byChar.find(g=>g.exp===r[1]&&g.ch===r[2]).rows,prev=[];
   for(const x of rows.slice(0,rows.indexOf(r))){const id=x[0];
-    if(x[3]!==r[3]||st(id)==="d")continue;
+    if(x[3]!==r[3]||st(id)==="d"||loose(x))continue;
     prev.push([id,{s:st(id),n:nt(id)}]);
     S={...S,[id]:{...(S[id]||{}),s:"d"}};
     if(/^locked/i.test(nt(id)))delete S[id].n; // a "Locked: …" note is stale once it's done
     write(id)}
   return prev;
 }
+// Saved progress from before this rule: catch the earlier quests up
+function catchUp(){let n=0;for(const r of Q){const s=st(r[0]);if(s==="p"||s==="d")n+=doneBefore(r,s).length}return n}
 function restore(prev){for(const[id,p]of prev){const v={};if(p.s)v.s=p.s;if(p.n)v.n=p.n;S={...S,[id]:v};write(id)}render()}
-// Mark done, with the earlier quests, and offer to undo the lot
-function markDone(r,patch,undoEl){const id=r[0],was={s:st(id),n:nt(id)},prev=doneBefore(r);
+// Mark In progress or Done, with the earlier quests Done, and offer to undo the lot
+function markDone(r,patch,undoEl){const id=r[0],was={s:st(id),n:nt(id)},prev=doneBefore(r,patch.s);
   const subs=change(id,patch);
-  const also=(prev.length?` ${plural(prev.length,"earlier quest")} too.`:"")+(subs.length?` ${plural(subs.length,"quest")} that started during it too.`:"");
-  if(undoEl==="undo"||also)showUndo(`${r[4]} marked Done.${also}`,()=>restore([[id,was],...prev,...subs]),undoEl);
+  const also=(prev.length?` ${plural(prev.length,"earlier quest")} ${patch.s==="d"?"too":"marked Done"}.`:"")+(subs.length?` ${plural(subs.length,"quest")} that started during it too.`:"");
+  if(undoEl==="undo"||also)showUndo(`${r[4]} marked ${LABEL[patch.s]}.${also}`,()=>restore([[id,was],...prev,...subs]),undoEl);
 }
 
 /* ---------------- progress ---------------- */
@@ -642,34 +632,17 @@ function renderSummary(){
     const n=document.createElement("span");n.textContent=e;const pc=document.createElement("span");pc.className="pct";pc.textContent=Math.round(rc.d/rc.t*100)+"%";
     row.append(n,bar(rc.d,rc.p,rc.t),pc);R.append(row)}
   const N=$("now");N.innerHTML="";
-  // Plate: in progress, plus notes on quests not yet started (paid Dream Bundle reminders excluded). Locked quests get their own section.
+  // Plate: in progress, plus notes on quests not yet started (paid Dream Bundle reminders excluded).
   const items=Q.filter(onPlate);
   $("plate-count").textContent=items.length?`${items.length} quest${items.length>1?"s":""}`:"";
   if(!items.length){N.innerHTML='<li class="dv-card note"><span class="dv-pick"><b>Nothing in progress</b><span>Mark a quest "In progress" and it shows up here.</span></span></li>'}
   for(const r of items)N.append(plateCard(r,r[2]+(nt(r[0])?" · "+nt(r[0]):"")));
-  renderLocked();
 }
 
 // In progress, or not started but carrying a note (paid Dream Bundle reminders excluded)
 function onPlate(r){const s=st(r[0]),n=nt(r[0]);return s==="p"||(!s&&!!n&&!/Dream Bundle/.test(n))}
 
-/* ---------------- locked ---------------- */
 const why=n=>n.replace(/^locked:\s*/i,"");
-function renderLocked(){
-  const box=$("locked"),L=$("locked-list");
-  const rows=Q.filter(r=>st(r[0])==="l");box.hidden=!rows.length;L.innerHTML="";
-  $("locked-count").textContent=rows.length?`${rows.length} quest${rows.length>1?"s":""}`:"";
-  const groups=new Map();for(const r of rows){const k=r[1]+"|"+r[2];if(!groups.has(k))groups.set(k,[]);groups.get(k).push(r)}
-  for(const[k,rs]of groups){
-    const reasons=[...new Set(rs.map(r=>why(nt(r[0]))).filter(Boolean))];const shared=reasons.length===1?reasons[0]:"";
-    const det=document.createElement("details");det.className="dv-lk";det.open=lockOpen.has(k)||rs.some(r=>r[0]===plateOpen);
-    det.ontoggle=()=>{det.open?lockOpen.add(k):lockOpen.delete(k)};
-    const sm=document.createElement("summary");const nm=document.createElement("b");nm.className="dv-chev";nm.textContent=rs[0][2];
-    const meta=document.createElement("span");meta.className="meta";meta.textContent=`${rs.length} quest${rs.length>1?"s":""}`+(shared?" · "+shared:"");
-    sm.append(nm,meta);det.append(sm);
-    const ul=document.createElement("ul");ul.className="dv-plate";for(const r of rs){const own=why(nt(r[0]));ul.append(plateCard(r,own&&own!==shared?own:""))}
-    det.append(ul);L.append(det)}
-}
 
 /* ---------------- guide links ----------------
    The wiki's search "Go" jumps straight to the quest's page when the title
@@ -711,7 +684,7 @@ function plateSet(r,patch){const id=r[0],prev={s:st(id),n:nt(id)};
   if(patch.s===prev.s){if(patch.n!==undefined)change(id,{n:patch.n});else render();return}
   // a "Locked: …" note is stale once the quest leaves Locked
   if(prev.s==="l"&&patch.s!=="l"&&patch.n===undefined&&/^locked/i.test(prev.n))patch={...patch,n:""};
-  if(patch.s==="d")return markDone(r,patch,"undo");
+  if(patch.s==="d"||patch.s==="p")return markDone(r,patch,"undo");
   const subs=change(id,patch);
   const also=subs.length?` ${plural(subs.length,"quest")} that start${subs.length===1?"s":""} during it too.`:"";
   showUndo(`${r[4]} marked ${LABEL[patch.s]}.${also}`,()=>{change(id,prev);restore(subs)});
@@ -1072,7 +1045,7 @@ function renderList(){
       if(r[3]&&r[3]!==sec){sec=r[3];const s=document.createElement("li");s.className="dv-sec";s.textContent=sec;ol.append(s)}
       const li=document.createElement("li");const s=st(r[0]);li.className="dv-row"+(s?" is-"+s:"");
       const btn=document.createElement("button");btn.className="dv-st "+s;btn.textContent=LABEL[s];btn.setAttribute("aria-label",`${r[4]}: ${LABEL[s]}. Change status`);
-      btn.onclick=()=>CYCLE[s]==="d"?markDone(r,{s:"d"},"l-undo"):change(r[0],{s:CYCLE[s]});
+      btn.onclick=()=>CYCLE[s]==="d"||CYCLE[s]==="p"?markDone(r,{s:CYCLE[s]},"l-undo"):change(r[0],{s:CYCLE[s]});
       const qt=document.createElement("div");qt.className="dv-qt";const name=document.createElement("span");name.textContent=r[4];qt.append(name);
       if(editing===r[0]){const inp=document.createElement("input");inp.className="pp-input";inp.id="note-"+r[0];inp.value=nt(r[0]);inp.placeholder="Add a note";
         const done=()=>{editing=null;change(r[0],{n:inp.value.trim()})};
@@ -1411,7 +1384,7 @@ function startFirebase(){
     firebase.initializeApp(window.PPFirebaseConfig);
     const db=firebase.firestore();
     qdoc=db.doc(QUEST_DOC);tdoc=db.doc(TODO_DOC);F.listen(db);C.listen(db);D.listen(db);AR.listen(db);
-    qdoc.onSnapshot(snap=>{if(pending)return;S=snap.exists?{...snap.data()}:{};writeCache();if(!editing&&!plateTyping)render();setSync("idle","Synced")},
+    qdoc.onSnapshot(snap=>{if(pending)return;S=snap.exists?{...snap.data()}:{};catchUp();writeCache();if(!editing&&!plateTyping)render();setSync("idle","Synced")},
       err=>{console.error(err);setSync("error","Offline — saved here")});
     tdoc.onSnapshot(snap=>{if(tpending)return;tloaded=true;T=snap.exists?{...snap.data()}:{};writeCache();renderTodo()},
       err=>{console.error(err);tloaded=true;renderTodo()});
