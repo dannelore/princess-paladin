@@ -476,7 +476,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script src="/assets/pp-firebase.js"></script>
-<script src="ddv-data.js?v=2026-11-20b"></script>
+<script src="ddv-data.js?v=2026-11-20c"></script>
 <script src="ddv-resources.js?v=2026-11-17"></script>
 <script>
 "use strict";
@@ -931,21 +931,20 @@ function renderHang(P){
     const next=picks.slice(1,3).filter(p=>p.n||!top.n).map(p=>esc(p.v.name));
     el.innerHTML=`<p class="dv-label">Hang out with</p><p class="dv-hang-name">${esc(top.v.name)}</p><p class="dv-hint">${why}${next.length?` After them: ${next.join(" or ")}.`:""}</p>`}
 }
-/* Quickest quest: of the quests you can play right now (in progress, or open
-   to start), the one with the fewest steps (STEPS), counting a wait for time
+/* Quickest quest: of the quests On your plate (in progress, or noted to do
+   next), the one with the fewest steps (STEPS), counting a wait for time
    to pass as 8 steps and every 10 items to gather as 1. In progress wins a
    tie, since it's under way. The to-do list still ranks by what a quest opens. */
 const quickCost=id=>{const x=STEPS[id];return x?x[0]+x[1]*8+x[2]/10:null};
-function quickPicks(P){
+function quickPicks(){
   const seen=new Set(),out=[];
   const add=r=>{if(!r||seen.has(r)||st(r[0])==="d"||!playable(r))return;seen.add(r);out.push({r,c:quickCost(r[0]),p:st(r[0])==="p"})};
-  for(const r of Q)if(st(r[0])==="p")add(r);
-  for(const F of P.fronts)if(!F.bs.length)add(F.r);
+  for(const r of Q)if(onPlate(r))add(r);
   return out.filter(x=>x.c!==null).sort((a,b)=>(a.c-b.c)||(b.p-a.p)||a.r[4].localeCompare(b.r[4]));
 }
 function renderQuick(P){
   const el=$("quick");if(!el)return;
-  const picks=quickPicks(P),top=picks[0];el.hidden=!top;if(!top){el.innerHTML="";return}
+  const picks=quickPicks(),top=picks[0];el.hidden=!top;if(!top){el.innerHTML="";return}
   const [n,w]=STEPS[top.r[0]];
   const why=`${plural(n,"step")}${w?`, ${w===1?"one of them":`${w} of them`} waiting for time to pass`:", no waiting"}. ${top.p?"You've already started it.":"Ready to start."}`;
   const next=picks.slice(1,3).map(p=>esc(title(p.r)));
