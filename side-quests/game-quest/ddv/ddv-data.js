@@ -974,12 +974,13 @@ const UNLOCKS={
    and Pumbaa, Islands in the Sky doesn't). LOOSE_QUESTS are single quests
    listed in a story they don't follow on from: Cat Tree Catastrophe is how
    Cheshire Cat moves in, Drawings and The Spaghetti Incident start once
-   Timon or Lady live in the Valley (NEEDS says so). Merida's The Wolf of the
+   Timon or Lady live in the Valley (NEEDS says so), and Valley Visits waits
+   on Daisy, not on Vanellope's story. Merida's The Wolf of the
    Wilds and A Land of Myths and Legends each start when you unlock their
    area (AREAS), in either order, once A New Chapter is done. */
 const UNORDERED=["Secret Potatoes","Snow White","Tinker Bell"];
 const LOOSE=["Merlin|Side Story"];
-const LOOSE_QUESTS=["alice--cat-tree-catastrophe","timon--drawings","lady--the-spaghetti-incident","merida--the-wolf-of-the-wilds","merida--a-land-of-myths-and-legends"];
+const LOOSE_QUESTS=["alice--cat-tree-catastrophe","timon--drawings","lady--the-spaghetti-incident","merida--the-wolf-of-the-wilds","merida--a-land-of-myths-and-legends","vanellope-von-schwee--valley-visits"];
 const loose=r=>UNORDERED.includes(r[2])||/\(Dream Bundle\)$/.test(r[2])||LOOSE.includes(r[2]+"|"+r[3])||LOOSE_QUESTS.includes(r[0]);
 
 /* Whether a quest can be played on this save: in an expansion Danni owns
