@@ -887,6 +887,46 @@ const REALMS=[
 ];
 /* Event quests that go away: last day you can do them. They jump to the top
    of the to-do list in their last two weeks and drop off after. */
+/* How long each quest is, from the Objectives list on its Dreamlight Valley
+   Wiki page (Nov 20, 2026): [steps, steps that wait a day, items to gather
+   (the counts in brackets, up to 50 each)]. Only the quests open on Danni's
+   save then; the Quickest quest box skips any quest not listed. */
+const STEPS={
+  "scrooge-mcduck--new-ventures-and-adventures":[10,0,65],
+  "merlin--the-moose-hunt":[20,0,25],
+  "merlin--islands-in-the-sky":[9,0,6],
+  "merlin--the-magic-of-friendship":[7,1,0],
+  "ursula--villager-of-the-month-ursula":[16,0,27],
+  "donald-duck--villager-of-the-month-donald":[6,0,11],
+  "vanellope-von-schwee--press-start":[22,0,71],
+  "mushu--a-reminder-in-stone":[39,0,124],
+  "timon--old-enemies":[32,0,51],
+  "aladdin--good-as-gold":[30,0,38],
+  "alice--books-with-no-pictures":[37,0,50],
+  "alice--cat-tree-catastrophe":[13,0,10],
+  "oswald--the-lesser-evil":[12,0,3],
+  "snow-white--handle-with-care":[25,0,62],
+  "snow-white--hold-your-horses-the-wishing-alps":[7,0,27],
+  "snow-white--reindeer-are-better-than-people":[10,0,57],
+  "mirabel--once-upon-a-dance-pieces-of-the-hearts":[14,0,0],
+  "timon--drawings":[1,0,0],
+  "peter-pan--shadow-tag":[22,0,27],
+  "cogsworth--on-her-majesty-s-festive-service":[26,0,73],
+  "oogie-boogie--oogie-boogie-s-big-game":[22,0,0],
+  "jafar--the-secrets-of-eternity-isles":[17,0,0],
+  "rapunzel--rapunzel-s-challenge":[12,0,0],
+  "gaston--gaston-s-challenge":[7,0,10],
+  "eve--eve-s-challenge":[12,0,34],
+  "tinker-bell--crystal-cavern-wishing-alps":[26,0,0],
+  "daisy-duck--once-upon-a-dance-essence-of-moments":[11,0,18],
+  "kristoff--once-upon-a-dance-soft-steps-strong-ties":[11,0,9],
+  "once-upon-a-dance-dr--once-upon-a-dance-frightfully-formal":[17,0,0],
+  "dapper-wall-e-dream--your-sunday-best":[27,0,12],
+  "dapper-wall-e-dream--matchmaking-magic":[37,0,34],
+  "dapper-wall-e-dream--strut-your-stuff":[33,0,108],
+  "dapper-wall-e-dream--sprouting-a-story":[41,0,91]
+};
+
 const DEADLINE={"oogie-boogie--let-the-games-begin":"2026-11-04"};
 /* "Progress further with" someone: the wiki says a quest waits on more of
    their story without naming the quest. Only the Quest Flow uses these
