@@ -30,11 +30,16 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: python firestore_backup.py
 
+      # Rebuilds the Skylight Calendar feeds (calendar/*.ics) from the backup
+      # just taken and from assets/pp-cleaning.js.
+      - name: Rebuild calendar feeds
+        run: node tools/build-calendar.js
+
       - name: Save backup
         run: |
           git config user.name "Firestore Backup"
           git config user.email "actions@github.com"
-          git add firestore_backups/
+          git add firestore_backups/ calendar/
 
           if git diff --cached --quiet; then
             echo "No backup changes to save."
