@@ -410,6 +410,13 @@
         <label class="fr-sel">Breed <select id="fltBreed"></select></label>
         <label class="fr-sel">Rarity <select id="fltRarity"></select></label>
         <label class="fr-sel">Gender <select id="fltGender"></select></label>
+        <label class="fr-sel">Planner
+          <select id="fltPlan">
+            <option value="all">Any</option>
+            <option value="unpaired">Unpaired</option>
+            <option value="paired">On the planner</option>
+          </select>
+        </label>
         <label class="fr-sel">Flight <select id="fltFlight"></select></label>
         <label class="fr-sel">Sort
           <select id="sortBy">
@@ -797,7 +804,7 @@ const lairs = {};
 LAIR_KEYS.forEach(k => { lairs[k] = { items: [], daily: cleanDaily(null), plan: cleanPlan(null), ref: null, saving: false, timer: null, sync: ["idle","Connecting"] }; });
 
 let who = "danni", editId = null, famId = null;
-let filter = "all", fltFlight = "all", fltBreed = "all", fltRarity = "all", fltGender = "all", query = "";
+let filter = "all", fltFlight = "all", fltBreed = "all", fltRarity = "all", fltGender = "all", fltPlan = "all", query = "";
 /* the sort is remembered on this device; the filters start fresh each visit */
 const SORTS = Array.from(document.querySelectorAll("#sortBy option"), o => o.value);
 let sortBy = (() => {
@@ -1298,6 +1305,7 @@ function renderChips(){
   if(fltGender !== "all" && !genders.includes(fltGender)) fltGender = "all";
   $("fltGender").innerHTML = `<option value="all">Any</option>` + genders.map(g => `<option value="${g}">${GENDERS[g]}</option>`).join("");
   $("fltGender").value = fltGender;
+  $("fltPlan").value = fltPlan;
 }
 
 $("chips").onclick = e => {
@@ -1310,6 +1318,7 @@ $("fltFlight").onchange = e => { fltFlight = e.target.value; render(); };
 $("fltBreed").onchange  = e => { fltBreed = e.target.value; render(); };
 $("fltRarity").onchange = e => { fltRarity = e.target.value; render(); };
 $("fltGender").onchange = e => { fltGender = e.target.value; render(); };
+$("fltPlan").onchange   = e => { fltPlan = e.target.value; render(); };
 $("sortBy").onchange    = e => {
   sortBy = e.target.value;
   try{ localStorage.setItem("pp_fr_sort", sortBy); }catch(err){}
@@ -1318,9 +1327,9 @@ $("sortBy").onchange    = e => {
 $("sortBy").value = sortBy;
 $("q").addEventListener("input", e => { query = e.target.value.trim().toLowerCase(); render(); });
 
-const filtering = () => filter !== "all" || fltFlight !== "all" || fltBreed !== "all" || fltRarity !== "all" || fltGender !== "all" || !!query;
+const filtering = () => filter !== "all" || fltFlight !== "all" || fltBreed !== "all" || fltRarity !== "all" || fltGender !== "all" || fltPlan !== "all" || !!query;
 $("clearBtn").onclick = () => {
-  filter = fltFlight = fltBreed = fltRarity = fltGender = "all";
+  filter = fltFlight = fltBreed = fltRarity = fltGender = fltPlan = "all";
   query = "";
   $("q").value = "";
   render();
@@ -1335,6 +1344,11 @@ function visible(){
     if(fltBreed !== "all" && d.breed !== fltBreed) return false;
     if(fltRarity !== "all" && rarityOf(d) !== +fltRarity) return false;
     if(fltGender !== "all" && d.gender !== fltGender) return false;
+    /* unpaired: could breed, but isn't in any of the planner's pairs */
+    if(fltPlan !== "all"){
+      const paired = cur().plan.pairs.some(p => p.dam === d.id || p.sire === d.id);
+      if(fltPlan === "paired" ? !paired : (paired || !plannable(d))) return false;
+    }
     if(query){
       const hay = [d.name, d.breed, d.flight, d.genes, d.notes, d.frId || "", STATUS[d.status],
         parentName(d.sire), parentName(d.dam)].concat(d.colours).join(" ").toLowerCase();
@@ -1923,7 +1937,7 @@ $("grid").onclick = e => {
 /* ---------------- tabs: #danni (default), #brendon ---------------- */
 function showTab(k, remember){
   if(!LAIR_KEYS.includes(k)) k = "danni";
-  if(k !== who){ closeForm(); closeFam(); filter = fltFlight = fltBreed = fltRarity = fltGender = "all"; picking = false; }
+  if(k !== who){ closeForm(); closeFam(); filter = fltFlight = fltBreed = fltRarity = fltGender = fltPlan = "all"; picking = false; }
   who = k;
   LAIR_KEYS.forEach(x => { $("tab-" + x).setAttribute("aria-selected", x === k); $("tab-" + x).tabIndex = x === k ? 0 : -1; });
   $("lair").setAttribute("aria-labelledby", "tab-" + k);
