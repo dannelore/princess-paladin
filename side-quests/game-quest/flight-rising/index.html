@@ -167,6 +167,13 @@
   .fr-name{ font-family: var(--font-serif); font-weight: 600; font-size: 1.4rem; margin: 0; line-height: 1.1; overflow-wrap: anywhere; }
   .fr-sub{ font-family: var(--font-serif); font-size: 1.05rem; color: var(--ink-soft); line-height: 1.2; }
   .fr-meta{ display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+  /* the planner's dates on each card: who they nest with, and when they're free after */
+  .fr-plans{ display: flex; flex-direction: column; gap: 3px; font-size: .8rem; line-height: 1.35; color: var(--ink-soft); }
+  .fr-plans .fr-plan{ padding-left: 8px; border-left: 2px solid var(--line); }
+  .fr-plans .fr-plan.high{ border-left-color: var(--gold-deep); }
+  .fr-plans .fr-plan.low{ border-left-style: dashed; }
+  .fr-plans b{ color: var(--ink); font-weight: 600; }
+  .fr-plans .fr-free{ font-style: italic; }
   .fr-tag{
     font-family: var(--font-body); font-size: .66rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
     border-radius: 999px; padding: 5px 10px; background: rgba(46,36,31,.06); color: var(--ink-soft); line-height: 1.2;
@@ -1344,9 +1351,10 @@ function visible(){
     if(fltBreed !== "all" && d.breed !== fltBreed) return false;
     if(fltRarity !== "all" && rarityOf(d) !== +fltRarity) return false;
     if(fltGender !== "all" && d.gender !== fltGender) return false;
-    /* unpaired: could breed, but isn't in any of the planner's pairs */
+    /* unpaired: could breed, but has nothing on the planner's agenda (a pair
+       whose mate is gone or in the den doesn't count) */
     if(fltPlan !== "all"){
-      const paired = cur().plan.pairs.some(p => p.dam === d.id || p.sire === d.id);
+      const paired = !!PLANS[d.id];
       if(fltPlan === "paired" ? !paired : (paired || !plannable(d))) return false;
     }
     if(query){
@@ -1406,6 +1414,24 @@ function moreInfo(d){
   </dl></div>`;
 }
 
+/* Each dragon's place in the planner's agenda: [{ day, mate, pri }], soonest
+   first, worked out once per render. */
+let PLANS = {};
+function planMap(){
+  const m = {};
+  try{
+    agenda().forEach(r => [[r.dam, r.sire], [r.sire, r.dam]].forEach(([a, b]) => (m[a.id] = m[a.id] || []).push({ day: r.day, mate: b, pri: r.pri })));
+  }catch(e){ return {}; }
+  return m;
+}
+function planLines(d){
+  const plans = PLANS[d.id];
+  if(!plans || !plans.length) return "";
+  const last = plans[plans.length - 1];
+  return `<div class="fr-plans">${plans.map(p => `<span class="fr-plan ${p.pri}" title="${PRIORITY[p.pri].label} priority"><b>${fmtAgenda(dayStr(p.day))}</b> with ${esc(p.mate.name)}</span>`).join("")}
+    <span class="fr-free">Free again ${fmtAgenda(dayStr(last.day + COOLDOWNS[d.breed]))}</span></div>`;
+}
+
 function card(d){
   const art = d.frId
     ? `<img src="${renderUrl(d.frId)}" alt="" loading="lazy" data-fallback="${esc(d.name)}"
@@ -1425,6 +1451,7 @@ function card(d){
           ${d.flight ? `<span class="fr-tag flight"${LIGHT_FLIGHTS.includes(d.flight) ? " data-light" : ""}>${esc(d.flight)}</span>` : ""}
           ${gender}${breedBadge(d)}
         </div>
+        ${planLines(d)}
       </div>
       <div class="fr-links">
         <button class="fr-famlink" type="button" data-fam="${esc(d.id)}">Family tree</button>
@@ -1895,6 +1922,7 @@ function render(){
   renderDaily();
   renderHoard();
   renderChips();
+  PLANS = planMap();
   const rows = sorted(visible());
   const living = cur().items.filter(d => d.status !== "gone").length;
   $("count").textContent = filtering()
