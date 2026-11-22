@@ -408,6 +408,7 @@
       <div class="fr-tools pp-field">
         <input id="q" type="search" placeholder="Search names, breeds, colours, genes, parents" aria-label="Search dragons">
         <label class="fr-sel">Breed <select id="fltBreed"></select></label>
+        <label class="fr-sel">Rarity <select id="fltRarity"></select></label>
         <label class="fr-sel">Gender <select id="fltGender"></select></label>
         <label class="fr-sel">Flight <select id="fltFlight"></select></label>
         <label class="fr-sel">Sort
@@ -416,6 +417,7 @@
             <option value="added-asc">Oldest first</option>
             <option value="name-asc">Name A&ndash;Z</option>
             <option value="breed-asc">Breed</option>
+            <option value="rarity-desc">Rarest breed first</option>
             <option value="level-desc">Highest level</option>
             <option value="breed-soon">Ready to breed first</option>
             <option value="flight-asc">Flight</option>
@@ -639,8 +641,9 @@ const isAncient = d => ANCIENT.includes(d.breed);
 const RARITY = ["Plentiful","Common","Uncommon","Limited","Rare"];
 const BREED_STARS = { Fae:1, Guardian:1, Mirror:1, Tundra:1, Pearlcatcher:2, Ridgeback:2, Snapper:2, Spiral:2,
   Bogsneak:3, Fathom:3, Obelisk:3, Skydancer:3, Imperial:4, Nocturne:4, Coatl:5, Wildclaw:5 };
+const rarityOf = d => (isAncient(d) ? 2 : BREED_STARS[d.breed]) || 0;
 function rarityStars(d){
-  const n = isAncient(d) ? 2 : BREED_STARS[d.breed];
+  const n = rarityOf(d);
   return n ? `<span class="fr-stars">${"★".repeat(n)}${"☆".repeat(5 - n)}</span> <i>${RARITY[n - 1]}</i>` : "";
 }
 
@@ -794,7 +797,7 @@ const lairs = {};
 LAIR_KEYS.forEach(k => { lairs[k] = { items: [], daily: cleanDaily(null), plan: cleanPlan(null), ref: null, saving: false, timer: null, sync: ["idle","Connecting"] }; });
 
 let who = "danni", editId = null, famId = null;
-let filter = "all", fltFlight = "all", fltBreed = "all", fltGender = "all", query = "";
+let filter = "all", fltFlight = "all", fltBreed = "all", fltRarity = "all", fltGender = "all", query = "";
 /* the sort is remembered on this device; the filters start fresh each visit */
 const SORTS = Array.from(document.querySelectorAll("#sortBy option"), o => o.value);
 let sortBy = (() => {
@@ -1285,6 +1288,12 @@ function renderChips(){
   $("fltBreed").innerHTML = `<option value="all">All</option>` + breeds.map(b => `<option>${esc(b)}</option>`).join("");
   $("fltBreed").value = fltBreed;
 
+  /* rarest first, only the rarities this lair has */
+  const stars = [5,4,3,2,1].filter(n => items.some(d => rarityOf(d) === n)).map(String);
+  if(fltRarity !== "all" && !stars.includes(fltRarity)) fltRarity = "all";
+  $("fltRarity").innerHTML = `<option value="all">All</option>` + stars.map(n => `<option value="${n}">${RARITY[n - 1]}</option>`).join("");
+  $("fltRarity").value = fltRarity;
+
   const genders = Object.keys(GENDERS).filter(g => items.some(d => d.gender === g));
   if(fltGender !== "all" && !genders.includes(fltGender)) fltGender = "all";
   $("fltGender").innerHTML = `<option value="all">Any</option>` + genders.map(g => `<option value="${g}">${GENDERS[g]}</option>`).join("");
@@ -1299,6 +1308,7 @@ $("chips").onclick = e => {
 };
 $("fltFlight").onchange = e => { fltFlight = e.target.value; render(); };
 $("fltBreed").onchange  = e => { fltBreed = e.target.value; render(); };
+$("fltRarity").onchange = e => { fltRarity = e.target.value; render(); };
 $("fltGender").onchange = e => { fltGender = e.target.value; render(); };
 $("sortBy").onchange    = e => {
   sortBy = e.target.value;
@@ -1308,9 +1318,9 @@ $("sortBy").onchange    = e => {
 $("sortBy").value = sortBy;
 $("q").addEventListener("input", e => { query = e.target.value.trim().toLowerCase(); render(); });
 
-const filtering = () => filter !== "all" || fltFlight !== "all" || fltBreed !== "all" || fltGender !== "all" || !!query;
+const filtering = () => filter !== "all" || fltFlight !== "all" || fltBreed !== "all" || fltRarity !== "all" || fltGender !== "all" || !!query;
 $("clearBtn").onclick = () => {
-  filter = fltFlight = fltBreed = fltGender = "all";
+  filter = fltFlight = fltBreed = fltRarity = fltGender = "all";
   query = "";
   $("q").value = "";
   render();
@@ -1323,6 +1333,7 @@ function visible(){
     if(filter === "all" ? d.status === "gone" : d.status !== filter) return false;
     if(fltFlight !== "all" && d.flight !== fltFlight) return false;
     if(fltBreed !== "all" && d.breed !== fltBreed) return false;
+    if(fltRarity !== "all" && rarityOf(d) !== +fltRarity) return false;
     if(fltGender !== "all" && d.gender !== fltGender) return false;
     if(query){
       const hay = [d.name, d.breed, d.flight, d.genes, d.notes, d.frId || "", STATUS[d.status],
@@ -1342,6 +1353,7 @@ const SORT_BY = {
   "added-asc":  (a,b) => a.added - b.added,
   "name-asc":   (a,b) => a.name.localeCompare(b.name),
   "breed-asc":  (a,b) => blankLast(a.breed, b.breed) || a.name.localeCompare(b.name),
+  "rarity-desc": (a,b) => rarityOf(b) - rarityOf(a) || blankLast(a.breed, b.breed) || a.name.localeCompare(b.name),
   "status-asc": (a,b) => STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status) || a.name.localeCompare(b.name),
   "level-desc": (a,b) => b.level - a.level || a.name.localeCompare(b.name),
   "breed-soon": (a,b) => breedIn(a) - breedIn(b) || a.name.localeCompare(b.name),
@@ -1911,7 +1923,7 @@ $("grid").onclick = e => {
 /* ---------------- tabs: #danni (default), #brendon ---------------- */
 function showTab(k, remember){
   if(!LAIR_KEYS.includes(k)) k = "danni";
-  if(k !== who){ closeForm(); closeFam(); filter = fltFlight = fltBreed = fltGender = "all"; picking = false; }
+  if(k !== who){ closeForm(); closeFam(); filter = fltFlight = fltBreed = fltRarity = fltGender = "all"; picking = false; }
   who = k;
   LAIR_KEYS.forEach(x => { $("tab-" + x).setAttribute("aria-selected", x === k); $("tab-" + x).tabIndex = x === k ? 0 : -1; });
   $("lair").setAttribute("aria-labelledby", "tab-" + k);
