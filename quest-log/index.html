@@ -921,6 +921,157 @@
      Monsters. It now rides inside the sticky ribbon as a full-width row, so
      every quest-log page is one tap away no matter how far down you are. */
   /* .pp-ribbon-sections lives in pp.css now — see section 19b. */
+
+  /* ===== POP-OUT TO-DO WINDOW =====
+     These rules style the little always-on-top window (see "FLOATING TO-DO
+     WINDOW" in the script). That window gets a copy of every stylesheet on
+     this page, so its cards reuse .task-card, the chips and the subtask rows
+     as they are, and only what's new to it lives here. */
+  .pop-out-btn{ white-space:nowrap; }
+  .pop-out-btn.nudge{ color:var(--accent-dark); font-weight:600; animation:fl-nudge 1.4s ease-in-out 3; }
+  @keyframes fl-nudge{ 50%{ opacity:.35; } }
+  /* Phones have no windows to float over. */
+  @media (hover:none) and (pointer:coarse){ .pop-out-btn{ display:none; } }
+
+  .fl-body{
+    display:flex; flex-direction:column; min-height:100vh;
+    font-size:13px; line-height:1.45;
+  }
+  .fl-head{
+    position:sticky; top:0; z-index:20;
+    background:var(--cream); color:var(--ink);
+    border-bottom:2px solid rgba(232,124,166,0.35);
+    box-shadow:0 4px 14px rgba(180,90,120,0.12);
+    padding:9px 11px 8px;
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .fl-titlebar{ display:flex; align-items:baseline; gap:8px; }
+  .fl-titlebar h1{
+    font-family:var(--font-serif); font-size:19px; font-weight:600;
+    margin:0; color:var(--accent-dark); line-height:1.1;
+  }
+  .fl-count{ font-size:11.5px; color:var(--ink-soft); }
+  .fl-purse{
+    margin-left:auto; font-size:11px; font-weight:500; color:var(--quest-copper);
+    font-variant-numeric:tabular-nums; white-space:nowrap;
+  }
+  .fl-help-btn{
+    background:none; border:1px solid rgba(74,59,65,0.2); border-radius:50%;
+    width:18px; height:18px; padding:0; font-size:10.5px; line-height:1;
+    color:var(--ink-soft); cursor:pointer; font-family:var(--font-body); flex-shrink:0;
+  }
+  .fl-help-btn:hover,
+  .fl-help-btn[aria-expanded="true"]{ color:var(--accent-dark); border-color:var(--accent); }
+  #flInput{
+    font-family:var(--font-body); font-size:14px; line-height:1.45;
+    border:1px solid rgba(74,59,65,0.15); border-radius:8px;
+    padding:7px 10px; background:var(--white); color:var(--ink);
+    width:100%; resize:none; min-height:34px; max-height:30vh; display:block;
+  }
+  #flInput:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+  #flInput::placeholder{ color:var(--ink-soft); }
+  .fl-preview{ display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:10px; }
+  .fl-preview:empty{ display:none; }
+  .fl-preview .quick-title{
+    font-size:11px; color:var(--ink-soft);
+    max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .fl-legend{ margin:0; font-size:10.5px; line-height:1.75; color:var(--ink-soft); }
+  .fl-legend[hidden]{ display:none; }
+  .fl-legend code{
+    font-family:var(--font-body); font-size:10.5px;
+    background:rgba(74,59,65,0.06); border-radius:6px; padding:1px 5px;
+    color:var(--accent-dark);
+  }
+  .fl-filters{
+    display:flex; gap:5px; overflow-x:auto; scrollbar-width:none;
+    margin:0 -11px; padding:0 11px;
+  }
+  .fl-filters::-webkit-scrollbar{ display:none; }
+  .fl-filters:empty{ display:none; }
+  .fl-filters .filter-pill{ font-size:11px; padding:3px 10px; flex-shrink:0; }
+  /* In CSS rather than inline so Brendon's gold "on" pill still wins. */
+  .filter-pill.fl-all.on{ background:var(--ink); }
+
+  .fl-main{ flex:1; padding:9px 9px 64px; }
+  .fl-main .task-card{ padding:6px 8px 6px 2px; }
+  .fl-main .task-title{ font-size:14.5px; }
+  .fl-main .task-meta{ gap:5px; }
+  .fl-main .sub-wrap{ margin:5px 0 2px 28px; }
+  .fl-main .done-toggle{ margin-top:10px; padding:6px 11px; }
+  .fl-main .done-list{ gap:6px; }
+  .fl-subs{
+    font-family:var(--font-body); font-size:10.5px; color:var(--ink-soft);
+    background:rgba(74,59,65,0.06); border:none; border-radius:8px;
+    padding:2px 7px; cursor:pointer;
+  }
+  .fl-subs:hover{ color:var(--accent-dark); }
+  .fl-grip-space{ width:16px; flex-shrink:0; }
+  .task-card.fl-leaving{ opacity:.35; transform:translateX(10px); }
+  .task-card.fl-fresh{ animation:fl-fresh 1.2s ease-out; }
+  @keyframes fl-fresh{ from{ box-shadow:0 0 0 2px var(--accent), 0 2px 8px rgba(180,90,120,0.08); } }
+
+  .fl-edit{
+    display:block; width:100%; resize:none; overflow:hidden;
+    font-family:var(--font-body); font-size:13.5px; line-height:1.35;
+    border:1px solid var(--accent); border-radius:7px;
+    padding:4px 7px; background:var(--white); color:var(--ink);
+  }
+  .fl-edit:focus{ outline:none; }
+  .task-card.fl-editing .task-actions{ display:none; }
+  .fl-edit-hint{ font-size:10px; color:var(--ink-soft); margin-top:2px; }
+
+  .fl-notice{
+    font-size:11.5px; color:var(--ink-soft); background:var(--white);
+    border:1px dashed rgba(74,59,65,0.25); border-radius:10px;
+    padding:7px 10px; margin-bottom:8px; display:flex; gap:8px; align-items:flex-start;
+  }
+  .fl-notice[hidden]{ display:none; }
+  .fl-notice button{
+    margin-left:auto; background:none; border:none; padding:0 2px;
+    color:var(--ink-soft); cursor:pointer; font-size:11px;
+  }
+
+  .fl-toast{
+    position:fixed; left:9px; right:9px; bottom:9px; z-index:30;
+    background:var(--ink); color:var(--white);
+    border-radius:12px; padding:8px 12px; font-size:12px;
+    display:flex; align-items:center; gap:10px;
+    box-shadow:0 6px 18px rgba(46,36,31,0.3);
+    opacity:0; transform:translateY(8px); pointer-events:none;
+    transition:opacity .2s, transform .2s;
+  }
+  .fl-toast.show{ opacity:1; transform:none; pointer-events:auto; }
+  .fl-toast span{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .fl-toast button{
+    background:none; border:none; padding:0; cursor:pointer; flex-shrink:0;
+    font-family:var(--font-body); font-size:12px; color:var(--pink-bg-alt);
+    text-decoration:underline;
+  }
+
+  .fl-newday{
+    position:fixed; inset:0; z-index:40;
+    background:rgba(46,36,31,0.55);
+    display:flex; align-items:center; justify-content:center; padding:18px;
+  }
+  .fl-newday[hidden]{ display:none; }
+  .fl-newday-card{
+    background:var(--cream); color:var(--ink); border-radius:var(--radius-md);
+    padding:16px 16px 14px; text-align:center; max-width:280px;
+    box-shadow:0 12px 32px rgba(46,36,31,0.35);
+  }
+  .fl-newday-card .big{ font-size:30px; line-height:1; }
+  .fl-newday-card p{ margin:8px 0 12px; font-size:12.5px; color:var(--ink-soft); }
+  .fl-newday-card button{
+    font-family:var(--font-body); font-weight:500; font-size:13px;
+    background:var(--accent); color:var(--white); border:none;
+    padding:7px 16px; border-radius:16px; cursor:pointer;
+  }
+  .fl-newday-card button:hover{ background:var(--accent-dark); }
+
+  html.pp-paladin .fl-head,
+  html.pp-paladin .fl-notice{ color:var(--ink); }
+  html.pp-paladin .fl-titlebar h1{ color:#7C5B30; }
 </style>
 </head>
 <body class="pp-dannelore">
@@ -1112,7 +1263,13 @@
   </div>
 
   <div class="col-todos">
-    <div class="col-head"><h2>To Dos <span class="col-emo" data-alt="🛡️">🌸</span></h2><span class="sub" id="todosCount">0 open</span></div>
+    <div class="col-head">
+      <h2>To Dos <span class="col-emo" data-alt="🛡️">🌸</span></h2>
+      <span class="head-right">
+        <span class="sub" id="todosCount">0 open</span>
+        <button class="view-toggle pop-out-btn" id="todosPopOut" title="Open your to-dos in a small window that stays on top of your other programs">pop out ↗</button>
+      </span>
+    </div>
     <button class="add-toggle" id="todosAddToggle" aria-expanded="false" aria-controls="todosAddRow">+ Add a to-do</button>
     <div class="add-row" id="todosAddRow" hidden>
       <textarea id="todosInput" placeholder="One to-do per line.&#10;Indent with two spaces or a dash to make it a subtask."></textarea>
@@ -1359,9 +1516,11 @@ function money(c){ return c >= 100 ? `${Math.floor(c/100)}g ${c%100}c` : `${c}c`
 function tagById(id){ return S().tags.find(t => t.id === id) || null; }
 function capital(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
 
-function value(task, col){ return PQ.taskValue(S(), task, col, viewDate); }
-function subValue(task, col){ return PQ.subtaskValue(S(), task, col, viewDate); }
-function bonusOf(task, col){ return PQ.bonusValue(S(), task, col, viewDate); }
+/* `day` defaults to the day the board is showing. The pop-out window has no
+   date of its own — it is always today — so it passes TODAY explicitly. */
+function value(task, col, day){ return PQ.taskValue(S(), task, col, day || viewDate); }
+function subValue(task, col, day){ return PQ.subtaskValue(S(), task, col, day || viewDate); }
+function bonusOf(task, col, day){ return PQ.bonusValue(S(), task, col, day || viewDate); }
 
 /* Window dailies keep one record per window rather than per day, so every
    lookup goes through PQ.completionKey — it hands back the plain date key
@@ -1741,13 +1900,21 @@ let lastQuickAdd = null;
 
 /* A to-do added while a tag filter is on inherits that tag — otherwise it
    would be filed and vanish from the board in the same breath. */
-function quickDefaults(meta){
+function quickDefaults(meta, filterTag = activeTag){
   return {
     difficulty: meta.difficulty || 3,
     priority: meta.priority || 'medium',
-    tag: meta.tag || activeTag || null,
+    tag: meta.tag || filterTag || null,
     due: meta.due || null
   };
+}
+/* One parsed shorthand line → a fresh to-do. Shared with the pop-out
+   window, which has its own tag filter. */
+function newTodo(line, filterTag = activeTag){
+  return Object.assign({
+    id: uid(), title: line.meta.title, subs: line.subs,
+    created: PQ.TODAY_KEY, done:false, doneDate:null
+  }, quickDefaults(line.meta, filterTag));
 }
 /* The visual viewport shrinks when the keyboard opens; the gap it leaves is
    handed to the stylesheet so the card can sit on top of it. */
@@ -1766,10 +1933,14 @@ function quickGrow(){
   quickInput.style.height = quickInput.scrollHeight + 'px';
 }
 function renderQuickPreview(){
-  const lines = quickLines(quickInput.value);
-  if(!lines.length){ quickPreview.innerHTML = ''; return; }
+  quickPreview.innerHTML = quickPreviewHtml(quickLines(quickInput.value));
+}
+/* The chips under a shorthand box: how the first line will be filed, and a
+   count of anything after it. */
+function quickPreviewHtml(lines, filterTag = activeTag){
+  if(!lines.length) return '';
   const first = lines[0];
-  const base = quickDefaults(first.meta);
+  const base = quickDefaults(first.meta, filterTag);
   const tag = tagById(base.tag);
   let html = `<span class="quick-title">${escapeHtml(first.meta.title)}</span>`;
   html += difficultyChip(base.difficulty);
@@ -1781,17 +1952,14 @@ function renderQuickPreview(){
   if(lines.length > 1) rest.push(`+${lines.length - 1} more to-do${lines.length > 2 ? 's' : ''}`);
   if(subs) rest.push(`${subs} subtask${subs === 1 ? '' : 's'}`);
   if(rest.length) html += `<span class="quick-title">${rest.join(' · ')}</span>`;
-  quickPreview.innerHTML = html;
+  return html;
 }
 function quickCommit(){
   const lines = quickLines(quickInput.value);
   if(!lines.length) return;
   const ids = [];
   lines.forEach(line => {
-    const task = Object.assign({
-      id: uid(), title: line.meta.title, subs: line.subs,
-      created: PQ.TODAY_KEY, done:false, doneDate:null
-    }, quickDefaults(line.meta));
+    const task = newTodo(line);
     S().todos.push(task);
     ids.push(task.id);
   });
@@ -2249,7 +2417,7 @@ function renderDailies(){
 }
 
 /* ============ TODOS + PROJECTS ============ */
-function toggleSimpleSub(task, column, subId){
+function toggleSimpleSub(task, column, subId, day){
   if(!task.subDone) task.subDone = {};
   if(!task.subGrants) task.subGrants = {};
   if(task.subDone[subId]){
@@ -2258,11 +2426,12 @@ function toggleSimpleSub(task, column, subId){
     delete task.subGrants[subId];
   } else {
     task.subDone[subId] = true;
-    task.subGrants[subId] = reward(task, column, subValue(task, column), Math.max(1, Math.round((task.difficulty || 3) * 1.5)));
+    task.subGrants[subId] = reward(task, column, subValue(task, column, day), Math.max(1, Math.round((task.difficulty || 3) * 1.5)));
   }
   saveAndRender();
 }
-function toggleSimple(task, column){
+function toggleSimple(task, column, day){
+  day = day || viewDate;
   const subs = task.subs || [];
   if(task.done){
     task.done = false; task.doneDate = null;
@@ -2271,8 +2440,8 @@ function toggleSimple(task, column){
   } else {
     const allSubs = !subs.length || subs.every(s => (task.subDone || {})[s.id]);
     task.done = true;
-    task.doneDate = PQ.dateKey(viewDate);
-    task.grant = reward(task, column, allSubs ? bonusOf(task, column) : 0, (task.difficulty || 3) * 8);
+    task.doneDate = PQ.dateKey(day);
+    task.grant = reward(task, column, allSubs ? bonusOf(task, column, day) : 0, (task.difficulty || 3) * 8);
   }
   saveAndRender();
 }
@@ -2317,19 +2486,21 @@ COLUMNS.forEach(col => {
    Pointer events rather than HTML5 drag-and-drop, so it works on a phone.
    The visible list can be a subset (dailies show only what's scheduled), so
    on drop we write the new order back into the slots those tasks occupied
-   and leave everything else where it was. */
-(function(){
-  let drag = null;
+   and leave everything else where it was.
 
-  function listColumn(list){
-    return COLUMNS.find(c => document.getElementById(c + 'List') === list);
-  }
+   It's a factory because the pop-out window is a separate document: it gets
+   its own copy of these listeners, with `listColumn` telling each copy which
+   of its lists are sortable, and `autoScroll` because a short window often
+   can't show the slot you're dragging to. */
+function makeDragSort(doc, listColumn, opts){
+  opts = opts || {};
+  let drag = null;
 
   function cardsIn(list){
     return [...list.querySelectorAll('.task-card')].filter(c => c !== (drag && drag.card));
   }
 
-  document.addEventListener('pointerdown', e => {
+  doc.addEventListener('pointerdown', e => {
     const grip = e.target.closest('.drag-grip');
     if(!grip) return;
     const card = grip.closest('.task-card');
@@ -2347,8 +2518,13 @@ COLUMNS.forEach(col => {
     drag.grip = grip;
   });
 
-  document.addEventListener('pointermove', e => {
+  doc.addEventListener('pointermove', e => {
     if(!drag) return;
+    if(opts.autoScroll){
+      const view = doc.defaultView;
+      if(e.clientY < 70) view.scrollBy(0, -14);
+      else if(e.clientY > view.innerHeight - 40) view.scrollBy(0, 14);
+    }
     if(!drag.moved){
       drag.moved = true;
       drag.card.classList.add('dragging');
@@ -2381,23 +2557,31 @@ COLUMNS.forEach(col => {
 
       const col = listColumn(list);
       const order = [...list.querySelectorAll('.task-card')].map(c => c.dataset.id).filter(Boolean);
+      drag = null;   /* before saving, so the redraw it triggers isn't skipped as mid-drag */
       applyOrder(col, order);
     }
     drag = null;
   }
-  document.addEventListener('pointerup', finish);
-  document.addEventListener('pointercancel', finish);
+  doc.addEventListener('pointerup', finish);
+  doc.addEventListener('pointercancel', finish);
 
-  /* Put the dragged ids back into the slots they collectively occupied. */
-  function applyOrder(col, order){
-    const arr = S()[col];
-    const slots = [];
-    arr.forEach((t, i) => { if(order.includes(t.id)) slots.push(i); });
-    const byId = Object.fromEntries(arr.map(t => [t.id, t]));
-    order.forEach((id, n) => { if(slots[n] !== undefined) arr[slots[n]] = byId[id]; });
-    saveAndRender();
-  }
-})();
+  return { get dragging(){ return !!drag; } };
+}
+
+/* Put the dragged ids back into the slots they collectively occupied. */
+function applyOrder(col, order){
+  const arr = S()[col];
+  const byId = Object.fromEntries(arr.map(t => [t.id, t]));
+  /* A card can outlive its task if a sync lands mid-drag; drop those ids so
+     the rest still line up with their slots. */
+  order = order.filter(id => byId[id]);
+  const slots = [];
+  arr.forEach((t, i) => { if(order.includes(t.id)) slots.push(i); });
+  order.forEach((id, n) => { if(slots[n] !== undefined) arr[slots[n]] = byId[id]; });
+  saveAndRender();
+}
+
+makeDragSort(document, list => COLUMNS.find(c => document.getElementById(c + 'List') === list));
 
 /* ============ REWARDS PANEL ============ */
 let editingShopId = null;
@@ -2568,6 +2752,661 @@ function renderSettings(){
   renderHelperSettings();
 }
 
+/* ============ FLOATING TO-DO WINDOW ============
+   The board lives in a browser tab, so it's buried the moment you switch to
+   anything else, and a list you can't see is one you stop adding to. "Pop
+   out" opens the To Dos column in a small window of its own that floats
+   above every other program (Document Picture-in-Picture, in Chrome and
+   Edge), so it's there while you work: type a line, press Enter, tick it off
+   when it's done, drag things into order.
+
+   It is not a second copy of the board. The little window runs no scripts of
+   its own. Everything in it is drawn and driven from this page, against this
+   page's store, through the same newTodo / toggleSimple / reward / save path
+   the board uses. That's deliberate: a quest log is one Firestore document
+   written whole on every save, so two independent pages open at once would
+   each overwrite the other's changes with their own stale copy. One page
+   with two windows onto it can't do that.
+
+   The catch is that closing the board tab closes the window too. Minimise
+   the board instead.
+
+   Browsers without Document Picture-in-Picture (Firefox, Safari) get the same
+   window as an ordinary popup. It works the same way but can't stay on top.
+
+   It is always "today", whatever day the board is showing. Ticks pass TODAY
+   explicitly, and since an always-on-top window is exactly the kind of thing
+   that stays open overnight, it stops taking changes once the date rolls
+   over and asks for a refresh. Otherwise the morning's ticks would be filed
+   under yesterday. */
+const floater = {
+  win:null, doc:null,
+  pinned:false,        // true when it really is on top (Picture-in-Picture)
+  filter:null,         // tag id, or null for everything
+  editing:null,        // { id, line, keepTag } while a title is open for editing
+  expanded:new Set(),  // cards with their subtasks showing
+  showDone:false,
+  sorter:null,
+  pending:new Set(),   // ids mid tick-animation, so a double click can't pay twice
+  cache:{},            // last HTML written to each region, to skip no-op redraws
+  lastSync:0,
+  toastTimer:null
+};
+const fd = id => floater.doc.getElementById(id);
+const FLOAT_SYNC_MS = 20 * 1000;       // at most one cloud re-read per this long
+const FLOAT_POLL_MS = 3 * 60 * 1000;   // re-read anyway if it's sat this long
+const FLOAT_REOPEN_KEY = 'pp-floater-reopen';
+const FLOAT_NOTICE_KEY = 'pp-floater-notice';
+const DIFF_WORD = { 1:'trivial', 2:'easy', 4:'hard', 5:'gruelling' };
+
+const popOutBtn = document.getElementById('todosPopOut');
+function syncPopOutBtn(){
+  popOutBtn.textContent = floater.win ? 'pop back in' : 'pop out ↗';
+  popOutBtn.classList.toggle('on', !!floater.win);
+}
+popOutBtn.onclick = () => {
+  popOutBtn.classList.remove('nudge');
+  try{ sessionStorage.removeItem(FLOAT_REOPEN_KEY); }catch(e){}
+  if(floater.win){ floater.win.close(); floaterClosed(); }
+  else floaterOpen();
+};
+/* Back from the new-day refresh. A browser only opens a window like this on
+   a click, so it can't come back by itself; the button asks instead. */
+try{
+  if(sessionStorage.getItem(FLOAT_REOPEN_KEY)){
+    popOutBtn.classList.add('nudge');
+    popOutBtn.textContent = 'pop out again ↗';
+  }
+}catch(e){}
+
+async function floaterOpen(){
+  let win = null, pinned = false;
+  if('documentPictureInPicture' in window){
+    try{
+      win = await documentPictureInPicture.requestWindow({ width:360, height:600 });
+      pinned = true;
+    }catch(err){
+      console.warn('Picture-in-Picture refused, using a popup instead:', err);
+    }
+  }
+  if(!win){
+    win = window.open('', 'pp-todo-floater', 'popup,width=380,height=640');
+    if(!win){ alert('The pop-out window was blocked. Allow pop-ups for this site, then try again.'); return; }
+    /* A named popup left over from an earlier visit is reused, old contents
+       and all, so it's always written fresh. */
+    win.document.open();
+    win.document.write('<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1"></head><body></body></html>');
+    win.document.close();
+  }
+  floaterMount(win, pinned);
+}
+
+function floaterMount(win, pinned){
+  const doc = win.document;
+  Object.assign(floater, { win, doc, pinned, editing:null, sorter:null, cache:{}, lastSync:Date.now() });
+  floater.pending.clear();
+
+  doc.title = `${store.person.name}'s To Dos`;
+  doc.documentElement.className = document.documentElement.className;   // carries pp-paladin
+  /* Every stylesheet on the board comes along, so the cards and chips look
+     the same. Our own sheets are copied in as text, already parsed, so the
+     window is styled from its first frame. Google Fonts won't let a page
+     read its rules, so that one is linked. The <base> gives the window the
+     board's address to resolve anything relative against; it has none of
+     its own. */
+  const base = doc.createElement('base');
+  base.href = location.href;
+  doc.head.appendChild(base);
+  [...document.styleSheets].forEach(sheet => {
+    let css = null;
+    try{ css = [...sheet.cssRules].map(r => r.cssText).join('\n'); }catch(e){}
+    if(css !== null){
+      const style = doc.createElement('style');
+      style.textContent = css;
+      doc.head.appendChild(style);
+    } else if(sheet.href){
+      const link = doc.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = sheet.href;
+      doc.head.appendChild(link);
+    }
+  });
+
+  const paladin = document.documentElement.classList.contains('pp-paladin');
+  doc.body.className = document.body.className + ' fl-body';
+  doc.body.innerHTML = `
+    <header class="fl-head">
+      <div class="fl-titlebar">
+        <h1>To Dos <span class="col-emo">${paladin ? '🛡️' : '🌸'}</span></h1>
+        <span class="fl-count" id="flCount"></span>
+        <span class="fl-purse" id="flPurse" title="Your purse"></span>
+        <button type="button" class="fl-help-btn" id="flHelp" aria-expanded="false" aria-controls="flLegend" title="Shorthand you can type">?</button>
+      </div>
+      <textarea id="flInput" rows="1" placeholder="Add a to-do and press Enter" aria-label="Add a to-do"></textarea>
+      <div class="fl-preview" id="flPreview"></div>
+      <p class="fl-legend" id="flLegend" hidden>
+        <code>#home</code> tag ·
+        <code>!high</code> <code>!urgent</code> <code>!low</code> priority ·
+        <code>*easy</code> <code>*hard</code> or <code>*1</code>–<code>*5</code> difficulty ·
+        <code>@today</code> <code>@fri</code> <code>@3d</code> <code>@dec5</code> due.
+        Paste several lines to add several; Shift+Enter, then indent a line, for a subtask.
+        Click a to-do's name to change it the same way.
+      </p>
+      <div class="fl-filters" id="flFilters"></div>
+    </header>
+    <main class="col-todos fl-main">
+      <div class="fl-notice" id="flNotice" hidden>
+        <span>This browser can't keep the window on top of your other programs. Open the board in Chrome or Edge and pop out from there to get that.</span>
+        <button type="button" id="flNoticeClose" title="Dismiss">✕</button>
+      </div>
+      <div class="task-list" id="flList"></div>
+      <button type="button" class="done-toggle" id="flDoneToggle" style="display:none;"></button>
+      <div class="done-list" id="flDone"></div>
+    </main>
+    <div class="fl-toast" id="flToast" role="status" aria-live="polite">
+      <span id="flToastText"></span><button type="button" id="flToastUndo">undo</button>
+    </div>
+    <div class="fl-newday" id="flNewDay" hidden>
+      <div class="fl-newday-card">
+        <div class="big">🌅</div>
+        <p>It's a new day! The board needs a quick refresh first, or anything you tick off now would count for yesterday.</p>
+        <button type="button" id="flNewDayGo">Refresh the board</button>
+      </div>
+    </div>`;
+
+  const input = fd('flInput');
+  input.addEventListener('input', () => { floaterGrow(); floaterPreview(); });
+  input.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); floaterAdd(); }
+    else if(e.key === 'Escape' && input.value){ e.preventDefault(); input.value = ''; floaterGrow(); floaterPreview(); }
+  });
+  fd('flHelp').onclick = () => {
+    const legend = fd('flLegend');
+    legend.hidden = !legend.hidden;
+    fd('flHelp').setAttribute('aria-expanded', String(!legend.hidden));
+  };
+  fd('flDoneToggle').onclick = () => { floater.showDone = !floater.showDone; renderFloater(); };
+  fd('flNewDayGo').onclick = () => {
+    try{ sessionStorage.setItem(FLOAT_REOPEN_KEY, '1'); }catch(e){}
+    location.reload();
+  };
+  let noticeSeen = false;
+  try{ noticeSeen = !!sessionStorage.getItem(FLOAT_NOTICE_KEY); }catch(e){}
+  fd('flNotice').hidden = pinned || noticeSeen;
+  fd('flNoticeClose').onclick = () => {
+    fd('flNotice').hidden = true;
+    try{ sessionStorage.setItem(FLOAT_NOTICE_KEY, '1'); }catch(e){}
+  };
+
+  ['flList', 'flDone'].forEach(id => {
+    fd(id).addEventListener('click', floaterClick);
+    fd(id).addEventListener('keydown', floaterKey);
+  });
+  fd('flFilters').addEventListener('click', e => {
+    const pill = e.target.closest('[data-filter]');
+    if(!pill) return;
+    const tagId = pill.dataset.filter || null;
+    floater.filter = (floater.filter === tagId ? null : tagId);
+    renderFloater();
+    floaterPreview();
+  });
+
+  /* N or / jumps to the box from anywhere in the window, as N does on the
+     board, unless you're already typing. */
+  doc.addEventListener('keydown', e => {
+    if(!['n', 'N', '/'].includes(e.key) || e.metaKey || e.ctrlKey || e.altKey) return;
+    const el = doc.activeElement;
+    if(el && (el.isContentEditable || ['INPUT','TEXTAREA','SELECT'].includes(el.tagName))) return;
+    e.preventDefault();
+    input.focus();
+  });
+
+  floater.sorter = makeDragSort(doc, list => list.id === 'flList' ? 'todos' : null, { autoScroll:true });
+
+  /* The board re-reads the cloud whenever its tab comes back into view. This
+     window never leaves view, so it re-reads when you come back to it
+     instead: on focus, or as the mouse comes in on its way to a click. That
+     way something added on your phone shows up, and ticking an item here
+     doesn't save over it with an old copy. */
+  win.addEventListener('pagehide', floaterClosed);
+  win.addEventListener('focus', floaterSync);
+  doc.documentElement.addEventListener('mouseenter', floaterSync);
+  /* The window's own timers, not this tab's: they keep time while the board
+     is minimised, and they stop when the window closes. */
+  win.setInterval(floaterTick, 60 * 1000);
+
+  syncPopOutBtn();
+  renderFloater();
+  floaterStale();
+  input.focus();
+}
+
+function floaterClosed(){
+  if(!floater.win) return;
+  Object.assign(floater, { win:null, doc:null, sorter:null, editing:null, cache:{} });
+  floater.pending.clear();
+  syncPopOutBtn();
+}
+/* A popup (not Picture-in-Picture, which closes itself) would outlive this
+   page with every button dead, so it goes when the board does. */
+window.addEventListener('pagehide', () => {
+  if(floater.win && !floater.pinned) floater.win.close();
+});
+
+/* True, and the window says so, once the date has moved on since the board
+   loaded. Every action checks this first. */
+function floaterStale(){
+  const stale = PQ.dateKey(new Date()) !== PQ.TODAY_KEY;
+  if(stale && floater.doc) fd('flNewDay').hidden = false;
+  return stale;
+}
+function floaterSync(){
+  if(!floater.win || floaterStale()) return;
+  if(Date.now() - floater.lastSync < FLOAT_SYNC_MS) return;
+  if(floater.editing || floater.pending.size || (floater.sorter && floater.sorter.dragging)) return;
+  floater.lastSync = Date.now();
+  refreshFromCloud();
+}
+function floaterTick(){
+  if(floaterStale()) return;
+  if(Date.now() - floater.lastSync >= FLOAT_POLL_MS) floaterSync();
+}
+
+/* ---- shorthand, both ways ----
+   Editing a to-do here is the same as adding one: the box shows it written
+   out in shorthand ("Ring the florist #wedding !high @fri"), and whatever
+   the tokens say when you press Enter is what it becomes. Delete "#wedding"
+   and it's untagged. So each token written out has to read back as the same
+   value, and each one is checked by parsing it before it's offered. */
+function tagToken(tag){
+  const flat = String(tag.name).toLowerCase().replace(/\s+/g, '');
+  /* The name squashed together, then shorter and shorter prefixes of it: a
+     name with punctuation in ("Self-care") can't be typed whole, but its
+     first word still finds it. */
+  for(let n = flat.length; n > 0; n--){
+    const word = flat.slice(0, n);
+    if(PPShorthand.tag(word, S().tags) === tag) return word;
+  }
+  return null;
+}
+function dueToken(key){
+  for(const word of ['today', 'tomorrow']){
+    if(PPShorthand.due(word, TODAY) === key) return word;
+  }
+  const d = PQ.fromKey(key);
+  const short = d.toLocaleDateString('en-US', { month:'short' }).toLowerCase() + d.getDate();
+  /* "nov20" means the next 20 November, so a date already past (or more
+     than a year out) keeps its full form. */
+  return PPShorthand.due(short, TODAY) === key ? short : key;
+}
+function floaterLine(task){
+  const bits = [task.title];
+  const tag = tagById(task.tag);
+  const tagWord = tag && tagToken(tag);
+  if(tagWord) bits.push('#' + tagWord);
+  const pr = task.priority || 'medium';
+  if(pr !== 'medium') bits.push('!' + pr);
+  const diff = task.difficulty || 3;
+  if(diff !== 3) bits.push('*' + DIFF_WORD[diff]);
+  if(task.due) bits.push('@' + dueToken(task.due));
+  return bits.join(' ');
+}
+
+/* ---- drawing ---- */
+function floaterGrow(){
+  const input = fd('flInput');
+  input.style.height = 'auto';
+  input.style.height = (input.scrollHeight + 2) + 'px';
+}
+function floaterPreview(){
+  if(!floater.doc) return;
+  fd('flPreview').innerHTML = quickPreviewHtml(quickLines(fd('flInput').value), floater.filter);
+}
+/* Only rewrites a region when its HTML actually changed. A cloud re-read
+   that found nothing new shouldn't rebuild the list under the mouse, or
+   wipe a half-typed subtask. */
+function floaterPaint(id, html){
+  if(floater.cache[id] === html) return;
+  floater.cache[id] = html;
+  fd(id).innerHTML = html;
+}
+
+function floaterCardHtml(task, done){
+  const tag = tagById(task.tag);
+  const subs = task.subs || [];
+  const subDone = task.subDone || {};
+  const ticked = subs.filter(s => subDone[s.id]).length;
+  const isOpen = !done && floater.expanded.has(task.id);
+
+  /* Medium is what nearly everything is, so it goes unsaid here; the board
+     still shows it. */
+  let meta = '';
+  if(tag) meta += `<span class="tag-chip" style="background:${tag.color}">${escapeHtml(tag.name)}</span>`;
+  const pr = task.priority || 'medium';
+  if(pr !== 'medium') meta += `<span class="priority-chip ${pr}">${PRIORITY_LABEL[pr]}</span>`;
+  if((task.difficulty || 3) !== 3) meta += difficultyChip(task.difficulty);
+  if(task.due){
+    const overdue = !done && PQ.TODAY_KEY > task.due;
+    const label = task.due === PQ.TODAY_KEY ? 'today'
+      : PQ.fromKey(task.due).toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    meta += `<span class="due-chip ${overdue ? 'overdue' : ''}">${overdue ? 'overdue · ' : 'due '}${label}</span>`;
+  }
+  if(subs.length && !done){
+    meta += `<button type="button" class="fl-subs" aria-expanded="${isOpen}" title="${isOpen ? 'Hide' : 'Show'} subtasks">${ticked}/${subs.length} subtasks ${isOpen ? '▾' : '▸'}</button>`;
+  }
+  meta += `<span class="payout-chip">${money(value(task, 'todos', TODAY))}</span>`;
+
+  let subHtml = '';
+  if(isOpen){
+    if(subs.length) subHtml += `<div class="sub-progress"><i style="width:${ticked / subs.length * 100}%"></i></div>`;
+    subs.forEach(s => {
+      const on = !!subDone[s.id];
+      subHtml += `
+        <div class="sub-row ${on ? 'done' : ''}" data-sub="${escapeHtml(s.id)}">
+          <div class="sub-check ${on ? 'checked' : ''}" role="checkbox" aria-checked="${on}" tabindex="0">${on ? '✓' : ''}</div>
+          <div class="sub-text">${escapeHtml(s.title)}</div>
+          <span class="sub-value">${subValue(task, 'todos', TODAY)}c</span>
+          <button type="button" class="sub-del" title="Remove">✕</button>
+        </div>`;
+    });
+    subHtml = `<div class="sub-wrap">${subHtml}
+      <div class="sub-add"><input type="text" placeholder="Add a subtask" aria-label="Add a subtask"><button type="button">Add</button></div>
+    </div>`;
+  }
+
+  return `
+    <div class="task-card${done ? ' done' : ''}" data-id="${escapeHtml(task.id)}"${tag ? ` style="--card-accent:${tag.color}"` : ''}>
+      <div class="task-main">
+        ${done ? '<div class="fl-grip-space"></div>' : '<div class="drag-grip" title="Drag to reorder" aria-hidden="true">⠿⠿</div>'}
+        <div class="check${done ? ' checked' : ''}" role="checkbox" aria-checked="${done}" tabindex="0" title="${done ? 'Not done after all' : 'Done!'}">${done ? '✓' : ''}</div>
+        <div class="task-body">
+          <div class="task-title"${done ? '' : ' title="Click to edit"'}>${escapeHtml(task.title)}</div>
+          <div class="task-meta">${meta}</div>
+        </div>
+        <div class="task-actions">
+          ${done ? '' : `<button type="button" class="fl-top" title="Move to the top">⤒</button>
+          <button type="button" class="fl-addsub" title="Add a subtask">＋</button>`}
+          <button type="button" class="fl-del" title="Delete">✕</button>
+        </div>
+      </div>
+      ${subHtml}
+    </div>`;
+}
+
+function renderFloater(){
+  if(!floater.win) return;
+  if(floater.win.closed){ floaterClosed(); return; }
+  /* Never redraw out from under a half-typed edit or a card mid-drag; both
+     redraw when they finish. */
+  if(floater.editing || (floater.sorter && floater.sorter.dragging)) return;
+
+  const todos = S().todos;
+  if(floater.filter && !tagById(floater.filter)) floater.filter = null;
+  const inView = t => !floater.filter || t.tag === floater.filter;
+  const open = todos.filter(t => !t.done);
+  const shown = open.filter(inView);
+  const doneToday = todos.filter(t => t.done && t.doneDate === PQ.TODAY_KEY && inView(t));
+
+  fd('flCount').textContent = `${open.length} open`;
+  fd('flPurse').textContent = `${S().gold}g ${S().copper}c`;
+
+  /* Only the tags something open is filed under, to keep the row short. The
+     one you're filtering by stays even once it's empty, so you can get out. */
+  const used = S().tags.filter(tag => tag.id === floater.filter || open.some(t => t.tag === tag.id));
+  let pills = '';
+  if(used.length){
+    pills += `<button type="button" class="filter-pill fl-all${floater.filter ? '' : ' on'}" data-filter="">All</button>`;
+    used.forEach(tag => {
+      const on = floater.filter === tag.id;
+      const n = open.filter(t => t.tag === tag.id).length;
+      pills += `<button type="button" class="filter-pill${on ? ' on' : ''}" data-filter="${escapeHtml(tag.id)}" style="${on ? 'background' : 'border-color'}:${tag.color}">${escapeHtml(tag.name)} ${n}</button>`;
+    });
+  }
+  floaterPaint('flFilters', pills);
+
+  floaterPaint('flList', shown.length
+    ? shown.map(t => floaterCardHtml(t, false)).join('')
+    : `<div class="empty-note">${open.length ? 'Nothing open under this tag' : 'Nothing waiting. Add something above!'}</div>`);
+
+  const doneBtn = fd('flDoneToggle');
+  doneBtn.style.display = doneToday.length ? 'block' : 'none';
+  doneBtn.textContent = `${doneToday.length} finished today ${floater.showDone ? '▾' : '▸'}`;
+  fd('flDone').classList.toggle('open', floater.showDone);
+  floaterPaint('flDone', floater.showDone ? doneToday.map(t => floaterCardHtml(t, true)).join('') : '');
+}
+
+/* ---- actions ----
+   Everything looks its to-do up by id at the moment it acts, never through a
+   reference kept from when the card was drawn: a cloud re-read swaps the
+   whole state out, and a kept reference would be editing a copy nobody
+   saves. */
+const floaterTask = id => S().todos.find(t => t.id === id) || null;
+
+function floaterToast(text, undo){
+  if(!floater.doc) return;
+  const toast = fd('flToast');
+  fd('flToastText').textContent = text;
+  const btn = fd('flToastUndo');
+  btn.hidden = !undo;
+  btn.onclick = () => {
+    toast.classList.remove('show');
+    if(undo && !floaterStale()) undo();
+  };
+  toast.classList.add('show');
+  floater.win.clearTimeout(floater.toastTimer);
+  floater.toastTimer = floater.win.setTimeout(() => toast.classList.remove('show'), undo ? 6000 : 3000);
+}
+
+function floaterAdd(){
+  if(floaterStale()) return;
+  const input = fd('flInput');
+  const lines = quickLines(input.value);
+  if(!lines.length) return;
+  /* With a tag filter on, new to-dos take that tag, as on the board, so
+     they don't vanish from view the moment they're added. */
+  const added = lines.map(line => newTodo(line, floater.filter));
+  S().todos.push(...added);
+  input.value = '';
+  floaterGrow();
+  floaterPreview();
+  saveAndRender();
+
+  const ids = added.map(t => t.id);
+  const cards = ids.map(id => fd('flList').querySelector(`.task-card[data-id="${id}"]`)).filter(Boolean);
+  cards.forEach(c => c.classList.add('fl-fresh'));
+  if(cards.length) cards[cards.length - 1].scrollIntoView({ block:'nearest' });
+  floaterToast(added.length === 1 ? `Added “${added[0].title}”` : `Added ${added.length} to-dos`, () => {
+    const gone = new Set(ids);
+    S().todos = S().todos.filter(t => !gone.has(t.id));
+    saveAndRender();
+  });
+  input.focus();
+}
+
+function floaterToggle(id, card){
+  if(floaterStale() || floater.pending.has(id)) return;
+  const task = floaterTask(id);
+  if(!task) return;
+  if(task.done){
+    toggleSimple(task, 'todos', TODAY);
+    floaterToast(`Back on the list: “${task.title}”`);
+    return;
+  }
+  /* A beat to see the tick land before the card slides away. */
+  floater.pending.add(id);
+  card.classList.add('fl-leaving');
+  const check = card.querySelector('.check');
+  check.classList.add('checked');
+  check.textContent = '✓';
+  floater.win.setTimeout(() => {
+    floater.pending.delete(id);
+    const t = floaterTask(id);
+    if(!t || t.done || floaterStale()){ floater.cache = {}; renderFloater(); return; }
+    const modal = document.getElementById('celebrateModal');
+    const wasOpen = modal.classList.contains('open');
+    toggleSimple(t, 'todos', TODAY);
+    const grant = t.grant || { copper:0, xp:0 };
+    const bits = [];
+    if(grant.copper) bits.push('+' + money(grant.copper));
+    if(grant.xp) bits.push(`+${grant.xp} XP`);
+    /* Level-ups and the like open their card on the board, which may be
+       hidden behind everything, so they get a mention here too. */
+    if(!wasOpen && modal.classList.contains('open')){
+      bits.push(`${document.getElementById('celebrateEmoji').textContent} ${document.getElementById('celebrateTitle').textContent}!`);
+    }
+    floaterToast(`Done! ${bits.join(' · ')}`, () => {
+      const u = floaterTask(id);
+      if(u && u.done) toggleSimple(u, 'todos', TODAY);
+    });
+  }, 300);
+}
+
+function floaterDelete(id){
+  if(floaterStale()) return;
+  const list = S().todos;
+  const at = list.findIndex(t => t.id === id);
+  if(at < 0) return;
+  const [task] = list.splice(at, 1);
+  floater.expanded.delete(id);
+  saveAndRender();
+  floaterToast(`Deleted “${task.title}”`, () => {
+    if(floaterTask(id)) return;
+    S().todos.splice(Math.min(at, S().todos.length), 0, task);
+    saveAndRender();
+  });
+}
+
+function floaterToTop(id){
+  if(floaterStale()) return;
+  const list = S().todos;
+  const at = list.findIndex(t => t.id === id);
+  if(at <= 0) return;
+  list.unshift(list.splice(at, 1)[0]);
+  saveAndRender();
+  floater.win.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function floaterAddSub(id){
+  if(floaterStale()) return;
+  const task = floaterTask(id);
+  const field = fd('flList').querySelector(`.task-card[data-id="${id}"] .sub-add input`);
+  if(!task || !field) return;
+  const title = field.value.trim();
+  if(!title) return;
+  if(!task.subs) task.subs = [];
+  task.subs.push({ id: uid(), title });
+  saveAndRender();
+  /* Ready for the next one. */
+  const again = fd('flList').querySelector(`.task-card[data-id="${id}"] .sub-add input`);
+  if(again){ again.value = ''; again.focus(); }
+}
+
+function floaterEdit(id, card){
+  if(floaterStale()) return;
+  const task = floaterTask(id);
+  if(!task) return;
+  const tag = tagById(task.tag);
+  const line = floaterLine(task);
+  /* A tag whose name can't be written as a token isn't in the box, so it
+     mustn't be read as having been deleted from it. */
+  floater.editing = { id, line, keepTag: !!task.tag && !(tag && tagToken(tag)) };
+
+  /* A textarea so a long line wraps where you can see all of it, but still
+     one line: Enter saves, and a pasted newline becomes a space. */
+  const box = floater.doc.createElement('textarea');
+  box.rows = 1;
+  box.className = 'fl-edit';
+  box.value = line;
+  box.setAttribute('aria-label', 'Edit this to-do');
+  card.classList.add('fl-editing');
+  card.querySelector('.task-title').replaceWith(box);
+  card.querySelector('.task-meta').innerHTML =
+    '<span class="fl-edit-hint">Enter to save · Esc to cancel · #tag !high *hard @fri</span>';
+  const grow = () => { box.style.height = 'auto'; box.style.height = (box.scrollHeight + 2) + 'px'; };
+  box.addEventListener('input', () => {
+    if(box.value.includes('\n')) box.value = box.value.replace(/\s*\n\s*/g, ' ');
+    grow();
+  });
+  grow();
+  box.focus();
+  box.setSelectionRange(box.value.length, box.value.length);
+
+  let finished = false;
+  const finish = save => {
+    if(finished) return;
+    finished = true;
+    const ed = floater.editing;
+    floater.editing = null;
+    floater.cache = {};
+    if(save) floaterSaveEdit(ed, box.value);
+    else renderFloater();
+  };
+  box.addEventListener('keydown', e => {
+    if(e.key === 'Enter'){ e.preventDefault(); finish(true); }
+    else if(e.key === 'Escape'){ e.preventDefault(); finish(false); }
+  });
+  box.addEventListener('blur', () => finish(true));
+}
+function floaterSaveEdit(ed, text){
+  const task = ed && floaterTask(ed.id);
+  if(!task || text.trim() === ed.line || floaterStale()){ renderFloater(); return; }
+  const meta = parseQuick(text);
+  /* Emptying the box isn't a delete; the ✕ is for that. */
+  if(!meta.title){ renderFloater(); return; }
+  task.title = meta.title;
+  task.priority = meta.priority || 'medium';
+  task.difficulty = meta.difficulty || 3;
+  task.tag = meta.tag || (ed.keepTag ? task.tag : null);
+  task.due = meta.due || null;
+  saveAndRender();
+}
+
+function floaterClick(e){
+  const card = e.target.closest('.task-card');
+  if(!card || e.target.closest('.fl-edit')) return;
+  const id = card.dataset.id;
+  const t = e.target;
+  const sub = t.closest('.sub-row');
+  if(sub){
+    const task = floaterTask(id);
+    if(!task || floaterStale()) return;
+    if(t.closest('.sub-check')) toggleSimpleSub(task, 'todos', sub.dataset.sub, TODAY);
+    else if(t.closest('.sub-del')){
+      task.subs = (task.subs || []).filter(s => s.id !== sub.dataset.sub);
+      saveAndRender();
+    }
+    return;
+  }
+  if(t.closest('.sub-add button')) return floaterAddSub(id);
+  if(t.closest('.sub-add')) return;
+  if(t.closest('.check')) return floaterToggle(id, card);
+  if(t.closest('.fl-del')) return floaterDelete(id);
+  if(t.closest('.fl-top')) return floaterToTop(id);
+  if(t.closest('.fl-addsub')){
+    floater.expanded.add(id);
+    renderFloater();
+    const field = fd('flList').querySelector(`.task-card[data-id="${id}"] .sub-add input`);
+    if(field) field.focus();
+    return;
+  }
+  if(t.closest('.fl-subs')){
+    if(floater.expanded.has(id)) floater.expanded.delete(id); else floater.expanded.add(id);
+    renderFloater();
+    return;
+  }
+  if(t.closest('.task-title') && !card.classList.contains('done')) floaterEdit(id, card);
+}
+function floaterKey(e){
+  if(e.target.matches('.sub-add input') && e.key === 'Enter'){
+    e.preventDefault();
+    floaterAddSub(e.target.closest('.task-card').dataset.id);
+  } else if(e.target.matches('.check, .sub-check') && (e.key === 'Enter' || e.key === ' ')){
+    e.preventDefault();
+    e.target.click();
+  }
+}
+
 /* ============ PANELS + DATE NAV ============ */
 const overlay = document.getElementById('overlay');
 function openPanel(id){ overlay.classList.add('open'); document.getElementById(id).classList.add('open'); }
@@ -2669,17 +3508,27 @@ function renderAll(){
   renderShop();
   renderSettings();
   flushCelebrations();
+  renderFloater();
 }
 function saveAndRender(){ store.save(); renderAll(); }
 
+/* Pick up whatever's changed elsewhere (your phone, the other log's monster
+   hits) since this page last read. */
+function refreshFromCloud(){
+  return Promise.all([store.load(), monsterStore.load()]).then(() => {
+    PQ.settleHunger(S(), PQ.makeCtx(S()));
+    renderAll();
+  });
+}
+
 /* ============ BOOT ============ */
 document.addEventListener('visibilitychange', () => {
-  if(document.visibilityState === 'visible'){
-    Promise.all([store.load(), monsterStore.load()]).then(() => {
-      PQ.settleHunger(S(), PQ.makeCtx(S()));
-      renderAll();
-    });
-  }
+  if(document.visibilityState !== 'visible') return;
+  /* "Today" is fixed when the page loads. A tab left open overnight (more
+     likely now the to-dos can pop out of it) starts afresh rather than
+     filing this morning's ticks under yesterday. */
+  if(PQ.dateKey(new Date()) !== PQ.TODAY_KEY){ location.reload(); return; }
+  refreshFromCloud();
 });
 
 document.querySelectorAll('a[href^="/quest-log"]').forEach(a => {
