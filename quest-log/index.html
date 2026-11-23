@@ -206,6 +206,7 @@
   }
   .filter-pill:hover{ border-color:var(--accent); }
   .filter-pill.on{ color:var(--white); border-color:transparent; }
+  .filter-pill.all.on{ background:var(--ink); }
 
   /* ===== BOARD ===== */
   .board{
@@ -1478,9 +1479,8 @@ function renderFilters(){
   const el = document.getElementById('filterStrip');
   el.innerHTML = '';
   const all = document.createElement('button');
-  all.className = 'filter-pill' + (activeTag ? '' : ' on');
+  all.className = 'filter-pill all' + (activeTag ? '' : ' on');
   all.textContent = 'All';
-  if(!activeTag) all.style.background = 'var(--ink)';
   all.onclick = () => { activeTag = null; renderAll(); };
   el.appendChild(all);
 
