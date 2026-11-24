@@ -4,13 +4,16 @@
 
    Everything you gather in a biome (foraged, mined, dug up or fished), and
    the crops whose seeds that biome's stall sells (how: "Grow", with the seed
-   price and growing time in the note), from the Dreamlight Valley Wiki,
-   checked Nov 11, 2026. Shop-only items, limited-time event items and
-   Golden Honey (beekeeping) are left out. The Keepsake Sea expansion isn't
-   out yet.
+   price in the note), from the Dreamlight Valley Wiki, checked Nov 11, 2026.
+   Shop-only items, limited-time event items and Golden Honey (beekeeping)
+   are left out. The Keepsake Sea expansion isn't out yet.
 
    { name, category, biomes: [...], how, sell (Star Coins), note?,
-     max?, respawn?, unsure? }
+     max?, respawn?, grow?, water?, unsure? }
+   Crops have grow (minutes, the normal time; 10% faster in the crop's native
+   biome) and water (how many times in all, counting the first one when you
+   plant it), from the wiki's Gardening table, checked Nov 24, 2026. Where its
+   pages disagree, water is [fewest, most] and unsure includes "water".
    max is how many can be out in a biome at once, respawn how long one takes
    to come back (real time), from guides and the wiki (Nov 11, 2026): a
    specific number where one is known, otherwise the rule for its kind
@@ -23,7 +26,7 @@
 
 const BIOME_AREA = { "Plaza": "Dreamlight Valley", "Peaceful Meadow": "Dreamlight Valley", "Dazzle Beach": "Dreamlight Valley", "Forest of Valor": "Dreamlight Valley", "Glade of Trust": "Dreamlight Valley", "Sunlit Plateau": "Dreamlight Valley", "Frosted Heights": "Dreamlight Valley", "Forgotten Lands": "Dreamlight Valley", "Wild Tangle": "Eternity Isle", "Glittering Dunes": "Eternity Isle", "Ancient's Landing": "Eternity Isle", "The Bind": "Storybook Vale", "Mythopia": "Storybook Vale", "Everafter": "Storybook Vale", "Wishing Alps": "Wishblossom Ranch", "Glamour Gulch": "Wishblossom Ranch", "Pixie Acres": "Wishblossom Ranch", "Drowsybloom Acre": "Honeyglow Woods", "Gloommeadow": "Honeyglow Woods", "Braveheart Grove": "Honeyglow Woods", "Nectar Apiary": "Honeyglow Woods" };
 
-const RESOURCE_SOURCE = "Resources from the Dreamlight Valley Wiki's biome pages, checked Nov 11, 2026. Sells for is the base price in Star Coins. Types follow the wiki's ingredient categories. Crops are everything you can plant from a seed, listed under the biomes where you get the seeds. Shop-only and event items aren't included. Max is how many can be out in a biome at once; respawn times are real time and approximate. A ? on Max means only one guide says so, or guides disagree.";
+const RESOURCE_SOURCE = "Resources from the Dreamlight Valley Wiki's biome pages, checked Nov 11, 2026. Sells for is the base price in Star Coins. Types follow the wiki's ingredient categories. Crops are everything you can plant from a seed, listed under the biomes where you get the seeds. Shop-only and event items aren't included. Max is how many can be out in a biome at once; respawn times are real time and approximate. Crop grow times and waterings are from the wiki's Gardening table (Nov 24, 2026). Grow times are the normal ones; a crop grows 10% faster in its native biome, usually the one whose stall sells the seed. Water counts every watering, the first one when you plant it included: a crop that needs another wilts and stops growing until you water it, about evenly through its grow time, and rain waters it for you. A ? means only one guide says so, or guides disagree.";
 const RESOURCES = [
   {"name":"Amethyst","category":"Gems","biomes":["Frosted Heights","Forgotten Lands"],"how":"Mine","sell":500,"max":"No cap (chance drop)","respawn":"5 min after mined out"},
   {"name":"Anglerfish","category":"Fish","biomes":["Forgotten Lands"],"how":"Fish","sell":1500,"note":"Ripples: Gold","max":"Unlimited","respawn":"Ripples ~5 min"},
@@ -338,63 +341,63 @@ const RESOURCES = [
   {"name":"White Thistle","category":"Flowers","biomes":["Drowsybloom Acre","Gloommeadow","Braveheart Grove","Nectar Apiary"],"how":"Forage","sell":20,"respawn":"20–60 min by rarity"},
   {"name":"Yellow & Orange Foxglove","category":"Flowers","biomes":["Drowsybloom Acre","Gloommeadow","Braveheart Grove","Nectar Apiary"],"how":"Forage","sell":35,"respawn":"20–60 min by rarity"},
   {"name":"Yellow Thistle","category":"Flowers","biomes":["Drowsybloom Acre","Gloommeadow","Braveheart Grove","Nectar Apiary"],"how":"Forage","sell":26,"respawn":"20–60 min by rarity"},
-  {"name":"Asparagus","category":"Vegetables","biomes":["Frosted Heights"],"how":"Grow","sell":133,"note":"Seeds 150 coins · grows in 2 hr 15 min"},
-  {"name":"Barley","category":"Grains","biomes":["The Bind"],"how":"Grow","sell":15,"note":"Seeds 15 coins · grows in 15 min"},
-  {"name":"Beans","category":"Vegetables","biomes":["Glittering Dunes"],"how":"Grow","sell":49,"note":"Seeds 50 coins · grows in 1 hr"},
-  {"name":"Beetroot","category":"Vegetables","biomes":["Wishing Alps"],"how":"Grow","sell":21,"note":"Seeds 10 coins · grows in 5 min · Seeds from Goofy's Caravan, which travels through Wishing Alps, Glamour Gulch and Pixie Acres"},
-  {"name":"Bell Pepper","category":"Vegetables","biomes":["Forest of Valor"],"how":"Grow","sell":33,"note":"Seeds 12 coins · grows in 15 min"},
-  {"name":"Black Pepper","category":"Spices","biomes":["Mythopia"],"how":"Grow","sell":83,"note":"Seeds 70 coins · grows in 1 hr 30 min"},
-  {"name":"Broccoli","category":"Vegetables","biomes":["Glittering Dunes"],"how":"Grow","sell":152,"note":"Seeds 60 coins · grows in 40 min"},
-  {"name":"Cabbage","category":"Vegetables","biomes":["Wild Tangle"],"how":"Grow","sell":256,"note":"Seeds 150 coins · grows in 1 hr"},
-  {"name":"Canola","category":"Dairy and Oil","biomes":["Forest of Valor","Ancient's Landing"],"how":"Grow","sell":109,"note":"Seeds 25 coins · grows in 35 min"},
-  {"name":"Carrot","category":"Vegetables","biomes":["Peaceful Meadow","Drowsybloom Acre"],"how":"Grow","sell":44,"note":"Seeds 10 coins · grows in 15 min · in Honeyglow Woods, seeds from the Honeyglow Goods stall"},
-  {"name":"Cauliflower","category":"Vegetables","biomes":["The Bind"],"how":"Grow","sell":25,"note":"Seeds 10 coins · grows in 10 min"},
-  {"name":"Celery","category":"Vegetables","biomes":["Ancient's Landing"],"how":"Grow","sell":65,"note":"Seeds 20 coins · grows in 10 min"},
-  {"name":"Chia Seeds","category":"Dairy and Oil","biomes":["The Bind"],"how":"Grow","sell":6,"note":"Seeds 5 coins · grows in 5 min"},
-  {"name":"Chili Pepper","category":"Vegetables","biomes":["Sunlit Plateau","Glittering Dunes"],"how":"Grow","sell":78,"note":"Seeds 20 coins · grows in 45 min"},
-  {"name":"Corn","category":"Vegetables","biomes":["Dazzle Beach","Glittering Dunes"],"how":"Grow","sell":16,"note":"Seeds 15 coins · grows in 12 min"},
-  {"name":"Cosmic Figs","category":"Fruit","biomes":["Ancient's Landing"],"how":"Grow","sell":22,"note":"Seeds 10 coins · grows in 25 min"},
-  {"name":"Cotton","category":"Crafting Materials","biomes":["Sunlit Plateau"],"how":"Grow","sell":37,"note":"Seeds 42 coins · grows in 25 min · Crafting material, not a cooking ingredient"},
-  {"name":"Cucumber","category":"Vegetables","biomes":["Frosted Heights"],"how":"Grow","sell":159,"note":"Seeds 40 coins · grows in 1 hr 15 min"},
-  {"name":"Dark Chocolate Coffee Beans","category":"Fruit","biomes":["Wishing Alps"],"how":"Grow","sell":66,"note":"Seeds 60 coins · grows in 30 min · Seeds from Goofy's Caravan, which travels through Wishing Alps, Glamour Gulch and Pixie Acres; unlocks with Glamour Gulch"},
-  {"name":"Eggplant","category":"Vegetables","biomes":["Frosted Heights"],"how":"Grow","sell":308,"note":"Seeds 95 coins · grows in 3 hr"},
-  {"name":"Faerie Rye","category":"Grains","biomes":["Everafter"],"how":"Grow","sell":62,"note":"Seeds 60 coins · grows in 1 hr 15 min"},
-  {"name":"Fairy Kamut","category":"Grains","biomes":["Pixie Acres"],"how":"Grow","sell":107,"note":"Seeds 200 coins · grows in 50 min · Seeds from Goofy's Caravan, which travels through Wishing Alps, Glamour Gulch and Pixie Acres; unlocks with Pixie Acres"},
-  {"name":"Flute Root","category":"Vegetables","biomes":["Glittering Dunes"],"how":"Grow","sell":112,"note":"Seeds 70 coins · grows in 1 hr 15 min"},
-  {"name":"Golden Pattypan","category":"Vegetables","biomes":["Drowsybloom Acre"],"how":"Grow","sell":44,"note":"Seeds 50 coins · grows in 20 min · Seeds from Honeyglow Goods (self-service stall, starts in Drowsybloom Acre, can be moved within Honeyglow Woods)"},
-  {"name":"Grapes","category":"Fruit","biomes":["Ancient's Landing"],"how":"Grow","sell":9,"note":"Seeds 5 coins · grows in 20 min"},
-  {"name":"Green Beans","category":"Vegetables","biomes":["Everafter"],"how":"Grow","sell":209,"note":"Seeds 250 coins · grows in 4 hr"},
-  {"name":"Honeydew Melon","category":"Fruit","biomes":["Mythopia"],"how":"Grow","sell":125,"note":"Seeds 40 coins · grows in 45 min"},
-  {"name":"Leek","category":"Vegetables","biomes":["Forgotten Lands"],"how":"Grow","sell":309,"note":"Seeds 120 coins · grows in 2 hr"},
-  {"name":"Lettuce","category":"Vegetables","biomes":["Peaceful Meadow"],"how":"Grow","sell":8,"note":"Seeds 3 coins · grows in 3 min"},
-  {"name":"Lollipop Fruit","category":"Fruit","biomes":["Pixie Acres"],"how":"Grow","sell":115,"note":"Seeds 175 coins · grows in 40 min · Seeds from Goofy's Caravan, which travels through Wishing Alps, Glamour Gulch and Pixie Acres; unlocks with Pixie Acres"},
-  {"name":"Melon","category":"Fruit","biomes":["Glittering Dunes"],"how":"Grow","sell":93,"note":"Seeds 40 coins · grows in 30 min"},
-  {"name":"Oats","category":"Grains","biomes":["Everafter"],"how":"Grow","sell":99,"note":"Seeds 150 coins · grows in 2 hr"},
-  {"name":"Okra","category":"Vegetables","biomes":["Glade of Trust"],"how":"Grow","sell":114,"note":"Seeds 135 coins · grows in 2 hr"},
-  {"name":"Onion","category":"Vegetables","biomes":["Forest of Valor"],"how":"Grow","sell":170,"note":"Seeds 50 coins · grows in 1 hr 15 min"},
-  {"name":"Parsnip","category":"Vegetables","biomes":["Drowsybloom Acre"],"how":"Grow","sell":33,"note":"Seeds 25 coins · grows in 5 min · Seeds from Honeyglow Goods (self-service stall, starts in Drowsybloom Acre, can be moved within Honeyglow Woods)"},
-  {"name":"Pearly Barley","category":"Grains","biomes":["Wishing Alps"],"how":"Grow","sell":45,"note":"Seeds 50 coins · grows in 20 min · Seeds from Goofy's Caravan, which travels through Wishing Alps, Glamour Gulch and Pixie Acres; unlocks with Glamour Gulch"},
-  {"name":"Pineapple","category":"Fruit","biomes":["Wild Tangle"],"how":"Grow","sell":532,"note":"Seeds 200 coins · grows in 3 hr"},
-  {"name":"Potato","category":"Vegetables","biomes":["Forgotten Lands","Wild Tangle"],"how":"Grow","sell":126,"note":"Seeds 55 coins · grows in 35 min"},
-  {"name":"Pufflebud Pods","category":"Fruit","biomes":["Drowsybloom Acre"],"how":"Grow","sell":80,"note":"Seeds 150 coins · grows in 40 min · Seeds from Honeyglow Goods (self-service stall, starts in Drowsybloom Acre, can be moved within Honeyglow Woods)"},
-  {"name":"Pumpkin","category":"Vegetables","biomes":["Forgotten Lands"],"how":"Grow","sell":664,"note":"Seeds 275 coins · grows in 4 hr"},
-  {"name":"Radicchio","category":"Vegetables","biomes":["Mythopia"],"how":"Grow","sell":127,"note":"Seeds 50 coins · grows in 1 hr"},
-  {"name":"Radish","category":"Vegetables","biomes":["Everafter"],"how":"Grow","sell":133,"note":"Seeds 100 coins · grows in 1 hr 45 min"},
-  {"name":"Rhubarb","category":"Fruit","biomes":["Everafter"],"how":"Grow","sell":229,"note":"Seeds 200 coins · grows in 3 hr"},
-  {"name":"Rice","category":"Grains","biomes":["Glade of Trust"],"how":"Grow","sell":61,"note":"Seeds 35 coins · grows in 50 min"},
-  {"name":"Ring Squash","category":"Vegetables","biomes":["The Bind"],"how":"Grow","sell":41,"note":"Seeds 20 coins · grows in 30 min"},
-  {"name":"Ruby Lentils","category":"Vegetables","biomes":["Wild Tangle"],"how":"Grow","sell":156,"note":"Seeds 250 coins · grows in 2 hr"},
-  {"name":"Scarlet Kale","category":"Vegetables","biomes":["Wishing Alps"],"how":"Grow","sell":29,"note":"Seeds 15 coins · grows in 10 min · Seeds from Goofy's Caravan, which travels through Wishing Alps, Glamour Gulch and Pixie Acres"},
-  {"name":"Soya","category":"Dairy and Oil","biomes":["Sunlit Plateau"],"how":"Grow","sell":69,"note":"Seeds 60 coins · grows in 1 hr 30 min"},
-  {"name":"Spinach","category":"Vegetables","biomes":["Glade of Trust"],"how":"Grow","sell":41,"note":"Seeds 45 coins · grows in 1 hr"},
-  {"name":"Sugarcane","category":"Sweets","biomes":["Dazzle Beach"],"how":"Grow","sell":19,"note":"Seeds 5 coins · grows in 7 min"},
-  {"name":"Tomato","category":"Vegetables","biomes":["Dazzle Beach","Wild Tangle"],"how":"Grow","sell":22,"note":"Seeds 8 coins · grows in 25 min"},
-  {"name":"Turnip","category":"Vegetables","biomes":["Wild Tangle"],"how":"Grow","sell":187,"note":"Seeds 100 coins · grows in 4 hr"},
-  {"name":"Wheat","category":"Grains","biomes":["Peaceful Meadow","Ancient's Landing","Drowsybloom Acre"],"how":"Grow","sell":2,"note":"Seeds 1 coin · grows in 1 min · in Honeyglow Woods, seeds from the Honeyglow Goods stall"},
-  {"name":"Yam","category":"Vegetables","biomes":["Ancient's Landing"],"how":"Grow","sell":36,"note":"Seeds 15 coins · grows in 15 min"},
-  {"name":"Zucchini","category":"Vegetables","biomes":["Sunlit Plateau"],"how":"Grow","sell":52,"note":"Seeds 30 coins · grows in 40 min"},
-  {"name":"Dill","category":"Spices","biomes":["Wishing Alps"],"how":"Grow","sell":40,"note":"Seeds are found by foraging in Wishing Alps, not sold"},
-  {"name":"Fairy Sprinkles","category":"Spices","biomes":["Pixie Acres"],"how":"Grow","sell":80,"note":"Seeds are found by foraging in Pixie Acres, not sold"}
+  {"name":"Asparagus","category":"Vegetables","biomes":["Frosted Heights"],"how":"Grow","sell":133,"note":"Seeds 150 coins","grow":135,"water":2},
+  {"name":"Barley","category":"Grains","biomes":["The Bind"],"how":"Grow","sell":15,"note":"Seeds 15 coins","grow":15,"water":[1,2],"unsure":["water"]},
+  {"name":"Beans","category":"Vegetables","biomes":["Glittering Dunes"],"how":"Grow","sell":49,"note":"Seeds 50 coins","grow":60,"water":1},
+  {"name":"Beetroot","category":"Vegetables","biomes":["Wishing Alps"],"how":"Grow","sell":21,"note":"Seeds 10 coins · Seeds from Goofy's Caravan, which travels through Wishing Alps, Glamour Gulch and Pixie Acres","grow":5,"water":1},
+  {"name":"Bell Pepper","category":"Vegetables","biomes":["Forest of Valor"],"how":"Grow","sell":33,"note":"Seeds 12 coins","grow":15,"water":1},
+  {"name":"Black Pepper","category":"Spices","biomes":["Mythopia"],"how":"Grow","sell":83,"note":"Seeds 70 coins","grow":90,"water":2},
+  {"name":"Broccoli","category":"Vegetables","biomes":["Glittering Dunes"],"how":"Grow","sell":152,"note":"Seeds 60 coins","grow":40,"water":2},
+  {"name":"Cabbage","category":"Vegetables","biomes":["Wild Tangle"],"how":"Grow","sell":256,"note":"Seeds 150 coins","grow":60,"water":2},
+  {"name":"Canola","category":"Dairy and Oil","biomes":["Forest of Valor","Ancient's Landing"],"how":"Grow","sell":109,"note":"Seeds 25 coins","grow":35,"water":[3,4],"unsure":["water"]},
+  {"name":"Carrot","category":"Vegetables","biomes":["Peaceful Meadow","Drowsybloom Acre"],"how":"Grow","sell":44,"note":"Seeds 10 coins · in Honeyglow Woods, seeds from the Honeyglow Goods stall","grow":15,"water":1},
+  {"name":"Cauliflower","category":"Vegetables","biomes":["The Bind"],"how":"Grow","sell":25,"note":"Seeds 10 coins","grow":10,"water":2},
+  {"name":"Celery","category":"Vegetables","biomes":["Ancient's Landing"],"how":"Grow","sell":65,"note":"Seeds 20 coins","grow":10,"water":1},
+  {"name":"Chia Seeds","category":"Dairy and Oil","biomes":["The Bind"],"how":"Grow","sell":6,"note":"Seeds 5 coins","grow":5,"water":2},
+  {"name":"Chili Pepper","category":"Vegetables","biomes":["Sunlit Plateau","Glittering Dunes"],"how":"Grow","sell":78,"note":"Seeds 20 coins","grow":45,"water":1},
+  {"name":"Corn","category":"Vegetables","biomes":["Dazzle Beach","Glittering Dunes"],"how":"Grow","sell":16,"note":"Seeds 15 coins","grow":12,"water":1},
+  {"name":"Cosmic Figs","category":"Fruit","biomes":["Ancient's Landing"],"how":"Grow","sell":22,"note":"Seeds 10 coins","grow":25,"water":2},
+  {"name":"Cotton","category":"Crafting Materials","biomes":["Sunlit Plateau"],"how":"Grow","sell":37,"note":"Seeds 42 coins · Crafting material, not a cooking ingredient","grow":25,"water":[3,4],"unsure":["water"]},
+  {"name":"Cucumber","category":"Vegetables","biomes":["Frosted Heights"],"how":"Grow","sell":159,"note":"Seeds 40 coins","grow":75,"water":1},
+  {"name":"Dark Chocolate Coffee Beans","category":"Fruit","biomes":["Wishing Alps"],"how":"Grow","sell":66,"note":"Seeds 60 coins · Seeds from Goofy's Caravan, which travels through Wishing Alps, Glamour Gulch and Pixie Acres; unlocks with Glamour Gulch","grow":30,"water":2},
+  {"name":"Eggplant","category":"Vegetables","biomes":["Frosted Heights"],"how":"Grow","sell":308,"note":"Seeds 95 coins","grow":180,"water":2},
+  {"name":"Faerie Rye","category":"Grains","biomes":["Everafter"],"how":"Grow","sell":62,"note":"Seeds 60 coins","grow":75,"water":2},
+  {"name":"Fairy Kamut","category":"Grains","biomes":["Pixie Acres"],"how":"Grow","sell":107,"note":"Seeds 200 coins · Seeds from Goofy's Caravan, which travels through Wishing Alps, Glamour Gulch and Pixie Acres; unlocks with Pixie Acres","grow":50,"water":3},
+  {"name":"Flute Root","category":"Vegetables","biomes":["Glittering Dunes"],"how":"Grow","sell":112,"note":"Seeds 70 coins","grow":75,"water":2},
+  {"name":"Golden Pattypan","category":"Vegetables","biomes":["Drowsybloom Acre"],"how":"Grow","sell":44,"note":"Seeds 50 coins · Seeds from Honeyglow Goods (self-service stall, starts in Drowsybloom Acre, can be moved within Honeyglow Woods)","grow":20,"water":2},
+  {"name":"Grapes","category":"Fruit","biomes":["Ancient's Landing"],"how":"Grow","sell":9,"note":"Seeds 5 coins","grow":20,"water":1},
+  {"name":"Green Beans","category":"Vegetables","biomes":["Everafter"],"how":"Grow","sell":209,"note":"Seeds 250 coins","grow":240,"water":[1,2],"unsure":["water"]},
+  {"name":"Honeydew Melon","category":"Fruit","biomes":["Mythopia"],"how":"Grow","sell":125,"note":"Seeds 40 coins","grow":45,"water":3},
+  {"name":"Leek","category":"Vegetables","biomes":["Forgotten Lands"],"how":"Grow","sell":309,"note":"Seeds 120 coins","grow":120,"water":2},
+  {"name":"Lettuce","category":"Vegetables","biomes":["Peaceful Meadow"],"how":"Grow","sell":8,"note":"Seeds 3 coins","grow":3,"water":1},
+  {"name":"Lollipop Fruit","category":"Fruit","biomes":["Pixie Acres"],"how":"Grow","sell":115,"note":"Seeds 175 coins · Seeds from Goofy's Caravan, which travels through Wishing Alps, Glamour Gulch and Pixie Acres; unlocks with Pixie Acres","grow":40,"water":2},
+  {"name":"Melon","category":"Fruit","biomes":["Glittering Dunes"],"how":"Grow","sell":93,"note":"Seeds 40 coins","grow":30,"water":1},
+  {"name":"Oats","category":"Grains","biomes":["Everafter"],"how":"Grow","sell":99,"note":"Seeds 150 coins","grow":120,"water":2},
+  {"name":"Okra","category":"Vegetables","biomes":["Glade of Trust"],"how":"Grow","sell":114,"note":"Seeds 135 coins","grow":120,"water":1},
+  {"name":"Onion","category":"Vegetables","biomes":["Forest of Valor"],"how":"Grow","sell":170,"note":"Seeds 50 coins","grow":75,"water":[2,3],"unsure":["water"]},
+  {"name":"Parsnip","category":"Vegetables","biomes":["Drowsybloom Acre"],"how":"Grow","sell":33,"note":"Seeds 25 coins · Seeds from Honeyglow Goods (self-service stall, starts in Drowsybloom Acre, can be moved within Honeyglow Woods)","grow":5,"water":1},
+  {"name":"Pearly Barley","category":"Grains","biomes":["Wishing Alps"],"how":"Grow","sell":45,"note":"Seeds 50 coins · Seeds from Goofy's Caravan, which travels through Wishing Alps, Glamour Gulch and Pixie Acres; unlocks with Glamour Gulch","grow":20,"water":2},
+  {"name":"Pineapple","category":"Fruit","biomes":["Wild Tangle"],"how":"Grow","sell":532,"note":"Seeds 200 coins","grow":180,"water":3},
+  {"name":"Potato","category":"Vegetables","biomes":["Forgotten Lands","Wild Tangle"],"how":"Grow","sell":126,"note":"Seeds 55 coins","grow":35,"water":3},
+  {"name":"Pufflebud Pods","category":"Fruit","biomes":["Drowsybloom Acre"],"how":"Grow","sell":80,"note":"Seeds 150 coins · Seeds from Honeyglow Goods (self-service stall, starts in Drowsybloom Acre, can be moved within Honeyglow Woods)","grow":40,"water":2},
+  {"name":"Pumpkin","category":"Vegetables","biomes":["Forgotten Lands"],"how":"Grow","sell":664,"note":"Seeds 275 coins","grow":240,"water":2},
+  {"name":"Radicchio","category":"Vegetables","biomes":["Mythopia"],"how":"Grow","sell":127,"note":"Seeds 50 coins","grow":60,"water":2},
+  {"name":"Radish","category":"Vegetables","biomes":["Everafter"],"how":"Grow","sell":133,"note":"Seeds 100 coins","grow":105,"water":2},
+  {"name":"Rhubarb","category":"Fruit","biomes":["Everafter"],"how":"Grow","sell":229,"note":"Seeds 200 coins","grow":180,"water":[1,2],"unsure":["water"]},
+  {"name":"Rice","category":"Grains","biomes":["Glade of Trust"],"how":"Grow","sell":61,"note":"Seeds 35 coins","grow":50,"water":2},
+  {"name":"Ring Squash","category":"Vegetables","biomes":["The Bind"],"how":"Grow","sell":41,"note":"Seeds 20 coins","grow":30,"water":2},
+  {"name":"Ruby Lentils","category":"Vegetables","biomes":["Wild Tangle"],"how":"Grow","sell":156,"note":"Seeds 250 coins","grow":120,"water":1},
+  {"name":"Scarlet Kale","category":"Vegetables","biomes":["Wishing Alps"],"how":"Grow","sell":29,"note":"Seeds 15 coins · Seeds from Goofy's Caravan, which travels through Wishing Alps, Glamour Gulch and Pixie Acres","grow":10,"water":1},
+  {"name":"Soya","category":"Dairy and Oil","biomes":["Sunlit Plateau"],"how":"Grow","sell":69,"note":"Seeds 60 coins","grow":90,"water":2},
+  {"name":"Spinach","category":"Vegetables","biomes":["Glade of Trust"],"how":"Grow","sell":41,"note":"Seeds 45 coins","grow":60,"water":2},
+  {"name":"Sugarcane","category":"Sweets","biomes":["Dazzle Beach"],"how":"Grow","sell":19,"note":"Seeds 5 coins","grow":7,"water":1},
+  {"name":"Tomato","category":"Vegetables","biomes":["Dazzle Beach","Wild Tangle"],"how":"Grow","sell":22,"note":"Seeds 8 coins","grow":25,"water":2},
+  {"name":"Turnip","category":"Vegetables","biomes":["Wild Tangle"],"how":"Grow","sell":187,"note":"Seeds 100 coins","grow":240,"water":1},
+  {"name":"Wheat","category":"Grains","biomes":["Peaceful Meadow","Ancient's Landing","Drowsybloom Acre"],"how":"Grow","sell":2,"note":"Seeds 1 coin · in Honeyglow Woods, seeds from the Honeyglow Goods stall","grow":1,"water":1},
+  {"name":"Yam","category":"Vegetables","biomes":["Ancient's Landing"],"how":"Grow","sell":36,"note":"Seeds 15 coins","grow":15,"water":2},
+  {"name":"Zucchini","category":"Vegetables","biomes":["Sunlit Plateau"],"how":"Grow","sell":52,"note":"Seeds 30 coins","grow":40,"water":2},
+  {"name":"Dill","category":"Spices","biomes":["Wishing Alps"],"how":"Grow","sell":40,"note":"Seeds are found by foraging in Wishing Alps, not sold","grow":2,"water":1},
+  {"name":"Fairy Sprinkles","category":"Spices","biomes":["Pixie Acres"],"how":"Grow","sell":80,"note":"Seeds are found by foraging in Pixie Acres, not sold","grow":2,"water":1}
 ];
 
 /* Things that come back on their own once a day (or every hour, in the newer
