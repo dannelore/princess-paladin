@@ -453,6 +453,7 @@
           <option value="left">Most quests left</option>
           <option value="close">Closest to finished</option>
         </select></label>
+        <button type="button" class="pp-pill" id="l-fold">Collapse all</button>
         <span class="dv-count" id="l-count"></span>
       </div>
     </div>
@@ -1028,6 +1029,7 @@ function saveListPrefs(){try{localStorage.setItem(LIST_KEY,JSON.stringify({exp:e
   if(![...sel.options].some(o=>o.value===expF))expF="all";sel.value=expF;$("l-sort").value=sortBy;
   if(valF!=="in")valF="all";$("l-val").setAttribute("aria-pressed",valF==="in");
   sel.onchange=()=>{expF=sel.value;saveListPrefs();renderList()};
+  $("l-fold").onclick=foldAll;
   $("l-sort").onchange=e=>{sortBy=e.target.value;saveListPrefs();renderList()};
   $("l-val").onclick=e=>{valF=valF==="in"?"all":"in";e.currentTarget.setAttribute("aria-pressed",valF==="in");saveListPrefs();renderList()}}
 const expOk=e=>expF==="all"||(expF==="owned"?OWNED.includes(e):e===expF);
@@ -1048,6 +1050,21 @@ function keep(r){const s=st(r[0]);
   if(query){const h=(r[2]+" "+r[4]+" "+r[3]).toLowerCase();if(!h.includes(query))return false}
   return true}
 
+/* Which characters are open, remembered in this browser. Until there's a
+   saved choice, the ones with a quest in progress start open. A search opens
+   every match without remembering it, unless Collapse all is pressed during
+   that search. */
+const OPEN_KEY="pp_ddv_open";
+let searchFolded=false;
+try{const o=JSON.parse(localStorage.getItem(OPEN_KEY)||"null");if(Array.isArray(o)){openSet=new Set(o);first=false}}catch(e){}
+function saveOpen(){try{localStorage.setItem(OPEN_KEY,JSON.stringify([...openSet]))}catch(e){}}
+const shownGroups=()=>[...$("list").querySelectorAll("details.dv-group")];
+// Collapse all while any character is open, otherwise Expand all (the ones shown)
+function syncFoldAll(){const d=shownGroups(),b=$("l-fold");b.hidden=!d.length;b.textContent=d.some(x=>x.open)?"Collapse all":"Expand all"}
+function foldAll(){const d=shownGroups();
+  if(d.some(x=>x.open)){openSet.clear();searchFolded=true}else{for(const x of d)openSet.add(x.dataset.key);searchFolded=false}
+  saveOpen();renderList()}
+
 function renderList(){
   const L=$("list");L.innerHTML="";let lastExp=null,shown=0;
   const exps=[...new Set(byChar.map(g=>g.exp))];
@@ -1059,9 +1076,11 @@ function renderList(){
     if(g.exp!==lastExp){const h=document.createElement("h3");h.className="dv-exp";h.textContent=g.exp;L.append(h);lastExp=g.exp}
     const det=document.createElement("details");det.className="dv-group";
     if(first&&g.rows.some(r=>st(r[0])==="p"))openSet.add(g.key);
-    det.open=openSet.has(g.key)||!!query;
-    det.ontoggle=()=>{det.open?openSet.add(g.key):openSet.delete(g.key)};
+    det.dataset.key=g.key;det.open=openSet.has(g.key)||(!!query&&!searchFolded);
+    det.ontoggle=syncFoldAll;
     const sm=document.createElement("summary");
+    // a tap is remembered (det.open is still the old state here); a search opening it isn't
+    sm.onclick=()=>{det.open?openSet.delete(g.key):openSet.add(g.key);saveOpen()};
     const nm=document.createElement("span");nm.className="name dv-chev";nm.textContent=g.ch;
     const ct=document.createElement("span");ct.className="count"+(c.d===c.t?" full":"");ct.textContent=`${c.d}/${c.t}`;
     sm.append(nm,bar(c.d,c.p,c.t),ct);det.append(sm);
@@ -1081,7 +1100,7 @@ function renderList(){
       li.append(btn,qt,links);ol.append(li)}
     det.append(ol);L.append(det)}
   if(!shown){L.innerHTML='<p class="pp-empty">No quests match. Try another filter or search.</p>'}
-  first=false;
+  first=false;syncFoldAll();
 }
 /* ---------------- expansion panels (Friendship and Critters tabs) ---------------- */
 // Owned expansions start open; a tap's choice is remembered with the other folds.
@@ -1424,7 +1443,7 @@ window.addEventListener("hashchange",()=>showTab(location.hash.slice(1)));
 showTab(location.hash.slice(1));
 
 function render(){renderSummary();renderTodo();renderChips();renderList();renderFriends();renderCritters();renderResources()}
-$("q").addEventListener("input",e=>{query=e.target.value.trim().toLowerCase();renderList()});
+$("q").addEventListener("input",e=>{query=e.target.value.trim().toLowerCase();searchFolded=false;renderList()});
 
 /* ---------------- Firestore ---------------- */
 function startFirebase(){
