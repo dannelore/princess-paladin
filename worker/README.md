@@ -8,12 +8,15 @@ the same path as anything typed by hand.
 It exists because the board is a static site. Anything the board ships is
 public, so it can't hold an API key. This is the one piece that can.
 
-**What it can and can't do.** It holds the key and talks to Claude. That's
-all. It can't read the quest log, can't write to it, and never touches
-Firestore — the board sends it only what Claude needs to tag and rate
-sensibly: your tag names, the titles and difficulties already on the board,
-and what's currently open. The worst a stolen token can do is spend API
-credit.
+**What it can and can't do.** For pastes, it holds the key and talks to
+Claude, and that's all. It never touches Firestore for this: the board sends
+only what Claude needs to tag and rate sensibly. That means your tag names, the
+titles and difficulties already on the board, and what's currently open. The
+worst a stolen `PP_TOKEN` can do is spend API credit.
+
+It has one other job: the [calendar feeds](#the-calendar-feed-skylight) that
+put due quests and the meal plan on a Skylight. Those only ever *read* the
+quest log and meal plan, and they never write.
 
 ## Setting it up
 
@@ -79,16 +82,84 @@ well-specified task rather than a hard one.
 To change the token later, run `wrangler secret put PP_TOKEN` again, redeploy,
 and update Settings on each device.
 
+## The calendar feed (Skylight)
+
+The worker also serves calendar links that a Skylight (or Google Calendar, or
+anything else that subscribes to a calendar URL) can show:
+
+| Link ends in   | What's on it |
+| -------------- | ------------ |
+| `danni.ics`    | Danni's open to-dos and projects that have a due date |
+| `brendon.ics`  | Brendon's, the same |
+| `meals.ics`    | Lunch and dinner from the meal plan, two weeks back to eight ahead |
+
+Everything is an all-day event on its date. A quest drops off the calendar
+once it's ticked off. An overdue one stays on its due date rather than
+following you to today. Dailies are left out, or the calendar would be nothing
+but habits. Lunches are worked out exactly as the home page does it, leftovers
+and all, because the worker uses the site's own `/assets/pp-meals.js`.
+
+### Turning it on
+
+Make a second secret just for the calendar. Skylight will hold this link, so
+it's kept apart from `PP_TOKEN`, and changing it only breaks the calendar:
+
+```bash
+openssl rand -hex 24
+npx wrangler secret put CAL_TOKEN     # paste that string when prompted
+npx wrangler deploy
+```
+
+Until `CAL_TOKEN` is set, every calendar link is a 404.
+
+### Putting it on the Skylight
+
+1. On the quest board, **Settings → Calendar for Skylight**. Paste the
+   `CAL_TOKEN` string and press Save. (It uses the worker URL from the paste
+   helper settings just above, so set that up first.) Copy the link you want.
+   To get Brendon's, open his board (`?who=brendon`) and do the same there.
+2. In the Skylight app: **Calendar → Sync a New Calendar → Calendar URL**.
+   Paste the link and tap **Sync Calendar URL**. Do this once per link: quests
+   and meals as separate calendars means each gets its own colour on the
+   frame.
+
+If you'd rather build the link by hand, it's
+`https://pp-paste-helper.<your-subdomain>.workers.dev/cal/<CAL_TOKEN>/danni.ics`.
+
+Skylight checks the link on its own schedule, so a change on the board can take
+a while to appear on the frame. The feed asks to be checked hourly, but it's
+the calendar app that decides.
+
+### Who can see it
+
+Anyone holding a calendar link can read what's on it: quest titles, subtasks,
+tags, and meals. Treat the link like a password. To cut off an old link, put in
+a new `CAL_TOKEN`, redeploy, and re-add the new link on the Skylight.
+
+The worker reads Firestore through its public REST API with the same client
+key the board ships in `/assets/pp-firebase.js`, and asks only for the fields
+it shows (`todos`, `projects`, `tags`; `mealplan`, `recipes`). That works
+because the security rules let that public key read the data, which is also
+how the board itself loads with no sign-in. So the feed opens up nothing new.
+It does mean anyone who finds the public key can read the quest log directly.
+That was already true before the calendar existed.
+
 ## Testing
 
 ```bash
 cd worker
 npm install
-node test.mjs
+npm test
 ```
 
-24 assertions against a stand-in for the Anthropic API — no real calls, no
-key needed, nothing spent. It covers the happy path, what does and doesn't
-get sent to Claude, every refusal (bad token, foreign origin, empty and
-oversized pastes), and the model misbehaving (wrong shape, refusal, rate
-limit, rejected key).
+Two files, both run against stand-ins, with no real calls and nothing spent:
+
+- `test.mjs`: 24 assertions on the paste helper against a fake Anthropic
+  API. They cover the happy path, what does and doesn't get sent to Claude,
+  every refusal (bad token, foreign origin, empty and oversized pastes), and
+  the model misbehaving (wrong shape, refusal, rate limit, rejected key).
+- `test-calendar.mjs`: 42 assertions on the calendar feeds against a fake
+  Firestore. They cover who gets in (no token set, wrong token, the paste
+  token, unknown feeds), what makes it onto each calendar and what doesn't,
+  escaping and line folding, the meal plan's leftover lunches, and Firestore
+  being down or a log missing.

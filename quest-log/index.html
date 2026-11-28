@@ -265,6 +265,7 @@
   .add-row[hidden]{ display:none; }
   .add-row textarea,
   .add-row input[type="text"],
+  .add-row input[type="password"],
   .add-row input[type="date"],
   .add-row input[type="number"],
   .add-row select{
@@ -273,6 +274,11 @@
     padding:8px 10px; background:var(--cream); color:var(--ink);
     width:100%;
   }
+  /* Settings → Calendar: a feed link you copy into Skylight. */
+  .cal-link{ display:flex; flex-direction:column; gap:4px; }
+  .cal-link-row{ display:flex; gap:8px; align-items:center; }
+  .add-row .cal-link-row input[type="text"]{ flex:1; min-width:0; font-size:12px; }
+  .cal-link-row .add-btn{ align-self:auto; }
   .add-row textarea{ resize:vertical; min-height:52px; line-height:1.5; }
   .add-row ::placeholder{ color:var(--ink-soft); }
   .add-row-controls{
@@ -1455,6 +1461,24 @@
     </div>
 
     <div class="panel-section">
+      <h3 class="panel-section-title">Calendar for Skylight</h3>
+      <p class="rate-readout" style="margin-top:0;">
+        Puts your open quests that have a due date, and the meal plan, on a
+        Skylight — or any calendar that takes a link. It uses the worker URL
+        above and its calendar token (see <code>worker/README.md</code>). Kept
+        in this browser only.
+      </p>
+      <div class="add-row" style="margin-bottom:0;">
+        <input type="password" id="calToken" placeholder="Calendar token" autocomplete="off">
+        <div class="add-row-controls">
+          <span class="field-label" id="calState"></span>
+          <button class="add-btn" id="saveCal">Save</button>
+        </div>
+        <div id="calLinks"></div>
+      </div>
+    </div>
+
+    <div class="panel-section">
       <h3 class="panel-section-title">Reset progress</h3>
       <p class="rate-readout">Back to Level 1 and 0 XP. Tasks, tags, pets, wardrobe, rewards and coins all stay exactly as they are — only the level and XP go. Party members move to the stable, since party slots unlock by level.</p>
       <button class="danger-btn" id="resetProgress">Reset to Level 1</button>
@@ -2082,6 +2106,70 @@ document.getElementById('saveHelper').onclick = () => {
     else localStorage.removeItem(HELPER_KEY);
   } catch(e){}
   renderHelperSettings();
+  renderCalendarSettings();
+};
+
+/* ============ CALENDAR FEED ============
+   The same worker serves calendar feeds (worker/src/calendar.js) that a
+   Skylight subscribes to. This only builds the links to paste into it:
+   the worker URL from the paste helper, the calendar token, and the feed.
+   The token stays in this browser, like the paste helper's. */
+const CAL_KEY = 'pp-calendar';
+function calToken(){
+  try { return localStorage.getItem(CAL_KEY) || ''; }
+  catch(e){ return ''; }
+}
+function renderCalendarSettings(){
+  const input = document.getElementById('calToken');
+  const token = calToken();
+  if(document.activeElement !== input) input.value = token;
+
+  const base = helperConfig().url;
+  const feeds = (base && token) ? [
+    [`${store.person.name}'s quests`, `${base}/cal/${encodeURIComponent(token)}/${WHO}.ics`],
+    ['Meal plan', `${base}/cal/${encodeURIComponent(token)}/meals.ics`]
+  ] : [];
+  document.getElementById('calState').textContent =
+    feeds.length ? 'copy a link into Skylight' : (base ? 'not set up' : 'needs the worker URL above');
+
+  // Settings re-render on every change; only rebuild when the links do,
+  // so a "Copied" doesn't vanish under you.
+  const links = document.getElementById('calLinks');
+  const key = JSON.stringify(feeds);
+  if(links.dataset.key === key) return;
+  links.dataset.key = key;
+  links.replaceChildren(...feeds.map(([label, url]) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'cal-link';
+    const name = document.createElement('span');
+    name.className = 'field-label';
+    name.textContent = label;
+    const row = document.createElement('div');
+    row.className = 'cal-link-row';
+    const box = document.createElement('input');
+    box.type = 'text'; box.readOnly = true; box.value = url;
+    box.setAttribute('aria-label', label + ' calendar link');
+    box.onfocus = () => box.select();
+    const copy = document.createElement('button');
+    copy.className = 'add-btn';
+    copy.textContent = 'Copy';
+    copy.onclick = () => {
+      const copied = () => { copy.textContent = 'Copied'; setTimeout(() => { copy.textContent = 'Copy'; }, 1500); };
+      if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(copied, () => box.select());
+      else box.select();
+    };
+    row.append(box, copy);
+    wrap.append(name, row);
+    return wrap;
+  }));
+}
+document.getElementById('saveCal').onclick = () => {
+  const token = document.getElementById('calToken').value.trim();
+  try {
+    if(token) localStorage.setItem(CAL_KEY, token);
+    else localStorage.removeItem(CAL_KEY);
+  } catch(e){}
+  renderCalendarSettings();
 };
 
 /* What the helper is told: the tag names, how this person has rated things
@@ -2788,6 +2876,7 @@ function renderSettings(){
   document.getElementById('rateReadout').innerHTML = html;
   renderTagEditor();
   renderHelperSettings();
+  renderCalendarSettings();
 }
 
 /* ============ FLOATING TO-DO WINDOW ============

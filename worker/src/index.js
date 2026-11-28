@@ -9,17 +9,20 @@
    drops them into the quick-add box, where they go through exactly the same
    review-and-add path as anything typed by hand.
 
-   It is deliberately the only thing this Worker does. It cannot read the
-   quest log, cannot write to it, and never sees Firestore — the board keeps
-   all of that to itself and only sends the few lines of context Claude needs
-   to tag and rate sensibly. The worst a stolen token can do is spend API
-   credit.
+   The paste helper never sees Firestore — the board keeps all of that to
+   itself and only sends the few lines of context Claude needs to tag and
+   rate sensibly. The worst a stolen PP_TOKEN can do is spend API credit.
+
+   The Worker's other job is the calendar feeds under /cal/ (calendar.js),
+   which put due quests and the meal plan on a Skylight. Those only ever
+   read, with the board's own public key, and sit behind their own token.
 
    Deploying it, and what it costs to run: see worker/README.md.
    ========================================================================== */
 
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
+import { calendarResponse } from './calendar.js';
 
 /* Generous for a pasted list, small enough that nobody can run up a bill by
    posting a novel at it. */
@@ -138,6 +141,11 @@ function contextBlock(body){
 export default {
   async fetch(request, env){
     const origin = request.headers.get('Origin') || '';
+
+    /* Calendar apps fetch these with a plain GET and no Origin, so they're
+       sorted out before any of the paste helper's checks. */
+    const url = new URL(request.url);
+    if(url.pathname.startsWith('/cal/')) return calendarResponse(request, env, url);
 
     if(request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(origin) });
     if(request.method !== 'POST') return json({ error: 'POST a list here.' }, 405, origin);
