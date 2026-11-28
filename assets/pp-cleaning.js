@@ -25,6 +25,11 @@
    further down): a deep clean, a kid weekend, the other deep clean, a kid
    weekend, then back to the start. A weekend is Friday to Sunday, and all
    three days show whatever that weekend is.
+
+   THE SKYLIGHT CALENDAR
+   The Skylight's household feed (/calendar/household.ics) is rebuilt from
+   this file once a day, so a change here shows up there by the next
+   morning. To rebuild it straight away: node tools/build-calendar.js
    ========================================================================== */
 
 window.PPCleaning = (function(){
@@ -119,7 +124,7 @@ window.PPCleaning = (function(){
 
   return {
     DAY_KEYS: DAY_KEYS, DAY_LABELS: DAY_LABELS, PEOPLE: PEOPLE,
-    SCHEDULE: SCHEDULE, WEEKENDS: WEEKENDS,
+    SCHEDULE: SCHEDULE, WEEKENDS: WEEKENDS, WEEKEND_START: WEEKEND_START,
     choresOn: choresOn, weekendOf: weekendOf, weekendsFrom: weekendsFrom
   };
 })();
